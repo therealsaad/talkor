@@ -1,0 +1,58 @@
+TAP version 13
+# Subtest: quoted CSV fields and Unicode survive parsing without executing markup
+ok 1 - quoted CSV fields and Unicode survive parsing without executing markup
+  ---
+  duration_ms: 1.348247
+  type: 'test'
+  ...
+# Subtest: private rendering escapes HTML and enforces shape limits
+ok 2 - private rendering escapes HTML and enforces shape limits
+  ---
+  duration_ms: 0.478977
+  type: 'test'
+  ...
+# Subtest: all 110 grade/level addresses are stable and complete
+ok 3 - all 110 grade/level addresses are stable and complete
+  ---
+  duration_ms: 1.046526
+  type: 'test'
+  ...
+# Subtest: grade and level parsing reject invalid/out-of-range/injection values
+ok 4 - grade and level parsing reject invalid/out-of-range/injection values
+  ---
+  duration_ms: 0.599877
+  type: 'test'
+  ...
+# Subtest: empty shells never count as published even with a published flag
+ok 5 - empty shells never count as published even with a published flag
+  ---
+  duration_ms: 0.146449
+  type: 'test'
+  ...
+# Subtest: staff Mongo projection maps legacy published and draft levels without inventing activities
+ok 6 - staff Mongo projection maps legacy published and draft levels without inventing activities
+  ---
+  duration_ms: 22.49295
+  type: 'test'
+  ...
+# Subtest: authorization, API mounting, admin UI and opt-in seed are explicitly integrated
+ok 7 - authorization, API mounting, admin UI and opt-in seed are explicitly integrated
+  ---
+  duration_ms: 0.636792
+  type: 'test'
+  ...
+# Subtest: dry-run writes nothing, apply creates only missing drafts, rerun is idempotent
+ok 8 - dry-run writes nothing, apply creates only missing drafts, rerun is idempotent
+  ---
+  duration_ms: 47.023778
+  type: 'test'
+  ...
+1..8
+# tests 8
+# suites 0
+# pass 8
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 361.723788

@@ -1,0 +1,888 @@
+.educator-shell {
+    --ed-navy: #0b1736;
+    --ed-ink: #17213b;
+    --ed-muted: #69728a;
+    --ed-line: #e5e8ef;
+    --ed-yellow: #f7ca3e;
+    --ed-violet: #7657d7;
+    background: #f5f6f9;
+    color: var(--ed-ink);
+    display: flex;
+    min-height: 100svh;
+    min-width: 0;
+    width: 100%
+}
+
+.educator-sidebar {
+    background: var(--ed-navy);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    flex: 0 0 252px;
+    min-height: 100svh;
+    padding: 22px 16px;
+    position: sticky;
+    top: 0
+}
+
+.educator-logo {
+    align-items: center;
+    display: flex;
+    gap: 10px;
+    margin: 0 6px 28px
+}
+
+.educator-logo>b {
+    background: var(--ed-yellow);
+    border-radius: 11px;
+    color: var(--ed-navy);
+    display: grid;
+    font-size: 21px;
+    height: 40px;
+    place-items: center;
+    width: 40px
+}
+
+.educator-logo>span {
+    font-size: 20px;
+    font-weight: 950;
+    line-height: 1
+}
+
+.educator-logo small {
+    color: #9ba9c7;
+    display: block;
+    font-size: 9px;
+    letter-spacing: .13em;
+    margin-top: 5px;
+    text-transform: uppercase
+}
+
+.educator-logo>button {
+    display: none
+}
+
+.educator-sidebar nav {
+    display: flex;
+    flex-direction: column;
+    gap: 5px
+}
+
+.educator-sidebar nav a {
+    align-items: center;
+    border-radius: 11px;
+    color: #aebbd3;
+    display: flex;
+    font-size: 13px;
+    font-weight: 750;
+    gap: 12px;
+    min-height: 44px;
+    padding: 10px 12px;
+    text-decoration: none
+}
+
+.educator-sidebar nav a svg {
+    height: 18px
+}
+
+.educator-sidebar nav a.active {
+    background: rgba(255, 255, 255, .1);
+    color: #fff
+}
+
+.educator-sidebar nav a.active:before {
+    background: var(--ed-yellow);
+    border-radius: 5px;
+    content: '';
+    height: 18px;
+    margin-left: -12px;
+    width: 3px
+}
+
+.educator-ai-launch {
+    align-items: center;
+    background: linear-gradient(135deg, #7254ce, #4a78d3);
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 14px;
+    color: #fff;
+    display: flex;
+    gap: 10px;
+    margin-top: auto;
+    padding: 13px;
+    text-align: left
+}
+
+.educator-ai-launch svg {
+    height: 20px
+}
+
+.educator-ai-launch span,
+.educator-account div {
+    min-width: 0
+}
+
+.educator-ai-launch b,
+.educator-ai-launch small,
+.educator-account b,
+.educator-account small {
+    display: block
+}
+
+.educator-ai-launch b {
+    font-size: 12px
+}
+
+.educator-ai-launch small {
+    font-size: 9px;
+    opacity: .75
+}
+
+.educator-account {
+    align-items: center;
+    border-top: 1px solid rgba(255, 255, 255, .1);
+    display: flex;
+    gap: 9px;
+    margin-top: 15px;
+    padding: 16px 3px 0
+}
+
+.educator-account>span,
+.educator-user>span {
+    background: #dfeaff;
+    border-radius: 10px;
+    color: #29466c;
+    display: grid;
+    font-size: 11px;
+    font-weight: 900;
+    height: 36px;
+    place-items: center;
+    width: 36px
+}
+
+.educator-account div {
+    flex: 1
+}
+
+.educator-account b {
+    font-size: 11px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap
+}
+
+.educator-account small {
+    color: #8899b9;
+    font-size: 9px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap
+}
+
+.educator-account button {
+    background: none;
+    border: 0;
+    color: #8fa0bc
+}
+
+.educator-account svg {
+    height: 16px
+}
+
+.educator-main {
+    min-width: 0;
+    flex: 1
+}
+
+.educator-topbar {
+    align-items: center;
+    background: #fff;
+    border-bottom: 1px solid var(--ed-line);
+    display: flex;
+    height: 68px;
+    justify-content: space-between;
+    padding: 0 28px;
+    position: sticky;
+    top: 0;
+    z-index: 20
+}
+
+.educator-search {
+    align-items: center;
+    background: #f5f6f8;
+    border: 1px solid #ebedf2;
+    border-radius: 10px;
+    color: #8a92a5;
+    display: flex;
+    font-size: 11px;
+    gap: 8px;
+    padding: 9px 12px;
+    text-decoration: none;
+    width: min(360px, 40vw)
+}
+
+.educator-search:hover,
+.educator-search:focus-visible {
+    border-color: #c9c0ef;
+    color: #4c3c91
+}
+
+.educator-search svg {
+    height: 15px
+}
+
+.educator-menu,
+.educator-ai-mobile {
+    display: none
+}
+
+.educator-user {
+    margin-left: auto
+}
+
+.educator-workspace {
+    margin: 0 auto;
+    max-width: 1440px;
+    min-width: 0;
+    padding: 26px clamp(20px, 3vw, 42px) 50px
+}
+
+.educator-page-head {
+    align-items: flex-start;
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 22px
+}
+
+.educator-page-head small {
+    color: #7b8498;
+    font-size: 10px;
+    font-weight: 850;
+    letter-spacing: .09em;
+    text-transform: uppercase
+}
+
+.educator-page-head h1 {
+    font-size: clamp(25px, 2.5vw, 34px);
+    letter-spacing: -.035em;
+    margin: 4px 0
+}
+
+.educator-page-head p {
+    color: var(--ed-muted);
+    font-size: 12px;
+    margin: 0
+}
+
+.educator-live {
+    align-items: center;
+    background: #fff;
+    border: 1px solid var(--ed-line);
+    border-radius: 99px;
+    display: flex;
+    font-size: 10px;
+    font-weight: 800;
+    gap: 6px;
+    padding: 7px 10px
+}
+
+.educator-live i {
+    background: #22b573;
+    border-radius: 50%;
+    height: 7px;
+    width: 7px
+}
+
+.educator-ai-panel {
+    background: #fff;
+    border-left: 1px solid var(--ed-line);
+    bottom: 0;
+    box-shadow: -16px 0 45px rgba(13, 29, 64, .13);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    right: 0;
+    top: 0;
+    transform: translateX(105%);
+    transition: transform .25s ease;
+    width: min(390px, 100vw);
+    z-index: 100
+}
+
+.educator-ai-panel.open {
+    transform: none
+}
+
+.educator-ai-panel>header {
+    align-items: center;
+    background: var(--ed-navy);
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    padding: 18px
+}
+
+.educator-ai-panel>header>div {
+    align-items: center;
+    display: flex;
+    gap: 10px
+}
+
+.educator-ai-panel header svg {
+    height: 20px
+}
+
+.educator-ai-panel header span b,
+.educator-ai-panel header span small {
+    display: block
+}
+
+.educator-ai-panel header span b {
+    font-size: 13px
+}
+
+.educator-ai-panel header span small {
+    color: #9daac2;
+    font-size: 9px
+}
+
+.educator-ai-panel header button {
+    background: none;
+    border: 0;
+    color: #fff
+}
+
+.educator-ai-body {
+    padding: 30px 22px
+}
+
+.ai-orb {
+    background: #eee9ff;
+    border-radius: 18px;
+    color: var(--ed-violet);
+    display: grid;
+    height: 52px;
+    place-items: center;
+    width: 52px
+}
+
+.educator-ai-body h2 {
+    font-size: 20px;
+    margin: 16px 0 7px
+}
+
+.educator-ai-body>p {
+    color: var(--ed-muted);
+    font-size: 12px;
+    line-height: 1.6
+}
+
+.ai-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 20px
+}
+
+.ai-chips button {
+    background: #f7f5ff;
+    border: 1px solid #ddd5ff;
+    border-radius: 99px;
+    color: #5943ac;
+    font-size: 10px;
+    font-weight: 800;
+    padding: 8px 10px
+}
+
+.ai-unavailable {
+    align-items: center;
+    background: #f7f8fa;
+    border: 1px solid var(--ed-line);
+    border-radius: 12px;
+    display: flex;
+    gap: 10px;
+    margin-top: 24px;
+    padding: 12px
+}
+
+.ai-unavailable svg {
+    color: #8791a7;
+    height: 18px
+}
+
+.ai-unavailable b,
+.ai-unavailable small {
+    display: block
+}
+
+.ai-unavailable b {
+    font-size: 11px
+}
+
+.ai-unavailable small {
+    color: var(--ed-muted);
+    font-size: 9px;
+    margin-top: 2px
+}
+
+.educator-ai-input {
+    display: flex;
+    gap: 7px;
+    margin-top: auto;
+    padding: 16px
+}
+
+.educator-ai-input input {
+    border: 1px solid #dfe3eb;
+    border-radius: 11px;
+    flex: 1;
+    font: inherit;
+    font-size: 12px;
+    padding: 11px
+}
+
+.educator-ai-input button {
+    background: var(--ed-violet);
+    border: 0;
+    border-radius: 10px;
+    color: #fff;
+    width: 42px
+}
+
+.educator-loading {
+    align-items: center;
+    background: #f5f6f9;
+    color: #5f687d;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    min-height: 100svh
+}
+
+.educator-loading i {
+    animation: ed-spin .8s linear infinite;
+    border: 3px solid #d8dce5;
+    border-radius: 50%;
+    border-top-color: #7657d7;
+    height: 24px;
+    width: 24px
+}
+
+@keyframes ed-spin {
+    to {
+        transform: rotate(360deg)
+    }
+}
+
+@media(max-width:900px) {
+    .educator-sidebar {
+        bottom: 0;
+        left: 0;
+        position: fixed;
+        top: 0;
+        transform: translateX(-105%);
+        transition: transform .22s;
+        z-index: 80
+    }
+
+    .menu-open .educator-sidebar {
+        transform: none
+    }
+
+    .educator-scrim {
+        background: rgba(5, 13, 31, .48);
+        border: 0;
+        inset: 0;
+        position: fixed;
+        z-index: 70
+    }
+
+    .educator-logo>button {
+        background: none;
+        border: 0;
+        color: #fff;
+        display: block;
+        margin-left: auto
+    }
+
+    .educator-menu {
+        background: none;
+        border: 0;
+        display: block
+    }
+
+    .educator-menu svg {
+        height: 20px
+    }
+
+    .educator-search {
+        display: none
+    }
+
+    .educator-ai-mobile {
+        align-items: center;
+        background: #f1edff;
+        border: 0;
+        border-radius: 9px;
+        color: #654bc2;
+        display: flex;
+        font-size: 10px;
+        font-weight: 850;
+        gap: 5px;
+        padding: 8px 10px
+    }
+
+    .educator-ai-mobile svg {
+        height: 14px
+    }
+
+    .educator-topbar {
+        height: 58px;
+        padding: 0 15px
+    }
+
+    .educator-workspace {
+        padding: 20px 15px 40px
+    }
+}
+
+@media(max-width:560px) {
+    .educator-page-head {
+        gap: 10px
+    }
+
+    .educator-page-head h1 {
+        font-size: 25px
+    }
+
+    .educator-live {
+        display: none
+    }
+
+    .educator-sidebar {
+        width: min(280px, 88vw)
+    }
+
+    .educator-workspace {
+        padding: 18px 12px calc(28px + env(safe-area-inset-bottom))
+    }
+
+    .educator-page-head {
+        flex-wrap: wrap
+    }
+}
+
+@media(max-width:560px) {
+    .school-student-toolbar {
+        align-items: stretch !important;
+        flex-direction: column;
+    }
+
+    .school-student-search {
+        display: grid !important;
+        flex: 1 1 100% !important;
+        grid-template-columns: minmax(0, 1fr) auto;
+        max-width: none !important;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .school-student-search-input {
+        grid-column: 1 / -1;
+        min-height: 44px;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .school-student-grade-filter {
+        min-height: 44px;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .school-student-search-submit,
+    .school-student-enroll-button {
+        min-height: 44px;
+    }
+
+    .school-student-enroll-button {
+        width: 100%;
+    }
+
+    .school-student-table-header {
+        flex-wrap: wrap;
+        gap: 6px;
+        padding: 14px !important;
+    }
+
+    .school-student-table-header small {
+        line-height: 1.4;
+    }
+
+    .school-student-table-scroll {
+        max-width: 100%;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .school-student-modal-overlay {
+        padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom)) !important;
+    }
+
+    .school-student-modal-form {
+        max-height: calc(100dvh - max(24px, env(safe-area-inset-top)) - max(24px, env(safe-area-inset-bottom))) !important;
+        max-width: 100%;
+        padding: 22px 16px !important;
+        width: 100%;
+    }
+
+    .school-student-grade-fields {
+        grid-template-columns: minmax(0, 1fr) !important;
+    }
+
+    .school-student-modal-actions {
+        flex-direction: column;
+    }
+
+    .school-student-modal-actions button {
+        min-height: 44px;
+        width: 100%;
+    }
+
+    .school-teacher-modal-overlay {
+        padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom)) !important;
+    }
+
+    .school-teacher-modal-form {
+        max-height: calc(100dvh - max(24px, env(safe-area-inset-top)) - max(24px, env(safe-area-inset-bottom)));
+        overflow-y: auto;
+        padding: 20px 16px !important;
+        width: 100%;
+    }
+
+    .school-teacher-modal-actions {
+        flex-wrap: wrap;
+    }
+}
+
+.school-student-enrollment-form {
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 16px 48px rgba(15, 23, 42, .22);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 40px);
+    max-height: calc(100dvh - 40px);
+    max-width: 760px;
+    min-height: 0;
+    overflow: hidden;
+    width: 100%;
+}
+
+.school-student-enrollment-header {
+    align-items: center;
+    border-bottom: 1px solid #e8edf3;
+    display: flex;
+    flex: 0 0 auto;
+    gap: 16px;
+    justify-content: space-between;
+    padding: 17px 24px;
+}
+
+.school-student-enrollment-header h3 {
+    color: #0f172a;
+    font-size: 20px;
+    line-height: 1.25;
+    margin: 0;
+}
+
+.school-student-enrollment-close {
+    align-items: center;
+    background: #f1f5f9;
+    border: 0;
+    border-radius: 10px;
+    color: #334155;
+    cursor: pointer;
+    display: inline-flex;
+    flex: 0 0 auto;
+    font-size: 24px;
+    height: 42px;
+    justify-content: center;
+    line-height: 1;
+    padding: 0;
+    width: 42px;
+}
+
+.school-student-enrollment-close:focus-visible,
+.school-student-enrollment-actions button:focus-visible {
+    outline: 3px solid #2563eb;
+    outline-offset: 2px;
+}
+
+.school-student-enrollment-body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 16px 24px 20px;
+    scrollbar-gutter: stable;
+}
+
+.school-student-enrollment-body .avatar-type-picker {
+    margin: 0 0 14px;
+}
+
+.school-student-enrollment-body .avatar-type-picker button {
+    border-radius: 14px;
+    min-height: 116px;
+    padding: 6px;
+}
+
+.school-student-enrollment-error,
+.school-student-enrollment-notice {
+    border-radius: 10px;
+    font-size: 12px;
+    line-height: 1.5;
+    margin: 0 0 14px;
+    padding: 10px 12px;
+}
+
+.school-student-enrollment-error {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.school-student-enrollment-notice {
+    background: #fff7ed;
+    color: #9a3412;
+    grid-column: 1 / -1;
+}
+
+.school-student-enrollment-notice.is-published {
+    background: #ecfdf5;
+    color: #166534;
+}
+
+.school-student-enrollment-notice a {
+    color: inherit;
+    font-weight: 800;
+    margin-left: 4px;
+}
+
+.school-student-enrollment-fields {
+    display: grid;
+    gap: 12px 14px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.school-student-enrollment-field {
+    min-width: 0;
+}
+
+.school-student-enrollment-field input,
+.school-student-enrollment-field select {
+    background: #fff;
+    border: 1px solid #cbd5e1;
+    border-radius: 8px;
+    box-sizing: border-box;
+    color: #0f172a;
+    font: inherit;
+    font-weight: 500;
+    min-height: 44px;
+    min-width: 0;
+    padding: 9px 10px;
+    width: 100%;
+}
+
+.school-student-enrollment-field input:focus-visible,
+.school-student-enrollment-field select:focus-visible {
+    border-color: #2563eb;
+    outline: 3px solid rgba(37, 99, 235, .2);
+}
+
+.school-student-enrollment-full-row {
+    grid-column: 1 / -1;
+}
+
+.school-student-enrollment-actions {
+    align-items: center;
+    background: #fff;
+    border-top: 1px solid #e8edf3;
+    display: flex;
+    flex: 0 0 auto;
+    gap: 10px;
+    justify-content: flex-end;
+    padding: 13px 24px max(13px, env(safe-area-inset-bottom));
+}
+
+.school-student-enrollment-actions button {
+    border-radius: 9px;
+    cursor: pointer;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 800;
+    min-height: 44px;
+    padding: 9px 16px;
+}
+
+.school-student-enrollment-actions button:first-child {
+    background: #f1f5f9;
+    border: 1px solid #e2e8f0;
+    color: #1e293b;
+}
+
+.school-student-enrollment-actions button[type="submit"] {
+    background: #ffd83d;
+    border: 2px solid #0f172a;
+    color: #0f172a;
+    font-weight: 900;
+}
+
+.school-student-enrollment-actions button:disabled {
+    cursor: wait;
+    opacity: .7;
+}
+
+@media (max-width: 700px) {
+    .school-student-enrollment-form {
+        border-radius: 16px;
+        max-height: calc(100dvh - 32px);
+    }
+
+    .school-student-enrollment-header {
+        padding: 14px 18px;
+    }
+
+    .school-student-enrollment-body {
+        padding: 14px 18px 18px;
+    }
+
+    .school-student-enrollment-actions {
+        padding-left: 18px;
+        padding-right: 18px;
+    }
+}
+
+@media (max-width: 560px) {
+    .school-student-enrollment-form {
+        max-height: calc(100dvh - max(24px, env(safe-area-inset-top)) - max(24px, env(safe-area-inset-bottom)));
+    }
+
+    .school-student-enrollment-fields {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .school-student-enrollment-full-row,
+    .school-student-enrollment-notice {
+        grid-column: auto;
+    }
+
+    .school-student-enrollment-actions {
+        align-items: stretch;
+        flex-direction: column-reverse;
+    }
+
+    .school-student-enrollment-actions button {
+        width: 100%;
+    }
+}

@@ -1,0 +1,2 @@
+Parsed 411 TypeScript files and checked 924 relative imports.
+PASS: no syntax errors or unresolved relative imports. (No semantic typecheck performed.)

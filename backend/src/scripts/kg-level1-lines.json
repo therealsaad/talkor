@@ -1,0 +1,346 @@
+﻿{
+  "manifestVersion": "v1",
+  "voicePreset": "miss-julie-priya-v6",
+  "clips": [
+    {
+      "id": "welcome",
+      "text": "Hello, superstar! Welcome to our ABCD adventure!",
+      "activityIds": [],
+      "scope": "level",
+      "output": "welcome.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/welcome.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "how-to-play",
+      "text": "Listen to me, then say the word. I am listening!",
+      "activityIds": [],
+      "scope": "level",
+      "output": "how-to-play.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/how-to-play.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "letter-a",
+      "text": "This is the letter A. Say A with me!",
+      "activityIds": [
+        "say-a"
+      ],
+      "scope": "activity",
+      "output": "letter-a.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/letter-a.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "letter-b",
+      "text": "This is the letter B. Say B with me!",
+      "activityIds": [
+        "say-b"
+      ],
+      "scope": "activity",
+      "output": "letter-b.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/letter-b.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "letter-c",
+      "text": "This is the letter C. Say C with me!",
+      "activityIds": [
+        "say-c"
+      ],
+      "scope": "activity",
+      "output": "letter-c.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/letter-c.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "letter-d",
+      "text": "This is the letter D. Say D with me!",
+      "activityIds": [
+        "say-d"
+      ],
+      "scope": "activity",
+      "output": "letter-d.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/letter-d.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "word-apple",
+      "text": "Apple. Apple begins with A. Say apple with me!",
+      "activityIds": [
+        "say-a"
+      ],
+      "scope": "activity",
+      "output": "word-apple.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/word-apple.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "word-ball",
+      "text": "Ball. Ball begins with B. Say ball with me!",
+      "activityIds": [
+        "say-b"
+      ],
+      "scope": "activity",
+      "output": "word-ball.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/word-ball.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "word-cat",
+      "text": "Cat. Cat begins with C. Say cat with me!",
+      "activityIds": [
+        "say-c"
+      ],
+      "scope": "activity",
+      "output": "word-cat.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/word-cat.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "word-dog",
+      "text": "Dog. Dog begins with D. Say dog with me!",
+      "activityIds": [
+        "say-d"
+      ],
+      "scope": "activity",
+      "output": "word-dog.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/word-dog.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "say-a",
+      "text": "A! A for apple! Can you say apple?",
+      "activityIds": [
+        "say-a"
+      ],
+      "scope": "activity",
+      "output": "say-a.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/say-a.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "say-b",
+      "text": "B! B for ball! Can you say ball?",
+      "activityIds": [
+        "say-b"
+      ],
+      "scope": "activity",
+      "output": "say-b.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/say-b.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "say-c",
+      "text": "C! C for cat! Can you say cat?",
+      "activityIds": [
+        "say-c"
+      ],
+      "scope": "activity",
+      "output": "say-c.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/say-c.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "say-d",
+      "text": "D! D for dog! Can you say dog?",
+      "activityIds": [
+        "say-d"
+      ],
+      "scope": "activity",
+      "output": "say-d.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/say-d.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "puzzle-intro",
+      "text": "Amazing! Now touch the picture I say!",
+      "activityIds": [
+        "find-a",
+        "find-b",
+        "find-c",
+        "find-d"
+      ],
+      "scope": "activity",
+      "output": "puzzle-intro.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/puzzle-intro.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "recognize-intro",
+      "text": "Look at each picture. Listen, then touch the one I say!",
+      "activityIds": [
+        "find-a",
+        "find-b",
+        "find-c",
+        "find-d"
+      ],
+      "scope": "activity",
+      "output": "recognize-intro.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/recognize-intro.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "find-a",
+      "text": "Can you find the apple? Touch the apple!",
+      "activityIds": [
+        "find-a"
+      ],
+      "scope": "activity",
+      "output": "find-a.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/find-a.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "find-b",
+      "text": "Can you find the ball? Touch the ball!",
+      "activityIds": [
+        "find-b"
+      ],
+      "scope": "activity",
+      "output": "find-b.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/find-b.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "find-c",
+      "text": "Can you find the cat? Touch the cat!",
+      "activityIds": [
+        "find-c"
+      ],
+      "scope": "activity",
+      "output": "find-c.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/find-c.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "find-d",
+      "text": "Can you find the dog? Touch the dog!",
+      "activityIds": [
+        "find-d"
+      ],
+      "scope": "activity",
+      "output": "find-d.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/find-d.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "great",
+      "text": "Yay! You got it! Well done!",
+      "activityIds": [
+        "say-a",
+        "say-b",
+        "say-c",
+        "say-d",
+        "find-a",
+        "find-b",
+        "find-c",
+        "find-d"
+      ],
+      "scope": "activity",
+      "output": "great.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/great.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "try-again",
+      "text": "Nice try! Listen once more and try again!",
+      "activityIds": [
+        "say-a",
+        "say-b",
+        "say-c",
+        "say-d",
+        "find-a",
+        "find-b",
+        "find-c",
+        "find-d"
+      ],
+      "scope": "activity",
+      "output": "try-again.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/try-again.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "repeat",
+      "text": "I did not hear clearly. Can you say it again?",
+      "activityIds": [
+        "say-a",
+        "say-b",
+        "say-c",
+        "say-d",
+        "find-a",
+        "find-b",
+        "find-c",
+        "find-d"
+      ],
+      "scope": "activity",
+      "output": "repeat.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/repeat.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "silence",
+      "text": "I am still listening. Take your time, then say it for me!",
+      "activityIds": [
+        "say-a",
+        "say-b",
+        "say-c",
+        "say-d",
+        "find-a",
+        "find-b",
+        "find-c",
+        "find-d"
+      ],
+      "scope": "activity",
+      "output": "silence.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/silence.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "celebrate",
+      "text": "Hooray! You know A, B, C, and D! You are a superstar!",
+      "activityIds": [],
+      "scope": "level",
+      "output": "celebrate.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/celebrate.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "level-complete",
+      "text": "You finished Level 1! You learned A, B, C, and D. Hooray!",
+      "activityIds": [],
+      "scope": "level",
+      "output": "level-complete.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/level-complete.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "navigation-map",
+      "text": "Let us go back to your letter garden!",
+      "activityIds": [],
+      "scope": "level",
+      "output": "navigation-map.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/navigation-map.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "replay-intro",
+      "text": "Would you like to watch Miss Julie’s story again? Let’s play!",
+      "activityIds": [],
+      "scope": "level",
+      "output": "replay-intro.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/replay-intro.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    },
+    {
+      "id": "replay-level",
+      "text": "Welcome back, superstar! Let’s play the ABCD adventure again!",
+      "activityIds": [],
+      "scope": "level",
+      "output": "replay-level.mp3",
+      "s3Key": "kg/level-1/miss-julie/v1/replay-level.mp3",
+      "voicePreset": "miss-julie-priya-v6"
+    }
+  ]
+}
+

@@ -1,0 +1,130 @@
+TAP version 13
+# Subtest: network retries reuse the submitted payload, while authorization and validation errors are not retried
+ok 1 - network retries reuse the submitted payload, while authorization and validation errors are not retried
+  ---
+  duration_ms: 3.325589
+  type: 'test'
+  ...
+# Subtest: a request timeout retries a bounded number of times and navigation cancels immediately
+ok 2 - a request timeout retries a bounded number of times and navigation cancels immediately
+  ---
+  duration_ms: 13.39749
+  type: 'test'
+  ...
+# Subtest: late microphone permission is released after navigation and denied permission never opens a recorder
+ok 3 - late microphone permission is released after navigation and denied permission never opens a recorder
+  ---
+  duration_ms: 2.898554
+  type: 'test'
+  ...
+# Subtest: VAD ends short speech, treats quiet background as silence, and closes the audio graph
+ok 4 - VAD ends short speech, treats quiet background as silence, and closes the audio graph
+  ---
+  duration_ms: 76.301935
+  type: 'test'
+  ...
+# Subtest: audio completion resolves playback only, and aborted playback releases its handlers
+ok 5 - audio completion resolves playback only, and aborted playback releases its handlers
+  ---
+  duration_ms: 30.507552
+  type: 'test'
+  ...
+# Subtest: five-digit KG login enters the mandatory story and the student map resumes saved progress
+ok 6 - five-digit KG login enters the mandatory story and the student map resumes saved progress
+  ---
+  duration_ms: 1.021902
+  type: 'test'
+  ...
+# Subtest: the canonical intro is unskippable and only its ended event persists completion
+ok 7 - the canonical intro is unskippable and only its ended event persists completion
+  ---
+  duration_ms: 0.497071
+  type: 'test'
+  ...
+# Subtest: the lesson keeps Task 1 private S3 playback and uses recoverable errors for missing audio
+ok 8 - the lesson keeps Task 1 private S3 playback and uses recoverable errors for missing audio
+  ---
+  duration_ms: 0.289336
+  type: 'test'
+  ...
+# Subtest: speech capture is single-session, retries silence, and stops when the lesson is hidden
+ok 9 - speech capture is single-session, retries silence, and stops when the lesson is hidden
+  ---
+  duration_ms: 0.179872
+  type: 'test'
+  ...
+# Subtest: KG mandatory story requests real fullscreen and pauses on escape, keeps native video controls unavailable
+ok 10 - KG mandatory story requests real fullscreen and pauses on escape, keeps native video controls unavailable
+  ---
+  duration_ms: 0.166602
+  type: 'test'
+  ...
+# Subtest: each KG entry gets a backend ticket and a completed watch before attempts
+ok 11 - each KG entry gets a backend ticket and a completed watch before attempts
+  ---
+  duration_ms: 0.114834
+  type: 'test'
+  ...
+# Subtest: existing alphabet work stays A-D and new homework is included in the authoritative voice manifest
+ok 12 - existing alphabet work stays A-D and new homework is included in the authoritative voice manifest
+  ---
+  duration_ms: 0.831184
+  type: 'test'
+  ...
+# Subtest: bilingual child-friendly hint never changes grading of correct answers
+ok 13 - bilingual child-friendly hint never changes grading of correct answers
+  ---
+  duration_ms: 0.252872
+  type: 'test'
+  ...
+# Subtest: report CSV is spreadsheet-safe, keyset-paged, and teacher-restricted
+ok 14 - report CSV is spreadsheet-safe, keyset-paged, and teacher-restricted
+  ---
+  duration_ms: 24.406565
+  type: 'test'
+  ...
+# Subtest: static KG audio cache deduplicates concurrent S3 reads and retries missing objects
+ok 15 - static KG audio cache deduplicates concurrent S3 reads and retries missing objects
+  ---
+  duration_ms: 15.190386
+  type: 'test'
+  ...
+# Subtest: enrollment modal keeps its title and accessible close control in the dialog header
+ok 16 - enrollment modal keeps its title and accessible close control in the dialog header
+  ---
+  duration_ms: 1.019198
+  type: 'test'
+  ...
+# Subtest: form body scrolls independently while the action footer stays in the dialog frame
+ok 17 - form body scrolls independently while the action footer stays in the dialog frame
+  ---
+  duration_ms: 0.379282
+  type: 'test'
+  ...
+# Subtest: student creation retains the Grade 0 school-admin workflow and existing PIN response
+ok 18 - student creation retains the Grade 0 school-admin workflow and existing PIN response
+  ---
+  duration_ms: 0.217819
+  type: 'test'
+  ...
+# Subtest: KG draft copy describes allowlisted pilot access without exposing pilot identifiers
+ok 19 - KG draft copy describes allowlisted pilot access without exposing pilot identifiers
+  ---
+  duration_ms: 0.284369
+  type: 'test'
+  ...
+# Subtest: fields adapt from two columns to one column on narrow screens
+ok 20 - fields adapt from two columns to one column on narrow screens
+  ---
+  duration_ms: 0.368386
+  type: 'test'
+  ...
+1..20
+# tests 20
+# suites 0
+# pass 20
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 734.778417
