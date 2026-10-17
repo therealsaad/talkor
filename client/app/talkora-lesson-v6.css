@@ -1,0 +1,3266 @@
+/* =========================================================
+   TALKORA CANONICAL LESSON EXPERIENCE — CLASS 4 UNIT 1
+   Clean, reference-matching, modular design system.
+   ========================================================= */
+
+:root {
+  --talkora-navy-dark: #071830;
+  --talkora-navy-surface: rgba(7, 24, 48, 0.95);
+  --talkora-cream: #ffffff;
+  --talkora-mint: #d1fae5;
+  --talkora-mint-border: #a7f3d0;
+  --talkora-mint-text: #065f46;
+  --talkora-julie-text: #0f172a;
+  --talkora-blue: #2563eb;
+  --talkora-purple: #8b5cf6;
+  --talkora-green: #16a34a;
+  --talkora-yellow: #ffd84d;
+  --talkora-gold: #f59e0b;
+}
+
+/* =========================================================
+   GOLD-STANDARD FAVOURITE FAIR EXPERIENCE
+   ========================================================= */
+.talkora-lesson {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  height: 100%;
+  position: relative;
+  z-index: 4
+}
+
+.talkora-lesson__scene {
+  min-height: 0;
+  position: relative
+}
+
+.talkora-lesson__interaction {
+  align-items: center;
+  background: linear-gradient(180deg, rgba(7, 18, 38, 0.72) 0%, rgba(7, 13, 30, 0.94) 100%);
+  border-top: 1px solid rgba(94, 220, 255, 0.15);
+  backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  justify-content: center;
+  padding: 12px clamp(16px, 3vw, 40px) 18px;
+  position: relative;
+  z-index: 20;
+}
+
+.talkora-lesson__interaction > .talkora-card-panel,
+.talkora-lesson__interaction > .talkora-suggestion-chips-panel {
+  margin: 0;
+  max-width: 820px;
+  width: 100%;
+  overflow: visible;
+}
+
+.talkora-card-panel {
+  background: rgba(13, 27, 56, 0.88) !important;
+  backdrop-filter: blur(14px) !important;
+  border: 1px solid rgba(94, 220, 255, 0.22) !important;
+  border-radius: var(--tk-radius-lg, 20px) !important;
+  color: #ffffff !important;
+  padding: 16px 20px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4) !important;
+}
+
+.talkora-lesson__interaction > .lesson-mic-dock {
+  margin: 0;
+  width: auto;
+  min-width: 320px;
+}
+
+
+.talkora-lesson__feedback {
+  background: #fff7df;
+  border: 2px solid #f5b842;
+  border-radius: 15px;
+  color: #173353;
+  font-size: 13px;
+  font-weight: 800;
+  max-width: 330px;
+  padding: 10px 14px
+}
+
+.talkora-lesson__continue,
+.talkora-lesson__retry {
+  border: 2px solid #092747;
+  border-radius: 999px;
+  box-shadow: 0 5px 0 #061b32;
+  font-size: 14px;
+  font-weight: 1000;
+  min-height: 48px;
+  padding: 10px 22px
+}
+
+.talkora-lesson__continue {
+  background: #ffd84d;
+  color: #092747
+}
+
+.talkora-lesson__retry {
+  background: #fff7df;
+  color: #153b61
+}
+
+.talkora-correction {
+  background: #fff7df;
+  border: 3px solid #ffd36a;
+  border-radius: 18px;
+  box-shadow: 0 7px 0 rgba(7, 24, 48, .25);
+  color: #102d4b;
+  max-width: 470px;
+  padding: 11px 16px
+}
+
+.talkora-correction span {
+  color: #9a5c00;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .08em;
+  text-transform: uppercase
+}
+
+.talkora-correction p {
+  font-size: clamp(16px, 1.6vw, 23px);
+  font-weight: 900;
+  margin: 4px 0
+}
+
+.talkora-correction mark {
+  background: #ffd84d;
+  border-radius: 7px;
+  color: #092747;
+  padding: 1px 5px
+}
+
+.talkora-cloud {
+  background: rgba(255, 255, 255, .82);
+  border-radius: 999px;
+  filter: drop-shadow(0 12px 15px rgba(32, 93, 133, .12));
+  height: 36px;
+  position: absolute;
+  width: 130px
+}
+
+.talkora-cloud:before,
+.talkora-cloud:after {
+  background: inherit;
+  border-radius: 50%;
+  content: "";
+  position: absolute
+}
+
+.talkora-cloud:before {
+  height: 62px;
+  left: 22px;
+  top: -28px;
+  width: 62px
+}
+
+.talkora-cloud:after {
+  height: 48px;
+  right: 18px;
+  top: -19px;
+  width: 48px
+}
+
+.talkora-cloud--one {
+  animation: fair-cloud 18s ease-in-out infinite;
+  left: 8%;
+  top: 15%
+}
+
+.talkora-cloud--two {
+  animation: fair-cloud 22s ease-in-out infinite reverse;
+  right: 9%;
+  top: 21%;
+  transform: scale(.72)
+}
+
+@keyframes fair-cloud {
+  50% {
+    translate: 28px -7px
+  }
+}
+
+.talkora-fair-school {
+  background: linear-gradient(145deg, #fff5d5, #ffd997);
+  border: 5px solid #244d6b;
+  border-radius: 38px 38px 8px 8px;
+  bottom: 17%;
+  box-shadow: 0 18px 30px rgba(14, 56, 67, .24);
+  height: 29%;
+  left: 50%;
+  position: absolute;
+  transform: translateX(-50%) perspective(600px) rotateX(3deg);
+  width: 34%
+}
+
+.talkora-fair-school:before {
+  background: repeating-linear-gradient(90deg, #55b8dd 0 13%, #ecfbff 13% 17%);
+  border: 4px solid #244d6b;
+  content: "";
+  inset: 28% 9% 9%;
+  position: absolute
+}
+
+.talkora-fair-school span {
+  background: #f36f53;
+  border: 3px solid #244d6b;
+  border-radius: 999px;
+  color: #fff;
+  display: block;
+  font-size: clamp(10px, 1.2vw, 18px);
+  font-weight: 1000;
+  left: 50%;
+  padding: 7px 20px;
+  position: absolute;
+  top: -18px;
+  transform: translateX(-50%);
+  white-space: nowrap
+}
+
+.talkora-fair-stall {
+  border: 4px solid #173c5b;
+  border-radius: 20px 20px 7px 7px;
+  bottom: 15%;
+  box-shadow: 0 15px 25px rgba(9, 39, 71, .22);
+  height: 19%;
+  position: absolute;
+  width: 18%
+}
+
+.talkora-fair-stall:before {
+  background: repeating-linear-gradient(90deg, #fff 0 20%, #ffcf5c 20% 40%);
+  border-bottom: 4px solid #173c5b;
+  border-radius: 15px 15px 4px 4px;
+  content: "";
+  height: 34%;
+  inset: 0;
+  position: absolute;
+  width: 100%
+}
+
+.talkora-fair-stall b {
+  background: #173c5b;
+  border-radius: 999px;
+  color: #fff;
+  font-size: clamp(7px, .8vw, 12px);
+  left: 50%;
+  padding: 5px 10px;
+  position: absolute;
+  top: 44%;
+  transform: translateX(-50%);
+  white-space: nowrap
+}
+
+.talkora-fair-stall--books {
+  background: #f7a6c5;
+  left: 4%;
+  transform: rotateY(8deg)
+}
+
+.talkora-fair-stall--sports {
+  background: #7dd99a;
+  right: 4%;
+  transform: rotateY(-8deg)
+}
+
+.talkora-garden-horizon {
+  z-index: -1
+}
+
+.talkora-fair-silhouette {
+  z-index: -2
+}
+
+.talkora-fair-flowers {
+  background: radial-gradient(circle, #ffe054 0 4px, #ff6f8e 5px 9px, transparent 10px) 0 0/48px 36px;
+  bottom: 3%;
+  height: 12%;
+  left: 0;
+  opacity: .78;
+  position: absolute;
+  right: 0
+}
+
+.talkora-fair-foreground {
+  background: radial-gradient(ellipse at 10% 100%, #0c793e 0 12%, transparent 13%), radial-gradient(ellipse at 90% 100%, #0b6c39 0 13%, transparent 14%);
+  bottom: -2%;
+  height: 22%;
+  left: -3%;
+  right: -3%
+}
+
+.talkora-fair-children {
+  bottom: 15%;
+  display: flex;
+  gap: 12px;
+  position: absolute
+}
+
+.talkora-fair-children i {
+  background: #f6b48e;
+  border: 4px solid #173c5b;
+  border-radius: 50% 50% 44% 44%;
+  box-shadow: 0 25px 0 5px #e0714f;
+  height: 22px;
+  width: 22px
+}
+
+.talkora-fair-children--reading {
+  left: 25%;
+  transform: scale(.72)
+}
+
+.talkora-fair-children--cricket {
+  right: 25%;
+  transform: scale(.72)
+}
+
+.talkora-fair-children--cricket span {
+  background: #f4d247;
+  border: 3px solid #173c5b;
+  border-radius: 50%;
+  height: 12px;
+  margin-top: 35px;
+  width: 12px
+}
+
+.talkora-world-loader {
+  align-items: center;
+  background: #08213b;
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  overflow: hidden;
+  position: fixed;
+  z-index: 999
+}
+
+.talkora-world-loader__map {
+  background-image: linear-gradient(rgba(5, 25, 47, .35), rgba(5, 25, 47, .66)), url('/talkora/adventure/talkora-world-map.png');
+  background-position: center;
+  background-size: cover;
+  filter: blur(1px);
+  inset: -2%;
+  position: absolute;
+  transform: scale(1.03)
+}
+
+.talkora-world-loader__destination {
+  align-items: center;
+  background: #fff5cf;
+  border: 5px solid #ffd84d;
+  border-radius: 30px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .35);
+  color: #092747;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 24px 38px;
+  position: relative;
+  text-align: center
+}
+
+.talkora-world-loader__destination svg {
+  color: #ec8d18
+}
+
+.talkora-world-loader__destination strong {
+  font-size: clamp(25px, 4vw, 46px);
+  font-weight: 1000
+}
+
+.talkora-world-loader__destination span {
+  font-size: 14px;
+  font-weight: 800
+}
+
+.talkora-reward {
+  align-items: center;
+  background: radial-gradient(circle at 50% 20%, rgba(255, 235, 130, .7), transparent 32%), linear-gradient(180deg, #54c8ef, #8ee4cf 68%, #4db96b);
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100dvh - 66px);
+  justify-content: center;
+  overflow: auto;
+  padding: 24px;
+  position: relative;
+  text-align: center
+}
+
+.talkora-reward__sky {
+  inset: 0;
+  pointer-events: none;
+  position: absolute
+}
+
+.talkora-reward__sky i {
+  background: #ffd84d;
+  border-radius: 3px;
+  height: 9px;
+  left: calc((var(--i, 1))*7%);
+  position: absolute;
+  top: calc(8% + (var(--i, 1))*3%);
+  width: 9px
+}
+
+.talkora-reward__sky i:nth-child(3n) {
+  background: #ff6f9f
+}
+
+.talkora-reward__sky i:nth-child(2n) {
+  background: #fff
+}
+
+.talkora-reward__badge {
+  align-items: center;
+  background: linear-gradient(145deg, #fff2a3, #f6ad22);
+  border: 8px solid #fff7dc;
+  border-radius: 50%;
+  box-shadow: 0 14px 0 #c46f16, 0 24px 55px rgba(30, 62, 68, .28);
+  color: #153b61;
+  display: flex;
+  flex-direction: column;
+  height: 180px;
+  justify-content: center;
+  margin-bottom: 30px;
+  width: 180px
+}
+
+.talkora-reward__badge svg {
+  height: 72px;
+  width: 72px
+}
+
+.talkora-reward__badge span {
+  font-size: 14px;
+  font-weight: 1000
+}
+
+.talkora-reward__eyebrow {
+  align-items: center;
+  color: #153b61;
+  display: flex;
+  font-size: 12px;
+  font-weight: 1000;
+  gap: 7px;
+  letter-spacing: .12em
+}
+
+.talkora-reward h1 {
+  color: #092747;
+  font-size: clamp(30px, 4.3vw, 62px);
+  line-height: 1.02;
+  margin: 10px 0;
+  max-width: 850px
+}
+
+.talkora-reward>p {
+  color: #174d61;
+  font-size: clamp(15px, 1.5vw, 21px);
+  font-weight: 800;
+  margin: 0
+}
+
+.talkora-reward__evidence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+  margin: 20px
+}
+
+.talkora-reward__evidence span {
+  align-items: center;
+  background: #fff6dc;
+  border: 2px solid #174866;
+  border-radius: 999px;
+  color: #173c5b;
+  display: flex;
+  font-size: 12px;
+  font-weight: 900;
+  gap: 6px;
+  padding: 8px 13px
+}
+
+.talkora-reward__evidence svg {
+  height: 15px;
+  width: 15px
+}
+
+.talkora-reward__xp {
+  align-items: center;
+  background: #102e4d;
+  border: 3px solid #ffd84d;
+  border-radius: 999px;
+  color: #ffd84d;
+  display: flex;
+  font-size: 24px;
+  gap: 8px;
+  padding: 10px 24px
+}
+
+.talkora-reward__continue {
+  background: #ffd84d;
+  border: 3px solid #092747;
+  border-radius: 999px;
+  box-shadow: 0 7px 0 #092747;
+  color: #092747;
+  font-size: 16px;
+  font-weight: 1000;
+  margin-top: 0;
+  padding: 13px 28px;
+  text-decoration: none
+}
+
+.talkora-reward__home {
+  max-width: 650px;
+  padding-top: 14px;
+}
+
+.talkora-reward__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 22px;
+}
+
+.talkora-reward__continue--secondary {
+  background: #fff7dc;
+  cursor: pointer;
+}
+
+@media(max-width:800px) {
+  .talkora-lesson__interaction {
+    align-items: stretch;
+    display: grid;
+    gap: 8px;
+    grid-template-columns: 1fr auto;
+    min-height: 190px;
+    padding: 9px 10px
+  }
+
+  .talkora-lesson__interaction>.talkora-card-panel,
+  .talkora-lesson__interaction>.talkora-suggestion-chips-panel {
+    grid-column: 1/-1;
+    max-height: 128px
+  }
+
+  .talkora-lesson__interaction>.lesson-mic-dock {
+    align-self: center;
+    flex: none;
+    grid-column: 2;
+    grid-row: 2;
+    width: auto
+  }
+
+  .talkora-correction {
+    grid-column: 1/-1;
+    max-width: none
+  }
+
+  .talkora-fair-school {
+    bottom: 20%;
+    height: 25%;
+    width: 54%
+  }
+
+  .talkora-fair-stall {
+    bottom: 18%;
+    width: 24%
+  }
+
+  .talkora-fair-children {
+    display: none
+  }
+
+  .talkora-world-loader__destination {
+    margin: 20px;
+    padding: 20px 25px
+  }
+
+  .talkora-reward {
+    height: calc(100dvh - 108px);
+    justify-content: flex-start;
+    overflow: auto;
+    padding-top: 28px
+  }
+
+  .talkora-reward__badge {
+    height: 125px;
+    margin-bottom: 20px;
+    width: 125px
+  }
+
+  .talkora-reward__badge svg {
+    height: 48px;
+    width: 48px
+  }
+}
+
+@media(max-width:430px) {
+  .talkora-fair-stall b {
+    display: none
+  }
+
+  .talkora-lesson__feedback {
+    font-size: 11px;
+    grid-column: 1/-1;
+    margin: 0
+  }
+
+  .talkora-reward__evidence {
+    margin: 13px
+  }
+
+  .talkora-reward__continue {
+    margin-bottom: 20px
+  }
+}
+
+.talkora-header-stage-path {
+  align-items: center;
+  background: rgba(255, 255, 255, .07);
+  border: 1px solid rgba(255, 255, 255, .13);
+  border-radius: 999px;
+  color: #e6f3ff;
+  display: flex;
+  font-size: 11px;
+  font-weight: 900;
+  gap: 8px;
+  padding: 8px 16px
+}
+
+.talkora-header-stage-path span {
+  color: #ffd84d
+}
+
+.talkora-hint {
+  background: #e9f5ff;
+  border: 3px solid #64b5e8;
+  border-radius: 18px;
+  color: #123654;
+  max-width: 430px;
+  padding: 10px 15px
+}
+
+.talkora-hint span {
+  color: #17699b;
+  font-size: 10px;
+  font-weight: 1000;
+  letter-spacing: .08em;
+  text-transform: uppercase
+}
+
+.talkora-hint p {
+  font-size: 15px;
+  font-weight: 900;
+  margin: 4px 0
+}
+
+.talkora-dialogue-history {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 auto 8px;
+  max-width: 440px;
+  width: 100%
+}
+
+.talkora-dialogue-history p {
+  background: rgba(255, 248, 225, .72);
+  border-left: 3px solid #f4ad35;
+  border-radius: 8px;
+  color: #24445f;
+  font-size: 10px;
+  line-height: 1.25;
+  margin: 0;
+  max-width: 88%;
+  opacity: .62;
+  padding: 5px 8px
+}
+
+.talkora-dialogue-history p[data-role="student"] {
+  align-self: flex-end;
+  background: rgba(216, 248, 226, .76);
+  border-left-color: #34a865
+}
+
+.talkora-dialogue-history b {
+  display: block;
+  font-size: 8px;
+  letter-spacing: .05em;
+  text-transform: uppercase
+}
+
+@media(max-width:800px) {
+
+  .talkora-header-stage-path,
+  .talkora-dialogue-history {
+    display: none
+  }
+
+  .talkora-hint {
+    grid-column: 1/-1;
+    max-width: none
+  }
+}
+
+/* Hide Next.js dev indicator in lesson view */
+body>[data-nextjs-toast-wrapper],
+body>[data-nextjs-dialog-overlay],
+[data-nextjs-indicator],
+[class*="nextjs-portal"] {
+  display: none !important;
+}
+
+/* =========================================================
+   1. LESSON SHELL CONTAINER
+   ========================================================= */
+.student-portal-shell--lesson {
+  padding-bottom: 0 !important;
+  min-height: 100dvh !important;
+  height: 100dvh !important;
+  overflow: hidden !important;
+  background: #071830 !important;
+}
+
+.student-route-stage--lesson {
+  height: 100% !important;
+  min-height: 100% !important;
+  overflow: hidden !important;
+}
+
+.talkora-lesson-shell {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  max-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Outfit', sans-serif;
+  color: #ffffff;
+  isolation: isolate;
+}
+
+.talkora-lesson-stage-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+  z-index: 10;
+}
+
+/* Background Atmosphere (Warm, soft, illustrated Wonder Fair scenery) */
+.talkora-lesson-scenery {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.talkora-sky-gradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg,
+      #38bdf8 0%,
+      #7dd3fc 30%,
+      #bae6fd 55%,
+      #fed7aa 78%,
+      #fdba74 100%);
+}
+
+.talkora-sunbeam-glow {
+  position: absolute;
+  top: -60px;
+  right: 18%;
+  width: 550px;
+  height: 550px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(254, 240, 138, 0.45) 0%, rgba(253, 224, 71, 0.12) 50%, transparent 70%);
+  filter: blur(25px);
+}
+
+.talkora-fair-silhouette {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 38%;
+  background:
+    radial-gradient(ellipse at 18% 100%, rgba(251, 146, 60, 0.22) 0%, transparent 60%),
+    radial-gradient(ellipse at 82% 100%, rgba(251, 191, 36, 0.22) 0%, transparent 60%);
+}
+
+.talkora-garden-horizon {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 20%;
+  background: linear-gradient(180deg, rgba(74, 222, 128, 0.35) 0%, rgba(34, 197, 94, 0.75) 50%, #15803d 100%);
+  border-radius: 50% 50% 0 0 / 12% 12% 0 0;
+  box-shadow: inset 0 6px 20px rgba(255, 255, 255, 0.18);
+}
+
+.talkora-scenery-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 40%, transparent 50%, rgba(7, 24, 48, 0.3) 100%);
+}
+
+/* =========================================================
+   2. TOP COMPACT HEADER
+   ========================================================= */
+.talkora-lesson-header {
+  height: 66px;
+  min-height: 66px;
+  max-height: 76px;
+  width: 100%;
+  background: rgba(7, 24, 48, 0.96);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  z-index: 50;
+  flex-shrink: 0;
+}
+
+.talkora-header-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.talkora-header-back-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.talkora-header-back-btn:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: translateX(-2px);
+}
+
+.talkora-header-title-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.talkora-header-unit-title {
+  font-size: 16px;
+  font-weight: 800;
+  color: #ffffff;
+  letter-spacing: -0.2px;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.talkora-header-stage-info {
+  font-size: 13px;
+  font-weight: 600;
+  color: #94a3b8;
+  margin-top: 2px;
+}
+
+/* Center Mode controls */
+.talkora-header-mode-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 4px;
+}
+
+.talkora-mode-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #cbd5e1;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.talkora-mode-btn:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.talkora-mode-btn--listen.is-active {
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 2px 12px rgba(37, 99, 235, 0.45);
+}
+
+.talkora-mode-btn--repeat.is-active {
+  background: #8b5cf6;
+  color: #ffffff;
+  box-shadow: 0 2px 12px rgba(139, 92, 246, 0.45);
+}
+
+.talkora-mode-btn--speak.is-active {
+  background: #16a34a;
+  color: #ffffff;
+  box-shadow: 0 2px 12px rgba(22, 163, 74, 0.45);
+}
+
+/* Right Section: Hint + XP + Progress */
+.talkora-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.talkora-hint-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 216, 77, 0.12);
+  border: 1px solid rgba(255, 216, 77, 0.35);
+  border-radius: 999px;
+  padding: 6px 14px;
+  color: #ffd84d;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.talkora-hint-btn:hover {
+  background: rgba(255, 216, 77, 0.22);
+  transform: translateY(-1px);
+}
+
+.talkora-header-xp-pill {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  padding: 6px 12px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.talkora-header-xp__amount {
+  color: #ffd84d;
+}
+
+.talkora-header-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.talkora-header-progress__label {
+  font-size: 12px;
+  font-weight: 700;
+  color: #94a3b8;
+}
+
+.talkora-header-progress-track {
+  width: 70px;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.15);
+  overflow: hidden;
+}
+
+.talkora-header-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ffd84d, #f59e0b);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+/* =========================================================
+   3. MAIN 3-COLUMN SCENE LAYOUT
+   ========================================================= */
+.talkora-lesson-scene {
+  flex: 1;
+  display: grid;
+  grid-template-columns: 24% 52% 24%;
+  gap: 16px;
+  padding: 8px 24px 0;
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+  height: calc(100dvh - 66px - 82px);
+  max-height: calc(100dvh - 66px - 82px);
+  overflow: hidden;
+  position: relative;
+  align-items: end;
+}
+
+/* Character columns */
+.talkora-lesson-character-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  height: 100%;
+  position: relative;
+  z-index: 10;
+  padding-bottom: 4px;
+}
+
+.talkora-lesson-julie,
+.talkora-lesson-student {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  position: relative;
+  width: 100%;
+}
+
+.talkora-julie-character__art img,
+.talkora-julie-character__image {
+  max-height: clamp(300px, 45vh, 430px);
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 14px 24px rgba(0, 0, 0, 0.28));
+  display: block;
+  transform: scale(1.15);
+  transform-origin: bottom center;
+}
+
+.learner-character img {
+  max-height: clamp(280px, 42vh, 410px);
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.25));
+  display: block;
+}
+
+/* Ground shadow under characters */
+.talkora-julie-character__shadow,
+.learner-character__shadow {
+  width: 160px;
+  height: 14px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.38) 0%, transparent 70%);
+  margin-top: -6px;
+}
+
+/* Character status badge */
+.talkora-character-badge {
+  margin-top: 6px;
+  background: rgba(7, 24, 48, 0.88);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  padding: 4px 14px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.talkora-character-badge__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #22c55e;
+}
+
+.talkora-character-badge.is-speaking .talkora-character-badge__dot {
+  background: #3b82f6;
+  animation: talkora-pulse-dot 1s infinite;
+}
+
+.talkora-character-badge.is-thinking .talkora-character-badge__dot {
+  background: #eab308;
+}
+
+@keyframes talkora-pulse-dot {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: scale(1.4);
+  }
+}
+
+/* =========================================================
+   4. CENTRAL CONVERSATION COLUMN & SPEECH BUBBLES
+   ========================================================= */
+.talkora-conversation-column {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 2px 6px 8px;
+  z-index: 15;
+  gap: 10px;
+  justify-content: flex-end;
+  scrollbar-width: none;
+}
+
+.talkora-conversation-column::-webkit-scrollbar {
+  display: none;
+}
+
+.talkora-dialogue-history {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+.talkora-bubble-turn {
+  display: flex;
+  width: 100%;
+}
+
+.talkora-bubble-turn.is-julie {
+  justify-content: flex-start;
+}
+
+.talkora-bubble-turn.is-student {
+  justify-content: flex-end;
+}
+
+/* Julie Speech Bubble (Warm Cream) */
+.talkora-speech-bubble--julie {
+  background: #ffffff;
+  color: #0f172a;
+  border-radius: 20px 20px 20px 4px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  padding: 12px 18px;
+  max-width: 86%;
+  position: relative;
+}
+
+/* Student Speech Bubble (Mint Green) */
+.talkora-speech-bubble--student {
+  background: #d1fae5;
+  color: #064e3b;
+  border-radius: 20px 20px 4px 20px;
+  box-shadow: 0 10px 24px rgba(16, 185, 129, 0.15), 0 2px 6px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(16, 185, 129, 0.28);
+  padding: 12px 18px;
+  max-width: 86%;
+  position: relative;
+}
+
+/* Bubble Pointer Tails */
+.talkora-bubble-tail--julie {
+  position: absolute;
+  left: -8px;
+  bottom: 12px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 7px 9px 7px 0;
+  border-color: transparent #ffffff transparent transparent;
+}
+
+.talkora-bubble-tail--student {
+  position: absolute;
+  right: -8px;
+  bottom: 12px;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 7px 0 7px 9px;
+  border-color: transparent transparent transparent #d1fae5;
+}
+
+.talkora-bubble-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 3px;
+}
+
+.talkora-speech-bubble--julie .talkora-bubble-speaker {
+  font-size: 11px;
+  font-weight: 800;
+  color: #ea580c;
+  letter-spacing: 0.5px;
+}
+
+.talkora-speech-bubble--student .talkora-bubble-speaker {
+  font-size: 11px;
+  font-weight: 800;
+  color: #047857;
+  letter-spacing: 0.5px;
+}
+
+.talkora-bubble-audio-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2563eb;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.talkora-bubble-audio-btn:hover {
+  background: #e2e8f0;
+  transform: scale(1.1);
+}
+
+.talkora-bubble-text {
+  font-size: clamp(15px, 1.35vw, 19px);
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0;
+}
+
+.talkora-bubble-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  margin-top: 6px;
+}
+
+/* =========================================================
+   5. ACTIVITY SUB-PANELS (Embedded in Conversation Stream)
+   ========================================================= */
+.talkora-activity-panel-slot {
+  width: 100%;
+  margin-top: 2px;
+}
+
+.talkora-card-panel {
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(16px);
+  border-radius: 20px;
+  padding: 14px 18px;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.04);
+  border: 1.5px solid rgba(255, 255, 255, 0.85);
+  width: 100%;
+  color: #0f172a;
+}
+
+.talkora-panel-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 2px;
+}
+
+.talkora-panel-subtitle {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 10px;
+}
+
+/* Warmup 6-Card Choice Grid (Page 12 Source of Truth) */
+.talkora-panel-badge-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.talkora-stage-pill {
+  background: #eff6ff;
+  color: #2563eb;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  letter-spacing: 0.5px;
+}
+
+.talkora-counter-pill {
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.talkora-warmup-grid-6 {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 6px;
+  margin: 10px 0;
+}
+
+@media (max-width: 768px) {
+  .talkora-warmup-grid-6 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.talkora-warmup-advance-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.talkora-warmup-next-btn {
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 8px 16px;
+  border-radius: 10px;
+  cursor: pointer;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+  transition: all 0.2s ease;
+}
+
+.talkora-warmup-next-btn:hover {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.talkora-warmup-card {
+  background: #ffffff;
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.talkora-warmup-card:hover,
+.talkora-warmup-card.is-active {
+  border-color: #3b82f6;
+  background: #eff6ff;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(59, 130, 246, 0.15);
+}
+
+.talkora-warmup-card__icon {
+  font-size: 24px;
+}
+
+.talkora-warmup-card__label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #1e293b;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.talkora-warmup-card__sound {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  font-size: 11px;
+  color: #2563eb;
+  padding: 2px;
+}
+
+.talkora-warmup-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+
+.talkora-speaking-step {
+  display: grid;
+  gap: 9px;
+  margin: 10px 0;
+  padding: 12px;
+  border: 2px solid #93c5fd;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #eef6ff, #fff8db);
+  text-align: center;
+}
+
+.talkora-speaking-step__label {
+  color: #1d4ed8;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.talkora-speaking-step strong {
+  color: #102a56;
+  font-size: clamp(16px, 2vw, 22px);
+}
+
+.talkora-turn-cue {
+  display: grid;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 14px;
+  background: #eef6ff;
+  color: #17386d;
+  text-align: center;
+}
+
+.talkora-turn-cue b {
+  font-size: 10px;
+  letter-spacing: .08em;
+}
+
+.talkora-turn-cue i {
+  color: #f59e0b;
+  font-style: normal;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.talkora-chunk-support {
+  display: grid;
+  gap: 5px;
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: 12px;
+  background: #fff7d6;
+  color: #563b00;
+  text-align: center;
+  font-weight: 800;
+}
+
+.talkora-chunk-support small {
+  font-weight: 600;
+}
+
+@media (max-width: 430px) {
+  .talkora-warmup-grid-6 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .talkora-warmup-card {
+    min-height: 66px;
+  }
+
+  .talkora-warmup-card__label {
+    white-space: normal;
+    font-size: 10px;
+  }
+
+  .talkora-warmup-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+  }
+
+  .talkora-like-btn {
+    min-height: 60px;
+  }
+
+  .talkora-repeat-next-line-btn,
+  .talkora-warmup-next-btn {
+    min-height: 48px;
+    width: 100%;
+  }
+}
+
+.talkora-like-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 8px 10px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  text-align: center;
+}
+
+.talkora-like-btn strong {
+  font-size: 13px;
+  display: block;
+}
+
+.talkora-like-btn small {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.85;
+  display: block;
+}
+
+.talkora-like-btn.is-like {
+  background: #dcfce7;
+  color: #15803d;
+  border-color: #86efac;
+}
+
+.talkora-like-btn.is-like:hover,
+.talkora-like-btn.is-like.is-selected {
+  background: #22c55e;
+  color: #ffffff;
+  border-color: #16a34a;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(34, 197, 94, 0.3);
+}
+
+.talkora-like-btn.is-dislike {
+  background: #fee2e2;
+  color: #b91c1c;
+  border-color: #fca5a5;
+}
+
+.talkora-like-btn.is-dislike:hover,
+.talkora-like-btn.is-dislike.is-selected {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #dc2626;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 14px rgba(239, 68, 68, 0.3);
+}
+
+.talkora-warmup-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 6px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.talkora-pagination-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.talkora-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.talkora-dot.is-active {
+  width: 18px;
+  border-radius: 999px;
+  background: #2563eb;
+}
+
+.talkora-pagination-text {
+  font-size: 11px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.talkora-next-item-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  font-size: 15px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.talkora-next-item-btn:hover {
+  background: #1d4ed8;
+  transform: translateX(2px);
+}
+
+/* Listen & Repeat Panel (Screen 4) */
+.talkora-listen-box {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+
+.talkora-listen-box__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.talkora-listen-box__heading {
+  font-size: 12px;
+  font-weight: 800;
+  color: #334155;
+}
+
+.talkora-listen-box__speaker {
+  background: #e2e8f0;
+  border: none;
+  border-radius: 50%;
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.talkora-model-pill {
+  background: #dbeafe;
+  border: 1.5px solid #bfdbfe;
+  border-radius: 12px;
+  padding: 9px 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #1e40af;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.talkora-model-pill:hover {
+  background: #bfdbfe;
+}
+
+.talkora-waveform {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  height: 26px;
+  margin-top: 8px;
+}
+
+.talkora-wave-bar {
+  width: 3.5px;
+  border-radius: 999px;
+  background: #3b82f6;
+  animation: talkora-waveform-anim 1s infinite ease-in-out alternate;
+}
+
+@keyframes talkora-waveform-anim {
+  0% {
+    height: 25%;
+  }
+
+  100% {
+    height: 100%;
+  }
+}
+
+.talkora-repeat-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+.talkora-repeat-heading {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+}
+
+.talkora-card-mic-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  border: 2px solid #60a5fa;
+  border-radius: 999px;
+  padding: 8px 20px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  transition: all 0.2s;
+}
+
+.talkora-card-mic-btn.is-recording {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border-color: #f87171;
+  box-shadow: 0 4px 20px rgba(239, 68, 68, 0.6);
+  animation: talkora-pulse-ring 1.2s infinite;
+}
+
+/* Sentence Builder Panel (Screen 6) */
+.talkora-practice-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.talkora-builder-title,
+.talkora-preview-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 2px;
+}
+
+.talkora-builder-desc {
+  font-size: 11px;
+  color: #64748b;
+  margin: 0 0 8px;
+}
+
+.talkora-token-bank {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.talkora-word-token {
+  background: #ffffff;
+  border: 1.5px solid #93c5fd;
+  border-radius: 10px;
+  padding: 5px 12px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #1e40af;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.talkora-word-token:hover {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  transform: translateY(-1px);
+}
+
+.talkora-word-token.is-placed {
+  background: #dbeafe;
+  border-color: #3b82f6;
+}
+
+.talkora-builder-target-slot {
+  min-height: 42px;
+  background: #f8fafc;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 4px 8px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+}
+
+.talkora-slot-placeholder {
+  font-size: 11px;
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.talkora-preview-box {
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 48px;
+  margin-top: 6px;
+}
+
+.talkora-preview-text {
+  font-size: 14px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+.talkora-preview-audio {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.talkora-builder-success {
+  margin-top: 6px;
+  background: #dcfce7;
+  color: #15803d;
+  font-size: 13px;
+  font-weight: 800;
+  padding: 6px 10px;
+  border-radius: 8px;
+  text-align: center;
+}
+
+.talkora-builder-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 8px;
+}
+
+.talkora-xp-reward-badge {
+  background: #fef3c7;
+  color: #92400e;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid #fde68a;
+}
+
+.talkora-check-btn {
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 7px 20px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.talkora-check-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.talkora-check-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Respect Differences Panel */
+.talkora-polite-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.talkora-polite-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 8px 14px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s;
+}
+
+.talkora-polite-card:hover,
+.talkora-polite-card.is-selected {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1e40af;
+  transform: translateX(3px);
+}
+
+/* Final Challenge Card (Screen 8) */
+.talkora-final-challenge-grid {
+  display: grid;
+  grid-template-columns: 1.3fr 1fr;
+  gap: 14px;
+  align-items: center;
+}
+
+.talkora-challenge-heading {
+  font-size: 18px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0 0 8px;
+}
+
+.talkora-challenge-checklist {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.talkora-challenge-checklist li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #334155;
+}
+
+.talkora-check-circle {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #22c55e;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+}
+
+.talkora-challenge-sub {
+  font-size: 11px;
+  color: #64748b;
+  margin: 0 0 10px;
+}
+
+.talkora-start-challenge-btn {
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 20px;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.4);
+  transition: all 0.2s;
+}
+
+.talkora-start-challenge-btn:hover {
+  background: #1d4ed8;
+  transform: translateY(-2px);
+}
+
+.talkora-challenge-visual {
+  background: linear-gradient(135deg, #dbeafe, #ede9fe);
+  border-radius: 16px;
+  padding: 16px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  text-align: center;
+}
+
+.talkora-challenge-bubble-preview {
+  background: #ffffff;
+  padding: 6px 14px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 12px;
+  color: #1e3a8a;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+}
+
+.talkora-challenge-rewards-strip {
+  display: flex;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #7c3aed;
+}
+
+/* Suggestion Chips */
+.talkora-suggestion-chips-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin-top: 2px;
+}
+
+.talkora-chips-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #ffffff;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.talkora-chips-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.talkora-chip-btn {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #1e293b;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+}
+
+.talkora-chip-btn:hover,
+.talkora-chip-btn.is-selected {
+  background: #ffd84d;
+  color: #78350f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 216, 77, 0.4);
+}
+
+/* =========================================================
+   6. PERSISTENT BOTTOM RESPONSE DOCK
+   ========================================================= */
+.talkora-bottom-dock-wrapper {
+  position: sticky;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 0 24px 8px;
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Feedback Alert banner directly above dock */
+.talkora-dock-feedback-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(7, 24, 48, 0.94);
+  backdrop-filter: blur(12px);
+  border: 1.5px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  padding: 5px 16px;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 700;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+  max-width: 800px;
+}
+
+.talkora-dock-feedback-banner.is-success {
+  border-color: #22c55e;
+  background: rgba(6, 78, 59, 0.95);
+  color: #d1fae5;
+}
+
+.talkora-feedback-action-btn {
+  background: #3b82f6;
+  border: none;
+  border-radius: 999px;
+  padding: 3px 10px;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  margin-left: 6px;
+}
+
+.talkora-feedback-action-btn.is-continue {
+  background: #22c55e;
+}
+
+/* Main Response Dock */
+.talkora-response-dock {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(7, 24, 48, 0.95);
+  backdrop-filter: blur(16px);
+  border: 1.5px solid rgba(255, 255, 255, 0.16);
+  border-radius: 22px;
+  padding: 6px 12px;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.4);
+  max-width: 960px;
+  width: 100%;
+}
+
+/* Repeat Button */
+.talkora-dock-repeat-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  padding: 8px 16px;
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.talkora-dock-repeat-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
+}
+
+.talkora-dock-repeat-icon {
+  font-size: 15px;
+  color: #93c5fd;
+}
+
+/* Type Input Field */
+.talkora-dock-input-field {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1.5px solid rgba(255, 255, 255, 0.18);
+  border-radius: 14px;
+  padding: 2px 5px 2px 12px;
+  transition: border-color 0.2s;
+}
+
+.talkora-dock-input-field:focus-within {
+  border-color: #3b82f6;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.talkora-dock-input-field input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+  outline: none;
+  padding: 6px 0;
+}
+
+.talkora-dock-input-field input::placeholder {
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.talkora-dock-send-btn {
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  padding: 7px 14px;
+  font-weight: 800;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+}
+
+.talkora-dock-send-btn:hover:not(:disabled) {
+  background: #1d4ed8;
+  transform: translateY(-1px);
+}
+
+.talkora-dock-send-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Primary Mic Button */
+.talkora-primary-mic {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  border: 2.5px solid #60a5fa;
+  border-radius: 999px;
+  padding: 5px 18px 5px 8px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(59, 130, 246, 0.45);
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.talkora-primary-mic:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 22px rgba(59, 130, 246, 0.6);
+}
+
+.talkora-mic-inner {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.talkora-mic-label {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.talkora-primary-mic.is-recording {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  border-color: #f87171;
+  box-shadow: 0 4px 25px rgba(239, 68, 68, 0.7);
+  animation: talkora-pulse-ring 1.2s infinite;
+}
+
+/* =========================================================
+   7. STAGE 10 REWARD CELEBRATION
+   ========================================================= */
+.talkora-rewards-stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 20;
+}
+
+.talkora-reward-celebration-card {
+  background: rgba(7, 24, 48, 0.95);
+  backdrop-filter: blur(16px);
+  border: 2px solid rgba(255, 216, 77, 0.4);
+  border-radius: 26px;
+  padding: 28px 36px;
+  max-width: 560px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.talkora-reward-badge-circle {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffd84d, #f59e0b);
+  border: 4px solid #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 38px;
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4);
+  margin-bottom: 12px;
+}
+
+.talkora-reward-eyebrow {
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #ffd84d;
+}
+
+.talkora-reward-badge-title {
+  font-size: 28px;
+  font-weight: 900;
+  color: #ffffff;
+  margin: 4px 0 6px;
+}
+
+.talkora-reward-desc {
+  font-size: 14px;
+  color: #cbd5e1;
+  margin: 0 0 16px;
+}
+
+.talkora-skills-checklist {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  padding: 14px 16px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+  margin-bottom: 18px;
+}
+
+.talkora-skill-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.talkora-skill-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #22c55e;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+}
+
+.talkora-reward-stats-strip {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.talkora-stat-pill {
+  background: rgba(255, 216, 77, 0.15);
+  border: 1px solid rgba(255, 216, 77, 0.35);
+  border-radius: 999px;
+  padding: 7px 16px;
+  color: #ffd84d;
+  font-size: 13px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.talkora-collect-badge-btn {
+  background: linear-gradient(135deg, #ffd84d, #f59e0b);
+  color: #071830;
+  border-radius: 999px;
+  padding: 12px 32px;
+  font-size: 15px;
+  font-weight: 900;
+  text-decoration: none;
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.4);
+  transition: all 0.2s ease;
+}
+
+.talkora-collect-badge-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px rgba(245, 158, 11, 0.5);
+}
+
+/* =========================================================
+   8. HINT MODAL
+   ========================================================= */
+.talkora-hint-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(8px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.talkora-hint-card {
+  background: #ffffff;
+  color: #0f172a;
+  border-radius: 24px;
+  padding: 22px;
+  max-width: 460px;
+  width: 100%;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.35);
+}
+
+.talkora-hint-card__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  margin-bottom: 12px;
+}
+
+.talkora-hint-card__icon {
+  font-size: 22px;
+}
+
+.talkora-hint-card__header h3 {
+  font-size: 17px;
+  font-weight: 800;
+  color: #0f172a;
+  margin: 0;
+  flex: 1;
+}
+
+.talkora-hint-card__close {
+  background: #f1f5f9;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.talkora-hint-card__body p {
+  font-size: 14px;
+  color: #334155;
+  line-height: 1.4;
+  margin: 0 0 12px;
+}
+
+.talkora-hint-card__examples {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 10px 12px;
+  margin-bottom: 16px;
+}
+
+.talkora-hint-card__examples strong {
+  font-size: 12px;
+  color: #0f172a;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.talkora-hint-card__examples ul {
+  margin: 0;
+  padding-left: 16px;
+  font-size: 12px;
+  color: #475569;
+}
+
+.talkora-hint-card__examples li {
+  margin-bottom: 3px;
+}
+
+.talkora-hint-card__gotit {
+  width: 100%;
+  background: #2563eb;
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  padding: 11px;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* =========================================================
+   9. RESPONSIVE BREAKPOINTS (Desktop, Tablet, Mobile)
+   ========================================================= */
+
+/* Desktop Character Columns */
+.talkora-mobile-character-stage {
+  display: none;
+}
+
+.talkora-lesson-character-col--desktop {
+  display: flex;
+}
+
+/* =========================================================
+   9. RESPONSIVE BREAKPOINTS (Desktop, Tablet, Mobile)
+   ========================================================= */
+
+/* Desktop 1440 / 1366 */
+@media (max-width: 1200px) {
+  .talkora-lesson-scene {
+    grid-template-columns: 23% 54% 23%;
+    padding: 6px 16px 0;
+  }
+}
+
+/* Tablet (1024 / 768) */
+@media (max-width: 960px) {
+  .talkora-lesson-scene {
+    grid-template-columns: 22% 56% 22%;
+    gap: 8px;
+    padding: 4px 10px 0;
+  }
+
+  .talkora-julie-character__art img,
+  .learner-character img {
+    max-height: 250px;
+  }
+
+  .talkora-speech-bubble--julie,
+  .talkora-speech-bubble--student {
+    max-width: 90%;
+  }
+
+  .talkora-header-mode-bar {
+    display: none;
+  }
+}
+
+/* Mobile (390x844) */
+@media (max-width: 640px) {
+  .talkora-lesson-header {
+    height: 56px;
+    min-height: 56px;
+    padding: 0 12px;
+  }
+
+  .talkora-header-unit-title {
+    font-size: 13px;
+  }
+
+  .talkora-header-stage-info {
+    font-size: 11px;
+  }
+
+  .talkora-header-progress-wrap {
+    display: none;
+  }
+
+  .talkora-header-xp-pill {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .talkora-hint-btn {
+    padding: 4px 8px;
+    font-size: 11px;
+  }
+
+  .talkora-lesson-scene {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    max-height: none;
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px 8px 90px;
+    gap: 8px;
+    justify-content: flex-start;
+  }
+
+  /* Desktop side columns hidden in mobile */
+  .talkora-lesson-character-col--desktop {
+    display: none !important;
+  }
+
+  /* Mobile character top row */
+  .talkora-mobile-character-stage {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: flex-end;
+    width: 100%;
+    height: 145px;
+    flex-shrink: 0;
+    padding: 0 8px;
+    margin-bottom: 4px;
+  }
+
+  .talkora-mobile-char-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    width: 46%;
+  }
+
+  .talkora-mobile-char-col .talkora-julie-character__art img,
+  .talkora-mobile-char-col .learner-character img {
+    max-height: 108px !important;
+    width: auto !important;
+  }
+
+  .talkora-mobile-char-col .talkora-julie-character__art img {
+    transform: scale(0.94);
+  }
+
+  .talkora-mobile-char-col .talkora-character-badge {
+    font-size: 10px;
+    padding: 2px 8px;
+    margin-top: 4px;
+  }
+
+  .talkora-conversation-column {
+    width: 100%;
+    height: auto;
+    max-height: none;
+    overflow-y: visible;
+    padding: 0;
+    justify-content: flex-start;
+  }
+
+  .talkora-speech-bubble--julie,
+  .talkora-speech-bubble--student {
+    max-width: 96%;
+    padding: 10px 14px;
+  }
+
+  .talkora-bubble-text {
+    font-size: 14px;
+  }
+
+  .talkora-warmup-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .talkora-practice-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .talkora-final-challenge-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .talkora-bottom-dock-wrapper {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    padding: 0 6px 6px;
+  }
+
+  .talkora-response-dock {
+    padding: 5px 8px;
+    gap: 6px;
+    border-radius: 18px;
+    min-width: 0;
+  }
+
+  .talkora-dock-repeat-btn {
+    padding: 6px 8px;
+    font-size: 11px;
+    border-radius: 10px;
+  }
+
+  .talkora-dock-repeat-btn>span:last-child {
+    display: none;
+  }
+
+  .talkora-dock-input-field,
+  .talkora-dock-input-field input {
+    min-width: 0;
+    width: 0;
+  }
+
+  .talkora-dock-input-field input {
+    font-size: 13px;
+  }
+
+  .talkora-dock-send-btn {
+    padding: 5px 10px;
+    font-size: 11px;
+  }
+
+  .talkora-primary-mic {
+    padding: 4px 6px;
+    gap: 6px;
+  }
+
+  .talkora-mic-inner {
+    width: 28px;
+    height: 28px;
+  }
+
+  .talkora-mic-label {
+    display: none;
+  }
+}
+
+/* =========================================================
+   FLAGSHIP FAVOURITE FAIR — CINEMATIC WORLD + GAME FRAME
+   ========================================================= */
+.talkora-favourite-fair-art {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-image: url('/talkora/worlds/favourite-fair-v1.png');
+  background-size: cover;
+  background-position: center 48%;
+  transform: scale(1.015);
+  filter: saturate(1.04) contrast(1.01);
+}
+
+.talkora-sky-gradient,
+.talkora-sunbeam-glow,
+.talkora-cloud,
+.talkora-fair-school,
+.talkora-fair-stall,
+.talkora-fair-children,
+.talkora-fair-silhouette,
+.talkora-garden-horizon,
+.talkora-fair-flowers,
+.talkora-fair-foreground {
+  display: none !important;
+}
+
+.talkora-scenery-vignette {
+  z-index: 2;
+  background:
+    linear-gradient(180deg, rgba(4, 19, 39, .04) 48%, rgba(4, 19, 39, .42) 100%),
+    radial-gradient(ellipse at 50% 45%, transparent 42%, rgba(4, 18, 35, .24) 100%);
+}
+
+.talkora-lesson__scene {
+  isolation: isolate;
+}
+
+.lesson-scene-stage {
+  min-height: 0;
+  height: 100%;
+  padding: 12px clamp(18px, 3.2vw, 50px) 0;
+  grid-template-columns: minmax(245px, .92fr) minmax(390px, 1.28fr) minmax(220px, .78fr);
+  gap: clamp(8px, 1.7vw, 26px);
+}
+
+.lesson-scene-stage:before {
+  background: linear-gradient(180deg, transparent 60%, rgba(5, 24, 46, .2));
+}
+
+.lesson-scene-stage__conversation {
+  align-self: start;
+  padding: clamp(68px, 9vh, 104px) 0 24px;
+  gap: 10px;
+}
+
+.lesson-dialogue-bubble {
+  box-shadow: 0 12px 0 rgba(6, 33, 57, .14), 0 22px 42px rgba(4, 24, 44, .2);
+}
+
+.lesson-julie-art img {
+  height: min(57vh, 630px);
+}
+
+.lesson-scene-stage__learner .learner-character {
+  height: min(48vh, 520px);
+}
+
+.talkora-lesson__interaction {
+  min-height: 142px;
+  max-height: 226px;
+  padding: 12px clamp(20px, 4vw, 62px);
+  background: linear-gradient(180deg, rgba(7, 25, 49, .88), rgba(5, 20, 42, .98));
+  box-shadow: 0 -16px 34px rgba(4, 20, 39, .18);
+}
+
+.talkora-lesson__interaction > .talkora-card-panel {
+  width: min(700px, 58vw);
+  max-height: 194px;
+  padding: 10px 16px !important;
+  border: 1px solid rgba(255, 255, 255, .18) !important;
+  border-radius: 22px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .96), rgba(242, 248, 255, .93)) !important;
+  box-shadow: 0 16px 40px rgba(2, 14, 30, .26) !important;
+  color: #112b4d;
+}
+
+.talkora-lesson__interaction > .talkora-card-panel .talkora-panel-title,
+.talkora-lesson__interaction > .talkora-card-panel .talkora-panel-subtitle {
+  color: #112b4d !important;
+}
+
+.talkora-lesson__interaction > .talkora-card-panel .talkora-panel-subtitle {
+  opacity: .78;
+}
+
+.talkora-lesson__interaction > .lesson-mic-dock {
+  flex-basis: min(340px, 31vw);
+  border: 2px solid rgba(108, 190, 255, .34);
+}
+
+@media (max-width: 900px) {
+  .talkora-favourite-fair-art { background-position: center center; }
+  .lesson-scene-stage { grid-template-columns: 31% 40% 29%; padding-inline: 8px; }
+  .lesson-scene-stage__conversation { padding-top: 42px; }
+  .talkora-lesson__interaction { padding: 10px 12px; }
+  .talkora-lesson__interaction > .talkora-card-panel { width: min(60vw, 620px); }
+}
+
+@media (max-width: 680px) {
+  .talkora-favourite-fair-art { background-position: 52% center; }
+  .lesson-scene-stage { min-height: 0; height: 100%; }
+  .lesson-scene-stage__conversation { top: 4px; padding: 0; }
+  .talkora-lesson__interaction {
+    min-height: 126px;
+    max-height: 226px;
+    gap: 7px;
+    padding: 8px;
+    flex-wrap: wrap;
+    overflow: auto;
+  }
+  .talkora-lesson__interaction > .talkora-card-panel {
+    width: 100%;
+    max-height: 142px;
+    padding: 5px 8px !important;
+  }
+  .talkora-lesson__interaction > .lesson-mic-dock {
+    flex: 1 1 100%;
+    margin: 0;
+  }
+}
+
+/* =========================================================
+   SOFT-LAUNCH RESCUE: CONVERSATION-FIRST STAGES 1-3
+   ========================================================= */
+.talkora-header-mode-bar,
+.talkora-character-badge,
+.talkora-dock-repeat-btn,
+.talkora-model-replay-btn {
+  display: none !important;
+}
+
+.talkora-lesson-scene {
+  grid-template-columns: minmax(220px, 28%) minmax(440px, 50%) minmax(190px, 22%);
+  gap: 8px;
+  padding: 10px 18px 0;
+  align-items: stretch;
+}
+
+.talkora-lesson-character-col--julie {
+  align-items: flex-end;
+}
+
+.talkora-lesson-character-col--student {
+  align-items: flex-start;
+}
+
+.talkora-lesson-julie {
+  transform: translateX(4%);
+}
+
+.talkora-lesson-student {
+  transform: translateX(-5%);
+}
+
+.talkora-julie-character__art img,
+.talkora-julie-character__image {
+  max-height: clamp(280px, 43vh, 390px);
+  transform: scale(1);
+}
+
+.learner-character img {
+  max-height: clamp(260px, 39vh, 360px);
+}
+
+.talkora-conversation-column {
+  justify-content: flex-start;
+  padding: 10px 8px 16px;
+  gap: 8px;
+  mask-image: linear-gradient(to bottom, transparent 0, #000 18px, #000 100%);
+}
+
+.talkora-dialogue-history {
+  min-height: 118px;
+  justify-content: flex-end;
+}
+
+.talkora-bubble-turn:not(.is-latest) {
+  opacity: .58;
+  transform: scale(.97);
+}
+
+.talkora-bubble-turn.is-latest {
+  opacity: 1;
+}
+
+.talkora-speech-bubble--julie,
+.talkora-speech-bubble--student {
+  max-width: 82%;
+}
+
+.talkora-activity-panel-slot {
+  margin-top: 0;
+}
+
+.talkora-card-panel {
+  background: transparent;
+  backdrop-filter: none;
+  border: 0;
+  box-shadow: none;
+  padding: 4px 8px 8px;
+}
+
+.talkora-panel-header {
+  text-align: center;
+}
+
+.talkora-panel-badge-row {
+  justify-content: center;
+}
+
+.talkora-panel-title {
+  color: #102a56;
+  font-size: clamp(17px, 1.6vw, 21px);
+}
+
+.talkora-panel-subtitle {
+  color: #24446c;
+}
+
+.talkora-counter-pill {
+  border-radius: 999px;
+  padding: 4px 9px;
+}
+
+.talkora-warmup-focus {
+  width: min(230px, 56%);
+  min-height: 126px;
+  margin: 8px auto 6px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 2px;
+  border-radius: 26px;
+  background: linear-gradient(145deg, rgba(255, 255, 255, .92), rgba(255, 248, 210, .9));
+  border: 2px solid rgba(255, 255, 255, .92);
+  box-shadow: 0 14px 30px rgba(24, 62, 93, .18);
+  color: #17345d;
+}
+
+.talkora-warmup-focus__art {
+  font-size: clamp(54px, 7vw, 78px);
+  line-height: 1;
+}
+
+.talkora-warmup-focus strong {
+  font-size: 17px;
+}
+
+.talkora-warmup-focus>span:last-child {
+  font-size: 11px;
+  font-weight: 800;
+  color: #55708f;
+}
+
+.talkora-warmup-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin: 4px 0 8px;
+}
+
+.talkora-warmup-dots span {
+  width: 8px;
+  height: 8px;
+  border-radius: 99px;
+  background: rgba(23, 52, 93, .22);
+}
+
+.talkora-warmup-dots span.is-current {
+  width: 24px;
+  background: #2563eb;
+}
+
+.talkora-warmup-dots span.is-done {
+  background: #22c55e;
+}
+
+.talkora-warmup-actions {
+  max-width: 470px;
+  margin: 0 auto 6px;
+}
+
+.talkora-like-btn {
+  flex-direction: row;
+  min-height: 54px;
+  box-shadow: 0 8px 18px rgba(20, 55, 90, .12);
+}
+
+.talkora-like-btn small {
+  display: none;
+}
+
+.talkora-speaking-step {
+  max-width: 470px;
+  margin: 6px auto;
+  padding: 10px 14px;
+}
+
+.talkora-speaking-step__dock-cue {
+  font-size: 12px;
+  font-weight: 750;
+  color: #315279;
+}
+
+.talkora-model-sentence-box,
+.talkora-turn-cue,
+.talkora-chunk-support {
+  max-width: 520px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.talkora-response-dock {
+  max-width: 820px;
+  min-height: 70px;
+  border-radius: 26px;
+  padding: 8px 10px 8px 16px;
+}
+
+.talkora-primary-mic {
+  min-height: 54px;
+  padding: 6px 22px 6px 8px;
+  border-width: 3px;
+  box-shadow: 0 8px 26px rgba(37, 99, 235, .58);
+}
+
+.talkora-mic-inner {
+  width: 42px;
+  height: 42px;
+}
+
+.talkora-response-dock.is-evaluating .talkora-primary-mic {
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+}
+
+.talkora-response-dock.is-julie-speaking .talkora-primary-mic {
+  opacity: .72;
+}
+
+.talkora-response-dock.is-audio-loading .talkora-primary-mic {
+  opacity: .76;
+}
+
+.talkora-bubble-status--voice-error {
+  color: #9f1239;
+}
+
+@media (max-width: 960px) and (min-width: 641px) {
+  .talkora-lesson-scene {
+    grid-template-columns: 25% 54% 21%;
+  }
+}
+
+@media (max-width: 640px) {
+  .talkora-mobile-character-stage {
+    height: 82px;
+    padding: 0 18px;
+    margin: 0;
+  }
+
+  .talkora-mobile-char-col .talkora-julie-character__art img,
+  .talkora-mobile-char-col .learner-character img {
+    max-height: 76px !important;
+  }
+
+  .talkora-lesson-scene {
+    padding: 4px 7px 94px;
+    gap: 3px;
+  }
+
+  .talkora-conversation-column {
+    padding: 0;
+    gap: 5px;
+    mask-image: none;
+  }
+
+  .talkora-dialogue-history {
+    min-height: 82px;
+    gap: 5px;
+  }
+
+  .talkora-bubble-turn:not(.is-latest) {
+    display: none;
+  }
+
+  .talkora-speech-bubble--julie,
+  .talkora-speech-bubble--student {
+    max-width: 92%;
+    padding: 8px 12px;
+  }
+
+  .talkora-bubble-text {
+    font-size: 13px;
+  }
+
+  .talkora-card-panel {
+    padding: 2px 4px 5px;
+  }
+
+  .talkora-panel-subtitle {
+    display: none;
+  }
+
+  .talkora-warmup-focus {
+    width: min(160px, 50%);
+    min-height: 86px;
+    margin: 3px auto;
+    border-radius: 19px;
+  }
+
+  .talkora-warmup-focus__art {
+    font-size: 45px;
+  }
+
+  .talkora-warmup-focus strong {
+    font-size: 13px;
+  }
+
+  .talkora-warmup-actions {
+    gap: 6px;
+  }
+
+  .talkora-like-btn {
+    min-height: 48px;
+    padding: 6px;
+    font-size: 12px;
+  }
+
+  .talkora-speaking-step {
+    margin: 4px auto;
+    padding: 7px;
+  }
+
+  .talkora-response-dock {
+    min-height: 66px;
+    padding: 6px;
+  }
+
+  .talkora-dock-input-field {
+    min-height: 48px;
+  }
+
+  .talkora-primary-mic {
+    min-width: 58px;
+    min-height: 58px;
+    padding: 5px;
+    justify-content: center;
+  }
+
+  .talkora-mic-inner {
+    width: 44px;
+    height: 44px;
+  }
+
+  .talkora-mic-label {
+    display: none;
+  }
+
+  .talkora-dock-feedback-banner {
+    max-width: calc(100vw - 14px);
+    border-radius: 16px;
+  }
+}
+
+@media (max-width: 900px) and (min-width: 641px) {
+  .talkora-lesson {
+    grid-template-rows: auto minmax(224px, 1fr) auto;
+  }
+
+  .talkora-lesson__scene,
+  .lesson-scene-stage {
+    min-height: 224px;
+  }
+
+  .lesson-julie-art img {
+    height: min(38vh, 230px);
+  }
+
+  .lesson-scene-stage__learner .learner-character {
+    height: min(34vh, 205px);
+  }
+
+  .talkora-lesson__interaction {
+    min-height: 156px;
+    max-height: 190px;
+  }
+}
+
+/* =========================================================
+   TALKORA LESSON UX PASS — conversation first, not worksheet first
+   ========================================================= */
+
+.talkora-lesson__interaction {
+  background: linear-gradient(180deg, rgba(16, 36, 31, .05), rgba(16, 36, 31, .42));
+  border-top: 0;
+  backdrop-filter: none;
+  padding: 10px clamp(12px, 2.5vw, 30px) 16px;
+}
+
+.talkora-lesson__interaction > .talkora-card-panel,
+.talkora-lesson__interaction > .talkora-suggestion-chips-panel {
+  max-width: 690px;
+}
+
+.talkora-card-panel {
+  background: rgba(255, 252, 238, .90) !important;
+  color: #27372f !important;
+  border: 1px solid rgba(93, 73, 36, .15) !important;
+  box-shadow: 0 14px 32px rgba(24, 47, 36, .16) !important;
+  backdrop-filter: blur(12px) !important;
+  border-radius: 24px !important;
+}
+
+.talkora-card-panel h2,
+.talkora-card-panel h3,
+.talkora-card-panel strong,
+.talkora-panel-title {
+  color: #314435 !important;
+}
+
+.talkora-panel-subtitle,
+.talkora-card-panel p {
+  color: #5d665d !important;
+}
+
+.lesson-mic-dock {
+  box-shadow: 0 12px 28px rgba(22, 46, 34, .15);
+}
+
+@media (min-width: 900px) {
+  .talkora-lesson__interaction > .talkora-card-panel {
+    width: min(52vw, 660px) !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .talkora-lesson__interaction {
+    padding-inline: 8px;
+  }
+  .talkora-card-panel {
+    padding: 13px 14px !important;
+    border-radius: 20px !important;
+  }
+}
+
+.tk-quiz-options {display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:14px;width:100%;margin:20px auto;}
+.tk-quiz-option {min-height:72px;padding:16px 20px;border:2px solid #c6e3d8;border-bottom-width:6px;border-radius:20px;background:#fff9df;color:#16394b;font:800 clamp(16px,2vw,22px)/1.35 inherit;cursor:pointer;box-shadow:0 10px 22px #1244361c;transition:background .2s,border-color .2s;}
+.tk-quiz-option:hover:not(:disabled),.tk-quiz-option:focus-visible {background:#eaffed;border-color:#54b77c;outline:3px solid #ffd45b;outline-offset:2px;}
+.tk-quiz-option:disabled {cursor:default;opacity:.7;}
+@media(max-width:640px){.tk-quiz-options {grid-template-columns:1fr;gap:10px}.tk-quiz-option{min-height:60px}}
+@media(prefers-reduced-motion:reduce){.tk-quiz-option{transition:none!important}}

@@ -1,0 +1,54 @@
+diff --git a/components/lessons/lesson-experience.tsx b/components/lessons/lesson-experience.tsx
+--- a/components/lessons/lesson-experience.tsx
++++ b/components/lessons/lesson-experience.tsx
+@@
+   async function choose(value: string, source: 'choice' | 'typed' = 'choice') {
+     setSelected(value)
+     if (!activity || isWarmupActivity(activity)) return
+@@
+     setHistory((current) => [...current, { id: capturedTurn.id, role: 'student', text: value } satisfies HistoryTurn].slice(-8))
++
++    const isMCQ =
++      String(activity.type || '').toUpperCase() === 'MCQ' ||
++      String(activity.metadata?.digitalType || '').toUpperCase() === 'MCQ'
++
++    if (isMCQ) {
++      setExperience('julie_thinking')
++      setPose('thinking')
++      try {
++        // MCQs are deterministic curriculum activities.
++        // The backend owns the correct answer and scoring.
++        // No VoiceSession, STT, or AI call is created here.
++        const result = await progressService.completeLocalActivity(activity.id, value)
++        const score = Number(result.score || 0)
++        const complete = score >= 70
++        setFeedback(
++          complete
++            ? 'Great choice! You understood it. ⭐'
++            : activity.hint || 'Good try! Look carefully and choose again.',
++        )
++        setXp((current) => current + (result.xpAwarded || 0))
++        setActivityComplete(complete)
++        setPose(complete ? 'celebrating' : 'encouraging')
++        setExperience(complete ? 'activity_complete' : 'retry_required')
++        setStudentTurn((current) =>
++          current
++            ? { ...current, status: complete ? 'accepted' : 'retry' }
++            : current,
++        )
++      } catch (error) {
++        setFeedback(
++          error instanceof Error
++            ? error.message
++            : 'Your answer could not be saved. Please try again.',
++        )
++        setPose('encouraging')
++        setExperience('recoverable_error')
++      }
++      return
++    }
++
+     const session = await voiceService.startSession({
+       lessonId: activity.lessonId,
+       activityId: activity.id,
+***

@@ -1,0 +1,1194 @@
+.page {
+  position: fixed;
+  inset: 0;
+
+  width: 100vw;
+  height: 100dvh;
+
+  overflow: hidden;
+
+  background: #071322;
+
+  font-family:
+    Inter,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+}
+
+/* =========================================================
+   FULL SCREEN MAP
+
+   IMPORTANT:
+   This completely removes the old top blue section/header.
+========================================================= */
+
+.mapBackground {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+
+  background-image: url("/images/talkora-adventure-map.png");
+  background-size: cover;
+  background-position: center center;
+  background-repeat: no-repeat;
+
+  transform: scale(1.01);
+
+  animation: mapReveal 1.1s ease-out;
+}
+
+@keyframes mapReveal {
+  from {
+    opacity: 0;
+    transform: scale(1.05);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1.01);
+  }
+}
+
+/*
+Tiny overlays only for readability.
+No giant blue header.
+*/
+
+.mapShade {
+  position: absolute;
+  inset: 0;
+
+  pointer-events: none;
+
+  background:
+    linear-gradient(
+      90deg,
+      rgba(3, 13, 25, 0.26) 0%,
+      transparent 20%,
+      transparent 82%,
+      rgba(3, 13, 25, 0.15) 100%
+    ),
+    linear-gradient(
+      0deg,
+      rgba(2, 8, 15, 0.24) 0%,
+      transparent 22%
+    );
+}
+
+/* =========================================================
+   SIDEBAR
+========================================================= */
+
+.sidebar {
+  position: fixed;
+
+  left: 14px;
+  top: 14px;
+  bottom: 14px;
+
+  z-index: 50;
+
+  width: 64px;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 9px;
+
+  border: 1px solid rgba(255, 255, 255, 0.15);
+
+  border-radius: 24px;
+
+  background: rgba(5, 19, 35, 0.78);
+
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+
+  box-shadow:
+    0 15px 45px rgba(0, 0, 0, 0.3),
+    inset 0 1px rgba(255, 255, 255, 0.09);
+
+  overflow: hidden;
+
+  transition:
+    width 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.3s ease,
+    box-shadow 0.3s ease;
+}
+
+.sidebar:hover {
+  width: 205px;
+
+  background: rgba(5, 19, 35, 0.93);
+
+  box-shadow:
+    0 20px 60px rgba(0, 0, 0, 0.42),
+    inset 0 1px rgba(255, 255, 255, 0.1);
+}
+
+.logoButton {
+  position: relative;
+
+  min-height: 48px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 11px;
+
+  border: 0;
+
+  padding: 0 6px;
+
+  color: white;
+  background: transparent;
+
+  cursor: pointer;
+}
+
+.logoCircle {
+  min-width: 42px;
+  width: 42px;
+  height: 42px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 14px;
+
+  font-weight: 1000;
+  font-size: 19px;
+
+  color: #173319;
+
+  background:
+    linear-gradient(
+      145deg,
+      #fff761,
+      #ffb72e
+    );
+
+  box-shadow:
+    0 5px 15px rgba(255, 190, 45, 0.36);
+}
+
+.navigation {
+  display: flex;
+  flex-direction: column;
+
+  gap: 7px;
+
+  margin-top: 28px;
+}
+
+.sidebarBottom {
+  margin-top: auto;
+}
+
+.sidebarItem {
+  width: 100%;
+  height: 49px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 13px;
+
+  padding: 0 10px;
+
+  border: 1px solid transparent;
+  border-radius: 15px;
+
+  color: rgba(255, 255, 255, 0.7);
+
+  background: transparent;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease,
+    color 0.2s ease,
+    border 0.2s ease;
+}
+
+.sidebarItem:hover {
+  color: white;
+
+  background: rgba(255, 255, 255, 0.1);
+
+  transform: translateX(2px);
+}
+
+.sidebarActive {
+  color: white;
+
+  border-color: rgba(93, 227, 255, 0.42);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(0, 174, 255, 0.24),
+      rgba(21, 116, 255, 0.12)
+    );
+
+  box-shadow:
+    0 6px 20px rgba(0, 158, 255, 0.12);
+}
+
+.sidebarIcon {
+  min-width: 24px;
+
+  display: grid;
+  place-items: center;
+}
+
+.menuText {
+  white-space: nowrap;
+
+  opacity: 0;
+
+  transform: translateX(-8px);
+
+  font-weight: 800;
+  font-size: 14px;
+
+  transition:
+    opacity 0.22s ease,
+    transform 0.3s ease;
+}
+
+.sidebar:hover .menuText {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* =========================================================
+   MISS JULIE
+========================================================= */
+
+.julieSection {
+  position: absolute;
+
+  /*
+   Talkora board is upper-left in generated map,
+   so Julie stays underneath it.
+  */
+
+  top: 21%;
+  left: 8.5%;
+
+  z-index: 25;
+
+  display: flex;
+  align-items: flex-start;
+
+  pointer-events: none;
+}
+
+/* TALKING BOX */
+
+.speechBubble {
+  position: absolute;
+
+  left: 112px;
+  top: -4px;
+
+  width: clamp(270px, 27vw, 430px);
+
+  padding: 15px 17px;
+
+  border:
+    3px solid
+    rgba(93, 64, 32, 0.78);
+
+  border-radius:
+    20px 20px 20px 8px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(255, 253, 226, 0.98),
+      rgba(255, 242, 192, 0.97)
+    );
+
+  color: #332313;
+
+  box-shadow:
+    0 10px 0 rgba(80, 48, 20, 0.2),
+    0 20px 45px rgba(0, 0, 0, 0.27);
+
+  pointer-events: auto;
+
+  animation:
+    speechEnter 0.7s
+    cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes speechEnter {
+  0% {
+    opacity: 0;
+    transform:
+      translate(-20px, 14px)
+      scale(0.82);
+  }
+
+  100% {
+    opacity: 1;
+    transform:
+      translate(0, 0)
+      scale(1);
+  }
+}
+
+.speechHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  margin-bottom: 7px;
+}
+
+.julieName {
+  display: block;
+
+  color: #c84e54;
+
+  letter-spacing: 1.3px;
+
+  font-size: 11px;
+  font-weight: 1000;
+}
+
+.julieRole {
+  display: block;
+
+  margin-top: 2px;
+
+  color: #89725a;
+
+  font-size: 8px;
+  font-weight: 900;
+
+  letter-spacing: 1px;
+}
+
+.julieText {
+  min-height: 42px;
+
+  margin: 0;
+
+  line-height: 1.45;
+
+  font-weight: 750;
+  font-size: 13px;
+}
+
+.cursor {
+  margin-left: 1px;
+
+  animation: blink 0.6s infinite;
+}
+
+@keyframes blink {
+  0%,
+  45% {
+    opacity: 1;
+  }
+
+  46%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.voiceButton {
+  width: 33px;
+  height: 33px;
+
+  display: grid;
+  place-items: center;
+
+  flex-shrink: 0;
+
+  border: 0;
+  border-radius: 50%;
+
+  background: rgba(93, 64, 32, 0.09);
+
+  color: #634727;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+.voiceButton:hover {
+  transform: scale(1.12);
+
+  background: rgba(93, 64, 32, 0.16);
+}
+
+.voiceSpeaking {
+  animation: speakerPulse 1s infinite;
+}
+
+@keyframes speakerPulse {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(236, 94, 83, 0.4);
+  }
+
+  100% {
+    box-shadow:
+      0 0 0 12px rgba(236, 94, 83, 0);
+  }
+}
+
+.bubbleTail {
+  position: absolute;
+
+  left: -16px;
+  bottom: 14px;
+
+  width: 28px;
+  height: 28px;
+
+  background: #fff6ca;
+
+  clip-path:
+    polygon(
+      100% 0,
+      100% 100%,
+      0 100%
+    );
+
+  transform: rotate(45deg);
+}
+
+/* VOICE ANIMATION */
+
+.voiceBars {
+  height: 18px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 3px;
+
+  margin-top: 5px;
+}
+
+.voiceBars span {
+  display: block;
+
+  width: 3px;
+  height: 7px;
+
+  border-radius: 20px;
+
+  background: #ed6559;
+
+  animation: voiceWave 0.7s ease-in-out infinite;
+}
+
+.voiceBars span:nth-child(2) {
+  animation-delay: 0.1s;
+}
+
+.voiceBars span:nth-child(3) {
+  animation-delay: 0.2s;
+}
+
+.voiceBars span:nth-child(4) {
+  animation-delay: 0.3s;
+}
+
+.voiceBars span:nth-child(5) {
+  animation-delay: 0.4s;
+}
+
+@keyframes voiceWave {
+  0%,
+  100% {
+    height: 5px;
+  }
+
+  50% {
+    height: 16px;
+  }
+}
+
+/* JULIE */
+
+.julieWrapper {
+  position: relative;
+
+  width: clamp(90px, 8vw, 130px);
+  height: 210px;
+
+  display: flex;
+  align-items: flex-end;
+
+  animation:
+    julieEnter 0.8s
+    cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes julieEnter {
+  from {
+    opacity: 0;
+    transform:
+      translateY(40px)
+      scale(0.8);
+  }
+
+  to {
+    opacity: 1;
+    transform:
+      translateY(0)
+      scale(1);
+  }
+}
+
+.julieImage {
+  position: relative;
+
+  z-index: 2;
+
+  width: 100%;
+  height: 100%;
+
+  object-fit: contain;
+  object-position: bottom;
+
+  filter:
+    drop-shadow(
+      0 10px 7px
+      rgba(0, 0, 0, 0.35)
+    );
+}
+
+.julieTalking {
+  animation:
+    julieTalk 0.8s
+    ease-in-out infinite;
+}
+
+@keyframes julieTalk {
+  0%,
+  100% {
+    transform:
+      translateY(0)
+      rotate(0deg);
+  }
+
+  50% {
+    transform:
+      translateY(-4px)
+      rotate(0.7deg);
+  }
+}
+
+.julieGlow {
+  position: absolute;
+
+  z-index: 1;
+
+  left: 50%;
+  bottom: 4px;
+
+  width: 95px;
+  height: 28px;
+
+  transform: translateX(-50%);
+
+  border-radius: 50%;
+
+  background:
+    rgba(255, 219, 86, 0.5);
+
+  filter: blur(10px);
+}
+
+/* =========================================================
+   LEVEL MAP
+========================================================= */
+
+.levelLayer {
+  position: absolute;
+  inset: 0;
+
+  z-index: 20;
+
+  pointer-events: none;
+}
+
+.levelPosition {
+  position: absolute;
+
+  transform:
+    translate(-50%, -50%);
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  border: 0;
+  padding: 0;
+
+  background: transparent;
+
+  cursor: pointer;
+
+  pointer-events: auto;
+
+  transition:
+    transform 0.25s ease;
+}
+
+.levelPosition:hover {
+  transform:
+    translate(-50%, -50%)
+    scale(1.08);
+}
+
+.selectedPosition {
+  z-index: 10;
+}
+
+/* ROUND LEVEL BUTTON */
+
+.levelButton {
+  position: relative;
+
+  width: clamp(52px, 4vw, 68px);
+  height: clamp(52px, 4vw, 68px);
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 50%;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.levelUnlocked {
+  border:
+    clamp(4px, 0.3vw, 6px)
+    solid #fff6ba;
+
+  background:
+    linear-gradient(
+      145deg,
+      #ffed58,
+      #ffaf22
+    );
+
+  box-shadow:
+    0 6px 0 #b96b15,
+    0 10px 19px rgba(30, 15, 5, 0.35),
+    inset 0 3px rgba(255, 255, 255, 0.75);
+
+  color: #5b3815;
+
+  animation:
+    levelFloat
+    2.7s ease-in-out infinite;
+}
+
+.levelUnlocked:hover {
+  box-shadow:
+    0 4px 0 #b96b15,
+    0 10px 30px rgba(255, 204, 44, 0.75),
+    inset 0 3px rgba(255, 255, 255, 0.75);
+
+  transform: translateY(-3px);
+}
+
+.levelLocked {
+  border:
+    4px solid
+    rgba(230, 239, 224, 0.75);
+
+  background:
+    rgba(31, 52, 47, 0.88);
+
+  color:
+    rgba(255, 255, 255, 0.72);
+
+  box-shadow:
+    0 5px 0 rgba(6, 22, 18, 0.8),
+    0 8px 18px rgba(0, 0, 0, 0.35);
+
+  backdrop-filter: blur(5px);
+}
+
+@keyframes levelFloat {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-5px);
+  }
+}
+
+.levelNumber {
+  font-size:
+    clamp(19px, 1.5vw, 26px);
+
+  font-weight: 1000;
+}
+
+.levelSpark {
+  position: absolute;
+
+  right: -4px;
+  top: -3px;
+
+  color: white;
+
+  filter:
+    drop-shadow(
+      0 2px 2px
+      rgba(0, 0, 0, 0.3)
+    );
+}
+
+.levelPulse {
+  position: absolute;
+  inset: -8px;
+
+  border:
+    2px solid
+    rgba(255, 234, 87, 0.65);
+
+  border-radius: 50%;
+
+  opacity: 0;
+
+  animation:
+    nodePulse
+    2.2s ease-out infinite;
+}
+
+.levelLocked .levelPulse {
+  display: none;
+}
+
+@keyframes nodePulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.8;
+  }
+
+  100% {
+    transform: scale(1.45);
+    opacity: 0;
+  }
+}
+
+/* LEVEL LABEL */
+
+.levelCard {
+  min-width: 126px;
+
+  margin-top: 8px;
+  padding: 7px 10px;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.16);
+
+  border-radius: 12px;
+
+  color: white;
+
+  text-align: center;
+
+  background:
+    rgba(5, 26, 22, 0.82);
+
+  backdrop-filter: blur(9px);
+
+  box-shadow:
+    0 5px 14px
+    rgba(0, 0, 0, 0.26);
+
+  transition:
+    transform 0.25s ease,
+    background 0.25s ease;
+}
+
+.levelPosition:hover .levelCard {
+  transform: translateY(3px);
+
+  background:
+    rgba(7, 33, 26, 0.94);
+}
+
+.levelCard strong {
+  display: block;
+
+  color: #ffe94d;
+
+  font-size: 9px;
+  font-weight: 1000;
+
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.levelTitle {
+  display: block;
+
+  margin-top: 2px;
+
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.levelCard small {
+  display: block;
+
+  margin-top: 2px;
+
+  opacity: 0.75;
+
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.stars {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 2px;
+
+  margin-top: 4px;
+
+  color: #ffd943;
+}
+
+/* =========================================================
+   PLAYER HUD
+========================================================= */
+
+.playerHud {
+  position: fixed;
+
+  z-index: 45;
+
+  top: 17px;
+  right: 18px;
+
+  height: 55px;
+
+  display: flex;
+  align-items: center;
+
+  gap: 10px;
+
+  padding:
+    7px 13px 7px 8px;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.18);
+
+  border-radius: 20px;
+
+  color: white;
+
+  background:
+    rgba(3, 21, 33, 0.76);
+
+  backdrop-filter: blur(13px);
+
+  box-shadow:
+    0 8px 26px
+    rgba(0, 0, 0, 0.23);
+
+  animation:
+    hudEnter 0.7s ease-out;
+}
+
+@keyframes hudEnter {
+  from {
+    opacity: 0;
+
+    transform:
+      translateY(-15px);
+  }
+
+  to {
+    opacity: 1;
+
+    transform:
+      translateY(0);
+  }
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+
+  display: grid;
+  place-items: center;
+
+  border:
+    2px solid #ffdb43;
+
+  border-radius: 50%;
+
+  background:
+    linear-gradient(
+      145deg,
+      #1575d4,
+      #062e63
+    );
+
+  font-weight: 1000;
+}
+
+.welcome {
+  display: block;
+
+  opacity: 0.6;
+
+  font-size: 8px;
+
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.playerHud strong {
+  display: block;
+
+  font-size: 12px;
+}
+
+.hudDivider {
+  width: 1px;
+  height: 29px;
+
+  margin: 0 3px;
+
+  background:
+    rgba(255, 255, 255, 0.16);
+}
+
+.stat {
+  display: flex;
+  align-items: center;
+
+  gap: 4px;
+
+  color: #ffdc45;
+
+  font-size: 12px;
+}
+
+.stat strong {
+  color: white;
+
+  font-size: 12px;
+}
+
+.stat span {
+  opacity: 0.62;
+
+  color: white;
+
+  font-size: 8px;
+}
+
+/* =========================================================
+   BOTTOM MESSAGE
+========================================================= */
+
+.instruction {
+  position: fixed;
+
+  z-index: 40;
+
+  left: 50%;
+  bottom: 18px;
+
+  transform:
+    translateX(-50%);
+
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+
+  padding:
+    9px 16px;
+
+  border:
+    1px solid
+    rgba(255, 255, 255, 0.19);
+
+  border-radius: 999px;
+
+  color: #fff9d3;
+
+  background:
+    rgba(3, 22, 27, 0.78);
+
+  backdrop-filter: blur(10px);
+
+  font-size: 11px;
+  font-weight: 750;
+
+  box-shadow:
+    0 5px 20px
+    rgba(0, 0, 0, 0.25);
+}
+
+/* =========================================================
+   RESPONSIVE
+========================================================= */
+
+@media (max-width: 1100px) {
+  .julieSection {
+    left: 10%;
+    top: 22%;
+  }
+
+  .speechBubble {
+    width: 290px;
+  }
+
+  .levelCard {
+    min-width: 105px;
+  }
+}
+
+@media (max-width: 800px) {
+  .sidebar {
+    left: 8px;
+    top: 8px;
+    bottom: 8px;
+
+    width: 53px;
+
+    border-radius: 18px;
+
+    padding: 5px;
+  }
+
+  .sidebar:hover {
+    width: 175px;
+  }
+
+  .sidebarItem {
+    padding-left: 8px;
+  }
+
+  .logoCircle {
+    min-width: 38px;
+    width: 38px;
+    height: 38px;
+  }
+
+  .playerHud {
+    right: 9px;
+    top: 9px;
+
+    transform:
+      scale(0.9);
+
+    transform-origin:
+      top right;
+  }
+
+  .julieSection {
+    top: 18%;
+    left: 11%;
+  }
+
+  .julieWrapper {
+    width: 78px;
+    height: 155px;
+  }
+
+  .speechBubble {
+    left: 70px;
+
+    width: 230px;
+
+    padding: 11px 12px;
+  }
+
+  .julieText {
+    font-size: 10px;
+  }
+
+  .levelCard {
+    display: none;
+  }
+
+  .levelButton {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+@media (max-width: 560px) {
+  /*
+    On phones we intentionally allow background crop.
+    The map stays full screen rather than creating
+    an ugly empty header area.
+  */
+
+  .mapBackground {
+    background-position: center center;
+  }
+
+  .julieSection {
+    top: 16%;
+    left: 17%;
+  }
+
+  .speechBubble {
+    width: 190px;
+
+    left: 55px;
+  }
+
+  .julieWrapper {
+    width: 60px;
+    height: 125px;
+  }
+
+  .playerHud {
+    max-width: 235px;
+  }
+
+  .hudDivider,
+  .stat:last-child {
+    display: none;
+  }
+
+  .instruction {
+    bottom: 12px;
+
+    font-size: 9px;
+  }
+}
