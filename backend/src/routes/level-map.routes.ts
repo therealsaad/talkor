@@ -7,4 +7,5 @@ router.use(authenticate, requireRole('SCHOOL_ADMIN', 'TEACHER'))
 router.get('/grades', LevelMapController.classes)
 router.get('/grades/:grade', LevelMapController.grade)
 router.get('/grades/:grade/levels/:level', LevelMapController.level)
+router.get('/grades/:grade/levels/:level/studio', LevelMapController.studio)
 export default router

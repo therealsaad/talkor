@@ -552,3 +552,110 @@
 .kg-alpha-homework { margin-top: 1rem; padding: .9rem 1rem; border-radius: 1rem; background: rgba(255, 255, 255, .85); color: #284064; max-width: 34rem; }
 .kg-alpha-homework p { margin: .4rem 0 .65rem; line-height: 1.5; }
 .kg-alpha-homework .kg-alpha-hear-again { position: static; display: inline-flex; align-items: center; gap: .45rem; }
+
+/* Optional quiet soundtrack. The original KG layout and controls remain intact. */
+.kg-alpha-audio-actions {
+  display: flex;
+  justify-self: end;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 7px;
+}
+.kg-alpha-music-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid rgba(49, 92, 66, .16);
+  border-radius: 999px;
+  padding: 8px 11px;
+  min-height: 36px;
+  color: #315c42;
+  background: rgba(255, 255, 255, .90);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.kg-alpha-music-toggle:hover { background: #fff8dc; }
+.kg-alpha-music-toggle:focus-visible { outline: 3px solid #25704a; outline-offset: 2px; }
+@media (max-width: 760px) {
+  .kg-alpha-audio-actions { grid-column: 2; grid-row: 1; gap: 4px; }
+  .kg-alpha-music-toggle { min-height: 34px; padding: 5px 8px; font-size: 10px; }
+  .kg-alpha-audio-actions .kg-alpha-replay-intro,
+  .kg-alpha-audio-actions .kg-alpha-level-pill { grid-column: auto; grid-row: auto; }
+}
+
+/* ===== KG LEVEL 1 INTERACTIVE 3D TEACHING BOARD / PATCH 2026-10-19 ===== */
+.kg-alpha-play {
+  background: radial-gradient(circle at 24% 12%,#fcf6d5 0,transparent 36%),linear-gradient(135deg,#b1e6df 0%,#cef1cb 44%,#88d6ae 100%);
+}
+.kg-alpha-play > .kg-alpha-garden-art { opacity: .09; filter: blur(13px) saturate(.7); transform: scale(1.08); }
+.kg-alpha-play > .kg-alpha-garden-wash { opacity: .34; }
+.kg-alpha-scene { grid-template-columns:minmax(235px,.72fr) minmax(430px,1.35fr);gap:clamp(12px,2.3vw,32px) }
+.kg-alpha-teacher { align-self:stretch; filter:drop-shadow(0 18px 15px #27665b35) }
+.kg-alpha-teacher-glow { top:4%; height:86%;background:radial-gradient(ellipse,#f9f2dc 0,#e5ffdf77 57%,transparent 76%) }
+.kg-julie-animated { isolation:isolate; overflow:visible; width:100%;height:min(65dvh,550px);justify-content:center;align-items:center }
+.kg-julie-animated__pose,.kg-julie-animated__video { position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 10px 11px #143d2d30); }
+.kg-julie-animated__video { aspect-ratio:auto;background:transparent!important;border:0; }
+.kg-julie-animated__speaking-dots { z-index:3;right:8%;top:20%; }
+.kg-alpha-teaching-board {
+  position:relative;
+  isolation:isolate;
+  border:clamp(10px,1.7vw,20px) solid #c9924f;
+  border-bottom-color:#86522e;
+  border-right-color:#a26839;
+  border-radius:clamp(20px,2.8vw,38px);
+  background:radial-gradient(ellipse at 28% 20%,#438e79aa,transparent 72%),linear-gradient(148deg,#23745e,#115843 80%);
+  box-shadow:0 10px 0 #76492a,0 25px 55px #224e4261,inset 0 0 0 4px #e5b677,inset 0 7px 29px #092e1f52;
+  color:#f9ffdf;
+  padding:clamp(13px,2vw,29px);
+}
+.kg-alpha-teaching-board:before { inset:11px;border:2px dashed #e6f5c419; }
+.kg-alpha-teaching-board .kg-alpha-learning h1,.kg-alpha-teaching-board .kg-alpha-recognition h1,.kg-alpha-teaching-board .kg-alpha-ready h1 { color:#fff7c9;text-shadow:0 4px 3px #0c402b; }
+.kg-alpha-teaching-board .kg-alpha-learning p,.kg-alpha-teaching-board .kg-alpha-recognition p,.kg-alpha-teaching-board .kg-alpha-ready p { color:#f5ffe4; }
+.kg-alpha-teaching-board .kg-alpha-activity-label { color:#fce59c; }
+.kg-alpha-teaching-board .kg-alpha-letter-orb {
+  border:6px solid #fff9cf;
+  background:radial-gradient(circle at 29% 21%,#fffef0 0%,color-mix(in srgb,var(--letter-color) 57%,#fff3c9) 75%);
+  box-shadow:0 9px 0 #925a38,0 15px 20px #05261990,inset 0 4px 8px #ffffff8c;
+  animation:kg-abc-dance 2.4s ease-in-out infinite;
+  color:#365e40;
+  font-family:inherit;
+}
+.kg-board-tappable { cursor:pointer;transition:filter .18s,translate .18s }
+.kg-board-tappable:hover:not(:disabled) {filter:brightness(1.07);translate:0 -4px}
+.kg-board-tappable:focus-visible {outline:4px solid #ffe28a;outline-offset:5px}
+.kg-board-tappable:disabled {cursor:default}
+.kg-board-object { background:transparent;border:0;padding:0;display:block;animation:kg-apple-dance 2.9s ease-in-out infinite }
+.kg-board-object img { display:block;width:clamp(135px,24vw,320px);height:clamp(120px,27dvh,255px);border:5px solid #fffad6;border-radius:28px;object-fit:cover;box-shadow:0 10px 0 #99622c,0 18px 29px #0a402c88 }
+.kg-alpha-teaching-board .kg-alpha-puzzle button {box-shadow:0 8px 0 #83532e,0 15px 23px #0b3f295d}
+.kg-alpha-teaching-board .kg-alpha-status {color:#fff9e3}
+.kg-device-voice { display:inline-flex;padding:4px 8px;border-radius:12px;background:#f9ebc8;color:#5c5231;font-size:10px;font-weight:800 }
+.kg-alpha-speech { background:#fff8d6; border-color:#fefdf0; box-shadow:0 8px 0 #b2c586,0 13px 28px #275a4260 }
+@keyframes kg-abc-dance { 0%,100%{ transform:translateY(0) rotate(-4deg) scale(1) } 30%{transform:translateY(-10px) rotate(4deg) scale(1.035)} 65%{transform:translateY(-2px) rotate(-1deg) scale(.99)} }
+@keyframes kg-apple-dance { 0%,100%{transform:translateY(0) rotate(0)} 50%{transform:translateY(-7px) rotate(2deg)} }
+/* Optional replay map is its own clean, accessible screen. */
+.kg-story-map {min-height:100dvh;background:#a8dbc2;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between;}
+.kg-story-map__art {position:absolute;inset:0;z-index:0;}
+.kg-story-map__art img {object-fit:cover;object-position:center center;}
+.kg-story-map__header {position:relative;display:flex;align-items:flex-start;justify-content:space-between;gap:12px;padding:18px clamp(16px,4vw,55px);background:linear-gradient(#fffdeac9,transparent);}
+.kg-story-map__header span {display:inline-flex;gap:8px;align-items:center;border-radius:20px;padding:8px 12px;background:#fff9dcd9;font-size:13px;font-weight:900;letter-spacing:.04em;color:#346f4b}
+.kg-story-map__header p {max-width:315px;border-radius:16px;background:#fff9dcce;padding:8px 13px;font-size:13px;font-weight:750;color:#46674c}
+.kg-story-map__actions {position:relative;z-index:1;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;gap:12px;margin:12px auto 26px;padding:14px 18px;border:2px solid #fffbe9;border-radius:24px;background:#fff9e5eb;box-shadow:0 9px 0 #b58b5380,0 15px 28px #12452d45;max-width:calc(100% - 24px)}
+.kg-story-map__primary {display:inline-flex;align-items:center;gap:9px;padding:11px 20px;border:0;border-radius:17px;background:linear-gradient(160deg,#fa9d56,#e87557);box-shadow:0 5px 0 #b95337;color:white;font-size:16px;font-weight:900;text-decoration:none;cursor:pointer}
+.kg-story-map__progress {font-size:12px;font-weight:850;color:#477252}
+.kg-story-map__locks {display:flex;gap:5px;flex-wrap:wrap;justify-content:center}
+.kg-story-map__locks span {display:inline-flex;align-items:center;gap:3px;border-radius:9px;background:#d9dec6;padding:4px 5px;color:#697e68;font-size:10px;font-weight:700}
+@media (max-height:650px) and (orientation:landscape) { .kg-alpha-teaching-board {padding:7px 11px;border-width:9px}.kg-alpha-teacher-image {height:48dvh;max-height:48dvh}.kg-julie-animated{height:48dvh}.kg-board-object img{height:25dvh;width: min(22vw,195px)}.kg-alpha-teaching-board .kg-alpha-letter-orb{width:24dvh;height:24dvh}.kg-story-map__actions{margin-bottom:10px;padding:9px 13px}.kg-story-map__header{padding:6px 12px} }
+@media (max-width:760px) and (orientation:landscape) {.kg-alpha-scene{grid-template-columns:minmax(130px,.55fr) minmax(0,1.45fr);gap:7px}.kg-alpha-teaching-board{border-width:6px;padding:7px 9px}.kg-board-object img{width:min(24vw,185px);height:25dvh;border-width:2px;border-radius:14px}.kg-julie-animated{height:46dvh}.kg-story-map__header p{display:none}.kg-story-map__locks{display:none} }
+@media (max-width:760px) and (orientation:portrait) {.kg-alpha-scene{grid-template-columns:1fr}.kg-alpha-teacher{max-height:22dvh}.kg-julie-animated{height:20dvh}.kg-board-object img{width:min(36vw,230px);height:20dvh}.kg-story-map__art img{object-position:28% center}.kg-story-map__header p{display:none}.kg-story-map__locks{display:none} }
+@media (prefers-reduced-motion: reduce) { .kg-alpha-letter-orb,.kg-board-object{animation:none!important} }
+
+/* KG voice and gesture polish: suppress the old exaggerated fallback bounce. */
+.kg-julie-animated.is-speaking .kg-julie-animated__pose { animation: none !important; }
+.kg-alpha-heard { margin: .25rem 0; padding: .32rem .65rem; background: #fff8db; color: #345b45;
+  border-radius: 12px; max-width: 100%; font-size: clamp(12px, 1vw, 16px); font-weight: 700; }
+.kg-mic-pulse { outline-offset: 4px; }
+.kg-mic-pulse:focus-visible, .kg-alpha-hear-again:focus-visible { outline: 3px solid #ffbd4a; }

@@ -25,6 +25,15 @@ export interface EditorMappedLevel {
   publication: 'PUBLISHED' | 'UPCOMING' | 'ARCHIVED'
   lessons: EditorMappedLesson[]
 }
+export interface EditorStudioDesign {
+  id: string
+  grade: number
+  level: number
+  title: string
+  designTheme: string
+  editorialStatus: string
+  readyForPublication: boolean
+}
 export interface GradeLevelMap {
   grade: number
   name: string
@@ -41,4 +50,5 @@ export const gradeLevelMapService = {
   grades: () => apiClient<Array<{ grade: number; title: string; levels: 10 }>>('/curriculum-map/grades'),
   grade: (grade: number) => apiClient<GradeLevelMap>(`/curriculum-map/grades/${grade}`),
   level: (grade: number, level: number) => apiClient<EditorMappedLevel>(`/curriculum-map/grades/${grade}/levels/${level}`),
+  studio: (grade: number, level: number) => apiClient<EditorStudioDesign>(`/curriculum-map/grades/${grade}/levels/${level}/studio`),
 }

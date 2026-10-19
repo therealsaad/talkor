@@ -4,6 +4,7 @@ import { ok } from '../utils/ApiResponse'
 import { ApiError } from '../utils/ApiError'
 import { parseGrade, parseLevel } from '../curriculum/level-map-contract'
 import { LevelMapService } from '../services/level-map.service'
+import { studioDesignForLevel } from '../curriculum/studio-catalog'
 
 function gradeFrom(value: unknown) {
   try { return parseGrade(value) }
@@ -30,6 +31,15 @@ export const LevelMapController = {
     checkKGTeacher(req, grade)
     res.setHeader('Cache-Control', 'no-store')
     ok(res, await LevelMapService.grade(grade))
+  }),
+  studio: catchAsync(async (req: Request, res: Response) => {
+    const grade = gradeFrom(req.params.grade)
+    const level = levelFrom(req.params.level)
+    checkKGTeacher(req, grade)
+    const design = studioDesignForLevel(grade, level)
+    if (!design) throw ApiError.notFound('Design not found')
+    res.setHeader('Cache-Control', 'no-store')
+    ok(res, design)
   }),
   level: catchAsync(async (req: Request, res: Response) => {
     const grade = gradeFrom(req.params.grade)

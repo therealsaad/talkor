@@ -7,7 +7,8 @@ export const generalLimiter = rateLimit({
   legacyHeaders: false,
   // Voice has dedicated burst-aware limits below; applying both would make the
   // stricter general bucket eventually cut off a healthy lesson session.
-  skip: (req) => req.path.startsWith('/api/v1/voice') || req.path.startsWith('/api/voice'),
+  skip: (req) => req.path.startsWith('/api/v1/voice') || req.path.startsWith('/api/voice') ||
+    req.path.startsWith('/api/v1/kg-alphabet') || req.path.startsWith('/api/kg-alphabet'),
 })
 
 export const authLimiter = rateLimit({
@@ -47,3 +48,13 @@ export const voiceMediaLimiter = rateLimit({
 
 // Backwards-compatible export for any route outside this module that still imports it.
 export const voiceLimiter = voiceSessionLimiter
+
+/** Lab computers often share one external IP: limit KG requests by authenticated user instead. */
+export const kgLessonLimiter = rateLimit({
+  windowMs: 60_000,
+  limit: 90,
+  standardHeaders: true,
+  legacyHeaders: false,
+  keyGenerator: (req) => `${req.auth?.schoolId || 'unknown'}:${req.auth?.id || 'unknown'}`,
+  message: { success: false, error: { code: 'RATE_LIMITED', message: 'Miss Julie is busy. Please wait a moment.' } },
+})

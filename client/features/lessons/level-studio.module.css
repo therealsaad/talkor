@@ -1,0 +1,21 @@
+
+.shell{color:var(--studio-ink);border:1px solid #dae1e6;border-radius:24px;overflow:hidden;background:#fff;box-shadow:0 16px 50px #223b5e14}
+.topline{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;padding:12px 20px;background:#183246;color:white;font-size:11px;font-weight:850;letter-spacing:.11em}
+.stage{position:relative;display:grid;grid-template-columns:minmax(230px,.9fr) minmax(270px,1.1fr);gap:30px;align-items:center;min-height:490px;padding:clamp(20px,4vw,52px);overflow:hidden;background:linear-gradient(150deg,var(--studio-bg),var(--studio-bg-deep))}
+.stage[data-layout="dialogue-stage"]{grid-template-columns:1fr 1fr}.stage[data-layout="explorer-trail"]{background:linear-gradient(33deg,var(--studio-bg-deep),var(--studio-bg))}
+.stage[data-layout="card-carousel"]{background:linear-gradient(170deg,var(--studio-bg-deep),var(--studio-bg) 60%)}
+.scenery{position:absolute;inset:0;pointer-events:none;overflow:hidden;opacity:.15;color:var(--studio-primary)}
+.scenery span{position:absolute;font-size:clamp(140px,20vw,360px);line-height:1}.scenery span:first-child{top:-15%;right:-5%;transform:rotate(-18deg)}.scenery span:nth-child(2){bottom:-25%;left:-7%;transform:rotate(21deg)}
+.hero,.board{position:relative;z-index:1}.eyebrow{color:var(--studio-primary);font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:900}
+.hero h1{font-size:clamp(32px,4vw,60px);line-height:1.02;margin:14px 0;color:var(--studio-ink)}.hero p{font-size:15px;line-height:1.6;max-width:37ch}
+.missJulie{position:relative;display:flex;align-items:flex-end;margin-top:18px;min-height:175px;gap:8px}.missJulie img{height:184px;width:auto;max-width:40%;object-fit:contain;object-position:bottom;filter:drop-shadow(0 10px 10px #2453a522)}
+.speech{max-width:250px;align-self:center;background:white;border-radius:18px;padding:14px 16px;box-shadow:0 8px 24px #0a1c3a16;font-weight:700;font-size:14px}
+.board{background:linear-gradient(160deg,#ffffffed,#fffffff0);border:7px solid #986b47;border-radius:26px;box-shadow:0 14px 0 #71503331,0 28px 32px #26426a29;padding:20px;min-height:380px;text-align:center;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.boardHeading{font-weight:950;color:var(--studio-primary);text-transform:uppercase;letter-spacing:.13em;font-size:11px}
+.symbol{font-size:clamp(70px,10vw,130px);line-height:1.1;color:var(--studio-primary);text-shadow:0 9px var(--studio-secondary),0 16px 15px #0002;animation:gentle 3s ease-in-out infinite}
+.board h2{font-size:23px;line-height:1.12;margin:15px 0 5px}.board p{font-size:14px;line-height:1.5;max-width:38ch}.choices{display:flex;justify-content:center;flex-wrap:wrap;gap:9px;margin-top:14px}
+.choices button{border:1px solid var(--studio-primary);border-radius:13px;background:white;color:var(--studio-ink);font:inherit;font-weight:700;padding:11px 14px;min-height:48px;cursor:pointer}.choices button[aria-pressed="true"]{background:var(--studio-primary);color:white}
+.footer{display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;padding:16px 20px;background:#fafafa;font-size:12px}.note{font-size:12px;color:#52647b;padding:0 20px 18px;line-height:1.6}
+@keyframes gentle{50%{transform:translateY(-7px) rotate(2deg)}}
+@media(max-width:790px){.stage,.stage[data-layout="dialogue-stage"]{grid-template-columns:1fr;gap:15px}.missJulie{min-height:120px}.missJulie img{height:140px}.board{min-height:320px}}
+@media(prefers-reduced-motion:reduce){.symbol{animation:none}}

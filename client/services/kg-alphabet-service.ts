@@ -26,6 +26,10 @@ export interface KGAttemptResponse {
   state: KGAlphabetState
   feedbackAudioId?: string
   teachingHint?: string | null
+  transcript?: string
+  feedbackText?: string
+  feedbackAudioBase64?: string | null
+  feedbackVoice?: 'azure' | 'unavailable'
 }
 export type KGPreparedAttempt = { body: string }
 
@@ -43,7 +47,7 @@ async function audioUrl(id: string, path?: string): Promise<string> {
   const key = audioPath(id, path)
   const existing = clipCache.get(key)
   if (existing) return existing
-  const promise = kgRequest((signal) => apiClientBlob(key, { cache: 'force-cache', signal }))
+  const promise = kgRequest((signal) => apiClientBlob(key, { cache: 'no-store', signal }), undefined, { retries: 0, timeoutMs: 45000 })
     .then((blob) => URL.createObjectURL(blob))
     .catch((error) => { clipCache.delete(key); throw error })
   clipCache.set(key, promise)
@@ -56,6 +60,23 @@ async function audioUrl(id: string, path?: string): Promise<string> {
     }
   }
   return promise
+}
+
+async function playAudioUrl(url: string, audio: HTMLAudioElement, signal?: AbortSignal): Promise<void> {
+  signal?.throwIfAborted()
+  audio.pause()
+  audio.src = url
+  audio.currentTime = 0
+  await new Promise<void>((resolve, reject) => {
+    const clean = () => { clearTimeout(clock); audio.onended = null; audio.onerror = null; signal?.removeEventListener('abort', abort) }
+    const fail = (error: unknown) => { clean(); audio.pause(); reject(error) }
+    const abort = () => fail(signal?.reason || new DOMException('Playback cancelled', 'AbortError'))
+    const clock = window.setTimeout(() => fail(new Error('Miss Julie audio timed out')), 35000)
+    audio.onended = () => { clean(); resolve() }
+    audio.onerror = () => fail(new Error('Miss Julie audio could not play'))
+    signal?.addEventListener('abort', abort, { once: true })
+    void audio.play().catch(fail)
+  })
 }
 
 export const kgAlphabetService = {
@@ -74,21 +95,27 @@ export const kgAlphabetService = {
   prefetch: (id: string, path?: string) => { void audioUrl(id, path).catch(() => undefined) },
   ensure: (id: string, path?: string) => audioUrl(id, path).then(() => undefined),
   audioUrl,
+  /** Staff-only real audio preview, backed by uncached Azure TTS. */
+  async previewPlay(id: string, audio: HTMLAudioElement, signal?: AbortSignal): Promise<void> {
+    const key = `/kg-alphabet/preview/audio/v1/${encodeURIComponent(id)}`
+    const blob = await apiClientBlob(key, { signal, cache: 'no-store' })
+    const url = URL.createObjectURL(blob)
+    try { await playAudioUrl(url, audio, signal) }
+    finally { URL.revokeObjectURL(url) }
+  },
+  async playFeedback(base64: string, audio: HTMLAudioElement, signal?: AbortSignal): Promise<void> {
+    if (!base64 || base64.length > 1_000_000) throw new Error('Invalid feedback audio')
+    const bytes = Uint8Array.from(atob(base64), (value) => value.charCodeAt(0))
+    const url = URL.createObjectURL(new Blob([bytes], { type: 'audio/mpeg' }))
+    try { await playAudioUrl(url, audio, signal) }
+    finally { URL.revokeObjectURL(url) }
+  },
+  previewSubmitPrepared: (prepared: KGPreparedAttempt, signal?: AbortSignal) =>
+    kgRequest((requestSignal) => apiClient<Omit<KGAttemptResponse, 'state'>>('/kg-alphabet/preview/attempt', { method: 'POST', body: prepared.body, signal: requestSignal }), signal, { retries: 0, timeoutMs: 65000 }),
   async play(id: string, audio: HTMLAudioElement, path?: string, signal?: AbortSignal): Promise<void> {
     const url = await audioUrl(id, path)
     signal?.throwIfAborted()
-    audio.src = url
-    audio.currentTime = 0
-    await new Promise<void>((resolve, reject) => {
-      const clean = () => { clearTimeout(clock); audio.onended = null; audio.onerror = null; signal?.removeEventListener('abort', abort) }
-      const fail = (error: unknown) => { clean(); audio.pause(); reject(error) }
-      const abort = () => fail(signal?.reason || new DOMException('Playback cancelled', 'AbortError'))
-      const clock = window.setTimeout(() => fail(new Error('Lesson audio timed out')), 45000)
-      audio.onended = () => { clean(); resolve() }
-      audio.onerror = () => fail(new Error('Miss Julie audio could not play'))
-      signal?.addEventListener('abort', abort, { once: true })
-      void audio.play().catch(fail)
-    })
+    await playAudioUrl(url, audio, signal)
   },
   async prepare(input: { activityId: string; replay: boolean; selected?: string; audio?: Blob; durationMs?: number; timeSpentMs?: number; noSpeech?: boolean }): Promise<KGPreparedAttempt> {
     let audioBase64: string | undefined
@@ -111,7 +138,7 @@ export const kgAlphabetService = {
     return kgRequest((requestSignal) => apiClient<KGAttemptResponse>('/kg-alphabet/attempt', {
       method: 'POST', body: prepared.body, signal: requestSignal,
       headers: playbackId ? { 'X-KG-Intro-Playback': playbackId } : {},
-    }), signal)
+    }), signal, { retries: 1, timeoutMs: 65000 })
   },
   async submit(input: { activityId: string; replay: boolean; selected?: string; audio?: Blob; durationMs?: number; timeSpentMs?: number }): Promise<KGAttemptResponse> {
     return this.submitPrepared(await this.prepare(input))

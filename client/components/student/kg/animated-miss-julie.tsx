@@ -1,17 +1,14 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
-/** Reusable tiny asset-swap animation for the original Miss Julie artwork.
- * Mouth movement is stylized speaking motion, not phoneme-accurate lip sync.
- * Requires no canvas, WebGL or third-party animation video downloads.
- */
+/** These clips are pose animations, NOT audio-aligned phoneme lip-sync. */
 export type MissJulieState = 'idle' | 'speaking' | 'listening' | 'thinking' | 'pointing' | 'encouraging' | 'celebrating'
 
 const poses: Record<MissJulieState, string> = {
   idle: '/miss-julie/welcome.webp',
-  speaking: '/miss-julie/speaking.webp',
+  speaking: '/miss-julie/welcome.webp', // neutral face after the initial short speaking gesture
   listening: '/miss-julie/listening.webp',
   thinking: '/miss-julie/thinking.webp',
   pointing: '/miss-julie/pointing.webp',
@@ -20,29 +17,30 @@ const poses: Record<MissJulieState, string> = {
 }
 
 export function AnimatedMissJulie({ state, reducedMotion = false }: { state: MissJulieState; reducedMotion?: boolean }) {
-  const [videoFailed, setVideoFailed] = useState(false)
-  useEffect(() => { setVideoFailed(false) }, [state])
-  // Set NEXT_PUBLIC_MISS_JULIE_ANIMATIONS=1 only after actual optimized WebM clips
-  // have been copied into public/miss-julie/animations/<state>.webm.
-  // Silent loops reflect teacher state; actual spoken audio is handled separately.
-  const videoReady = process.env.NEXT_PUBLIC_MISS_JULIE_ANIMATIONS === '1' && !reducedMotion && !videoFailed
+  const [playing, setPlaying] = useState(false)
+  const [failed, setFailed] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  useEffect(() => { setPlaying(false); setFailed(false) }, [state, reducedMotion])
+  const active = !reducedMotion && !failed
+  const shortGesture = state === 'speaking' || state === 'encouraging' || state === 'pointing'
   return <div className={`kg-alpha-teacher-image kg-julie-animated is-${state}`} data-julie-state={state}>
-    {videoReady ? <video
-      key={state}
-      className="kg-julie-animated__video"
-      src={`/miss-julie/animations/${state}.webm`}
-      autoPlay muted loop playsInline disablePictureInPicture preload="metadata"
-      aria-label={`Miss Julie ${state}`}
-      onError={() => setVideoFailed(true)}
-    /> : <Image
-      className="kg-julie-animated__pose"
-      src={poses[state]}
-      alt={`Miss Julie ${state === 'idle' ? 'welcoming you' : state}`}
-      width={390}
-      height={500}
-      priority={state === 'idle'}
-      sizes="(max-width: 760px) 35vw, 390px"
-    />}
+    {!playing && <Image className="kg-julie-animated__pose"
+      src={poses[state]} alt={`Miss Julie ${state}`} width={420} height={540}
+      priority={state === 'idle'} sizes="(max-width:760px) 30vw,420px" />}
+    {active ? <video ref={videoRef} key={state} className="kg-julie-animated__video"
+      style={{ opacity: playing ? 1 : 0, pointerEvents: 'none' }}
+      src={`/miss-julie-animations/${state}.webm`} autoPlay muted
+      loop={!shortGesture && state !== 'celebrating'} playsInline
+      disablePictureInPicture preload="metadata" aria-hidden="true"
+      onPlaying={() => setPlaying(true)} onError={() => { setPlaying(false); setFailed(true) }}
+      onTimeUpdate={(event) => {
+        // The generated speaking clip contains big, repeated hand gestures.
+        // Show only its short natural opening, then rest on the calm neutral pose.
+        if (shortGesture && event.currentTarget.currentTime >= 2.4) {
+          event.currentTarget.pause(); setPlaying(false)
+        }
+      }}
+      onEnded={() => setPlaying(false)} onStalled={() => setPlaying(false)} /> : null}
     {state === 'speaking' && !reducedMotion ? <span className="kg-julie-animated__speaking-dots" aria-hidden="true"><i /><i /><i /></span> : null}
   </div>
 }

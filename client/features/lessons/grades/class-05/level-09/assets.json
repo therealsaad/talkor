@@ -1,0 +1,16 @@
+{
+  "levelId": "g05-l09",
+  "status": "authored-assets-pending",
+  "assetsRoot": "/lessons/class-05/level-09/",
+  "introVideo": null,
+  "images": [],
+  "animations": [],
+  "audio": [],
+  "music": null,
+  "recommended": {
+    "julieAnimations": "/miss-julie-animations",
+    "dynamicFeedback": "azure-uncached",
+    "preauthoredTTS": "S3 CDN"
+  },
+  "note": "Do not add placeholders pointing at missing assets. Upload approved optimized media here."
+}
