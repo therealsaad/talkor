@@ -1,6 +1,6 @@
 import type { KGAlphabetState } from './kg-alphabet-service'
 
-/** UI-only school preview. Never writes to the backend or claims to test STT/S3. */
+/** Static staff preview state; audio, speech recognition and evaluation now run through authenticated backend APIs. */
 export const KG_PREVIEW_AUDIO: Record<string, string> = {
   welcome: 'Hello, superstar! Welcome to our ABCD adventure!',
   'how-to-play': 'Listen to me, then say the word. I am listening!',
@@ -49,15 +49,3 @@ export function makeKGPreviewState(currentIndex = 0): KGAlphabetState {
   }
 }
 
-/** Uses the browser's available system voice, not AI4Bharat; preview only. */
-export async function playKGPreviewSpeech(text: string): Promise<void> {
-  if (!('speechSynthesis' in window) || !('SpeechSynthesisUtterance' in window)) return
-  window.speechSynthesis.cancel()
-  await new Promise<void>((resolve) => {
-    const speech = new SpeechSynthesisUtterance(text)
-    speech.lang = 'en-IN'; speech.rate = .82; speech.pitch = 1.15
-    speech.onend = () => resolve()
-    speech.onerror = () => resolve()
-    window.speechSynthesis.speak(speech)
-  })
-}

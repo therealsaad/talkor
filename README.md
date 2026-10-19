@@ -1,3 +1,17 @@
+# Talkora — 110-Level Team Workspaces (Oct 19 2026)
+
+**Actual user GitHub ZIP used as baseline.** This is the original Talkora V4 UI plus the latest focused KG voice/animation patch and a **new independent editable workspace for every KG–Class 10 level**.
+
+- **Teammates:** start with [`docs/TEAM_QUICK_START.md`](docs/TEAM_QUICK_START.md).
+- **Full engineering architecture:** [`docs/110_LEVEL_TEAM_ARCHITECTURE.md`](docs/110_LEVEL_TEAM_ARCHITECTURE.md).
+- **20/20 requirement evidence and blockers:** [`docs/20_REQUIREMENTS_VERIFICATION.md`](docs/20_REQUIREMENTS_VERIFICATION.md).
+- **Verify offline:** `node tools/verify-110-levels.cjs`.
+- **Preview themes (staff login):** `/school/curriculum-map` → choose grade/level → Open design workspace.
+
+**No student route was replaced.** Empty grade-level folders are draft authoring workspaces, **not 110 falsely completed lessons**. KG Level 1 and existing Class 4 screens retain their own runtime paths. Do not deploy without production builds and live security/audio/microphone tests.
+
+---
+
 # Talkora V4 — Original UI + 110-Level Connected Curriculum Map
 
 This version is based on the **actual V3 source previously delivered**, in turn based on the original `clientnew.zip` and `backendnew.zip`. It retains the working Next.js student/school UI, Class 4 modules, KG ABCD flow, Node/Express/Mongo models and auth, S3 voice, teacher/parent progress reports, the scheduler-ready CSV export, spoken KG homework and bounded audio cache.

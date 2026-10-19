@@ -37,12 +37,14 @@ export class AzureVoiceProvider implements VoiceProvider {
     }
   }
 
-  private async generate(text: string): Promise<Buffer> {
+  private async generate(text: string, kindergarten = false): Promise<Buffer> {
     const s = this.settings()
     if (!s.key) throw ApiError.provider('Azure Speech is not configured')
 
     const url = `https://${s.region}.tts.speech.microsoft.com/cognitiveservices/v1`
-    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-IN"><voice name="${s.voice}"><prosody rate="${s.rate}" pitch="${s.pitch}">${escapeXml(text)}</prosody></voice></speak>`
+    const rate = kindergarten ? (process.env.KG_AZURE_SPEECH_RATE?.trim() || "+5%") : s.rate
+    const pitch = kindergarten ? (process.env.KG_AZURE_SPEECH_PITCH?.trim() || "+6%") : s.pitch
+    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-IN"><voice name="${s.voice}"><prosody rate="${rate}" pitch="${pitch}">${escapeXml(text)}</prosody></voice></speak>`
 
     let response: Response
     try {
@@ -55,7 +57,7 @@ export class AzureVoiceProvider implements VoiceProvider {
           'User-Agent': 'Talkora',
         },
         body: ssml,
-        signal: AbortSignal.timeout(s.timeoutMs),
+        signal: AbortSignal.timeout(kindergarten ? Math.max(5000, Math.min(45000, Number(process.env.KG_AZURE_TTS_TIMEOUT_MS || 25000))) : s.timeoutMs),
       })
     } catch (error) {
       logger.warn('Azure TTS request failed', { error })
@@ -73,6 +75,13 @@ export class AzureVoiceProvider implements VoiceProvider {
 
   private contentType(): string {
     return this.settings().format.startsWith('audio-') ? 'audio/mpeg' : 'audio/wav'
+  }
+
+  /** KG speech is transient: no MongoDB, no S3, no persistent audio cache. */
+  async synthesizeUncached(text: string): Promise<{ audio: Buffer; contentType: string }> {
+    const normalized = text.replace(/\s+/g, ' ').trim()
+    if (!normalized || normalized.length > 320) throw ApiError.badRequest('KG voice text must be 1–320 characters')
+    return { audio: await this.generate(normalized, true), contentType: this.contentType() }
   }
 
   private identity(text: string) {

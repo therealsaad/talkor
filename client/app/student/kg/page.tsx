@@ -5,13 +5,14 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { ArrowLeft, Check, Headphones, LoaderCircle, Mic, Play, RotateCcw, RotateCw, Sparkles, Volume2 } from 'lucide-react'
+import { ArrowLeft, Check, Headphones, LoaderCircle, Mic, Play, RotateCcw, RotateCw, Sparkles, Volume2, VolumeX } from 'lucide-react'
 import { watchVoiceActivity } from '@/lib/voice-activity'
 import { kgAlphabetService, type KGAlphabetState, type KGOutcome, type KGPreparedAttempt, type KGAttemptResponse } from '@/services/kg-alphabet-service'
 import { requestKGMicrophone, KG_SESSION_END_EVENT } from '@/lib/kg-microphone'
 import { AnimatedMissJulie } from '@/components/student/kg/animated-miss-julie'
+import { useKGAmbience } from '@/hooks/use-kg-ambience'
 import { AUTH_INVALIDATED_EVENT, ApiError, getStoredToken, handleUnauthorizedResponse } from '@/lib/api-client'
-import { KG_PREVIEW_AUDIO, makeKGPreviewState, playKGPreviewSpeech } from '@/services/kg-alphabet-preview'
+import { makeKGPreviewState } from '@/services/kg-alphabet-preview'
 import '@/components/student/kg/kg-alphabet.css'
 
 const INTRO_VIDEO = '/kg/videos/fullkg.mp4'
@@ -39,7 +40,8 @@ function stepAt(index: number) {
 function audioForStep(index: number): string[] {
   const step = stepAt(index)
   if (step.mode === 'speak') {
-    return [`letter-${step.letter.toLowerCase()}`, `word-${step.word}`, step.id]
+    // One cheerful prompt instead of three slow Azure requests per letter.
+    return [step.id]
   }
   return [...(index === 4 ? ['recognize-intro', 'puzzle-intro'] : []), step.id]
 }
@@ -67,6 +69,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
   const replayIntroRequest = params.get('intro') === 'replay'
   const [data, setData] = useState<KGAlphabetState | null>(null)
   const [phase, setPhase] = useState<Phase>('loading')
+  const { musicEnabled, setMusicEnabled, unlockMusic, silenceForMicrophone, beginVoice, stopMusic } = useKGAmbience(phase)
   const [index, setIndex] = useState(0)
   const [replay, setReplay] = useState(false)
   const [replayAll, setReplayAll] = useState(false)
@@ -74,6 +77,8 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
   const [micError, setMicError] = useState('')
   const [videoError, setVideoError] = useState('')
   const [mapError, setMapError] = useState('')
+  const [heardTranscript, setHeardTranscript] = useState('')
+  const autoIntroAttemptRef = useRef(-1)
   const [videoAttempt, setVideoAttempt] = useState(0)
   const videoRef = useRef<HTMLVideoElement>(null)
   const introFrameRef = useRef<HTMLDivElement>(null)
@@ -151,12 +156,13 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       setReplay(state.introSeen && (all || single)); replayRef.current = state.introSeen && (all || single)
       setReplayAll(state.introSeen && all); replayAllRef.current = state.introSeen && all
       introReplayRef.current = introReplay
-      void kgAlphabetService.beginIntro().catch(() => {
+      // Wait for the authenticated watch ticket BEFORE attempting automatic playback.
+      // Every entry, including a replay, must complete a new server-side intro ticket.
+      void kgAlphabetService.beginIntro().then(() => {
+        if (alive) setPhase('intro')
+      }).catch(() => {
         if (alive) { setVideoError('Could not prepare your full-screen story. Check the connection and reload.'); setPhase('intro-error') }
       })
-      // Every new KG Level 1 entry shows the complete story before activities,
-      // even when the learner has watched it in a previous session.
-      setPhase('intro')
     }).catch(() => {
       if (alive) { setFeedback('I couldn’t open your letter garden. Check your connection and try again.'); setPhase('error') }
     })
@@ -167,13 +173,14 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       pendingSubmissionRef.current = null; pendingResultRef.current = null
       kgAlphabetService.clearAudioCache()
       audioRef.current?.pause()
+      stopMusic()
       window.speechSynthesis?.cancel()
       videoRef.current?.pause()
       if (document.fullscreenElement === introFrameRef.current) void document.exitFullscreen?.().catch(() => undefined)
       stopRecording()
       releaseMic()
     }
-  }, [replayRequest, replayIntroRequest, stopRecording, releaseMic, preview, previewStartIndex])
+  }, [replayRequest, replayIntroRequest, stopRecording, releaseMic, stopMusic, preview, previewStartIndex])
 
   const isIntro = INTRO_PHASES.has(phase)
   useEffect(() => {
@@ -196,6 +203,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       stopRecording()
       releaseMic()
       audioRef.current?.pause()
+      stopMusic()
       setFeedback('I paused the microphone when you left the garden. Tap Try again when you are ready.')
       setPhase('error')
     }
@@ -203,7 +211,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       generation.current++
       requestRef.current?.abort()
       pendingSubmissionRef.current = null; pendingResultRef.current = null
-      stopRecording(); releaseMic(); audioRef.current?.pause()
+      stopRecording(); releaseMic(); audioRef.current?.pause(); stopMusic()
       window.speechSynthesis?.cancel()
       kgAlphabetService.clearAudioCache()
     }
@@ -228,14 +236,17 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       window.removeEventListener(AUTH_INVALIDATED_EVENT, endSession)
       window.removeEventListener(KG_SESSION_END_EVENT, endSession)
     }
-  }, [releaseMic, stopRecording, preview])
+  }, [releaseMic, stopRecording, stopMusic, preview])
 
   const playClip = useCallback(async (id: string) => {
     if (recorderRef.current?.state === 'recording' || micStartingRef.current) throw new Error('Recording must stop before playback')
-    if (preview) { await playKGPreviewSpeech(KG_PREVIEW_AUDIO[id] || id); return }
-    if (!audioRef.current) audioRef.current = new Audio()
-    await kgAlphabetService.play(id, audioRef.current, stateRef.current?.audio[id]?.url, requestRef.current?.signal)
-  }, [preview])
+    const releaseDucking = beginVoice()
+    try {
+      if (!audioRef.current) audioRef.current = new Audio()
+      if (preview) await kgAlphabetService.previewPlay(id, audioRef.current, requestRef.current?.signal)
+      else await kgAlphabetService.play(id, audioRef.current, stateRef.current?.audio[id]?.url, requestRef.current?.signal)
+    } finally { releaseDucking() }
+  }, [preview, beginVoice])
 
   const returnToMap = async () => {
     if (preview) { generation.current++; window.speechSynthesis?.cancel(); onPreviewBack?.(); return }
@@ -245,17 +256,10 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     stopRecording()
     releaseMic()
     audioRef.current?.pause()
+    stopMusic()
     setMapError('')
-    setPhase('julie')
-    try {
-      await playClip('navigation-map')
-    } catch {
-      setMapError('Miss Julie could not speak just now. Tap My garden to try again.')
-      setFeedback('The garden path is waiting. Try My garden once more.')
-    } finally {
-      // Navigation remains available even if this optional navigation clip is missing.
-      router.push('/student/kg/map')
-    }
+    // Never block the replay map behind an optional S3 navigation voice clip.
+    router.push('/student/kg/map')
   }
 
   const beginStep = useCallback(async (stepIndex: number) => {
@@ -269,23 +273,11 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     silenceRetriesRef.current = 0
     stepStartedAtRef.current = performance.now()
     cursorRef.current = stepIndex; setIndex(stepIndex)
-    setFeedback(''); setMicError('')
-    const nextIndex = stepIndex + 1 < STEP_COUNT ? stepIndex + 1 : -1
-    const openingAudio = stepIndex === 0 ? replayAllRef.current ? ['replay-level'] : ['welcome', 'how-to-play'] : []
-    const ids = [
-      ...openingAudio,
-      ...audioForStep(stepIndex),
-      ...(nextIndex >= 0 ? audioForStep(nextIndex) : []),
-      'great', 'try-again', 'repeat', 'silence',
-      ...(stepIndex === STEP_COUNT - 1 ? ['level-complete', 'celebrate'] : []),
-    ]
+    setFeedback(''); setMicError(''); setHeardTranscript('')
+    const openingAudio = stepIndex === 0 && replayAllRef.current ? ['replay-level'] : []
     setPhase('julie')
     try {
-      if (!preview) {
-        // A missing NEXT clip cannot prevent the CURRENT clip from playing.
-        ids.forEach((id) => kgAlphabetService.prefetch(id, stateRef.current?.audio[id]?.url))
-        await Promise.all([...openingAudio, ...audioForStep(stepIndex)].map((id) => kgAlphabetService.ensure(id, stateRef.current?.audio[id]?.url)))
-      }
+      // One short Azure line per step; don't queue many prerecorded clips.
       if (generation.current !== token) return
       for (const id of [...openingAudio, ...audioForStep(stepIndex)]) {
         await playClip(id)
@@ -295,7 +287,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       else setPhase('touch')
     } catch {
       if (generation.current !== token) return
-      setFeedback(friendlyAudioError())
+      setFeedback('Miss Julie could not play audio. Check Azure Speech credentials on the backend and try again.')
       setPhase('error')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -319,8 +311,9 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       } else if ((updated?.currentIndex ?? 0) >= STEP_COUNT) {
         setPhase('finished')
       } else {
-        // Permission is requested explicitly by the next user gesture.
-        setPhase('ready')
+        // Start ABCD immediately after the compulsory film; the browser may still
+        // ask the child/teacher once for microphone permission.
+        await beginStep(updated?.currentIndex ?? 0)
       }
     } catch {
       setVideoError('The story finished, but your progress did not save yet. Tap Continue to try again.')
@@ -383,10 +376,20 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       setPhase('intro-playing')
     } catch {
       video.pause()
-      setVideoError('Fullscreen or video playback was blocked. Use Chrome or Edge, allow fullscreen, and tap Play again.')
+      setVideoError('Your browser needs one tap to enable fullscreen sound. Tap the story to begin.')
       setPhase('intro-error')
     }
   }
+
+  // Best-effort direct entry. Browsers may require a real tap for unmuted media
+  // and Fullscreen API; in managed labs, configure browser kiosk permissions.
+  useEffect(() => {
+    if (phase !== 'intro' || autoIntroAttemptRef.current === videoAttempt) return
+    if (!preview && !kgAlphabetService.hasIntroTicket()) return
+    autoIntroAttemptRef.current = videoAttempt
+    void startVideo()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, videoAttempt, preview])
 
   const retryVideo = async () => {
     if (introEndedRef.current) { await finishIntro(); return }
@@ -410,12 +413,18 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     pendingSubmissionRef.current = { prepared, stepIndex }
     setPhase('checking')
     try {
-      const result = await kgAlphabetService.submitPrepared(prepared, requestRef.current?.signal)
+      const response = preview
+        ? await kgAlphabetService.previewSubmitPrepared(prepared, requestRef.current?.signal)
+        : await kgAlphabetService.submitPrepared(prepared, requestRef.current?.signal)
       if (generation.current !== token) return
+      const result: KGAttemptResponse = preview
+        ? { ...response, state: stateRef.current || makeKGPreviewState(stepIndex), replay: false }
+        : response as KGAttemptResponse
       pendingSubmissionRef.current = null
       pendingResultRef.current = { result, stepIndex }
       stateRef.current = result.state; setData(result.state)
-      await handleOutcome(result.outcome, stepIndex, token, result.feedbackAudioId, result.teachingHint)
+      setHeardTranscript(result.transcript || '')
+      await handleOutcome(result.outcome, stepIndex, token, result.feedbackAudioId, result.teachingHint, result.feedbackText, result.feedbackAudioBase64)
     } catch (error) {
       if (generation.current !== token) return
       if (error instanceof ApiError && error.status === 400) pendingSubmissionRef.current = null
@@ -429,7 +438,11 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
           return
         } catch { /* Keep a recoverable retry if refreshing state is also offline. */ }
       }
-      setFeedback('I couldn’t hear that just now. Let’s try once more!')
+      setFeedback(error instanceof ApiError && error.status >= 500
+        ? 'Speech recognition could not connect. Check Groq STT in the backend, then tap Try again.'
+        : error instanceof ApiError && error.status === 403
+          ? 'This microphone test needs a signed-in teacher or student.'
+          : 'I couldn’t check that answer. Tap Try again.')
       setPhase('error')
     }
   }
@@ -446,8 +459,8 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
 
   const startListening = useCallback(async (stepIndex: number, token: number) => {
     if (generation.current !== token) return
-    if (preview) { setPhase('listening'); return }
     if (recorderRef.current?.state === 'recording' || micStartingRef.current) return
+    silenceForMicrophone()
     if (audioRef.current && !audioRef.current.paused) return
     micStartingRef.current = true
     try {
@@ -462,8 +475,6 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       recorderRef.current = recorder
       const chunks: Blob[] = []
       const startedAt = performance.now()
-      let heardSpeech = false
-      let detectorAvailable = true
       recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data) }
       recorder.onerror = (event) => { recorder.onstop = null; stopRecording(); releaseMic(); if (generation.current === token) { const message = friendlyMicrophoneError(event); setMicError(message); setFeedback(message); setPhase('error') } }
       recorder.onstop = () => {
@@ -471,7 +482,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
         const blob = new Blob(chunks, { type: recorder.mimeType || mimeType || 'audio/webm' })
         releaseMic()
         if (generation.current !== token) return
-        if ((detectorAvailable && !heardSpeech) || blob.size < 500) {
+        if (blob.size < 800) {
           void submitSpeech(stepIndex, undefined, duration, currentStepTimeMs(), token, true)
           return
         }
@@ -482,7 +493,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       setPhase('listening')
       stopWatcher.current = watchVoiceActivity(stream, () => { if (recorder.state === 'recording') recorder.stop() },
         { silenceMs: 1100, minimumSpeechMs: 350, noSpeechTimeoutMs: 6500, speechThreshold: .017,
-          resumeContext: true, sampleIntervalMs: 50, onUnavailable: () => { detectorAvailable = false }, onSpeech: () => { heardSpeech = true } })
+          resumeContext: true, sampleIntervalMs: 50, onUnavailable: () => undefined })
       hardStop.current = window.setTimeout(() => { if (recorder.state === 'recording') recorder.stop() }, 9800)
     } catch (error) {
       releaseMic()
@@ -493,11 +504,21 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
         setPhase('error')
       }
     } finally { micStartingRef.current = false }
-  }, [playClip, releaseMic, submitSpeech, preview])
+  }, [playClip, releaseMic, submitSpeech, silenceForMicrophone, preview])
 
   retryListeningRef.current = (stepIndex, token) => { void startListening(stepIndex, token) }
 
-  const handleOutcome = async (outcome: KGOutcome, stepIndex: number, token: number, serverFeedbackId?: string, teachingHint?: string | null) => {
+  const speakFeedback = async (audioId: string, audioBase64?: string | null) => {
+    if (!audioBase64) return playClip(audioId)
+    const releaseDucking = beginVoice()
+    try {
+      if (!audioRef.current) audioRef.current = new Audio()
+      await kgAlphabetService.playFeedback(audioBase64, audioRef.current, requestRef.current?.signal)
+    } finally { releaseDucking() }
+  }
+
+  const handleOutcome = async (outcome: KGOutcome, stepIndex: number, token: number, serverFeedbackId?: string,
+    teachingHint?: string | null, feedbackText?: string, feedbackAudioBase64?: string | null) => {
     if (generation.current !== token) return
     const success = outcome === 'correct'
     const feedbackId = serverFeedbackId || (success ? 'great' : outcome === 'unclear' ? 'repeat' : 'try-again')
@@ -507,7 +528,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       setPhase(retryNumber < 2 ? 'julie' : 'error')
       if (retryNumber < 2) {
         try {
-          await playClip('silence')
+          await speakFeedback('silence', feedbackAudioBase64)
           if (generation.current !== token) return
           pendingResultRef.current = null
           stepStartedAtRef.current = performance.now()
@@ -516,12 +537,12 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       } else pendingResultRef.current = null
       return
     }
-    setFeedback(success ? 'Wonderful! You found it!' : teachingHint || (outcome === 'unclear' ? 'Let’s try that word together.' : 'Good try! Listen and have another go!'))
+    setFeedback(feedbackText || (success ? 'Wonderful! You found it!' : teachingHint || (outcome === 'unclear' ? 'Let’s try that word together.' : 'Good try! Listen and have another go!')))
     setPhase('feedback')
-    try { await playClip(feedbackId) }
+    try { await speakFeedback(feedbackId, feedbackAudioBase64) }
     catch {
       if (generation.current !== token) return
-      setFeedback(friendlyAudioError())
+      setFeedback('Miss Julie could not play audio. Check Azure Speech credentials on the backend and try again.')
       setPhase('error')
       return
     }
@@ -551,6 +572,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
   const startAdventure = async () => {
     if (busy.current || !stateRef.current) return
     if (!preview && !stateRef.current.introSeen) { setPhase('intro'); return }
+    unlockMusic() // authorized by the Start/Continue click; never autoplay during the intro
     if (cursorRef.current >= STEP_COUNT) { setPhase('finished'); return }
     busy.current = true
     const requestToken = ++generation.current
@@ -558,7 +580,8 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     requestRef.current = new AbortController()
     setMicError('')
     try {
-      if (!preview && stepAt(cursorRef.current).mode === 'speak') {
+      if (stepAt(cursorRef.current).mode === 'speak') {
+        silenceForMicrophone()
         micStartingRef.current = true
         const permission = await requestKGMicrophone(requestRef.current.signal)
         permission.getTracks().forEach((track) => track.stop())
@@ -586,7 +609,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     requestRef.current?.abort(); requestRef.current = new AbortController()
     try {
       if (pending) await sendPrepared(pending.stepIndex, pending.prepared, token)
-      else if (result) await handleOutcome(result.result.outcome, result.stepIndex, token, result.result.feedbackAudioId, result.result.teachingHint)
+      else if (result) await handleOutcome(result.result.outcome, result.stepIndex, token, result.result.feedbackAudioId, result.result.teachingHint, result.result.feedbackText, result.result.feedbackAudioBase64)
     } finally { busy.current = false }
   }
 
@@ -602,10 +625,8 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
         await sendPrepared(stepIndex, prepared, token)
         return
       }
-      const result = { outcome: (selected === stepAt(stepIndex).word ? 'correct' : 'incorrect') as KGOutcome, state: makeKGPreviewState(selected === stepAt(stepIndex).word ? stepIndex + 1 : stepIndex) }
-      if (generation.current !== token) return
-      stateRef.current = result.state; setData(result.state)
-      await handleOutcome(result.outcome, stepIndex, token)
+      const prepared = await kgAlphabetService.prepare({ activityId: stepAt(stepIndex).id, replay: false, selected, timeSpentMs: currentStepTimeMs() })
+      await sendPrepared(stepIndex, prepared, token)
     } catch {
       if (generation.current === token) { setFeedback('The garden needs a moment. Tap Try again to stay on this puzzle.'); setPhase('error') }
     } finally { busy.current = false }
@@ -670,8 +691,8 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
         {videoError ? <p className="kg-friendly-alert" role="alert">{videoError}</p> : null}
         {phase === 'saving-intro' ? <p className="kg-intro-saving" role="status"><LoaderCircle size={20} /> Saving your story progress…</p> : null}
         {phase === 'intro-paused' ? <button type="button" className="kg-story-play" onClick={() => void startVideo()}><Play size={19} fill="currentColor" /> Continue full screen</button> : null}
-        {phase === 'intro' ? <button type="button" className="kg-story-play" onClick={() => void startVideo()}><Play size={19} fill="currentColor" /> Play full-screen story</button> : null}
-        {phase === 'intro-error' && !introEndedRef.current ? <button type="button" className="kg-story-play" onClick={retryVideo}><RotateCw size={19} /> Try the story again</button> : null}
+        {phase === 'intro' ? <p className="kg-intro-saving" role="status">Opening your fullscreen story…</p> : null}
+        {phase === 'intro-error' && !introEndedRef.current ? <button type="button" className="kg-story-play" onClick={() => { if (kgAlphabetService.hasIntroTicket()) void startVideo(); else void retryVideo() }}><Play size={19} /> Tap to allow fullscreen</button> : null}
         {phase === 'intro-error' && introEndedRef.current ? <button type="button" className="kg-story-play" onClick={retryVideo}><Check size={19} /> Save and continue</button> : null}
       </div>
     </div>
@@ -687,7 +708,12 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
         <span>LEVEL 1 · ABCD</span>
         <div className="kg-alpha-step-bar">{Array.from({ length: STEP_COUNT }, (_, i) => <i key={i} className={i < index ? 'done' : i === index ? 'current' : ''} />)}</div>
       </div>
-      {data?.introSeen && !preview ? <Link className="kg-alpha-replay-intro" href="/student/kg?intro=replay"><RotateCw size={16} /> Replay story</Link> : <span className="kg-alpha-level-pill"><Sparkles size={15} /> LETTER GARDEN</span>}
+      <div className="kg-alpha-audio-actions">
+        <button type="button" className="kg-alpha-music-toggle" onClick={() => setMusicEnabled((enabled) => !enabled)} aria-pressed={musicEnabled} aria-label={musicEnabled ? 'Mute background music' : 'Enable background music'} title="Music only — Miss Julie’s voice stays on">
+          {musicEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />} <span>Music {musicEnabled ? 'on' : 'off'}</span>
+        </button>
+        {data?.introSeen && !preview ? <Link className="kg-alpha-replay-intro" href="/student/kg?intro=replay"><RotateCw size={16} /> Replay story</Link> : <span className="kg-alpha-level-pill"><Sparkles size={15} /> LETTER GARDEN</span>}
+      </div>
     </header>
 
     {mapError ? <p className="kg-alpha-recoverable" role="alert">{mapError}</p> : null}
@@ -713,22 +739,29 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
           </div>
         </aside>
 
-        <section className="kg-alpha-quest" aria-label="Letter Garden activity">
+        <section className="kg-alpha-quest kg-alpha-teaching-board" aria-label="Miss Julie’s interactive teaching board">
           <AnimatePresence mode="wait">
             {current && !isPictureRound ? <motion.div key={current.id} className="kg-alpha-learning" initial={reduceMotion ? false : { opacity: 0, y: 18, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={reduceMotion ? undefined : { opacity: 0, y: -10 }} transition={{ duration: .32 }}>
               <span className="kg-alpha-activity-label"><Headphones size={17} /> LISTEN · LEARN · SAY IT</span>
-              <div className="kg-alpha-lesson-art" style={{ '--letter-color': data?.letters.find((item) => item.letter === current.letter)?.color || '#ef8cad' } as React.CSSProperties}>
-                <div className="kg-alpha-letter-orb"><span>{current.letter}</span><small>{current.letter} is for</small></div>
-                <Image src={`/kg/pictures/level-1/${current.word}.webp`} alt={`A friendly 3D cartoon ${current.word}`} width={480} height={450} priority sizes="(max-width: 760px) 42vw, 360px" />
+              <div className="kg-alpha-lesson-art kg-board-lesson" style={{ '--letter-color': data?.letters.find((item) => item.letter === current.letter)?.color || '#ef8cad' } as React.CSSProperties}>
+                <button type="button" className="kg-alpha-letter-orb kg-board-tappable"
+                  aria-label={`Hear the letter ${current.letter} again`} title="Touch the letter to hear it again"
+                  disabled={phase === 'listening' || phase === 'julie' || phase === 'checking'}
+                  onClick={() => void beginStep(cursorRef.current)}><span>{current.letter}</span><small>{current.letter} is for</small></button>
+                <button type="button" className="kg-board-object kg-board-tappable"
+                  aria-label={`Hear ${current.word} again`} title={`Touch ${current.word} to hear it again`}
+                  disabled={phase === 'listening' || phase === 'julie' || phase === 'checking'}
+                  onClick={() => void beginStep(cursorRef.current)}>
+                  <Image src={`/kg/pictures/level-1/${current.word}.webp`} alt={`A friendly 3D cartoon ${current.word}`} width={480} height={450} priority sizes="(max-width: 760px) 42vw, 360px" />
+                </button>
               </div>
               <h1><span>{current.letter}</span> for <strong>{current.word}!</strong></h1>
               <p>Listen to Miss Julie, then say <b>{current.word}</b>.</p>
               {phase === 'ready' ? <button type="button" className="kg-story-play" onClick={() => void startAdventure()}><Mic size={20} /> Allow microphone &amp; {index ? 'continue' : 'start'}</button> : null}
               {phase === 'error' ? <button type="button" className="kg-story-play" onClick={() => void retryLesson()}><RotateCw size={19} /> Try again</button> : null}
-              {phase === 'listening' ? preview
-                ? <button type="button" className="kg-mic-pulse" onClick={() => void handleOutcome('correct', cursorRef.current, generation.current)}><Mic size={22} /><span>I said it!</span></button>
-                : <button type="button" className="kg-mic-pulse" onClick={stopRecording} aria-label="I have finished saying the word"><Mic size={22} /><span>I said it!</span></button> : null}
+              {phase === 'listening' ? <button type="button" className="kg-mic-pulse" onClick={stopRecording} aria-label="Finish recording my answer"><Mic size={22} /><span>Done speaking</span></button> : null}
               {phase === 'julie' || phase === 'checking' ? <div className="kg-alpha-status"><LoaderCircle className="kg-spin" size={19} /> {phase === 'julie' ? 'Miss Julie is speaking…' : 'Listening to your answer…'}</div> : null}
+              {heardTranscript ? <p className="kg-alpha-heard">Miss Julie heard: “{heardTranscript}”</p> : null}
               {phase === 'feedback' ? <div className="kg-alpha-status is-feedback"><Sparkles size={18} /> {feedback}</div> : null}
             </motion.div> : current && isPictureRound ? <motion.div key={current.id} className="kg-alpha-recognition" initial={reduceMotion ? false : { opacity: 0, y: 18, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={reduceMotion ? undefined : { opacity: 0, y: -10 }} transition={{ duration: .32 }}>
               <span className="kg-alpha-activity-label"><Sparkles size={17} /> {current.mastery ? 'FINAL MASTERY PUZZLE' : 'MIXED PICTURE REVIEW'}</span>

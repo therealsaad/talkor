@@ -12,6 +12,8 @@ import { KGIntroPlayback } from '../models/KGIntroPlayback'
 import { AUDIO_IDS, AUDIO_LINES, LETTERS, activityAt, audioKey, evaluateKGSpeech, KG_ALPHABET_VERSION, KG_AUDIO_VERSION, type AudioId } from '../kg/alphabet-content'
 import { isAuthorizedKGAlphabetStudent } from '../services/kg-pilot-access'
 import { getKGStaticAudio } from '../services/kg-static-audio-cache'
+import { generateKGFeedback, type KGFeedbackInput } from '../services/kg-feedback.service'
+import { AzureVoiceProvider } from '../providers/voice/AzureVoiceProvider'
 import { KGSpeechService } from '../services/kg-speech.service'
 import { kgTeachingHint } from '../services/kg-teaching-hint'
 import { env } from '../config/env'
@@ -66,6 +68,70 @@ function validateSubmissionId(value: unknown): string {
 
 function feedbackFor(outcome: string, reason?: string) {
   return outcome === 'correct' ? 'great' : outcome === 'incorrect' ? 'try-again' : reason === 'silence' ? 'silence' : 'repeat'
+}
+
+/** Personalized feedback speech is generated on-demand; audio bytes are never persisted. */
+async function spokenFeedback(input: KGFeedbackInput) {
+  const generated = await generateKGFeedback(input)
+  try {
+    const { audio } = await new AzureVoiceProvider().synthesizeUncached(generated.text)
+    return { feedbackText: generated.text, feedbackAudioBase64: audio.toString('base64'), feedbackVoice: 'azure', feedbackSource: generated.source }
+  } catch {
+    // Never roll back an already-graded attempt because TTS is temporarily unavailable.
+    return { feedbackText: generated.text, feedbackAudioBase64: null, feedbackVoice: 'unavailable', feedbackSource: generated.source }
+  }
+}
+
+async function sendKGVoice(res: Response, text: string) {
+  const { audio, contentType } = await new AzureVoiceProvider().synthesizeUncached(text)
+  res.setHeader('Content-Type', contentType)
+  res.setHeader('Content-Length', String(audio.length))
+  res.setHeader('Cache-Control', 'private, no-store')
+  res.setHeader('X-Content-Type-Options', 'nosniff')
+  res.send(audio)
+}
+
+function validatedAudioId(req: Request): AudioId {
+  const id = req.params.id as AudioId
+  if (req.params.version !== KG_AUDIO_VERSION || !AUDIO_IDS.includes(id)) throw ApiError.notFound('Audio clip not found')
+  return id
+}
+
+/** Audio validation shared by student submissions and teacher preview; never accept a transcript as trusted grading input. */
+type KGPreviewOutcome = {
+  activity: NonNullable<ReturnType<typeof activityAt>>
+  outcome: 'correct' | 'incorrect' | 'unclear'
+  selected?: string
+  transcript?: string
+  noSpeech?: boolean
+}
+
+async function previewOutcome(input: Record<string, unknown>): Promise<KGPreviewOutcome> {
+  const activityId = String(input.activityId || '')
+  const activityIndex = Array.from({ length: 8 }, (_, i) => i).find((i) => activityAt(i)?.id === activityId)
+  if (activityIndex === undefined) throw ApiError.badRequest('Unknown KG activity')
+  const activity = activityAt(activityIndex)!
+  if (activity.mode === 'touch') {
+    const selected = String(input.selected || '').toLowerCase().trim().slice(0, 20)
+    if (!LETTERS.some((letter) => letter.word === selected)) throw ApiError.badRequest('Choose one of the four pictures')
+    const outcome = LETTERS.find((item) => item.letter === activity.letter)?.word === selected ? 'correct' as const : 'incorrect' as const
+    return { activity, outcome, selected }
+  }
+  const durationMs = Number(input.durationMs)
+  if (!Number.isFinite(durationMs) || durationMs < 250 || durationMs > 12000) throw ApiError.badRequest('Recording duration must be 0.25–12 seconds')
+  if (input.noSpeech === true) return { activity, outcome: 'unclear' as const, noSpeech: true }
+  const mimeType = String(input.mimeType || '')
+  const audioBase64 = input.audioBase64
+  if (!isSupportedVoiceAudioMimeType(mimeType) || typeof audioBase64 !== 'string' || audioBase64.length < 128 || audioBase64.length > 11_000_000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(audioBase64)) {
+    throw ApiError.badRequest('A valid short microphone recording is required')
+  }
+  const stt = await KGSpeechService.transcribe({ audioBase64, mimeType, durationMs })
+  if (!stt.available) throw ApiError.provider('Speech recognition is temporarily unavailable')
+  const transcript = String(stt.transcript || '').slice(0, 240)
+  const confidence = 'confidence' in stt ? stt.confidence : undefined
+  const unclear = ('uncertain' in stt && stt.uncertain === true) || (typeof confidence === 'number' && confidence < 0.5)
+  const outcome = unclear ? 'unclear' as const : evaluateKGSpeech(transcript, activity.letter, 'word')
+  return { activity, outcome, transcript }
 }
 
 async function applyRecordedProgress(attempt: { studentId: Types.ObjectId; schoolId: Types.ObjectId; activityId: string; outcome: string; replay: boolean; createdAt: Date }) {
@@ -135,10 +201,14 @@ export const KGAlphabetController = {
   }),
   audio: catchAsync(async (req: Request, res: Response) => {
     await studentContext(req)
-    const id = req.params.id as AudioId
-    if (req.params.version !== KG_AUDIO_VERSION || !AUDIO_IDS.includes(id)) throw ApiError.notFound('Audio clip not found')
-    const audio = await getKGStaticAudio(audioKey(id))
-    if (!audio) throw ApiError.notFound('Miss Julie’s lesson audio is temporarily unavailable. Please try again later.')
+    const id = validatedAudioId(req)
+    // KG now defaults to Azure, so newly spoken teaching lines do not use the
+    // old monotone Priya library and are never written to a persistent cache.
+    if ((process.env.KG_VOICE_PROVIDER || 'azure').toLowerCase() !== 's3') return sendKGVoice(res, AUDIO_LINES[id])
+    const audio = await getKGStaticAudio(audioKey(id)).catch(() => null)
+    // For deployments explicitly preferring the old S3 clips, Azure is the
+    // fallback when a recording is absent or the bucket cannot be reached.
+    if (!audio) return sendKGVoice(res, AUDIO_LINES[id])
     const etag = `"${createHash('sha256').update(audio).digest('hex')}"`
     if (req.headers['if-none-match'] === etag) return res.status(304).end()
     res.setHeader('Content-Type', 'audio/mpeg')
@@ -149,6 +219,20 @@ export const KGAlphabetController = {
     res.setHeader('ETag', etag)
     res.setHeader('X-Content-Type-Options', 'nosniff')
     res.send(audio)
+  }),
+  previewAudio: catchAsync(async (req: Request, res: Response) => {
+    const id = validatedAudioId(req)
+    await sendKGVoice(res, AUDIO_LINES[id])
+  }),
+  previewAttempt: catchAsync(async (req: Request, res: Response) => {
+    // Staff preview performs real Groq STT/feedback but never writes student results.
+    const result = await previewOutcome((req.body || {}) as Record<string, unknown>)
+    const voice = await spokenFeedback({ letter: result.activity.letter, mode: result.activity.mode,
+      outcome: result.outcome, transcript: result.transcript, selected: result.selected, noSpeech: result.noSpeech })
+    res.setHeader('Cache-Control', 'no-store')
+    ok(res, { outcome: result.outcome, transcript: result.transcript || '',
+      feedbackAudioId: feedbackFor(result.outcome, result.noSpeech ? 'silence' : undefined),
+      teachingHint: kgTeachingHint(result.activity.letter, result.activity.mode, result.outcome), ...voice, preview: true })
   }),
   attempt: catchAsync(async (req: Request, res: Response) => {
     const { student, state } = await ensureState(req)
@@ -168,7 +252,10 @@ export const KGAlphabetController = {
       const latest = await KGAlphabetProgress.findOne({ studentId: student._id, schoolId: student.schoolId })
       return ok(res, { outcome: attempt.outcome, replay: attempt.replay, state: presentState(latest || state), duplicate: true,
         feedbackAudioId: feedbackFor(attempt.outcome, attempt.recognitionReason),
-        teachingHint: kgTeachingHint(attempt.letter as typeof LETTERS[number]['letter'], attempt.mode, attempt.outcome as 'correct' | 'incorrect' | 'unclear') })
+        teachingHint: kgTeachingHint(attempt.letter as typeof LETTERS[number]['letter'], attempt.mode, attempt.outcome as 'correct' | 'incorrect' | 'unclear'),
+        ...(await spokenFeedback({ letter: attempt.letter as typeof LETTERS[number]['letter'], mode: attempt.mode,
+          outcome: attempt.outcome as 'correct' | 'incorrect' | 'unclear', transcript: attempt.transcript, selected: attempt.selected,
+          noSpeech: attempt.recognitionReason === 'silence' })) })
     }
     const existing = await KGAlphabetAttempt.findOne(identity)
     if (existing) return returnRecorded(existing)
@@ -249,7 +336,11 @@ export const KGAlphabetController = {
       }
 
       const latest = await KGAlphabetProgress.findOne({ studentId: student._id, schoolId: student.schoolId })
-      return ok(res, { outcome, replay, state: presentState(latest || state), feedbackAudioId: feedbackFor(outcome, recognitionReason), teachingHint: kgTeachingHint(activity.letter, activity.mode, outcome) })
+      const voice = await spokenFeedback({ letter: activity.letter, mode: activity.mode, outcome,
+        transcript, selected, noSpeech: recognitionReason === 'silence' })
+      res.setHeader('Cache-Control', 'no-store')
+      return ok(res, { outcome, replay, transcript: transcript || '', state: presentState(latest || state),
+        feedbackAudioId: feedbackFor(outcome, recognitionReason), teachingHint: kgTeachingHint(activity.letter, activity.mode, outcome), ...voice })
     } finally {
       await KGAlphabetSubmission.deleteOne({ ...identity, owner })
     }

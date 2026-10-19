@@ -76,6 +76,7 @@ export default function SchoolCurriculumMapPage() {
         <h2 style={{ fontSize: 19, marginTop: 0 }}>Level {selected.level}: {selected.actualTitle || selected.plannedTitle}</h2>
         <p>{selected.objective}</p>
         <p style={{ color: '#64748b' }}>Address: {selected.address} · Mongo level ID: {selected.levelId || 'Not created'} · Publication: {selected.publication}</p>
+        <p><Link href={`/school/curriculum-studio/${grade}/${selected.level}`} style={{ fontWeight: 800 }}>Open design workspace →</Link></p>
         <h3 style={{ fontSize: 15 }}>Mapped lesson records</h3>
         {selected.lessons.length ? <ul>{selected.lessons.map((lesson) => <li key={lesson.id} style={{ marginBottom: 9 }}>
           {lesson.title} — {lesson.status}, {lesson.activityCount} active activities{lesson.placeholder ? ' (empty placeholder)' : ''}

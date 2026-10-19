@@ -10,7 +10,7 @@ export const LETTERS = [
 export type Letter = typeof LETTERS[number]['letter']
 export type ActivityId = `say-${Lowercase<Letter>}` | `find-${Lowercase<Letter>}`
 
-/** Text is a script for offline generation, not a request to synthesize during a student lesson. */
+/** Authoritative KG script lines: prerecorded S3 mode or uncached Azure live synthesis. */
 export const AUDIO_LINES = {
   'welcome': 'Hello, superstar! Welcome to our ABCD adventure!',
   'how-to-play': 'Listen to me, then say the word. I am listening!',
