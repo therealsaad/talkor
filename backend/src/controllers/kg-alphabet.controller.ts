@@ -1,3 +1,4 @@
+import { gradeKGTranscription } from '../kg/kg-child-grading'
 import { Request, Response } from 'express'
 import { createHash, randomUUID, randomBytes } from 'node:crypto'
 import { Types } from 'mongoose'
@@ -129,8 +130,11 @@ async function previewOutcome(input: Record<string, unknown>): Promise<KGPreview
   if (!stt.available) throw ApiError.provider('Speech recognition is temporarily unavailable')
   const transcript = String(stt.transcript || '').slice(0, 240)
   const confidence = 'confidence' in stt ? stt.confidence : undefined
-  const unclear = ('uncertain' in stt && stt.uncertain === true) || (typeof confidence === 'number' && confidence < 0.5)
-  const outcome = unclear ? 'unclear' as const : evaluateKGSpeech(transcript, activity.letter, 'word')
+  const outcome = gradeKGTranscription({
+    transcript, letter: activity.letter,
+    uncertain: 'uncertain' in stt && stt.uncertain === true,
+    confidence: typeof confidence === 'number' ? confidence : undefined,
+  })
   return { activity, outcome, transcript }
 }
 
@@ -314,9 +318,11 @@ export const KGAlphabetController = {
         sttProvider = transcription.provider
         const confidence = 'confidence' in transcription ? transcription.confidence : undefined
         sttConfidence = typeof confidence === 'number' && Number.isFinite(confidence) && confidence >= 0 && confidence <= 1 ? confidence : undefined
-        outcome = ('uncertain' in transcription && transcription.uncertain === true) ||
-          (confidence !== undefined && (sttConfidence === undefined || sttConfidence < 0.5))
-          ? 'unclear' : evaluateKGSpeech(transcript, activity.letter, 'word')
+        outcome = gradeKGTranscription({
+          transcript, letter: activity.letter,
+          uncertain: 'uncertain' in transcription && transcription.uncertain === true,
+          confidence: sttConfidence,
+        })
         if (outcome === 'unclear') recognitionReason = 'uncertain'
       } else {
         selected = String(req.body?.selected || '').toLowerCase().trim().slice(0, 20)

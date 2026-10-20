@@ -14,6 +14,7 @@ import { useKGAmbience } from '@/hooks/use-kg-ambience'
 import { AUTH_INVALIDATED_EVENT, ApiError, getStoredToken, handleUnauthorizedResponse } from '@/lib/api-client'
 import { makeKGPreviewState } from '@/services/kg-alphabet-preview'
 import '@/components/student/kg/kg-alphabet.css'
+import '@/components/student/kg/kg-level1-polish.css'
 
 const INTRO_VIDEO = '/kg/videos/fullkg.mp4'
 const STEP_COUNT = 8

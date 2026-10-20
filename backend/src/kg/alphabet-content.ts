@@ -105,32 +105,40 @@ function isPlausibleNearMatch(token: string, target: string): boolean {
 }
 
 export function evaluateKGSpeech(raw: string, letter: Letter, target: 'word' | 'letter' | 'either' = 'either'): 'correct' | 'incorrect' | 'unclear' {
-  // Whisper may write an English word in Devanagari during Hindi/English speech.
-  // Accept that spelling, while still teaching the English curriculum word.
+  // Whisper may transcribe Indian English into Devanagari. Preserve these known words.
   const phonetic: Record<string, string> = {
     'एप्पल': 'apple', 'ऐप्पल': 'apple', 'ऐपल': 'apple', 'एपल': 'apple',
     'बॉल': 'ball', 'कैट': 'cat', 'डॉग': 'dog', 'डाग': 'dog',
     'ए': 'a', 'बी': 'b', 'सी': 'c', 'डी': 'd',
   }
-  const normalized = raw.slice(0, 240).replace(/\p{L}[\p{L}\p{M}]*/gu, (token) => phonetic[token] || token).toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+  const normalized = raw.slice(0, 240)
+    .replace(/\p{L}[\p{L}\p{M}]*/gu, (token) => phonetic[token] || token)
+    .toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ').trim()
   if (!normalized) return 'unclear'
+
+  // Allow ONLY carefully chosen variations typical of young Indian-English speakers.
+  // Do not use generic edit distance to PASS: "fog" is one edit from "dog".
+  const childAliases: Record<Letter, string[]> = {
+    A: ['aaple', 'aple', 'applee', 'appul', 'applle'],
+    B: ['bawl', 'baal', 'boll', 'balll'],
+    C: ['kat', 'kaat', 'catt', 'katt'],
+    D: ['dhog', 'dawg', 'daug', 'dogg', 'doggy', 'dohg'],
+  }
+  const tokens = normalized.split(' ')
   const word = LETTERS.find((item) => item.letter === letter)!.word
-  // A one-word answer or a simple sentence such as "It's an apple" is accepted.
-  const mentioned = LETTERS.filter((item) => new RegExp(`\\b${item.word}\\b`).test(normalized))
-  if (mentioned.length > 1 || /\b(not|no|isn t)\b/.test(normalized)) return 'unclear'
+  const mentioned = LETTERS.filter((item) =>
+    tokens.includes(item.word) || childAliases[item.letter].some((alias) => tokens.includes(alias)),
+  )
+  if (mentioned.length > 1 || /\b(not|no|isn t|never|don t)\b/.test(normalized)) return 'unclear'
   if (target !== 'letter' && mentioned.some((item) => item.word === word)) return 'correct'
-  // Single-letter speech is unreliable for four-year-olds. Accept common STT spellings
-  // only when the response is exclusively the target letter sound.
-  const aliases: Record<Letter, string[]> = {
+
+  const letterAliases: Record<Letter, string[]> = {
     A: ['a', 'ay', 'hey'], B: ['b', 'bee', 'be'], C: ['c', 'see', 'sea'], D: ['d', 'dee'],
   }
-  if (aliases[letter].includes(normalized)) return target === 'word' ? 'unclear' : 'correct'
-  // Silence/Whisper fillers should never be recorded as a language mistake.
+  if (letterAliases[letter].includes(normalized)) return target === 'word' ? 'unclear' : 'correct'
   if (/^(uh|um|hmm|hm|ah|hello|you|thank you|okay|ok)$/.test(normalized)) return 'unclear'
-  // Groq Whisper does not return confidence. A short prefix or one-edit transcript
-  // is plausible child pronunciation and should be repeated, not graded as wrong.
-  const tokens = normalized.split(' ')
+  // Short partial or near-match transcripts get another gentle attempt, not a failure.
   if (tokens.length === 1 && isPlausibleNearMatch(tokens[0], word)) return 'unclear'
   return 'incorrect'
 }
