@@ -3,10 +3,10 @@
 import { Suspense, useState } from 'react'
 import Link from 'next/link'
 import { SchoolShell } from '@/components/school/school-shell'
-import { KGAlphabetMap } from '@/components/student/kg/kg-alphabet-map'
-import { KGAlphabetLesson } from '@/app/student/kg/page'
+import { RegisteredLevelExperience } from '@/features/lessons/RegisteredLevelExperience'
+import { KGAlphabetMap } from '@/features/lessons/grades/kg/level-01/components/LevelMap'
 
-/** Authorized staff live preview: uses real Azure voice and Groq STT, but saves NO student progress. */
+/** Authorized staff live preview: real Azure/Groq behavior, but no student records are read or written. */
 export default function KGAlphabetSchoolPreview() {
   const [step, setStep] = useState<number | null>(null)
   return <SchoolShell title="KG Level 1 · ABCD Preview" subtitle="Test real speech recognition and voice without modifying student progress.">
@@ -14,6 +14,6 @@ export default function KGAlphabetSchoolPreview() {
       <strong>LIVE teacher preview.</strong> The complete introduction video plays first. Then Miss Julie uses Azure Speech and your microphone is sent to Groq STT. Wrong answers receive real corrective feedback. This preview does not save student attempts.
       Test student progression separately: enable ABCD pilot access in <Link href="/school/students">Students</Link>, then sign in with that student's 5-digit PIN.
     </section>
-    {step === null ? <KGAlphabetMap preview onPreviewPlay={setStep} /> : <Suspense fallback={<p>Opening lesson preview…</p>}><KGAlphabetLesson key={step} preview previewStartIndex={step} onPreviewBack={() => setStep(null)} /></Suspense>}
+    {step === null ? <KGAlphabetMap preview onPreviewPlay={setStep} /> : <Suspense fallback={<p>Opening lesson preview…</p>}><RegisteredLevelExperience key={step} grade={0} level={1} staffPreview experienceProps={{ preview: true, previewStartIndex: step, onPreviewBack: () => setStep(null) }} fallback={<p>Opening lesson preview…</p>} /></Suspense>}
   </SchoolShell>
 }

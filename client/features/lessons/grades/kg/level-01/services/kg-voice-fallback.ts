@@ -1,5 +1,5 @@
 /**
- * Emergency on-device narration only when the authenticated S3 audio route fails.
+ * Emergency on-device narration for KG Level 1 when the authenticated S3 audio route fails.
  * Original S3/Priya voice remains the default. Never synthesize while recording.
  * Voice selection varies by browser; do not claim this is Miss Julie's AI voice.
  */

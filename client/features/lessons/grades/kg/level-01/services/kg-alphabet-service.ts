@@ -1,5 +1,5 @@
 import { apiClient, apiClientBlob } from '@/lib/api-client'
-import { kgRequest } from '@/lib/kg-request'
+import { kgRequest } from './kg-request'
 
 export type KGOutcome = 'correct' | 'incorrect' | 'unclear'
 export type KGLetter = 'A' | 'B' | 'C' | 'D'

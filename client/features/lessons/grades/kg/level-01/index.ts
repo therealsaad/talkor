@@ -1,4 +1,5 @@
 export { config } from './config'
 export { activities, suggestedActivities } from './activities'
 export { interactions } from './interactions'
-export { default as LevelExperience } from './LevelExperience'
+export { default as LevelExperience, KGAlphabetLesson } from './LevelExperience'
+export { KGAlphabetMap } from './components/LevelMap'

@@ -10,6 +10,7 @@ import { StudentLessonFastService } from '../services/student-lesson-fast.servic
 import { Progress } from '../models/Progress'
 import { CurriculumAccessService } from '../services/curriculum-access.service'
 import { Student } from '../models/Student'
+import { HomePractice } from '../models/HomePractice'
 import { Types } from 'mongoose'
 
 export const StudentController = {
@@ -34,6 +35,25 @@ export const StudentController = {
       (levelTotal, level) => levelTotal + level.lessons.filter((lesson) => lesson.completed).length, 0,
     ), 0)
     ok(res, { ...detail.student, progress: { ...detail.progress, completedActivities, completedLessons }, recentAttempts: detail.recentAttempts, homePractice: detail.homePractice })
+  }),
+
+  homePracticeAudio: catchAsync(async (req: Request, res: Response) => {
+    if (!req.auth) throw ApiError.unauthorized()
+    if (!Types.ObjectId.isValid(req.params.id)) throw ApiError.notFound('Student not found')
+    const student = await Student.findOne({
+      _id: req.params.id,
+      schoolId: req.auth.schoolId,
+      ...(req.auth.role === 'TEACHER' ? { teacherId: req.auth.id } : {}),
+    }).select('_id').lean()
+    if (!student) throw ApiError.notFound('Student not found')
+    const submission = await HomePractice.findOne({ studentId: student._id, unitKey: 'UNIT1_FAVOURITES' })
+      .select('audioData audioContentType')
+    if (!submission?.audioData) throw ApiError.notFound('Home practice recording not found')
+    res.setHeader('Content-Type', submission.audioContentType || 'application/octet-stream')
+    res.setHeader('Content-Length', submission.audioData.length)
+    res.setHeader('Cache-Control', 'private, no-store')
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.send(submission.audioData)
   }),
 
   create: catchAsync(async (req: Request, res: Response) => {

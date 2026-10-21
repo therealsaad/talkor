@@ -5,9 +5,9 @@ import { test } from 'node:test'
 const read=(file)=>readFile(new URL(file,import.meta.url),'utf8')
 const login=await read('../../app/login/student/page.tsx')
 const layout=await read('../../app/student/layout.tsx')
-const map=await read('../../components/student/kg/kg-alphabet-map.tsx')
-const lesson=await read('../../app/student/kg/page.tsx')
-const service=await read('../../services/kg-alphabet-service.ts')
+const map=await read('../../features/lessons/grades/kg/level-01/components/LevelMap.tsx')
+const lesson=await read('../../features/lessons/grades/kg/level-01/LevelExperience.tsx')
+const service=await read('../../features/lessons/grades/kg/level-01/services/kg-alphabet-service.ts')
 const controller=await read('../../../backend/src/controllers/kg-alphabet.controller.ts')
 const routes=await read('../../../backend/src/routes/kg-alphabet.routes.ts')
 

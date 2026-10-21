@@ -1,4 +1,4 @@
-/** Bounded KG retries retain the same submission body and ID. */
+/** Bounded KG Level 1 retries retain the same submission body and ID. */
 export async function kgRequest<T>(operation: (signal: AbortSignal) => Promise<T>, signal?: AbortSignal,
   options: { retries?: number; timeoutMs?: number; delayMs?: number } = {}): Promise<T> {
   const retries = options.retries ?? 2

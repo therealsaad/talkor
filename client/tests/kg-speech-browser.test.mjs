@@ -11,7 +11,7 @@ const letters = ['apple', 'ball', 'cat', 'dog'].map((word, i) => ({ letter: 'ABC
 let browser
 before(async () => {
   browser = await puppeteer.launch({ executablePath: process.env.CHROME_PATH || 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
-    headless: true, args: ['--autoplay-policy=no-user-gesture-required'] })
+    headless: true, args: ['--autoplay-policy=no-user-gesture-required', '--no-proxy-server', '--no-sandbox', '--disable-gpu'] })
 })
 after(async () => { await browser?.close() })
 
@@ -26,10 +26,11 @@ function wave() {
   return bytes
 }
 
-async function fixture({ outcome = 'correct', denied = false, lostResponse = false, silent = false, feedbackFailure = false } = {}) {
+async function fixture({ outcome = 'correct', denied = false, lostResponse = false, silent = false, feedbackFailure = false, waitForRecording = false } = {}) {
   const context = await browser.createBrowserContext()
   const page = await context.newPage()
   const diagnostics = []
+  const requests = []
   page.on('pageerror', (error) => diagnostics.push(error.message))
   page.on('requestfailed', (request) => diagnostics.push(`request failed: ${new URL(request.url()).pathname} (${request.failure()?.errorText})`))
   page.on('response', (response) => { if (response.status() >= 400) diagnostics.push(`HTTP ${response.status()}: ${new URL(response.url()).pathname}`) })
@@ -45,6 +46,16 @@ async function fixture({ outcome = 'correct', denied = false, lostResponse = fal
     const encoded = btoa(JSON.stringify({ exp: Math.floor(Date.now() / 1000) + 3600 }))
     sessionStorage.setItem('talkora_token', `test.${encoded}.test`)
     window.__kgMedia = { requests: 0, streams: 0, recorders: 0, overlap: false }
+    let fakeFullscreenElement = null
+    Object.defineProperty(document, 'fullscreenElement', { configurable: true, get: () => fakeFullscreenElement })
+    Element.prototype.requestFullscreen = async function () {
+      fakeFullscreenElement = this
+      document.dispatchEvent(new Event('fullscreenchange'))
+    }
+    document.exitFullscreen = async () => {
+      fakeFullscreenElement = null
+      document.dispatchEvent(new Event('fullscreenchange'))
+    }
     const NativeRecorder = window.MediaRecorder
     window.MediaRecorder = class extends NativeRecorder {
       start(...args) { window.__kgMedia.recorders++; return super.start(...args) }
@@ -53,6 +64,21 @@ async function fixture({ outcome = 'correct', denied = false, lostResponse = fal
     const originalPlay = HTMLMediaElement.prototype.play
     HTMLMediaElement.prototype.play = function (...args) {
       if (window.__kgMedia.recorders) window.__kgMedia.overlap = true
+      if (this instanceof HTMLVideoElement && this.getAttribute('src')?.includes('/kg/videos/fullkg.mp4')) {
+        const video = this
+        Object.defineProperty(video, 'duration', { configurable: true, value: 63.018 })
+        Object.defineProperty(video, 'currentTime', { configurable: true, writable: true, value: 0 })
+        Object.defineProperty(video, 'seeking', { configurable: true, value: false })
+        setTimeout(() => {
+          video.dispatchEvent(new Event('play'))
+          for (let second = 1; second <= 63; second++) {
+            video.currentTime = second
+            video.dispatchEvent(new Event('timeupdate'))
+          }
+          video.dispatchEvent(new Event('ended'))
+        }, 10)
+        return Promise.resolve()
+      }
       return originalPlay.apply(this, args)
     }
     navigator.mediaDevices.getUserMedia = async () => {
@@ -80,7 +106,8 @@ async function fixture({ outcome = 'correct', denied = false, lostResponse = fal
   await page.setRequestInterception(true)
   page.on('request', async (request) => {
     const url = new URL(request.url())
-    const headers = { 'Access-Control-Allow-Origin': new URL(base).origin, 'Access-Control-Allow-Headers': 'authorization,content-type', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS' }
+    requests.push(`${request.method()} ${url.origin}${url.pathname}`)
+    const headers = { 'Access-Control-Allow-Origin': new URL(base).origin, 'Access-Control-Allow-Headers': 'authorization,content-type,x-kg-intro-playback', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS' }
     const json = (data, status = 200) => request.respond({ status, headers, contentType: 'application/json', body: JSON.stringify({ success: true, data }) })
     try {
       if (request.method() === 'OPTIONS') return await request.respond({ status: 204, headers })
@@ -91,6 +118,8 @@ async function fixture({ outcome = 'correct', denied = false, lostResponse = fal
         if (feedbackFailure && url.pathname.endsWith('/great')) return await request.respond({ status: 404, headers, contentType: 'application/json', body: JSON.stringify({ success: false, error: { message: 'Test missing feedback clip' } }) })
         return await request.respond({ status: 200, headers, contentType: 'audio/wav', body: wave() })
       }
+      if (url.pathname.endsWith('/kg-alphabet/intro/start')) return await json({ playbackId: 'a'.repeat(64) })
+      if (url.pathname.endsWith('/kg-alphabet/intro-seen')) return await json({ introSeen: true })
       if (url.pathname.endsWith('/kg-alphabet/state')) return await json(state())
       if (url.pathname.endsWith('/kg-alphabet/attempt')) {
         const body = JSON.parse(request.postData())
@@ -112,30 +141,38 @@ async function fixture({ outcome = 'correct', denied = false, lostResponse = fal
       }
       if (url.pathname.startsWith('/api/') || url.origin !== new URL(base).origin) return await request.abort()
       return await request.continue()
-    } catch { if (!request.isInterceptResolutionHandled()) await request.abort().catch(() => undefined) }
+    } catch (error) {
+      diagnostics.push(`Request interception failed: ${error instanceof Error ? error.message : String(error)}`)
+      if (!request.isInterceptResolutionHandled()) {
+        await request.abort().catch((abortError) => {
+          diagnostics.push(`Request abort failed: ${abortError instanceof Error ? abortError.message : String(abortError)}`)
+        })
+      }
+    }
   })
-  await page.goto(`${base}/student/kg`, { waitUntil: 'networkidle0' })
+  await page.goto(`${base}/student/kg`, { waitUntil: 'domcontentloaded' })
   try {
-    await page.waitForFunction(() => [...document.querySelectorAll('button')].some((button) => button.textContent.includes('Allow microphone')), { timeout: 15000 })
+    if (denied) {
+      await page.waitForFunction(() => document.body.innerText.includes('Please allow microphone access'), { timeout: 20000 })
+    } else if (waitForRecording) {
+      await page.waitForFunction(() => window.__kgMedia.recorders === 1, { timeout: 20000 })
+    } else {
+      await page.waitForFunction(() => window.__kgMedia.requests > 0, { timeout: 20000 })
+    }
   } catch (error) {
-    console.error('Isolated KG browser diagnostic:', JSON.stringify({ url: page.url(), errors: diagnostics, text: (await page.$eval('body', (element) => element.textContent)).slice(0, 1000) }))
+    console.error('Isolated KG browser diagnostic:', JSON.stringify({ url: page.url(), errors: diagnostics, requests, media: await page.evaluate(() => window.__kgMedia), attempts: ids, text: (await page.$eval('body', (element) => element.innerText)).slice(0, 1000) }))
     await context.close()
     throw error
   }
-  const start = async () => {
-    const buttons = await page.$$('button')
-    for (const button of buttons) if ((await button.evaluate((element) => element.textContent)).includes('Allow microphone')) { await button.click(); return }
-    throw new Error('Microphone start button missing')
-  }
-  return { page, context, firstAttempt, releaseAnswer, start, ids, diagnostics, restoreFeedback: () => { feedbackFailure = false } }
+  return { page, context, firstAttempt, releaseAnswer, ids, diagnostics, requests, restoreFeedback: () => { feedbackFailure = false } }
 }
 
 for (const outcome of ['correct', 'incorrect', 'unclear']) {
   test(`real browser playback and recorder: ${outcome} uses the server result without audio-driven advancement`, { timeout: 40000 }, async () => {
     const fixtureData = await fixture({ outcome })
-    const { page, context, firstAttempt, releaseAnswer, start } = fixtureData
+    const { page, context, firstAttempt, releaseAnswer } = fixtureData
     try {
-      await start(); await firstAttempt
+      await firstAttempt
       assert.equal(await page.evaluate(() => window.__kgMedia.streams), 0)
       assert.equal(await page.evaluate(() => window.__kgMedia.overlap), false)
       assert.match(await page.$eval('h1', (element) => element.textContent), /A.*apple/)
@@ -153,19 +190,16 @@ for (const outcome of ['correct', 'incorrect', 'unclear']) {
 }
 
 test('real browser denied permission keeps the first question and sends no audio', { timeout: 40000 }, async () => {
-  const { page, context, start, ids } = await fixture({ denied: true })
+  const { page, context, ids } = await fixture({ denied: true })
   try {
-    await start()
-    await page.waitForFunction(() => document.body.textContent.includes('Please allow microphone access'))
     assert.equal(ids.length, 0)
     assert.equal(await page.evaluate(() => window.__kgMedia.streams), 0)
   } finally { await context.close() }
 })
 
 test('real browser retries a lost response with the original submission ID', { timeout: 40000 }, async () => {
-  const { page, context, start, ids, diagnostics } = await fixture({ lostResponse: true })
+  const { page, context, ids, diagnostics } = await fixture({ lostResponse: true })
   try {
-    await start()
     try { await page.waitForFunction(() => document.querySelector('h1')?.textContent.includes('ball'), { timeout: 12000 }) }
     catch (error) {
       console.error('Lost-response diagnostic:', JSON.stringify({ ids, diagnostics, text: await page.$eval('main', (element) => element.textContent), media: await page.evaluate(() => window.__kgMedia) }))
@@ -177,9 +211,8 @@ test('real browser retries a lost response with the original submission ID', { t
 })
 
 test('real browser session expiry stops capture before the STT request', { timeout: 40000 }, async () => {
-  const { page, context, start, ids } = await fixture()
+  const { page, context, ids } = await fixture({ waitForRecording: true })
   try {
-    await start()
     await page.waitForFunction(() => window.__kgMedia.recorders === 1)
     await page.evaluate(() => window.dispatchEvent(new Event('talkora:auth-invalidated')))
     await page.waitForFunction(() => window.__kgMedia.streams === 0 && window.__kgMedia.recorders === 0)
@@ -188,10 +221,14 @@ test('real browser session expiry stops capture before the STT request', { timeo
 })
 
 test('real browser silence retries twice, saves only silence events, and offers manual retry', { timeout: 45000 }, async () => {
-  const { page, context, start, ids } = await fixture({ silent: true })
+  const { page, context, ids } = await fixture({ silent: true })
   try {
-    await start()
-    await page.waitForFunction(() => document.body.textContent.includes('That was quiet.') && window.__kgMedia.requests === 4, { timeout: 26000 })
+    try {
+      await page.waitForFunction(() => document.body.innerText.includes('That was quiet.') && window.__kgMedia.requests === 3, { timeout: 26000 })
+    } catch (error) {
+      console.error('Silence retry diagnostic:', JSON.stringify({ requests: await page.evaluate(() => window.__kgMedia), attempts: ids, text: await page.$eval('body', (element) => element.innerText) }))
+      throw error
+    }
     assert.equal(ids.length, 3)
     assert.equal(await page.evaluate(() => window.__kgMedia.streams), 0)
     assert.equal(await page.evaluate(() => window.__kgMedia.overlap), false)
@@ -200,10 +237,16 @@ test('real browser silence retries twice, saves only silence events, and offers 
 })
 
 test('real browser retries missing praise without resubmitting the saved correct answer', { timeout: 40000 }, async () => {
-  const { page, context, start, firstAttempt, releaseAnswer, restoreFeedback, ids } = await fixture({ feedbackFailure: true })
+  const fixtureData = await fixture({ feedbackFailure: true })
+  const { page, context, firstAttempt, releaseAnswer, restoreFeedback, ids } = fixtureData
   try {
-    await start(); await firstAttempt; releaseAnswer()
-    await page.waitForFunction(() => document.body.textContent.includes('voice is taking a little rest'), { timeout: 12000 })
+    await firstAttempt; releaseAnswer()
+    try {
+      await page.waitForFunction(() => document.body.textContent.includes('voice is taking a little rest'), { timeout: 12000 })
+    } catch (error) {
+      console.error('Missing praise diagnostic:', JSON.stringify({ requests: await page.evaluate(() => window.__kgMedia), requestLog: fixtureData.requests, attempts: ids, text: await page.$eval('body', (element) => element.innerText) }))
+      throw error
+    }
     assert.equal(ids.length, 1)
     restoreFeedback()
     const buttons = await page.$$('button')

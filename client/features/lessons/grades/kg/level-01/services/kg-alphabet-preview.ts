@@ -1,6 +1,6 @@
 import type { KGAlphabetState } from './kg-alphabet-service'
 
-/** Static staff preview state; audio, speech recognition and evaluation now run through authenticated backend APIs. */
+/** Static staff preview state; audio, speech recognition and evaluation run through authenticated backend APIs. */
 export const KG_PREVIEW_AUDIO: Record<string, string> = {
   welcome: 'Hello, superstar! Welcome to our ABCD adventure!',
   'how-to-play': 'Listen to me, then say the word. I am listening!',

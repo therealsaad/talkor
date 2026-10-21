@@ -1,7 +1,12 @@
 import type { ComponentType } from 'react'
 import type { LevelDesignConfig } from './types'
 
-export interface LevelWorkspace { config:LevelDesignConfig; LevelExperience:ComponentType }
+export interface LevelExperienceProps {
+  preview?: boolean
+  previewStartIndex?: number
+  onPreviewBack?: () => void
+}
+export interface LevelWorkspace { config:LevelDesignConfig; LevelExperience:ComponentType<LevelExperienceProps> }
 /** Literal lazy imports guarantee per-level code splitting and independent authoring. */
 const workspaces:Record<string, () => Promise<LevelWorkspace>> = {
   'g00-l01': () => import('./grades/kg/level-01'),
@@ -123,4 +128,19 @@ export const WORKSPACE_ADDRESSES=Object.freeze(Object.keys(workspaces))
 export function loadWorkspace(grade:number,level:number):Promise<LevelWorkspace>|null {
  const id=workspaceId(grade,level)
  return id&&workspaces[id] ? workspaces[id]() : null
+}
+
+/** Student resolver: draft workspaces stay addressable to staff but never become playable. */
+export async function loadStudentWorkspace(grade:number,level:number):Promise<LevelWorkspace> {
+ const id=workspaceId(grade,level)
+ const entry=loadWorkspace(grade,level)
+ if(!id||!entry) throw new Error('Curriculum address does not exist')
+ const workspace=await entry
+ if(workspace.config.id!==id||workspace.config.grade!==grade||workspace.config.level!==level) {
+  throw new Error(`Curriculum workspace metadata mismatch for ${id}`)
+ }
+ if(!workspace.config.studentPlayable||workspace.config.editorialStatus!=='existing-runtime'||workspace.config.staffOnlyPreview) {
+  throw new Error(`Curriculum workspace ${id} is not available to students`)
+ }
+ return workspace
 }

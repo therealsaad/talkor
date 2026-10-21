@@ -7,7 +7,7 @@ import vm from 'node:vm'
 import { createRequire } from 'node:module'
 const require = createRequire(import.meta.url)
 const ts = require('typescript')
-const moduleFile = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../lib/kg-voice-fallback.ts')
+const moduleFile = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../features/lessons/grades/kg/level-01/services/kg-voice-fallback.ts')
 const js = ts.transpileModule(readFileSync(moduleFile, 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText
 function setup() {
   let cancelled = 0
