@@ -2,13 +2,13 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { test } from 'node:test'
 
-const map = await readFile(new URL('../../components/student/kg-adventure-map.tsx', import.meta.url), 'utf8')
-const levels = await readFile(new URL('../../app/student/levels/page.tsx', import.meta.url), 'utf8')
-const login = await readFile(new URL('../../app/login/student/page.tsx', import.meta.url), 'utf8')
-const portal = await readFile(new URL('../../components/student/shell/student-portal-shell.tsx', import.meta.url), 'utf8')
-const lesson = await readFile(new URL('../../components/lessons/lesson-experience.tsx', import.meta.url), 'utf8')
-const intro = await readFile(new URL('../../components/student/lesson/kg-lesson-intro.tsx', import.meta.url), 'utf8')
-const picture = await readFile(new URL('../../components/student/lesson/immersive-lesson-stage.tsx', import.meta.url), 'utf8')
+const map = await readFile(new URL('../../../components/student/kg-adventure-map.tsx', import.meta.url), 'utf8')
+const levels = await readFile(new URL('../../../app/student/levels/page.tsx', import.meta.url), 'utf8')
+const login = await readFile(new URL('../../../app/login/student/page.tsx', import.meta.url), 'utf8')
+const portal = await readFile(new URL('../../../components/student/shell/student-portal-shell.tsx', import.meta.url), 'utf8')
+const lesson = await readFile(new URL('../../../components/lessons/lesson-experience.tsx', import.meta.url), 'utf8')
+const intro = await readFile(new URL('../../../components/student/lesson/kg-lesson-intro.tsx', import.meta.url), 'utf8')
+const picture = await readFile(new URL('../../../components/student/lesson/immersive-lesson-stage.tsx', import.meta.url), 'utf8')
 
 test('Grade 0 opens the new ABCD Level 1 while the older pilot remains separate', () => {
   assert.ok(levels.includes('if (student?.grade === 0)'))
@@ -25,7 +25,7 @@ test('optional lesson videos are probed as real local files and never block a le
   assert.ok(intro.includes("const extensions = ['webm', 'mp4']"))
   assert.ok(intro.includes('if (!available.length)'))
   assert.ok(intro.includes('onEnded={finishIntro}'))
-  assert.ok(intro.includes('aria-label="Skip introduction"'))
+  assert.ok(intro.includes('aria-label="Skip optional introduction"'))
   assert.ok(intro.includes('talkora:kg-intro:'))
   assert.ok(lesson.includes("introState !== 'done' || !activity"))
   assert.ok(lesson.includes('<KGLessonIntro'))

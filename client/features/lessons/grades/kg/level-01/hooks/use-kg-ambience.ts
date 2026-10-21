@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { KG_AMBIENCE_TRACK, KGAmbienceMixer, modeForKGPhase } from '@/lib/kg-ambience'
+import { KG_AMBIENCE_TRACK, KGAmbienceMixer, modeForKGPhase } from '../services/kg-ambience'
 
 /** One mixer per mounted lesson. Never stores student preferences on shared PCs. */
 export function useKGAmbience(phase: string) {

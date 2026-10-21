@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { LockKeyhole, Play, RotateCcw, Sparkles } from 'lucide-react'
-import { kgAlphabetService, type KGAlphabetState } from '@/services/kg-alphabet-service'
-import { makeKGPreviewState } from '@/services/kg-alphabet-preview'
-import './kg-alphabet.css'
+import { kgAlphabetService, type KGAlphabetState } from '../services/kg-alphabet-service'
+import { makeKGPreviewState } from '../services/kg-alphabet-preview'
+import '../styles/kg-alphabet.css'
 
 /** Optional replay map. Students start at /student/kg, not here. */
 export function KGAlphabetMap({ preview = false, onPreviewPlay }: { preview?: boolean; onPreviewPlay?: (index: number) => void } = {}) {

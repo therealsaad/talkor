@@ -1,16 +1,30 @@
 {
   "levelId": "g00-l01",
-  "status": "authored-assets-pending",
-  "assetsRoot": "/lessons/kg/level-01/",
+  "status": "existing-runtime",
+  "assetsRoot": "/kg/",
   "introVideo": "/kg/videos/fullkg.mp4",
-  "images": [],
-  "animations": [],
-  "audio": [],
-  "music": null,
+  "images": [
+    "/kg/images/garden-story.webp",
+    "/kg/images/letter-garden-map.png",
+    "/kg/pictures/level-1/apple.webp",
+    "/kg/pictures/level-1/ball.webp",
+    "/kg/pictures/level-1/cat.webp",
+    "/kg/pictures/level-1/dog.webp"
+  ],
+  "animations": [
+    "/miss-julie-animations/speaking.webm",
+    "/miss-julie-animations/listening.webm",
+    "/miss-julie-animations/thinking.webm",
+    "/miss-julie-animations/pointing.webm",
+    "/miss-julie-animations/encouraging.webm",
+    "/miss-julie-animations/celebrating.webm"
+  ],
+  "audio": ["authenticated /kg-alphabet/audio/v1/:id S3 route"],
+  "music": "/kg/audio/garden-ambience-v1.mp3",
   "recommended": {
     "julieAnimations": "/miss-julie-animations",
     "dynamicFeedback": "azure-uncached",
     "preauthoredTTS": "S3 CDN"
   },
-  "note": "Do not add placeholders pointing at missing assets. Upload approved optimized media here."
+  "note": "Runtime assets used by the canonical KG Level 1 implementation."
 }

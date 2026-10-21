@@ -7054,7 +7054,7 @@ import {
   TalkoraLoader,
 } from '@/components/student/talkora-loader'
 
-import { KGAlphabetMap } from '@/components/student/kg/kg-alphabet-map'
+import { KGAlphabetMap } from '@/features/lessons/grades/kg/level-01/components/LevelMap'
 
 import {
   TalkoraLogo,
