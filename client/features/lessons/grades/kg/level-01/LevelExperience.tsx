@@ -16,6 +16,7 @@ import { makeKGPreviewState } from './services/kg-alphabet-preview'
 import './styles/kg-alphabet.css'
 import './styles/kg-level1-polish.css'
 
+import './kg-level1-polish.css'
 const INTRO_VIDEO = '/kg/videos/fullkg.mp4'
 const STEP_COUNT = 8
 const LETTERS = ['A', 'B', 'C', 'D'] as const
