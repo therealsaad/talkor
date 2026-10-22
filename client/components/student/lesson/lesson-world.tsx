@@ -21,6 +21,7 @@ interface LessonWorldProps {
   worldName?: string
   syllabusName?: string
   levelNumber?: number
+  backgroundSrc?: string
 }
 
 type PointerState = {
@@ -40,6 +41,7 @@ export function LessonWorld({
   worldName = 'Favourite Fair',
   syllabusName = 'My Favourite Things',
   levelNumber = 1,
+  backgroundSrc: requestedBackground,
 }: LessonWorldProps) {
   const [
     pointer,
@@ -90,10 +92,10 @@ export function LessonWorld({
     })
   }
 
-  const backgroundSrc =
+  const backgroundSrc = requestedBackground || (
     Number(levelNumber) === 1
       ? LEVEL_ONE_BACKGROUND
-      : DEFAULT_BACKGROUND
+      : DEFAULT_BACKGROUND)
 
   const stage =
     String(

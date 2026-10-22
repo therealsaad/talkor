@@ -5,7 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { ArrowLeft, Check, Headphones, LoaderCircle, Mic, Play, RotateCcw, RotateCw, Sparkles, Volume2, VolumeX } from 'lucide-react'
+import { ArrowLeft, Check, Headphones, LoaderCircle, Mic, Play, RotateCw, Sparkles, Volume2, VolumeX } from 'lucide-react'
 import { watchVoiceActivity } from '@/lib/voice-activity'
 import { kgAlphabetService, type KGAlphabetState, type KGOutcome, type KGPreparedAttempt, type KGAttemptResponse } from './services/kg-alphabet-service'
 import { requestKGMicrophone, KG_SESSION_END_EVENT } from '@/lib/kg-microphone'
@@ -16,14 +16,13 @@ import { makeKGPreviewState } from './services/kg-alphabet-preview'
 import './styles/kg-alphabet.css'
 import './styles/kg-level1-polish.css'
 
-import './kg-level1-polish.css'
-const INTRO_VIDEO = '/kg/videos/fullkg.mp4'
+const INTRO_VIDEO = '/lessons/kg/videos/fullkg.mp4'
 const STEP_COUNT = 8
 const LETTERS = ['A', 'B', 'C', 'D'] as const
 const WORDS = ['apple', 'ball', 'cat', 'dog'] as const
 const INTRO_PHASES = new Set(['intro', 'intro-playing', 'intro-paused', 'intro-error', 'saving-intro'])
 
-type Phase = 'loading' | 'intro' | 'intro-playing' | 'intro-paused' | 'intro-error' | 'saving-intro' | 'ready' | 'julie' | 'listening' | 'checking' | 'touch' | 'feedback' | 'finished' | 'error'
+type Phase = 'loading' | 'intro' | 'intro-playing' | 'intro-paused' | 'intro-error' | 'saving-intro' | 'ready' | 'julie' | 'listening' | 'checking' | 'touch' | 'assist' | 'feedback' | 'finished' | 'error'
 
 function stepAt(index: number) {
   const letter = LETTERS[index % LETTERS.length]
@@ -46,6 +45,15 @@ function audioForStep(index: number): string[] {
     return [step.id]
   }
   return [...(index === 4 ? ['recognize-intro', 'puzzle-intro'] : []), step.id]
+}
+
+function pictureChoices(stepIndex: number, choices: KGAlphabetState['letters']) {
+  const targetIndex = stepIndex % LETTERS.length
+  const pairStart = Math.floor(targetIndex / 2) * 2
+  // Two clear choices are enough for a KG learner. The A round is apple/ball,
+  // while later rounds use the matching adjacent pair with the answer position
+  // naturally alternating between first and second.
+  return choices.slice(pairStart, pairStart + 2)
 }
 
 function friendlyAudioError() {
@@ -79,7 +87,10 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
   const [micError, setMicError] = useState('')
   const [videoError, setVideoError] = useState('')
   const [mapError, setMapError] = useState('')
+  const [homeworkSaving, setHomeworkSaving] = useState(false)
+  const [homeworkError, setHomeworkError] = useState('')
   const [heardTranscript, setHeardTranscript] = useState('')
+  const [feedbackAnimation, setFeedbackAnimation] = useState<'encouraging' | 'celebrating'>('encouraging')
   const autoIntroAttemptRef = useRef(-1)
   const [videoAttempt, setVideoAttempt] = useState(0)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -101,6 +112,8 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
   const maxVideoTimeRef = useRef(0)
   const lastValidVideoTimeRef = useRef(0)
   const silenceRetriesRef = useRef(0)
+  const previewErrorsRef = useRef(0)
+  const previewErrorsIndexRef = useRef(-1)
   const stepStartedAtRef = useRef(0)
   const retryListeningRef = useRef<(stepIndex: number, token: number) => void>(() => undefined)
   const requestRef = useRef<AbortController | null>(null)
@@ -144,7 +157,10 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       setReplayAll(false); replayAllRef.current = false
       introReplayRef.current = false
       setPhase('intro')
-      return () => { alive = false; generation.current++; window.speechSynthesis?.cancel(); stopRecording(); releaseMic() }
+      return () => {
+        alive = false; generation.current++; window.speechSynthesis?.cancel()
+        videoRef.current?.pause(); stopRecording(); releaseMic()
+      }
     }
     kgAlphabetService.state().then((state) => {
       if (!alive) return
@@ -158,8 +174,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       setReplay(state.introSeen && (all || single)); replayRef.current = state.introSeen && (all || single)
       setReplayAll(state.introSeen && all); replayAllRef.current = state.introSeen && all
       introReplayRef.current = introReplay
-      // Wait for the authenticated watch ticket BEFORE attempting automatic playback.
-      // Every entry, including a replay, must complete a new server-side intro ticket.
+      // Every entry receives a new authenticated watch ticket before playback.
       void kgAlphabetService.beginIntro().then(() => {
         if (alive) setPhase('intro')
       }).catch(() => {
@@ -273,9 +288,10 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     pendingSubmissionRef.current = null; pendingResultRef.current = null
     busy.current = false
     silenceRetriesRef.current = 0
+    if (previewErrorsIndexRef.current !== stepIndex) { previewErrorsIndexRef.current = stepIndex; previewErrorsRef.current = 0 }
     stepStartedAtRef.current = performance.now()
     cursorRef.current = stepIndex; setIndex(stepIndex)
-    setFeedback(''); setMicError(''); setHeardTranscript('')
+    setFeedback(''); setMicError(''); setHeardTranscript(''); setFeedbackAnimation('encouraging')
     const openingAudio = stepIndex === 0 && replayAllRef.current ? ['replay-level'] : []
     setPhase('julie')
     try {
@@ -285,7 +301,10 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
         await playClip(id)
         if (generation.current !== token) return
       }
-      if (stepAt(stepIndex).mode === 'speak') await startListening(stepIndex, token)
+      if (stepAt(stepIndex).mode === 'speak' && ((!replayRef.current && stateRef.current?.fallbackAvailable) || (preview && previewErrorsRef.current >= 2))) {
+        await playClip(`find-${stepAt(stepIndex).letter.toLowerCase()}`)
+        if (generation.current === token) setPhase('assist')
+      } else if (stepAt(stepIndex).mode === 'speak') await startListening(stepIndex, token)
       else setPhase('touch')
     } catch {
       if (generation.current !== token) return
@@ -302,7 +321,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     setVideoError('')
     try {
       const existing = stateRef.current
-      if (!preview) await kgAlphabetService.introSeen() // every visit completes its own server-side ticket
+      if (!preview) await kgAlphabetService.introSeen()
       const updated = existing ? { ...existing, introSeen: true } : null
       if (updated) { stateRef.current = updated; setData(updated) }
       if (document.fullscreenElement === introFrameRef.current) await document.exitFullscreen?.().catch(() => undefined)
@@ -313,8 +332,6 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       } else if ((updated?.currentIndex ?? 0) >= STEP_COUNT) {
         setPhase('finished')
       } else {
-        // Start ABCD immediately after the compulsory film; the browser may still
-        // ask the child/teacher once for microphone permission.
         await beginStep(updated?.currentIndex ?? 0)
       }
     } catch {
@@ -326,8 +343,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
   }, [beginStep, preview, previewStartIndex, router])
 
   // Browsers allow Esc and OS/browser controls to exit Fullscreen API mode.
-  // We cannot lock F11 from JavaScript. In a managed lab, run a real OS/browser kiosk.
-  // In normal browsers, leaving fullscreen pauses playback and blocks advancement.
+  // Leaving fullscreen pauses playback and prevents lesson advancement.
   useEffect(() => {
     if (!isIntro) return
     const fullscreenChanged = () => {
@@ -365,10 +381,9 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     if (introEndedRef.current) { await finishIntro(); return }
     setVideoError('')
     try {
-      // Both calls start during the same user gesture; browsers may otherwise
-      // lose media-autoplay activation while waiting for Fullscreen API.
-      if (document.fullscreenElement !== frame && !frame.requestFullscreen)
+      if (document.fullscreenElement !== frame && !frame.requestFullscreen) {
         throw new Error('Fullscreen is unavailable in this browser')
+      }
       video.playbackRate = 1
       const enterFullscreen = document.fullscreenElement === frame
         ? Promise.resolve()
@@ -383,8 +398,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     }
   }
 
-  // Best-effort direct entry. Browsers may require a real tap for unmuted media
-  // and Fullscreen API; in managed labs, configure browser kiosk permissions.
+  // Best effort only: unmuted media and fullscreen normally require a real tap.
   useEffect(() => {
     if (phase !== 'intro' || autoIntroAttemptRef.current === videoAttempt) return
     if (!preview && !kgAlphabetService.hasIntroTicket()) return
@@ -441,7 +455,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
         } catch { /* Keep a recoverable retry if refreshing state is also offline. */ }
       }
       setFeedback(error instanceof ApiError && error.status >= 500
-        ? 'Speech recognition could not connect. Check Groq STT in the backend, then tap Try again.'
+        ? (preview ? 'Speech recognition could not connect. Check the Groq STT service, then tap Try again.' : 'Miss Julie could not listen just now. Check your connection, then tap Try again.')
         : error instanceof ApiError && error.status === 403
           ? 'This microphone test needs a signed-in teacher or student.'
           : 'I couldn’t check that answer. Tap Try again.')
@@ -525,12 +539,19 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
   const handleOutcome = async (outcome: KGOutcome, stepIndex: number, token: number, serverFeedbackId?: string,
     teachingHint?: string | null, feedbackText?: string, feedbackAudioBase64?: string | null) => {
     if (generation.current !== token) return
-    const success = outcome === 'correct'
+    // Supported bilingual comprehension advances, but is NOT a pronunciation pass.
+    const success = outcome === 'correct' || outcome === 'supported'
+    if (preview && !success) previewErrorsRef.current += 1
+    setFeedbackAnimation(success ? 'celebrating' : 'encouraging')
     const feedbackId = serverFeedbackId || (success ? 'great' : outcome === 'unclear' ? 'repeat' : 'try-again')
     if (feedbackId === 'silence') {
       const retryNumber = silenceRetriesRef.current++
       setFeedback(retryNumber < 2 ? 'Take your time, then say the word!' : 'That was quiet. Tap Try again when you are ready.')
       setPhase(retryNumber < 2 ? 'julie' : 'error')
+      if ((!preview && stateRef.current?.fallbackAvailable) || (preview && previewErrorsRef.current >= 2)) {
+        setFeedback('Nice trying! Can you show Miss Julie the picture instead?')
+        setPhase('assist'); pendingResultRef.current = null; return
+      }
       if (retryNumber < 2) {
         try {
           await speakFeedback('silence', feedbackAudioBase64)
@@ -542,7 +563,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       } else pendingResultRef.current = null
       return
     }
-    setFeedback(feedbackText || (success ? 'Wonderful! You found it!' : teachingHint || (outcome === 'unclear' ? 'Let’s try that word together.' : 'Good try! Listen and have another go!')))
+    setFeedback(feedbackText || (outcome === 'supported' ? 'Great! In English we say apple. Let’s move on!' : success ? 'Wonderful! You found it!' : teachingHint || (outcome === 'unclear' ? 'Let’s try that word together.' : 'Good try! Listen and have another go!')))
     setPhase('feedback')
     try { await speakFeedback(feedbackId, feedbackAudioBase64) }
     catch {
@@ -552,7 +573,13 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       return
     }
     if (generation.current !== token) return
-    if (!success) { await beginStep(stepIndex); return }
+    if (!success) {
+      if ((!preview && stateRef.current?.fallbackAvailable) || (preview && previewErrorsRef.current >= 2)) {
+        setFeedback('Good effort! Now touch the matching picture!')
+        pendingResultRef.current = null; setPhase('assist'); return
+      }
+      await beginStep(stepIndex); return
+    }
     const nextIndex = preview || replayRef.current ? stepIndex + 1 : stateRef.current?.currentIndex ?? stepIndex
     if (preview && stateRef.current) { stateRef.current = { ...stateRef.current, currentIndex: nextIndex }; setData(stateRef.current) }
     if (replayRef.current && !replayAllRef.current) { pendingResultRef.current = null; setPhase('finished'); return }
@@ -577,7 +604,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
   const startAdventure = async () => {
     if (busy.current || !stateRef.current) return
     if (!preview && !stateRef.current.introSeen) { setPhase('intro'); return }
-    unlockMusic() // authorized by the Start/Continue click; never autoplay during the intro
+    unlockMusic()
     if (cursorRef.current >= STEP_COUNT) { setPhase('finished'); return }
     busy.current = true
     const requestToken = ++generation.current
@@ -585,7 +612,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     requestRef.current = new AbortController()
     setMicError('')
     try {
-      if (stepAt(cursorRef.current).mode === 'speak') {
+      if (stepAt(cursorRef.current).mode === 'speak' && !stateRef.current.fallbackAvailable && !(preview && previewErrorsRef.current >= 2)) {
         silenceForMicrophone()
         micStartingRef.current = true
         const permission = await requestKGMicrophone(requestRef.current.signal)
@@ -619,33 +646,51 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
   }
 
   const choosePicture = async (selected: string) => {
-    if (busy.current || phase !== 'touch') return
+    if (busy.current || (phase !== 'touch' && phase !== 'assist')) return
     busy.current = true
     const stepIndex = cursorRef.current
     const token = generation.current
+    const assistedPicture = phase === 'assist'
     setPhase('checking')
     try {
       if (!preview) {
-        const prepared = await kgAlphabetService.prepare({ activityId: stepAt(stepIndex).id, replay: replayRef.current, selected, timeSpentMs: currentStepTimeMs() })
+        const prepared = await kgAlphabetService.prepare({ activityId: stepAt(stepIndex).id, replay: replayRef.current, selected, timeSpentMs: currentStepTimeMs(), assistedPicture })
         await sendPrepared(stepIndex, prepared, token)
         return
       }
-      const prepared = await kgAlphabetService.prepare({ activityId: stepAt(stepIndex).id, replay: false, selected, timeSpentMs: currentStepTimeMs() })
+      const prepared = await kgAlphabetService.prepare({ activityId: stepAt(stepIndex).id, replay: false, selected, timeSpentMs: currentStepTimeMs(), assistedPicture })
       await sendPrepared(stepIndex, prepared, token)
     } catch {
       if (generation.current === token) { setFeedback('The garden needs a moment. Tap Try again to stay on this puzzle.'); setPhase('error') }
     } finally { busy.current = false }
   }
 
+  const completeHomework = async () => {
+    if (preview || homeworkSaving || !data?.completed || data.homework?.status !== 'pending') return
+    setHomeworkSaving(true)
+    setHomeworkError('')
+    try {
+      const saved = await kgAlphabetService.completeHomework()
+      stateRef.current = saved
+      setData(saved)
+    } catch {
+      setHomeworkError('Your practice was not saved. Please try again.')
+    } finally {
+      setHomeworkSaving(false)
+    }
+  }
+
   const current = index < STEP_COUNT ? stepAt(index) : null
   const isPictureRound = current?.mode === 'touch'
+  const showingPictures = isPictureRound || phase === 'assist'
+  const currentPictureChoices = showingPictures ? pictureChoices(index, data?.letters || []) : []
 
-  if (isIntro) return <section className={`kg-intro-cinema ${phase === 'intro-playing' ? 'is-video-playing' : ''}`} ref={introFrameRef} role="dialog" aria-modal="true" aria-label="Miss Julie’s full Level 1 story">
-    <Image className="kg-intro-cinema__garden" src="/kg/images/garden-story.webp" alt="" fill priority sizes="100vw" />
+  if (isIntro) return <section className={`kg-intro-cinema ${phase === 'intro-playing' ? 'is-video-playing' : ''}`} ref={introFrameRef} role="dialog" aria-modal="true" aria-label="Miss Julie's full Level 1 story">
+    <Image className="kg-intro-cinema__garden" src="/lessons/kg/images/garden-story.webp" alt="" fill priority sizes="100vw" />
     <div className="kg-intro-cinema__shade" aria-hidden="true" />
     <header className="kg-intro-cinema__header">
-      <span className="kg-intro-brand"><Sparkles size={18} /> MISS JULIE’S PICTURE GARDEN</span>
-      <span className="kg-intro-level">LEVEL 1 · A B C D</span>
+      <span className="kg-intro-brand"><Sparkles size={18} /> MISS JULIE&apos;S PICTURE GARDEN</span>
+      <span className="kg-intro-level">LEVEL 1 Â· A B C D</span>
     </header>
     <div className="kg-intro-cinema__content">
       <div className="kg-intro-cinema__title">
@@ -678,7 +723,6 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
           onPause={() => { if (!introEndedRef.current) setPhase((value) => value === 'intro-playing' ? 'intro-paused' : value) }}
           onEnded={() => {
             const video = videoRef.current
-            // A legitimate media-ended event is the sole progression trigger.
             if (!video || !Number.isFinite(video.duration) || video.duration <= 0 ||
                 maxVideoTimeRef.current < video.duration - 1.5 ||
                 document.fullscreenElement !== introFrameRef.current) {
@@ -686,7 +730,8 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
               setPhase('intro-error')
               return
             }
-            introEndedRef.current = true; void finishIntro()
+            introEndedRef.current = true
+            void finishIntro()
           }}
           onError={() => { setVideoError('The story could not load. Check your connection, then try again.'); setPhase('intro-error') }}
           aria-label="Full-screen Miss Julie Picture Garden introduction"
@@ -694,18 +739,18 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       </div>
       <div className="kg-intro-cinema__controls">
         {videoError ? <p className="kg-friendly-alert" role="alert">{videoError}</p> : null}
-        {phase === 'saving-intro' ? <p className="kg-intro-saving" role="status"><LoaderCircle size={20} /> Saving your story progress…</p> : null}
+        {phase === 'saving-intro' ? <p className="kg-intro-saving" role="status"><LoaderCircle size={20} /> Saving your story progressâ€¦</p> : null}
         {phase === 'intro-paused' ? <button type="button" className="kg-story-play" onClick={() => void startVideo()}><Play size={19} fill="currentColor" /> Continue full screen</button> : null}
-        {phase === 'intro' ? <p className="kg-intro-saving" role="status">Opening your fullscreen story…</p> : null}
+        {phase === 'intro' ? <p className="kg-intro-saving" role="status">Opening your fullscreen storyâ€¦</p> : null}
         {phase === 'intro-error' && !introEndedRef.current ? <button type="button" className="kg-story-play" onClick={() => { if (kgAlphabetService.hasIntroTicket()) void startVideo(); else void retryVideo() }}><Play size={19} /> Tap to allow fullscreen</button> : null}
-        {phase === 'intro-error' && introEndedRef.current ? <button type="button" className="kg-story-play" onClick={retryVideo}><Check size={19} /> Save and continue</button> : null}
+        {phase === 'intro-error' && introEndedRef.current ? <button type="button" className="kg-story-play" onClick={() => void retryVideo()}><Check size={19} /> Save and continue</button> : null}
       </div>
     </div>
-    <div className="kg-alpha-rotate-lock" aria-hidden="true"><RotateCw size={38} /><strong>Rotate your phone</strong><span>Turn your screen sideways for Miss Julie’s story.</span></div>
+    <div className="kg-alpha-rotate-lock" aria-hidden="true"><RotateCw size={38} /><strong>Rotate your phone</strong><span>Turn your screen sideways for Miss Julie&apos;s story.</span></div>
   </section>
 
   return <main className={`kg-alpha kg-alpha-play ${preview ? 'is-preview' : ''}`} aria-label="ABCD Picture Garden with Miss Julie">
-    <Image className="kg-alpha-garden-art" src="/kg/images/garden-story.webp" alt="" fill priority sizes="100vw" />
+    <Image className="kg-alpha-garden-art" src="/lessons/kg/images/level-1-meadow.png" alt="" fill priority sizes="100vw" />
     <div className="kg-alpha-garden-wash" aria-hidden="true" />
     <header className="kg-alpha-play-top">
       {preview ? <button type="button" className="kg-alpha-map-link" onClick={() => { generation.current++; window.speechSynthesis?.cancel(); onPreviewBack?.() }}><ArrowLeft size={18} /> Preview map</button> : <button type="button" className="kg-alpha-map-link" onClick={() => void returnToMap()}><ArrowLeft size={18} /> My garden</button>}
@@ -726,27 +771,42 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
 
     {phase === 'loading' ? <div className="kg-alpha-loading"><LoaderCircle className="kg-spin" size={26} /> Opening your garden…</div> : phase === 'finished' ? <motion.section className="kg-alpha-finish" initial={{ opacity: 0, scale: .94 }} animate={{ opacity: 1, scale: 1 }}>
       <div className="kg-alpha-finish__art"><AnimatedMissJulie state="celebrating" reducedMotion={Boolean(reduceMotion)} /></div>
-      <div className="kg-alpha-finish__card"><span className="kg-alpha-eyebrow"><Sparkles size={18} /> GARDEN MASTER</span><h1>You did it!</h1><p>You learned A, B, C and D. Miss Julie is so proud of you!</p>
+      <div className="kg-alpha-finish__card">
+        <span className="kg-alpha-eyebrow"><Sparkles size={18} /> GARDEN EXPLORER</span>
+        <h1>You did it!</h1>
+        <p>You explored A, B, C and D. Miss Julie is so proud of you!</p>
+        {data?.pronunciationNeedsPractice?.length ? <p>We will practise saying a few words together again another day!</p> : null}
+        {!preview && data?.completed ? <div className="kg-alpha-earned" aria-label="Your saved rewards"><span>⭐ {data.xp} XP</span><span>🌟 {data.stars} stars</span></div> : null}
+        <div className="kg-alpha-homework" role="note">
+          <strong>🏡 Your tiny homework</strong>
+          <p>{data?.homework?.text || 'Find an apple, a ball, a cat or a dog picture at home. Say its name and its first letter!'}</p>
+          <div className="kg-alpha-homework__actions">
+            <button type="button" className="kg-alpha-hear-again" onClick={() => void playClip('homework-abcd').catch(() => setFeedback(friendlyAudioError()))}><Volume2 size={16} /> Hear homework again</button>
+            {!preview && data?.completed && data.homework?.status === 'pending' ? <button type="button" className="kg-alpha-homework-check" onClick={() => void completeHomework()} disabled={homeworkSaving}>{homeworkSaving ? 'Saving…' : 'I practised at home'}</button> : null}
+          </div>
+          {!preview && data?.homework?.status === 'completed' ? <p className="kg-alpha-homework-done" role="status">✅ Your practice is saved!</p> : null}
+          {homeworkError ? <p role="alert">{homeworkError}</p> : null}
+          {feedback === friendlyAudioError() ? <p role="alert">{feedback}</p> : null}
+        </div>
         {preview ? <button type="button" className="kg-story-play" onClick={onPreviewBack}><Check size={20} /> Back to the map</button> : <Link className="kg-story-play" href="/student/kg/map"><Check size={20} /> Back to my garden</Link>}
-        <div className="kg-alpha-homework" role="note"><strong>🏡 Your tiny homework</strong><p>Find an apple, a ball, a cat or a dog picture at home. Say its name and its first letter!</p><button type="button" className="kg-alpha-hear-again" onClick={() => void playClip('homework-abcd').catch(() => setFeedback(friendlyAudioError()))}><Volume2 size={16} /> Hear homework again</button>{feedback === friendlyAudioError() ? <p role="alert">{feedback}</p> : null}</div>
       </div>
     </motion.section> : phase === 'error' && !current ? <section className="kg-alpha-error" role="alert"><Image src="/miss-julie-welcome.webp" alt="Miss Julie is here to help" width={170} height={210} /><div><h1>Let’s try that again</h1><p>{feedback}</p><button type="button" className="kg-story-play" onClick={() => window.location.reload()}><RotateCw size={18} /> Try again</button></div></section> : <>
       <div className="kg-alpha-scene">
         <aside className={`kg-alpha-teacher ${phase === 'julie' ? 'is-speaking' : ''}`}>
           <div className="kg-alpha-teacher-glow" aria-hidden="true" />
           <AnimatedMissJulie
-            state={phase === 'julie' ? 'speaking' : phase === 'listening' ? 'listening' : phase === 'checking' ? 'thinking' : phase === 'feedback' ? 'encouraging' : isPictureRound ? 'pointing' : 'idle'}
+            state={phase === 'julie' ? 'speaking' : phase === 'listening' ? 'listening' : phase === 'checking' ? 'thinking' : phase === 'feedback' ? feedbackAnimation : showingPictures ? 'pointing' : 'idle'}
             reducedMotion={Boolean(reduceMotion)}
           />
           <div className="kg-alpha-speech" role="status" aria-live="polite">
-            {phase === 'error' ? feedback : phase === 'julie' ? 'Listen close, superstar!' : phase === 'listening' ? 'Your turn! Say the word to Miss Julie.' : phase === 'checking' ? 'Let me hear that…' : phase === 'feedback' ? feedback : phase === 'ready' ? 'Ready for your next garden adventure?' : current ? data?.audio[current.id]?.text || `Let’s learn ${current.letter}!` : 'Welcome to your garden!'}
+            {phase === 'error' ? feedback : phase === 'julie' ? 'Listen close, superstar!' : phase === 'listening' ? 'Your turn! Say the word to Miss Julie.' : phase === 'checking' ? 'Let me hear that…' : phase === 'feedback' ? feedback : phase === 'assist' ? `Show me the ${current?.word || 'picture'}!` : phase === 'ready' ? 'Ready for your next garden adventure?' : current ? data?.audio[current.id]?.text || `Let’s learn ${current.letter}!` : 'Welcome to your garden!'}
             {phase === 'listening' ? <span className="kg-alpha-wave" aria-hidden="true"><i /><i /><i /><i /><i /></span> : null}
           </div>
         </aside>
 
         <section className="kg-alpha-quest kg-alpha-teaching-board" aria-label="Miss Julie’s interactive teaching board">
           <AnimatePresence mode="wait">
-            {current && !isPictureRound ? <motion.div key={current.id} className="kg-alpha-learning" initial={reduceMotion ? false : { opacity: 0, y: 18, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={reduceMotion ? undefined : { opacity: 0, y: -10 }} transition={{ duration: .32 }}>
+            {current && !showingPictures ? <motion.div key={current.id} className="kg-alpha-learning" initial={reduceMotion ? false : { opacity: 0, y: 18, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={reduceMotion ? undefined : { opacity: 0, y: -10 }} transition={{ duration: .32 }}>
               <span className="kg-alpha-activity-label"><Headphones size={17} /> LISTEN · LEARN · SAY IT</span>
               <div className="kg-alpha-lesson-art kg-board-lesson" style={{ '--letter-color': data?.letters.find((item) => item.letter === current.letter)?.color || '#ef8cad' } as React.CSSProperties}>
                 <button type="button" className="kg-alpha-letter-orb kg-board-tappable"
@@ -757,32 +817,30 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
                   aria-label={`Hear ${current.word} again`} title={`Touch ${current.word} to hear it again`}
                   disabled={phase === 'listening' || phase === 'julie' || phase === 'checking'}
                   onClick={() => void beginStep(cursorRef.current)}>
-                  <Image src={`/kg/pictures/level-1/${current.word}.webp`} alt={`A friendly 3D cartoon ${current.word}`} width={480} height={450} priority sizes="(max-width: 760px) 42vw, 360px" />
+                  <Image src={`/lessons/kg/pictures/level-1/${current.word}.webp`} alt={`A friendly 3D cartoon ${current.word}`} width={480} height={450} priority sizes="(max-width: 760px) 42vw, 360px" />
                 </button>
               </div>
               <h1><span>{current.letter}</span> for <strong>{current.word}!</strong></h1>
-              <p>Listen to Miss Julie, then say <b>{current.word}</b>.</p>
-              {phase === 'ready' ? <button type="button" className="kg-story-play" onClick={() => void startAdventure()}><Mic size={20} /> Allow microphone &amp; {index ? 'continue' : 'start'}</button> : null}
+              <p>Listen to Miss Julie, then try saying <b>{current.word}</b>. It doesn&apos;t have to be perfect!</p>
+              {phase === 'ready' ? <button type="button" className="kg-story-play" onClick={() => void startAdventure()}><Mic size={20} /> {index ? 'Continue with Miss Julie' : 'Start and let Julie listen'}</button> : null}
               {phase === 'error' ? <button type="button" className="kg-story-play" onClick={() => void retryLesson()}><RotateCw size={19} /> Try again</button> : null}
               {phase === 'listening' ? <button type="button" className="kg-mic-pulse" onClick={stopRecording} aria-label="Finish recording my answer"><Mic size={22} /><span>Done speaking</span></button> : null}
               {phase === 'julie' || phase === 'checking' ? <div className="kg-alpha-status"><LoaderCircle className="kg-spin" size={19} /> {phase === 'julie' ? 'Miss Julie is speaking…' : 'Listening to your answer…'}</div> : null}
-              {heardTranscript ? <p className="kg-alpha-heard">Miss Julie heard: “{heardTranscript}”</p> : null}
+              {preview && heardTranscript ? <p className="kg-alpha-heard">Speech check: “{heardTranscript}”</p> : null}
               {phase === 'feedback' ? <div className="kg-alpha-status is-feedback"><Sparkles size={18} /> {feedback}</div> : null}
-            </motion.div> : current && isPictureRound ? <motion.div key={current.id} className="kg-alpha-recognition" initial={reduceMotion ? false : { opacity: 0, y: 18, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={reduceMotion ? undefined : { opacity: 0, y: -10 }} transition={{ duration: .32 }}>
-              <span className="kg-alpha-activity-label"><Sparkles size={17} /> {current.mastery ? 'FINAL MASTERY PUZZLE' : 'MIXED PICTURE REVIEW'}</span>
-              <h1>{current.mastery ? 'One last picture puzzle!' : 'Can you find it?'}</h1>
-              <p>Listen to Miss Julie, then touch the picture.</p>
-              <div className="kg-alpha-puzzle" aria-label={current.mastery ? 'Final mastery picture puzzle' : 'Mixed picture choices'}>
-                {(data?.letters || []).map((item, optionIndex, values) => {
-                  const rotate = (index - 4) % values.length
-                  const option = values[(optionIndex + rotate) % values.length]
-                  return <motion.button key={`${current.id}-${option.letter}`} type="button" whileHover={reduceMotion ? undefined : { y: -4, scale: 1.025 }} whileTap={{ scale: .96 }} disabled={phase !== 'touch'} onClick={() => void choosePicture(option.word)} aria-label={`Touch the ${option.word}`}>
-                    <Image src={`/kg/pictures/level-1/${option.word}.webp`} alt={`3D cartoon ${option.word}`} width={480} height={450} sizes="(max-width: 760px) 37vw, 230px" />
+            </motion.div> : current && showingPictures ? <motion.div key={current.id} className="kg-alpha-recognition" initial={reduceMotion ? false : { opacity: 0, y: 18, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={reduceMotion ? undefined : { opacity: 0, y: -10 }} transition={{ duration: .32 }}>
+              <span className="kg-alpha-activity-label"><Sparkles size={17} /> {phase === 'assist' ? 'LET’S LEARN WITH PICTURES' : current.mastery ? 'FINAL MASTERY PUZZLE' : 'MIXED PICTURE REVIEW'}</span>
+              <h1>{phase === 'assist' ? `Find the ${current.word}!` : current.mastery ? 'One last picture puzzle!' : 'Can you find it?'}</h1>
+              <p>{phase === 'assist' ? 'Great trying! Choose the picture and we’ll practise the English word another time.' : 'Listen to Miss Julie, then choose one picture.'}</p>
+              <div className="kg-alpha-puzzle" aria-label={`Choose between ${currentPictureChoices.map((option) => option.word).join(' and ')}`} aria-busy={phase === 'checking'}>
+                {currentPictureChoices.map((option) => {
+                  return <motion.button key={`${current.id}-${option.letter}`} type="button" whileHover={reduceMotion ? undefined : { y: -4, scale: 1.025 }} whileTap={{ scale: .96 }} disabled={phase !== 'touch' && phase !== 'assist'} onClick={() => void choosePicture(option.word)} aria-label={`Touch the ${option.word}`}>
+                    <Image src={`/lessons/kg/pictures/level-1/${option.word}.webp`} alt={`3D cartoon ${option.word}`} width={480} height={450} sizes="(max-width: 760px) 37vw, 230px" />
                     <span>{option.word}</span>
                   </motion.button>
                 })}
               </div>
-              {phase === 'touch' ? <div className="kg-alpha-status"><Volume2 size={18} /> Touch one picture</div> : phase === 'julie' || phase === 'checking' ? <div className="kg-alpha-status"><LoaderCircle className="kg-spin" size={19} /> {phase === 'julie' ? 'Miss Julie is speaking…' : 'Checking your picture…'}</div> : null}
+              {phase === 'touch' || phase === 'assist' ? <div className="kg-alpha-status"><Volume2 size={18} /> Touch one picture</div> : phase === 'julie' || phase === 'checking' ? <div className="kg-alpha-status"><LoaderCircle className="kg-spin" size={19} /> {phase === 'julie' ? 'Miss Julie is speaking…' : 'Checking your picture…'}</div> : null}
               {phase === 'feedback' ? <div className="kg-alpha-status is-feedback"><Sparkles size={18} /> {feedback}</div> : null}
               {phase === 'ready' ? <button type="button" className="kg-story-play" onClick={() => void startAdventure()}><Play size={19} /> Continue picture garden</button> : null}
               {phase === 'error' ? <button type="button" className="kg-story-play" onClick={() => void retryLesson()}><RotateCw size={19} /> Try again</button> : null}
@@ -796,13 +854,13 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
         </section>
       </div>
       {phase === 'error' && current ? <div className="kg-alpha-recoverable" role="alert"><span>{feedback}</span>{isPictureRound ? null : <button type="button" onClick={() => void retryLesson()}>Try again</button>}</div> : null}
-      {(phase === 'listening' || phase === 'touch') && <button type="button" className="kg-alpha-hear-again" onClick={() => { generation.current++; audioRef.current?.pause(); stopRecording(); releaseMic(); void beginStep(cursorRef.current) }}><Volume2 size={17} /> Hear Julie again</button>}
+      {(phase === 'listening' || phase === 'touch' || phase === 'assist') && <button type="button" className="kg-alpha-hear-again" onClick={() => { generation.current++; audioRef.current?.pause(); stopRecording(); releaseMic(); void beginStep(cursorRef.current) }}><Volume2 size={17} /> Hear Julie again</button>}
     </>}
     <div className="kg-alpha-rotate-lock" aria-hidden="true"><RotateCw size={38} /><strong>Rotate your phone</strong><span>Turn your screen sideways to play in the garden.</span></div>
   </main>
 }
 
 /** Canonical KG Level 1 entrypoint used by the registered student route. */
-export default function LevelExperience() {
-  return <Suspense fallback={<main className="kg-alpha kg-alpha-loading"><LoaderCircle className="kg-spin" size={24} /> Opening your garden…</main>}><KGAlphabetLesson /></Suspense>
+export default function LevelExperience(props: Parameters<typeof KGAlphabetLesson>[0] = {}) {
+  return <Suspense fallback={<main className="kg-alpha kg-alpha-loading"><LoaderCircle className="kg-spin" size={24} /> Opening your garden…</main>}><KGAlphabetLesson {...props} /></Suspense>
 }

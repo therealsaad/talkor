@@ -7,7 +7,13 @@ export interface IKGAlphabetProgress {
   version: string
   currentIndex: number
   introSeen: boolean
+  pronunciationNeedsPractice: string[]
   completedAt?: Date
+  xp: number
+  stars: number
+  homeworkStatus: 'not-assigned' | 'pending' | 'completed'
+  homeworkAssignedAt?: Date
+  homeworkCompletedAt?: Date
   updatedAt: Date
 }
 
@@ -17,7 +23,13 @@ const schema = new Schema<IKGAlphabetProgress>({
   version: { type: String, default: KG_ALPHABET_VERSION },
   currentIndex: { type: Number, min: 0, max: 8, default: 0 },
   introSeen: { type: Boolean, default: false },
+  pronunciationNeedsPractice: { type: [String], default: [] },
   completedAt: Date,
+  xp: { type: Number, default: 0, min: 0 },
+  stars: { type: Number, default: 0, min: 0 },
+  homeworkStatus: { type: String, enum: ['not-assigned', 'pending', 'completed'], default: 'not-assigned' },
+  homeworkAssignedAt: Date,
+  homeworkCompletedAt: Date,
 }, { timestamps: true })
 
 export const KGAlphabetProgress = model<IKGAlphabetProgress>('KGAlphabetProgress', schema)

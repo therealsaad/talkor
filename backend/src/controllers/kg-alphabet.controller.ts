@@ -1,6 +1,6 @@
 import { gradeKGTranscription } from '../kg/kg-child-grading'
 import { Request, Response } from 'express'
-import { createHash, randomUUID, randomBytes } from 'node:crypto'
+import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import { Types } from 'mongoose'
 import { catchAsync } from '../utils/catchAsync'
 import { ok } from '../utils/ApiResponse'
@@ -33,15 +33,46 @@ async function studentContext(req: Request) {
 async function ensureState(req: Request) {
   const student = await studentContext(req)
   const state = await KGAlphabetProgress.findOneAndUpdate(
-    { studentId: student._id, schoolId: student.schoolId },
-    { $setOnInsert: { studentId: student._id, schoolId: student.schoolId, version: KG_ALPHABET_VERSION, currentIndex: 0, introSeen: false } },
+    // studentId is the model's unique key. Older progress rows can retain a
+    // previous schoolId, so including schoolId in an upsert filter makes Mongo
+    // try to insert a second row and fail with E11000 instead of loading it.
+    { studentId: student._id },
+    {
+      $set: { schoolId: student.schoolId },
+      $setOnInsert: { studentId: student._id, version: KG_ALPHABET_VERSION, currentIndex: 0, introSeen: false },
+    },
     { upsert: true, new: true, runValidators: true },
   )
   if (!state) throw ApiError.internal('Unable to load KG progress')
+  // Phase 2B: repair already-completed KG1 records written before Phase 1
+  // rewards/homework existed. No replays, extra XP or cross-student writes.
+  // Keep KGAlphabetProgress canonical rather than creating invalid generic
+  // Progress rows without a published CurriculumClass/Level relationship.
+  if (state.currentIndex === 8 && (state.xp < 100 || state.stars < 3 ||
+      state.homeworkStatus === 'not-assigned' || !state.homeworkAssignedAt || !state.completedAt)) {
+    const finalActivityId = activityAt(7)?.id
+    const finalAttempt = finalActivityId ? await KGAlphabetAttempt.findOne({
+      studentId: student._id, schoolId: student.schoolId,
+      activityId: finalActivityId, outcome: 'correct', replay: false,
+    }).select('createdAt').sort({ createdAt: 1 }).lean() : null
+    const recordedAt = finalAttempt?.createdAt || state.completedAt || state.updatedAt || new Date()
+    const set: Record<string, unknown> = {}
+    if (state.homeworkStatus === 'not-assigned') set.homeworkStatus = 'pending'
+    if (!state.homeworkAssignedAt) set.homeworkAssignedAt = recordedAt
+    // Only claim a lesson-completion timestamp when supported by a saved
+    // successful final answer. Do not fabricate historical completion times.
+    if (!state.completedAt && finalAttempt?.createdAt) set.completedAt = finalAttempt.createdAt
+    const refreshed = await KGAlphabetProgress.findOneAndUpdate(
+      { _id: state._id, schoolId: student.schoolId, currentIndex: 8 },
+      { $max: { xp: 100, stars: 3 }, ...(Object.keys(set).length ? { $set: set } : {}) },
+      { new: true, runValidators: true },
+    )
+    if (refreshed) return { student, state: refreshed }
+  }
   return { student, state }
 }
 
-function presentState(state: { currentIndex: number; introSeen: boolean; completedAt?: Date }) {
+function presentState(state: { currentIndex: number; introSeen: boolean; completedAt?: Date; xp?: number; stars?: number; homeworkStatus?: string; homeworkAssignedAt?: Date; homeworkCompletedAt?: Date; pronunciationNeedsPractice?: string[] }) {
   const index = state.currentIndex
   return {
     version: KG_ALPHABET_VERSION,
@@ -52,7 +83,12 @@ function presentState(state: { currentIndex: number; introSeen: boolean; complet
     audioVersion: KG_AUDIO_VERSION,
     introSeen: state.introSeen,
     completed: index === 8,
+    fallbackAvailable: false,
+    pronunciationNeedsPractice: state.pronunciationNeedsPractice || [],
     completedAt: state.completedAt || null,
+    xp: state.xp ?? 0,
+    stars: state.stars ?? 0,
+    homework: { id: 'kg-abcd-picture-homework-v1', audioId: 'homework-abcd', text: AUDIO_LINES['homework-abcd'], status: state.homeworkStatus || 'not-assigned', assignedAt: state.homeworkAssignedAt || null, completedAt: state.homeworkCompletedAt || null },
     level2Unlocked: index === 8,
     // Level 2 is not yet published; never provide a clickable lesson link for it.
     level2Available: false,
@@ -62,13 +98,24 @@ function presentState(state: { currentIndex: number; introSeen: boolean; complet
   }
 }
 
+/** Once two speaking attempts fail, let the learner demonstrate comprehension.
+ * This never certifies speaking mastery, and the count is trusted server-side.
+ */
+async function canUsePictureSupport(studentId: Types.ObjectId, schoolId: Types.ObjectId, currentIndex: number): Promise<boolean> {
+  const activity = activityAt(currentIndex)
+  if (!activity || activity.mode !== 'speak') return false
+  const failures = await KGAlphabetAttempt.countDocuments({ studentId, schoolId, activityId: activity.id,
+    mode: 'speak', replay: false, outcome: { $in: ['incorrect', 'unclear'] } })
+  return failures >= 2
+}
+
 function validateSubmissionId(value: unknown): string {
   if (typeof value !== 'string' || !/^[a-zA-Z0-9_-]{12,80}$/.test(value)) throw ApiError.badRequest('Invalid submission ID')
   return value
 }
 
 function feedbackFor(outcome: string, reason?: string) {
-  return outcome === 'correct' ? 'great' : outcome === 'incorrect' ? 'try-again' : reason === 'silence' ? 'silence' : 'repeat'
+  return outcome === 'supported' ? 'great' : outcome === 'correct' ? 'great' : outcome === 'incorrect' ? 'try-again' : reason === 'silence' ? 'silence' : 'repeat'
 }
 
 /** Personalized feedback speech is generated on-demand; audio bytes are never persisted. */
@@ -101,7 +148,7 @@ function validatedAudioId(req: Request): AudioId {
 /** Audio validation shared by student submissions and teacher preview; never accept a transcript as trusted grading input. */
 type KGPreviewOutcome = {
   activity: NonNullable<ReturnType<typeof activityAt>>
-  outcome: 'correct' | 'incorrect' | 'unclear'
+  outcome: 'correct' | 'incorrect' | 'unclear' | 'supported'
   selected?: string
   transcript?: string
   noSpeech?: boolean
@@ -112,11 +159,11 @@ async function previewOutcome(input: Record<string, unknown>): Promise<KGPreview
   const activityIndex = Array.from({ length: 8 }, (_, i) => i).find((i) => activityAt(i)?.id === activityId)
   if (activityIndex === undefined) throw ApiError.badRequest('Unknown KG activity')
   const activity = activityAt(activityIndex)!
-  if (activity.mode === 'touch') {
+  if (activity.mode === 'touch' || (activity.mode === 'speak' && input.assistedPicture === true)) {
     const selected = String(input.selected || '').toLowerCase().trim().slice(0, 20)
     if (!LETTERS.some((letter) => letter.word === selected)) throw ApiError.badRequest('Choose one of the four pictures')
     const outcome = LETTERS.find((item) => item.letter === activity.letter)?.word === selected ? 'correct' as const : 'incorrect' as const
-    return { activity, outcome, selected }
+    return { activity, outcome: activity.mode === 'speak' && outcome === 'correct' ? 'supported' : outcome, selected }
   }
   const durationMs = Number(input.durationMs)
   if (!Number.isFinite(durationMs) || durationMs < 250 || durationMs > 12000) throw ApiError.badRequest('Recording duration must be 0.25–12 seconds')
@@ -139,12 +186,13 @@ async function previewOutcome(input: Record<string, unknown>): Promise<KGPreview
 }
 
 async function applyRecordedProgress(attempt: { studentId: Types.ObjectId; schoolId: Types.ObjectId; activityId: string; outcome: string; replay: boolean; createdAt: Date }) {
-  if (attempt.outcome !== 'correct' || attempt.replay) return
+  if (!['correct', 'supported'].includes(attempt.outcome) || attempt.replay) return
   const index = Array.from({ length: 8 }, (_, i) => i).find((i) => activityAt(i)?.id === attempt.activityId)
   if (index === undefined) return
   // This also repairs a request interrupted between saving the attempt and progress.
   await KGAlphabetProgress.updateOne({ studentId: attempt.studentId, schoolId: attempt.schoolId, currentIndex: index }, {
-    $set: { currentIndex: index + 1, ...(index === 7 ? { completedAt: attempt.createdAt } : {}) },
+    $set: { currentIndex: index + 1, ...(index === 7 ? { completedAt: attempt.createdAt, xp: 100, stars: 3, homeworkStatus: 'pending', homeworkAssignedAt: attempt.createdAt } : {}) },
+    ...(attempt.outcome === 'supported' ? { $addToSet: { pronunciationNeedsPractice: activityAt(index)!.letter } } : {}),
   })
 }
 
@@ -165,14 +213,15 @@ async function assertIntroTicket(req: Request, studentId: Types.ObjectId, school
 export const KGAlphabetController = {
   state: catchAsync(async (req: Request, res: Response) => {
     const { state } = await ensureState(req)
-    ok(res, presentState(state))
+    res.setHeader('Cache-Control', 'private, no-store')
+    ok(res, { ...presentState(state), fallbackAvailable: await canUsePictureSupport(state.studentId, state.schoolId, state.currentIndex) })
   }),
   /** Starts a per-visit watch; no client-side localStorage trust. */
   startIntro: catchAsync(async (req: Request, res: Response) => {
     const { student } = await ensureState(req)
     const playbackId = randomBytes(32).toString('hex')
-    // A fresh entry invalidates prior watch tickets, including previously completed
-    // tickets that would otherwise allow an earlier visit to bypass the intro.
+    // A fresh entry invalidates prior watch tickets, including previously
+    // completed tickets that could otherwise bypass this visit's intro.
     await KGIntroPlayback.updateMany(
       { studentId: student._id, schoolId: student.schoolId, expiresAt: { $gt: new Date() } },
       { $set: { expiresAt: new Date() } },
@@ -203,6 +252,25 @@ export const KGAlphabetController = {
     res.setHeader('Cache-Control', 'no-store')
     ok(res, { introSeen: true })
   }),
+  // A student's own practice check-in; not a verified pronunciation grade.
+  // Scope the update to the authenticated student and only after KG1 completion.
+  completeHomework: catchAsync(async (req: Request, res: Response) => {
+    const { student, state } = await ensureState(req)
+    if (req.body?.homeworkId !== 'kg-abcd-picture-homework-v1') {
+      throw ApiError.badRequest('Unknown KG homework assignment')
+    }
+    if (state.currentIndex !== 8) throw ApiError.conflict('Finish Level 1 before checking in homework')
+    if (state.homeworkStatus === 'pending') {
+      await KGAlphabetProgress.updateOne({
+        studentId: student._id, schoolId: student.schoolId, currentIndex: 8,
+        homeworkStatus: 'pending',
+      }, { $set: { homeworkStatus: 'completed', homeworkCompletedAt: new Date() } })
+    }
+    const latest = await KGAlphabetProgress.findOne({ studentId: student._id, schoolId: student.schoolId })
+    if (!latest || latest.homeworkStatus !== 'completed') throw ApiError.conflict('Homework is not ready to check in')
+    res.setHeader('Cache-Control', 'private, no-store')
+    ok(res, presentState(latest))
+  }),
   audio: catchAsync(async (req: Request, res: Response) => {
     await studentContext(req)
     const id = validatedAudioId(req)
@@ -231,7 +299,7 @@ export const KGAlphabetController = {
   previewAttempt: catchAsync(async (req: Request, res: Response) => {
     // Staff preview performs real Groq STT/feedback but never writes student results.
     const result = await previewOutcome((req.body || {}) as Record<string, unknown>)
-    const voice = await spokenFeedback({ letter: result.activity.letter, mode: result.activity.mode,
+    const voice = await spokenFeedback({ letter: result.activity.letter, mode: result.selected ? 'touch' : result.activity.mode,
       outcome: result.outcome, transcript: result.transcript, selected: result.selected, noSpeech: result.noSpeech })
     res.setHeader('Cache-Control', 'no-store')
     ok(res, { outcome: result.outcome, transcript: result.transcript || '',
@@ -240,7 +308,7 @@ export const KGAlphabetController = {
   }),
   attempt: catchAsync(async (req: Request, res: Response) => {
     const { student, state } = await ensureState(req)
-    if (!state.introSeen) throw ApiError.conflict('Watch Miss Julie’s Level 1 story to the end before starting the activities.')
+    if (!state.introSeen) throw ApiError.conflict('Watch Miss Julie\u2019s Level 1 story to the end before starting the activities.')
     await assertIntroTicket(req, student._id, student.schoolId)
     const submissionId = validateSubmissionId(req.body?.submissionId)
     const identity = { studentId: student._id, schoolId: student.schoolId, submissionId }
@@ -248,17 +316,19 @@ export const KGAlphabetController = {
       activityId: req.body?.activityId, replay: req.body?.replay === true,
       selected: req.body?.selected, audioBase64: req.body?.audioBase64,
       mimeType: req.body?.mimeType, durationMs: req.body?.durationMs, timeSpentMs: req.body?.timeSpentMs,
-      noSpeech: req.body?.noSpeech,
+      noSpeech: req.body?.noSpeech, assistedPicture: req.body?.assistedPicture === true,
     })).digest('hex')
     const returnRecorded = async (attempt: IKGAlphabetAttempt) => {
       if (attempt.requestHash && attempt.requestHash !== requestHash) throw ApiError.conflict('This submission ID was already used for another answer')
       await applyRecordedProgress(attempt)
       const latest = await KGAlphabetProgress.findOne({ studentId: student._id, schoolId: student.schoolId })
-      return ok(res, { outcome: attempt.outcome, replay: attempt.replay, state: presentState(latest || state), duplicate: true,
+      const recoveredState = latest || state
+      return ok(res, { outcome: attempt.outcome, replay: attempt.replay,
+        state: { ...presentState(recoveredState), fallbackAvailable: await canUsePictureSupport(student._id, student.schoolId, recoveredState.currentIndex) }, duplicate: true,
         feedbackAudioId: feedbackFor(attempt.outcome, attempt.recognitionReason),
-        teachingHint: kgTeachingHint(attempt.letter as typeof LETTERS[number]['letter'], attempt.mode, attempt.outcome as 'correct' | 'incorrect' | 'unclear'),
+        teachingHint: kgTeachingHint(attempt.letter as typeof LETTERS[number]['letter'], attempt.mode, attempt.outcome),
         ...(await spokenFeedback({ letter: attempt.letter as typeof LETTERS[number]['letter'], mode: attempt.mode,
-          outcome: attempt.outcome as 'correct' | 'incorrect' | 'unclear', transcript: attempt.transcript, selected: attempt.selected,
+          outcome: attempt.outcome as 'correct' | 'incorrect' | 'unclear' | 'supported', transcript: attempt.transcript, selected: attempt.selected,
           noSpeech: attempt.recognitionReason === 'silence' })) })
     }
     const existing = await KGAlphabetAttempt.findOne(identity)
@@ -272,7 +342,7 @@ export const KGAlphabetController = {
       throw ApiError.conflict('This activity is not currently available. Reload your lesson.')
     }
     const activity = activityAt(index)!
-    let outcome: 'correct' | 'incorrect' | 'unclear'
+    let outcome: 'correct' | 'incorrect' | 'unclear' | 'supported'
     let transcript: string | undefined
     let selected: string | undefined
     const reportedTimeMs = req.body?.timeSpentMs === undefined ? 0 : Number(req.body.timeSpentMs)
@@ -298,7 +368,15 @@ export const KGAlphabetController = {
       let sttConfidence: number | undefined
       let recognitionReason: 'silence' | 'uncertain' | undefined
 
-      if (activity.mode === 'speak' && req.body?.noSpeech === true) {
+      const assistedPicture = activity.mode === 'speak' && req.body?.assistedPicture === true
+      if (assistedPicture) {
+        if (replay || !(await canUsePictureSupport(student._id, student.schoolId, index))) {
+          throw ApiError.forbidden('Complete two speech attempts before the picture helper')
+        }
+        selected = String(req.body?.selected || '').toLowerCase().trim().slice(0, 20)
+        if (!LETTERS.some((item) => item.word === selected)) throw ApiError.badRequest('Choose one of the four pictures')
+        outcome = LETTERS.find((item) => item.letter === activity.letter)?.word === selected ? 'supported' : 'incorrect'
+      } else if (activity.mode === 'speak' && req.body?.noSpeech === true) {
         const durationMs = Number(req.body?.durationMs)
         if (!Number.isFinite(durationMs) || durationMs < 250 || durationMs > 12000) throw ApiError.badRequest('A valid listening duration is required')
         // A local silence event may only create an unclear attempt; it can never pass.
@@ -332,7 +410,7 @@ export const KGAlphabetController = {
 
       try {
         const saved = await KGAlphabetAttempt.create({ studentId: student._id, schoolId: student.schoolId, activityId, letter: activity.letter,
-          mode: activity.mode, outcome, transcript, selected, replay, timeSpentMs: Math.round(reportedTimeMs), submissionId, requestHash, sttProvider, sttConfidence, recognitionReason })
+          mode: assistedPicture ? 'touch' : activity.mode, outcome, transcript, selected, replay, timeSpentMs: Math.round(reportedTimeMs), submissionId, requestHash, sttProvider, sttConfidence, recognitionReason })
         await applyRecordedProgress(saved)
       } catch (error) {
         if ((error as { code?: number }).code !== 11000) throw error
@@ -342,11 +420,12 @@ export const KGAlphabetController = {
       }
 
       const latest = await KGAlphabetProgress.findOne({ studentId: student._id, schoolId: student.schoolId })
-      const voice = await spokenFeedback({ letter: activity.letter, mode: activity.mode, outcome,
+      const voice = await spokenFeedback({ letter: activity.letter, mode: assistedPicture ? 'touch' : activity.mode, outcome,
         transcript, selected, noSpeech: recognitionReason === 'silence' })
       res.setHeader('Cache-Control', 'no-store')
-      return ok(res, { outcome, replay, transcript: transcript || '', state: presentState(latest || state),
-        feedbackAudioId: feedbackFor(outcome, recognitionReason), teachingHint: kgTeachingHint(activity.letter, activity.mode, outcome), ...voice })
+      return ok(res, { outcome, replay, transcript: transcript || '', state: { ...presentState(latest || state),
+        fallbackAvailable: await canUsePictureSupport(student._id, student.schoolId, (latest || state).currentIndex) },
+        feedbackAudioId: feedbackFor(outcome, recognitionReason), teachingHint: kgTeachingHint(activity.letter, assistedPicture ? 'touch' : activity.mode, outcome), ...voice })
     } finally {
       await KGAlphabetSubmission.deleteOne({ ...identity, owner })
     }
@@ -367,8 +446,9 @@ export const KGAlphabetController = {
         { $match: { schoolId: new Types.ObjectId(req.auth.schoolId), studentId: { $in: ids } } },
         { $group: {
           _id: '$studentId', attempts: { $sum: 1 },
-          scored: { $sum: { $cond: [{ $ne: ['$outcome', 'unclear'] }, 1, 0] } },
+          scored: { $sum: { $cond: [{ $in: ['$outcome', ['correct', 'incorrect']] }, 1, 0] } },
           correct: { $sum: { $cond: [{ $eq: ['$outcome', 'correct'] }, 1, 0] } },
+          supported: { $sum: { $cond: [{ $eq: ['$outcome', 'supported'] }, 1, 0] } },
           timeSpentMs: { $sum: '$timeSpentMs' },
           replayTimeSpentMs: { $sum: { $cond: ['$replay', '$timeSpentMs', 0] } },
           retryLetters: { $addToSet: { $cond: [{ $eq: ['$outcome', 'incorrect'] }, '$letter', null] } },
@@ -383,11 +463,14 @@ export const KGAlphabetController = {
       const scored = stats?.scored || 0
       const retryLetters = (stats?.retryLetters || []).filter((letter: unknown): letter is string => typeof letter === 'string')
       return { studentId: id, studentName: student.fullName, currentIndex: progressById.get(id)?.currentIndex || 0,
-        completed: progressById.get(id)?.currentIndex === 8, attempts: stats?.attempts || 0,
+        completed: progressById.get(id)?.currentIndex === 8,
+        xp: progressById.get(id)?.xp || 0, stars: progressById.get(id)?.stars || 0,
+        homeworkStatus: progressById.get(id)?.homeworkStatus || 'not-assigned',
+        attempts: stats?.attempts || 0,
         timeSpentMs: stats?.timeSpentMs || 0,
         replayTimeSpentMs: stats?.replayTimeSpentMs || 0,
         accuracy: scored ? Math.round((stats?.correct || 0) / scored * 100) : null,
-        retryLetters }
+        retryLetters, pronunciationNeedsPractice: progressById.get(id)?.pronunciationNeedsPractice || [], supported: stats?.supported || 0 }
     })
     ok(res, { level: 1, students: rows, completedCount: rows.filter((row) => row.completed).length,
       totalStudents, page, pageSize: limit, hasNext: page * limit < totalStudents, reportType: 'deterministic' })
@@ -406,8 +489,9 @@ export const KGAlphabetController = {
         { $match: { studentId: new Types.ObjectId(studentId), schoolId: new Types.ObjectId(schoolId) } },
         { $group: {
           _id: '$letter', attempts: { $sum: 1 },
-          scored: { $sum: { $cond: [{ $ne: ['$outcome', 'unclear'] }, 1, 0] } },
+          scored: { $sum: { $cond: [{ $in: ['$outcome', ['correct', 'incorrect']] }, 1, 0] } },
           correct: { $sum: { $cond: [{ $eq: ['$outcome', 'correct'] }, 1, 0] } },
+          supported: { $sum: { $cond: [{ $eq: ['$outcome', 'supported'] }, 1, 0] } },
           retries: { $sum: { $cond: [{ $eq: ['$outcome', 'incorrect'] }, 1, 0] } },
           unclear: { $sum: { $cond: [{ $eq: ['$outcome', 'unclear'] }, 1, 0] } },
           timeSpentMs: { $sum: '$timeSpentMs' },
@@ -422,14 +506,18 @@ export const KGAlphabetController = {
       const correct = stats?.correct || 0
       return { letter, attempts: stats?.attempts || 0, correct,
         accuracy: scored ? Math.round(correct / scored * 100) : null,
-        retries: stats?.retries || 0, timeSpentMs: stats?.timeSpentMs || 0,
+        retries: stats?.retries || 0, supported: stats?.supported || 0, timeSpentMs: stats?.timeSpentMs || 0,
         replayTimeSpentMs: stats?.replayTimeSpentMs || 0, unclear: stats?.unclear || 0 }
     })
     ok(res, { studentId, studentName: student.fullName, level: 1, currentIndex: progress?.currentIndex || 0,
-      completedAt: progress?.completedAt || null, totalAttempts: letters.reduce((sum, row) => sum + row.attempts, 0),
+      completedAt: progress?.completedAt || null,
+      xp: progress?.xp || 0, stars: progress?.stars || 0,
+      homework: { status: progress?.homeworkStatus || 'not-assigned',
+        assignedAt: progress?.homeworkAssignedAt || null, completedAt: progress?.homeworkCompletedAt || null },
+      totalAttempts: letters.reduce((sum, row) => sum + row.attempts, 0),
       timeSpentMs: letters.reduce((sum, row) => sum + row.timeSpentMs, 0),
       replayTimeSpentMs: letters.reduce((sum, row) => sum + row.replayTimeSpentMs, 0),
-      letters, needsPractice: letters.filter((l) => l.retries > 0 || (l.accuracy !== null && l.accuracy < 70)).map((l) => l.letter),
+      letters, needsPractice: letters.filter((l) => l.retries > 0 || l.supported > 0 || (l.accuracy !== null && l.accuracy < 70)).map((l) => l.letter),
       // Deterministic teacher-facing metrics. AI narrative can be added separately.
       reportType: 'deterministic' })
   }),

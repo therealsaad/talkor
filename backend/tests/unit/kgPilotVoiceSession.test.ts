@@ -65,7 +65,11 @@ describe('KG pilot voice sessions', () => {
     expect(pilotResult).toMatchObject({ provider: 'groq-whisper' })
     expect(configuredTranscribe).not.toHaveBeenCalled()
 
-    ;(CurriculumAccessService.context as jest.Mock).mockResolvedValue({ isKGPilot: false })
+    ;(CurriculumAccessService.context as jest.Mock).mockResolvedValue({ isKGPilot: false, isClass1Demo: true })
+    await VoiceService.transcribeAudio({ audioBase64: 'Y2xhc3Mx' }, studentId)
+    expect(groqTranscribe).toHaveBeenCalledWith({ audioBase64: 'Y2xhc3Mx' })
+
+    ;(CurriculumAccessService.context as jest.Mock).mockResolvedValue({ isKGPilot: false, isClass1Demo: false })
     const regularResult = await VoiceService.transcribeAudio({ audioBase64: 'YXVkaW8=' }, '64b000000000000000000004')
     expect(configuredTranscribe).toHaveBeenCalledWith({ audioBase64: 'YXVkaW8=' })
     expect(regularResult).toMatchObject({ provider: 'azure-speech' })

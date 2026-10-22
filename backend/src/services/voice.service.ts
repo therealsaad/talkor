@@ -1,3 +1,4 @@
+// TALKORA_CLASS1_STUDENT_DEMO_ROUTE_V1
 import { VoiceSession } from '../models/VoiceSession'
 import { getSpeechProvider } from '../providers/speech'
 import { GroqSpeechProvider } from '../providers/speech/GroqSpeechProvider'
@@ -14,10 +15,20 @@ import type { VoiceStreamResult } from '../providers/voice/VoiceProvider'
 import { GroqVoiceProvider } from '../providers/voice/GroqVoiceProvider'
 import { AzureVoiceProvider } from '../providers/voice/AzureVoiceProvider'
 import { PythonVoiceProvider } from '../providers/voice/PythonVoiceProvider'
+import { S3Service } from './S3Service'
 
 
 
 export type VoicePurpose = 'PAGE_GUIDANCE' | 'LESSON' | 'CONVERSATION' | 'FEEDBACK'
+
+function streamFromBuffer(audio: Buffer): ReadableStream<Uint8Array> {
+  return new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(audio)
+      controller.close()
+    },
+  })
+}
 
 async function tryStream(
   provider: { name: string; synthesizeStream?: (text: string, options?: { conversation?: boolean }) => Promise<VoiceStreamResult> },
@@ -59,11 +70,11 @@ export const VoiceService = {
       // and explicitly allowlisted KG pilot drafts. Re-fetching and requiring
       // global "active" status here incorrectly rejected every valid KG draft.
       const access = await CurriculumAccessService.assertActivity(studentId, input.activityId)
-      const expectedStatus = access.isKGPilot ? 'draft' : 'active'
+      const expectedStatus = access.isKGPilot || access.isClass1Demo ? 'draft' : 'active'
       if (access.activity.status !== expectedStatus) throw ApiError.notFound('Activity not found')
       // KG pilot transcriptions are routed to Groq Whisper below. Keep the
       // persisted provider label consistent with the provider actually used.
-      if (access.isKGPilot) sessionProvider = 'groq-whisper'
+      if (access.isKGPilot || access.isClass1Demo) sessionProvider = 'groq-whisper'
     }
     return VoiceSession.create({
       studentId,
@@ -174,9 +185,34 @@ export const VoiceService = {
 
   async streamSynthesize(
     text: string,
-    options: { studentId?: string; purpose?: VoicePurpose; language?: string } = {},
+    options: { studentId?: string; purpose?: VoicePurpose; language?: string; activityId?: string } = {},
   ) {
     const purpose = options.purpose ?? 'LESSON'
+
+    // Reviewed, reusable narration wins when this authenticated draft activity
+    // owns an approved S3 key. A missing object falls through to dynamic voice.
+    if (purpose === 'LESSON' && options.studentId && options.activityId) {
+      const access = await CurriculumAccessService.assertActivity(options.studentId, options.activityId)
+      const key = typeof access.activity.content?.audioKey === 'string'
+        ? access.activity.content.audioKey.trim()
+        : ''
+      if (access.isClass1Demo && key.startsWith('class-01/level-01/v1/')) {
+        try {
+          const audio = await S3Service.getAudio(key)
+          if (audio?.length) {
+            return {
+              body: streamFromBuffer(audio),
+              contentType: key.endsWith('.mp3') ? 'audio/mpeg' : 'audio/wav',
+              provider: 'ai4bharat-s3',
+              metadata: { 'X-Talkora-Cache': 'STATIC-HIT' },
+            }
+          }
+          logger.warn('Reviewed Class 1 audio is missing; using dynamic voice fallback', { activityId: options.activityId })
+        } catch (error) {
+          logger.warn('Class 1 static audio lookup failed; using dynamic voice fallback', { activityId: options.activityId, error })
+        }
+      }
+    }
 
     // Azure Neerja is Talkora's primary Miss Julie voice everywhere.
     // Groq is the fast vendor fallback and the existing Python/Priya pipeline
@@ -209,7 +245,7 @@ export const VoiceService = {
   ) {
     if (studentId) {
       const access = await CurriculumAccessService.context(studentId)
-      if (access.isKGPilot) {
+      if (access.isKGPilot || access.isClass1Demo) {
         // Keep the pilot's Whisper path server-selected. The browser cannot
         // choose a provider, and other grades retain their configured STT.
         return new GroqSpeechProvider().transcribe(input)
