@@ -91,6 +91,9 @@ export interface LessonExperienceProps {
   avatarType?: 'BOY' | 'GIRL'
   studentName?: string
   introVideoKey?: string
+  backgroundSrc?: string
+  completionMessage?: string
+  homeworkMessage?: string
   onLessonComplete?: (xpEarned: number) => void
   completedActivityIds?: string[]
 }
@@ -114,13 +117,14 @@ type TeacherTurn = {
   evidence?: unknown[]
   memoryUpdates?: unknown[]
   voicePriority?: VoicePriority
+  staticAudioActivityId?: string
 }
 type StudentTurn = { id: string; text: string; source: 'microphone' | 'typed' | 'choice'; transcriptConfidence?: number; durationMs?: number; status: 'captured' | 'transcribing' | 'evaluating' | 'accepted' | 'retry' }
 type HistoryTurn = { id: string; role: 'teacher' | 'student'; text: string }
 
 import { ImmersiveLessonStage } from '@/components/student/lesson/immersive-lesson-stage'
 
-export function LessonExperience({ activities, levelTitle = 'Favourite Fair', syllabusName = 'My Favourite Things', levelNumber = 1, avatarType = 'BOY', studentName = 'Explorer', onLessonComplete, completedActivityIds = [], introVideoKey }: LessonExperienceProps) {
+export function LessonExperience({ activities, levelTitle = 'Favourite Fair', syllabusName = 'My Favourite Things', levelNumber = 1, avatarType = 'BOY', studentName = 'Explorer', onLessonComplete, completedActivityIds = [], introVideoKey, backgroundSrc, completionMessage, homeworkMessage }: LessonExperienceProps) {
   const router = useRouter()
   const skippedPictureActivityCount = activities.filter((item) => typeof item.content?.pilotUnavailableMessage === 'string').length
   const playableActivities = activities.filter((item) => typeof item.content?.pilotUnavailableMessage !== 'string')
@@ -239,6 +243,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         retryRequired: false,
         hintLevel: 0,
         activityComplete: false,
+        staticAudioActivityId: activity.id,
         // Deterministic syllabus copy goes through the lesson/cache path.
         // Dynamic replies use the conversation path; the backend chooses the
         // configured TTS provider (Azure first in the current deployment).
@@ -319,7 +324,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     lastSpokenTurnIdRef.current = turn.id
     if (audioEnabled) {
       setExperience('julie_audio_pending')
-      const playback = await julie.speak(turn.text, `${turn.id}:${++teacherSequence.current}`, turn.voicePriority || 'LESSON')
+      const playback = await julie.speak(turn.text, `${turn.id}:${++teacherSequence.current}`, turn.voicePriority || 'LESSON', turn.staticAudioActivityId)
       if (generation !== playbackGeneration.current) return
       if (playback === 'autoplay-blocked') {
         // Do not start recording over a prompt the child never heard.
@@ -827,9 +832,9 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       onLessonComplete?.(xp)
       void commitTeacherTurn({
         id: `teacher-${activity?.id || index}-complete`,
-        text: syllabusName.toLowerCase().includes('favourite')
+        text: completionMessage || (syllabusName.toLowerCase().includes('favourite')
           ? `You did it, ${studentName}! You shared your favourites, asked questions, gave reasons, and spoke politely.`
-          : `You did it, ${studentName}! You finished ${syllabusName} and used clear English in real speaking turns.`,
+          : `You did it, ${studentName}! You finished ${syllabusName} and used clear English in real speaking turns.`),
         emotion: 'celebrating',
         intent: 'celebrate',
         requiresStudentResponse: false,
@@ -853,7 +858,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
   if (!activity) return <main className="lesson-empty-state"><h2>No activities found.</h2><Link href="/student/continue">My next lesson</Link></main>
 
   return (
-    <LessonWorld activity={activity} levelNumber={levelNumber} worldName={levelTitle} syllabusName={syllabusName}>
+    <LessonWorld activity={activity} levelNumber={levelNumber} worldName={levelTitle} syllabusName={syllabusName} backgroundSrc={backgroundSrc}>
       <AnimatePresence>{experience === 'entering' ? <TalkoraWorldLoader key="arrival" destination={levelTitle} subtitle={`Opening ${levelTitle}...`} /> : null}</AnimatePresence>
       <div className={`talkora-lesson ${experience === 'lesson_complete' ? 'is-celebrating' : ''}`} data-experience={experience}>
         <LessonHud
@@ -935,7 +940,9 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
             />
           </main>
         ) : (
-          <RewardScene studentName={studentName} syllabusName={syllabusName} xp={xp} evidence={reflection} onReplay={() => {
+          <RewardScene studentName={studentName} syllabusName={syllabusName} xp={xp} evidence={reflection} homeworkMessage={homeworkMessage} onReplayHomework={homeworkMessage ? () => {
+            void julie.speak(homeworkMessage, `homework:${activity.id}:${++teacherSequence.current}`, 'LESSON')
+          } : undefined} onReplay={() => {
             playbackGeneration.current += 1
             julie.stop()
             setIndex(0)
@@ -973,7 +980,7 @@ function uniqueEvidence(items: Evidence[]) {
 }
 
 
-function RewardScene({ studentName, syllabusName, xp, evidence, onReplay }: { studentName: string; syllabusName: string; xp: number; evidence: Evidence[]; onReplay: () => void }) {
+function RewardScene({ studentName, syllabusName, xp, evidence, homeworkMessage, onReplayHomework, onReplay }: { studentName: string; syllabusName: string; xp: number; evidence: Evidence[]; homeworkMessage?: string; onReplayHomework?: () => void; onReplay: () => void }) {
   return <main className="talkora-reward">
     <div className="talkora-reward__sky" aria-hidden="true">{Array.from({ length: 6 }, (_, index) => <motion.i key={index} animate={{ y: [0, -22, 0], rotate: [0, 35, 0], opacity: [0.25, 1, 0.25] }} transition={{ duration: 1.6 + index * 0.08, repeat: Infinity, delay: index * 0.06 }} />)}</div>
     <motion.div className="talkora-reward__badge" initial={{ scale: 0, rotate: -18 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 160, damping: 12 }}><Award /><span>{syllabusName.toLowerCase().includes('favourite') ? 'Favourite Finder' : 'Lesson Star'}</span></motion.div>
@@ -982,8 +989,9 @@ function RewardScene({ studentName, syllabusName, xp, evidence, onReplay }: { st
     <p>Miss Julie heard what you can really do in English.</p>
     <div className="talkora-reward__evidence">{evidence.length ? evidence.map((item) => <span key={item.skill}><BookOpen /> {friendlySkill(item.skill)}</span>) : <><span><BookOpen /> Lesson practice completed</span><span><BookOpen /> Keep learning with Miss Julie</span></>}</div>
     <motion.div className="talkora-reward__xp" initial={{ y: 18, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.45 }}><Sparkles /><strong>+{xp} XP</strong></motion.div>
-    <p className="talkora-reward__home">Your speaking homework was part of this lesson. Miss Julie has saved your learning progress.</p>
+    <p className="talkora-reward__home">{homeworkMessage || 'Your speaking homework was part of this lesson. Miss Julie has saved your learning progress.'}</p>
     <div className="talkora-reward__actions">
+      {onReplayHomework ? <button type="button" className="talkora-reward__continue talkora-reward__continue--secondary" onClick={onReplayHomework}>Hear homework</button> : null}
       <button type="button" className="talkora-reward__continue talkora-reward__continue--secondary" onClick={onReplay}>Replay lesson</button>
       <Link href="/student/practice/talk" className="talkora-reward__continue talkora-reward__continue--secondary">Practice with Miss Julie</Link>
       <Link href="/student/practice/home" className="talkora-reward__continue talkora-reward__continue--secondary">Record home conversation</Link>

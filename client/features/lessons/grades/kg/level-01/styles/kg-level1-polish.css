@@ -1,0 +1,165 @@
+/* Talkora KG1: two large picture choices and smooth Miss Julie state animations.
+   Loaded AFTER kg-alphabet.css so the existing site/theme remains unchanged. */
+
+.kg-alpha-teaching-board .kg-alpha-recognition {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+/* Previously these buttons had no base grid/card layout, so they stacked vertically. */
+.kg-alpha-teaching-board .kg-alpha-puzzle {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: min(100%, 520px);
+  max-width: 100%;
+  min-width: 0;
+  margin-inline: auto;
+  gap: clamp(8px, 1.3vh, 14px);
+  align-content: center;
+  justify-items: stretch;
+}
+
+.kg-alpha-teaching-board .kg-alpha-puzzle button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  width: 100%;
+  gap: 5px;
+  padding: 6px 9px;
+  border: 3px solid #fff7d9;
+  border-radius: 16px;
+  background: linear-gradient(145deg, #fffbed, #fcecc9);
+  color: #285940;
+  font: inherit;
+  cursor: pointer;
+  transition: filter 180ms ease, box-shadow 180ms ease;
+  touch-action: manipulation;
+}
+
+.kg-alpha-teaching-board .kg-alpha-puzzle button:disabled { cursor: default; }
+.kg-alpha-teaching-board .kg-alpha-puzzle button:not(:disabled):hover { filter: brightness(1.06); }
+.kg-alpha-teaching-board .kg-alpha-puzzle button:focus-visible { outline: 4px solid #ffd466; outline-offset: 3px; }
+
+.kg-alpha-teaching-board .kg-alpha-puzzle button img {
+  display: block;
+  width: 100%;
+  max-width: 220px;
+  height: clamp(100px, 21dvh, 190px);
+  object-fit: contain;
+  border-radius: 10px;
+}
+
+.kg-alpha-teaching-board .kg-alpha-puzzle button span {
+  font-size: clamp(12px, 1.25vw, 17px);
+  font-weight: 850;
+  line-height: 1.1;
+  text-transform: capitalize;
+}
+
+/* Always show a stable pose under the animation: no jump-to-blank frame. */
+.kg-julie-animated.kg-alpha-teacher-image {
+  position: relative;
+  width: 100%;
+  height: min(64dvh, 560px);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.kg-julie-animated .kg-julie-animated__pose {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  animation: none !important;
+  opacity: 1;
+  transition: opacity 160ms ease-out;
+}
+
+.kg-julie-animated.is-video-visible .kg-julie-animated__pose { opacity: 0; }
+
+.kg-julie-animated .kg-julie-animated__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  aspect-ratio: auto;
+  object-fit: contain;
+  object-position: center bottom;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 230ms ease-out;
+  will-change: opacity;
+}
+
+.kg-julie-animated .kg-julie-animated__video.is-visible { opacity: 1; }
+.kg-julie-animated .kg-julie-animated__speaking-dots { z-index: 2; }
+
+@media (max-height: 650px) and (orientation: landscape) {
+  .kg-julie-animated.kg-alpha-teacher-image { height: 48dvh; }
+  .kg-alpha-teaching-board .kg-alpha-puzzle { gap: 6px; }
+  .kg-alpha-teaching-board .kg-alpha-puzzle button { padding: 3px 6px; }
+  .kg-alpha-teaching-board .kg-alpha-puzzle button img { height: 12dvh; }
+}
+
+@media (max-width: 760px) and (orientation: portrait) {
+  .kg-julie-animated.kg-alpha-teacher-image { height: 20dvh; }
+  .kg-alpha-teaching-board .kg-alpha-puzzle button img { height: 11dvh; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kg-julie-animated .kg-julie-animated__video,
+  .kg-alpha-teaching-board .kg-alpha-puzzle button { transition: none !important; }
+}
+
+/* Phase 3: keep completion and homework above the fold on school lab screens. */
+.kg-alpha-finish {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: clamp(12px, 3vw, 32px);
+  width: 100%;
+  min-height: min(76dvh, 680px);
+  padding: clamp(14px, 3vh, 30px);
+  overflow-y: auto;
+}
+.kg-alpha-finish__art { flex: 0 1 min(30vw, 310px); min-width: 120px; max-height: 64dvh; }
+.kg-alpha-finish__art .kg-julie-animated { max-height: 64dvh; }
+.kg-alpha-finish__card {
+  flex: 1 1 330px;
+  min-width: 0;
+  max-width: 620px;
+  padding: clamp(18px, 3vw, 34px);
+  border-radius: 26px;
+  background: rgba(255, 254, 244, .96);
+  box-shadow: 0 16px 50px rgba(35, 73, 44, .16);
+  text-align: center;
+}
+.kg-alpha-finish__card h1 { font-size: clamp(30px, 4vw, 53px); line-height: 1.05; margin: .3em 0; }
+.kg-alpha-earned { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin: 12px 0; font-weight: 900; color: #365c31; }
+.kg-alpha-earned span { padding: 8px 14px; border-radius: 999px; background: #fff0bc; }
+.kg-alpha-finish__card .kg-alpha-homework { margin: 16px auto; max-width: 100%; padding: clamp(12px, 1.8vw, 20px); text-align: left; }
+.kg-alpha-homework__actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.kg-alpha-homework-check { min-height: 44px; padding: 9px 16px; border: 0; border-radius: 12px; background: #287c4d; color: #fff; font: inherit; font-weight: 850; cursor: pointer; }
+.kg-alpha-homework-check:disabled { opacity: .7; cursor: wait; }
+.kg-alpha-homework-check:focus-visible { outline: 3px solid #eab44b; outline-offset: 3px; }
+.kg-alpha-homework-done { color: #21663d; font-weight: 850; }
+@media (max-width: 760px) {
+  .kg-alpha-finish { align-content: start; padding: 12px; gap: 8px; }
+  .kg-alpha-finish__art { flex: 0 0 min(36vw, 170px); max-height: 24dvh; }
+  .kg-alpha-finish__art .kg-julie-animated { max-height: 24dvh; }
+  .kg-alpha-finish__card { flex-basis: 100%; padding: 16px; }
+}
+@media (max-height: 620px) and (orientation: landscape) {
+  .kg-alpha-finish { align-items: start; padding: 8px 16px; min-height: 0; }
+  .kg-alpha-finish__art { flex-basis: 18vw; max-height: 45dvh; }
+  .kg-alpha-finish__art .kg-julie-animated { max-height: 45dvh; }
+  .kg-alpha-finish__card { flex-basis: min(60%, 570px); padding: 12px 18px; }
+  .kg-alpha-finish__card h1 { font-size: clamp(25px, 3vw, 38px); }
+  .kg-alpha-finish__card .kg-alpha-homework { margin: 10px auto; padding: 10px 12px; }
+}

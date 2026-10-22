@@ -13,7 +13,7 @@ async function load(path, dependencies = {}) {
   })
   return exports
 }
-const { kgRequest } = await load('../lib/kg-request.ts')
+const { kgRequest } = await load('../features/lessons/grades/kg/level-01/services/kg-request.ts')
 const { requestKGMicrophone } = await load('../lib/kg-microphone.ts')
 const { watchVoiceActivity } = await load('../lib/voice-activity.ts')
 const quickly = { retries: 2, timeoutMs: 50, delayMs: 1 }
@@ -99,9 +99,9 @@ test('audio completion resolves playback only, and aborted playback releases its
   const oldWindow = globalThis.window
   globalThis.window = { setTimeout, clearTimeout }
   let posts = 0
-  const { kgAlphabetService } = await load('../services/kg-alphabet-service.ts', {
+  const { kgAlphabetService } = await load('../features/lessons/grades/kg/level-01/services/kg-alphabet-service.ts', {
     '@/lib/api-client': { apiClient: async () => { posts++; return {} }, apiClientBlob: async () => new Blob(['test audio'], { type: 'audio/mpeg' }) },
-    '@/lib/kg-request': { kgRequest: (operation, signal) => kgRequest(operation, signal, quickly) },
+    './kg-request': { kgRequest: (operation, signal) => kgRequest(operation, signal, quickly) },
   })
   try {
     const audio = { paused: true, play: async () => { audio.paused = false }, pause: () => { audio.paused = true } }

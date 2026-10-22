@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { test } from 'node:test'
 import { readFile } from 'node:fs/promises'
-import { KGAmbienceMixer, KG_AMBIENCE_TRACK, modeForKGPhase } from '../lib/kg-ambience.ts'
+import { KGAmbienceMixer, KG_AMBIENCE_TRACK, modeForKGPhase } from '../features/lessons/grades/kg/level-01/services/kg-ambience.ts'
 
 class FakeAudio {
   paused = true
@@ -70,13 +70,13 @@ test('speech lock prevents full music while homework voice plays', async () => {
 })
 
 test('lesson actually wires ambience to real speaking, recording and scene controls', async () => {
-  const lesson = await readFile(new URL('../app/student/kg/page.tsx', import.meta.url), 'utf8')
-  const hook = await readFile(new URL('../hooks/use-kg-ambience.ts', import.meta.url), 'utf8')
+  const lesson = await readFile(new URL('../features/lessons/grades/kg/level-01/LevelExperience.tsx', import.meta.url), 'utf8')
+  const hook = await readFile(new URL('../features/lessons/grades/kg/level-01/hooks/use-kg-ambience.ts', import.meta.url), 'utf8')
   assert.match(lesson, /const \{ musicEnabled, setMusicEnabled, unlockMusic, silenceForMicrophone, beginVoice, stopMusic \} = useKGAmbience\(phase\)/)
   assert.match(lesson, /const releaseDucking = beginVoice\(\)/)
   assert.match(lesson, /finally \{ releaseDucking\(\) \}/)
   assert.match(lesson, /silenceForMicrophone\(\)\s*micStartingRef\.current = true/)
   assert.match(lesson, /aria-label=\{musicEnabled \? 'Mute background music' : 'Enable background music'\}/)
   assert.match(hook, /pagehide/)
-  assert.equal(KG_AMBIENCE_TRACK, '/kg/audio/garden-ambience-v1.mp3')
+  assert.equal(KG_AMBIENCE_TRACK, '/lessons/kg/audio/garden-ambience-v1.mp3')
 })

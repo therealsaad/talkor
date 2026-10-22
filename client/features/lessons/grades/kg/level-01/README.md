@@ -1,21 +1,19 @@
-# Kindergarten / Level 01 — ABCD Picture Garden
+# Kindergarten / Level 01 - ABCD Picture Garden
 
-**Code:** `g00-l01` · **Design:** Petal Garden · **Status:** existing-runtime
+**Code:** `g00-l01` | **Design:** Petal Garden | **Status:** existing runtime
 
-- `LevelExperience.tsx` — staff-only visual design prototype. Never directly route students here.
-- `config.ts` — grade-specific objectives, theme, animation mood, audio policy, and resume behavior.
-- `activities.ts` — real approved activities (empty until authored); ideas do not count as activities.
-- `interactions.ts` — available voice/touch/corrective-feedback modes.
-- `assets.json` — references to approved media; never add dead placeholder URLs.
-- `index.ts` — exports used by the lazy-loaded 110-level registry.
+- `LevelExperience.tsx` - canonical live KG Level 1 experience used by students and staff preview.
+- `config.ts` - registry metadata, theme, audio policy, and resume behavior.
+- `activities.ts` - metadata for the eight approved speak and picture activities.
+- `interactions.ts` - available voice, touch, and corrective-feedback modes.
+- `assets.json` - the real intro, picture, Miss Julie animation, music, and authenticated audio sources.
+- `components/`, `hooks/`, `services/`, and `styles/` - lesson-owned runtime code relocated from app-wide folders.
+- `index.ts` - exports consumed by the lazy-loaded 110-level registry.
 
-## Authoring workflow
+## Runtime integration
 
-1. Verify the official syllabus and update `config.syllabus` with school-approved outcomes; set `syllabusVerified` only after review.
-2. Build real prompts, answer rubrics, and follow-up hints in `activities.ts` using the shared activity engine. Keep activities empty until end-to-end tests exist.
-3. Store optimized per-level art/media in `client/public/lessons/kg/level-01/`; register real paths in `assets.json`.
-4. Use the existing Azure/Groq/STT backend providers; static clips may use S3, while spontaneous corrections are uncached.
-5. Preview via `/school/curriculum-studio/0/1`; test microphone, playback, reduced motion, student resume, and permission boundaries.
-6. Publish only using authorized existing DB publication workflow after approval. Do not set `studentPlayable: true` merely to make the preview look complete.
-
-**KG Level 1:** Existing live runtime is `client/app/student/kg/page.tsx`; this directory is design metadata only. Preserve its mandatory intro ticket.
+1. `client/features/lessons/registry.ts` maps `g00-l01` to this directory.
+2. `/student/kg` is a thin `RegisteredLevelExperience` wrapper and contains no lesson implementation.
+3. `/school/kg-preview` resolves this same module with preview props, so it never writes student progress.
+4. The backend keeps grading, intro tickets, persistence, authorization, reporting, Groq STT, and S3/Azure voice behind the existing `/kg-alphabet` endpoints.
+5. Levels 2-10 remain draft workspaces and are rejected by the student resolver.

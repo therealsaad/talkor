@@ -19,6 +19,13 @@ function evict(key: string) {
   sizes.delete(key)
 }
 
+/** Test/process-lifecycle hook; production callers normally retain the bounded LRU. */
+export function clearKGStaticAudioCache() {
+  cache.clear()
+  sizes.clear()
+  cachedBytes = 0
+}
+
 export async function getKGStaticAudio(key: string): Promise<Buffer | null> {
   const old = cache.get(key)
   if (old) {

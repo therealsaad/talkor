@@ -6,7 +6,7 @@ export interface IKGAlphabetAttempt {
   activityId: string
   letter: string
   mode: 'speak' | 'touch'
-  outcome: 'correct' | 'incorrect' | 'unclear'
+  outcome: 'correct' | 'incorrect' | 'unclear' | 'supported'
   transcript?: string
   selected?: string
   timeSpentMs?: number
@@ -24,7 +24,7 @@ const schema = new Schema<IKGAlphabetAttempt>({
   activityId: { type: String, required: true },
   letter: { type: String, enum: ['A', 'B', 'C', 'D'], required: true },
   mode: { type: String, enum: ['speak', 'touch'], required: true },
-  outcome: { type: String, enum: ['correct', 'incorrect', 'unclear'], required: true },
+  outcome: { type: String, enum: ['correct', 'incorrect', 'unclear', 'supported'], required: true },
   transcript: { type: String, maxlength: 240 },
   selected: { type: String, maxlength: 20 },
   timeSpentMs: { type: Number, min: 0, max: 300000, default: 0 },

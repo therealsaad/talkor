@@ -2,8 +2,8 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { test } from 'node:test'
 
-const component = await readFile(new URL('../../app/school/students/student-management-page.tsx', import.meta.url), 'utf8')
-const styles = await readFile(new URL('../../app/educator.css', import.meta.url), 'utf8')
+const component = await readFile(new URL('../../../app/school/students/student-management-page.tsx', import.meta.url), 'utf8')
+const styles = await readFile(new URL('../../../app/educator.css', import.meta.url), 'utf8')
 const modalStart = component.indexOf('{/* Add Student Modal */}')
 const modalEnd = component.indexOf('{/* Edit Student Modal */}', modalStart)
 const modal = component.slice(modalStart, modalEnd)

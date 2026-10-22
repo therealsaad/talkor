@@ -8,7 +8,7 @@ export const config = {
   "gradeLabel": "Kindergarten",
   "title": "ABCD Picture Garden",
   "editorialStatus": "existing-runtime",
-  "studentPlayable": false,
+  "studentPlayable": true,
   "description": "ABCD Picture Garden — a distinct petal garden adventure for KG learners.",
   "syllabus": {
     "objectives": [
@@ -57,5 +57,5 @@ export const config = {
     "sendMicrophoneAudioToBackend": true,
     "homeworkRequired": true
   },
-  "staffOnlyPreview": true
+  "staffOnlyPreview": false
 } as const satisfies LevelDesignConfig
