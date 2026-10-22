@@ -14,6 +14,11 @@ export class PythonAIProvider implements AIProvider {
     const controller = new AbortController()
     const timeout = setTimeout(() => controller.abort(), env.aiServiceTimeoutMs)
     const unitGuidance = unitTeachingGuidance(context)
+    const isClass1Pilot = context.grade === 1 && context.levelId === 'g01-l01'
+    const pilotEnabled = process.env.TALKORA_CLASS1_QWEN_PILOT === 'true'
+    const baseUrl = pilotEnabled && isClass1Pilot
+      ? process.env.TALKORA_CLASS1_AI_URL || 'http://127.0.0.1:8002'
+      : env.aiServiceUrl
 
     try {
       if (env.nodeEnv !== 'production') {
@@ -26,7 +31,7 @@ export class PythonAIProvider implements AIProvider {
       }
 
       const response = await fetch(
-        `${env.aiServiceUrl.replace(/\/$/, '')}/v1/brain/respond`,
+        `${baseUrl.replace(/\/$/, '')}/v1/brain/respond`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -34,6 +39,7 @@ export class PythonAIProvider implements AIProvider {
           body: JSON.stringify({
             studentName: context.studentName,
             grade: context.grade,
+            ...(isClass1Pilot && pilotEnabled ? { levelId: context.levelId } : {}),
             avatarType: context.avatarType || 'BOY',
             unitNumber: context.unitNumber || 1,
             unitTitle: context.levelTitle || 'My Favourite Things',

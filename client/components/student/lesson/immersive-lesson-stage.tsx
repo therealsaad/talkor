@@ -520,7 +520,7 @@ export function ImmersiveLessonStage({
                         (() => {
                           const pictureOption = pictureOptions.find((item) => item.word === option && item.status === 'READY' && typeof item.assetKey === 'string')
                           return typeof pictureOption?.assetKey === 'string' ? (
-                            <span className="tk-picture-image-wrap"><Image className="tk-picture-image" src={`/kg/pictures/${encodeURIComponent(pictureOption.assetKey)}.webp`} alt={option} width={240} height={160} sizes="(max-width: 700px) 42vw, 220px" onError={() => setPictureLoadFailed(true)} /></span>
+                            <span className="tk-picture-image-wrap"><Image className="tk-picture-image" src={`/lessons/kg/pictures/${encodeURIComponent(pictureOption.assetKey)}.webp`} alt={option} width={240} height={160} sizes="(max-width: 700px) 42vw, 220px" onError={() => setPictureLoadFailed(true)} /></span>
                           ) : <span className="tk-picture-emoji" role="img" aria-label={option}>{pictureEmoji(option)}</span>
                         })()
                       ) : <span aria-hidden="true" style={{ marginRight: 9 }}>{['🌟','🎈','✨','🎯'][optionIndex % 4]}</span>}

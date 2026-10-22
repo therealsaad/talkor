@@ -6,6 +6,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Flame, Star } from 'lucide-react'
 import { progressService } from '@/services/progress-service'
+import { kgAlphabetService } from '@/features/lessons/grades/kg/level-01/services/kg-alphabet-service'
 import { StudentNav } from '@/components/student/navigation/student-nav'
 import { accountAvatar, learnerAvatar } from '@/config/talkora-assets'
 import { TalkoraLogo } from '@/components/brand/talkora-logo'
@@ -16,7 +17,8 @@ export function StudentPortalShell({ children }: { children: ReactNode }) {
   const router = useRouter()
   const { session } = useAuth()
   const [stats, setStats] = useState<{ xp?: number; streak?: number; stars?: number }>({})
-  const isLesson = pathname.startsWith('/student/lesson') || pathname.startsWith('/student/kg')
+  const isKGMap = pathname === '/student/kg/map'
+  const isLesson = pathname.startsWith('/student/lesson') || (pathname.startsWith('/student/kg') && !isKGMap)
   const isMap = pathname === '/student/levels' || pathname === '/student/kg/map'
   const isKgMap = isMap && session?.student?.grade === 0
 
@@ -28,29 +30,28 @@ export function StudentPortalShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let alive = true
-    if (!session?.student || session.student.grade === 0) {
+    if (!session?.student) {
       setStats({})
       return () => { alive = false }
     }
 
-    progressService
-      .getMyProgress()
-      .then((progress) => {
-        if (!alive) return
-        setStats({
-          xp: progress.xp,
-          streak: progress.streak,
-          stars: progress.stars,
-        })
-      })
-      .catch(() => {
-        if (alive) setStats({})
-      })
+    // KG Level 1 persists in KGAlphabetProgress, not generic curriculum Progress.
+    // Fetch on session changes and map/lesson navigation; never store on a shared PC.
+    if (session.student.grade === 0) {
+      setStats({})
+      kgAlphabetService.state().then((state) => {
+        if (alive) setStats({ xp: state.xp, stars: state.stars, streak: 0 })
+      }).catch(() => { if (alive) setStats({}) })
+    } else {
+      progressService.getMyProgress().then((progress) => {
+        if (alive) setStats({ xp: progress.xp, streak: progress.streak, stars: progress.stars })
+      }).catch(() => { if (alive) setStats({}) })
+    }
 
     return () => {
       alive = false
     }
-  }, [session?.student?.id])
+  }, [session?.student?.id, session?.student?.grade, pathname])
 
   const student = session?.student
   const studentName = student?.fullName?.split(' ')[0] || 'Explorer'

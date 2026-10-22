@@ -104,8 +104,8 @@ export const VoiceController = {
 
   synthesize: catchAsync(async (req: Request, res: Response) => {
     if (!req.auth || req.auth.role !== 'STUDENT') throw ApiError.forbidden()
-    const { text, purpose, language } = req.body
-    const stream = await VoiceService.streamSynthesize(text, { studentId: req.auth.id, purpose, language })
+    const { text, purpose, language, activityId } = req.body
+    const stream = await VoiceService.streamSynthesize(text, { studentId: req.auth.id, purpose, language, activityId })
     if (stream) {
       res.status(200)
       res.setHeader('Content-Type', stream.contentType)

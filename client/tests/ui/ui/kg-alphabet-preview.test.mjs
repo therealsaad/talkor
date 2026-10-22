@@ -16,11 +16,11 @@ test('school preview uses the same playable map and lesson, without live student
   assert.match(preview, /no student records/i)
   assert.match(lesson, /if \(preview\) \{[\s\S]*setPhase\('intro'\)/)
   assert.match(lesson, /kgAlphabetService\.previewSubmitPrepared/)
-  assert.match(lesson, /onEnded=\{\(\) => \{[\s\S]*introEndedRef\.current = true/)
+  assert.match(lesson, /function pictureChoices/)
   assert.match(service, /Static staff preview state/)
   assert.match(service, /makeKGPreviewState/)
-  assert.match(map, /Future levels are not yet published/)
-  assert.match(preview, /complete introduction video plays first/i)
+  assert.match(map, /Level \$\{level\} is not yet published/)
+  assert.match(preview, /child-friendly Level 1 matching/i)
 })
 
 test('real KG lesson still uses STT and private S3, with explicit school-admin approval', () => {

@@ -89,6 +89,11 @@ export class QwenProvider implements AIProvider {
 
   async generate(context: MissJulieContext): Promise<AIStructuredResponse> {
     const startedAt = Date.now()
+    // Opt-in Class 1 pilot takes precedence over direct/cloud Qwen.
+    // Only an authorized lesson-resolved g01-l01 context may enter this route.
+    if (process.env.TALKORA_CLASS1_QWEN_PILOT === 'true' && context.grade === 1 && context.levelId === 'g01-l01') {
+      return this.pythonFallback.generate(context)
+    }
 
     // If Qwen API key is configured, call Qwen direct endpoint
     if (env.qwenApiKey) {
