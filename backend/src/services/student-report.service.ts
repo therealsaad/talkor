@@ -59,7 +59,7 @@ export const StudentReportService = {
       ]) : Promise.resolve([]),
       student.grade === 0 ? KGAlphabetAttempt.distinct('letter', { studentId: student._id,
         createdAt: dates, outcome: 'incorrect' }) : Promise.resolve([]),
-      student.grade === 0 ? KGAlphabetProgress.findOne({ studentId: student._id }).select('currentIndex introSeen completedAt').lean() : Promise.resolve(null),
+      student.grade === 0 ? KGAlphabetProgress.findOne({ studentId: student._id }).select('currentIndex introSeen completedAt xp stars homeworkStatus').lean() : Promise.resolve(null),
     ])
     const legacy = attemptStats[0] || { attempts: 0, scoreSum: 0, correct: 0, timeMs: 0, activeDates: [] }
     const kg = kgStats[0] || { attempts: 0, scored: 0, correct: 0, unclear: 0, timeMs: 0, activeDates: [] }
@@ -67,6 +67,12 @@ export const StudentReportService = {
     const denominator = Number(legacy.attempts) + Number(kg.scored)
     const weakSkills = mistakes.map((item) => item.skill)
     const activeDays = new Set([...legacy.activeDates, ...kg.activeDates]).size
+    const curriculumCompletedLevels = progress.reduce((sum, item) => sum + item.levels.filter((level) => level.status === 'completed').length, 0)
+    const curriculumXp = progress.reduce((sum, item) => sum + item.xp, 0)
+    // KG1 is canonical in KGAlphabetProgress; do not duplicate a generic entry.
+    const kgComplete = student.grade === 0 && (kgProgress?.currentIndex ?? 0) === 8
+    const completedLevels = student.grade === 0 ? Math.max(curriculumCompletedLevels, kgComplete ? 1 : 0) : curriculumCompletedLevels
+    const totalXp = student.grade === 0 ? Math.max(curriculumXp, kgProgress?.xp ?? 0) : curriculumXp
     return {
       type: 'recorded-learning-report', period, window: { from: start.toISOString(), to: end.toISOString() },
       generatedAt: new Date().toISOString(),
@@ -79,10 +85,12 @@ export const StudentReportService = {
         // KG unclear speech is deliberately excluded from scored denominator.
         accuracyPercent: denominator ? Math.round((Number(legacy.scoreSum) + Number(kg.correct) * 100) / denominator) : null,
         totalMinutes: Math.round((Number(legacy.timeMs) + Number(kg.timeMs)) / 60000),
-        completedLevels: progress.reduce((sum, item) => sum + item.levels.filter((level) => level.status === 'completed').length, 0),
-        totalXp: progress.reduce((sum, item) => sum + item.xp, 0),
+        completedLevels,
+        totalXp,
+        kgLevel1Stars: student.grade === 0 ? (kgProgress?.stars ?? 0) : null,
+        kgHomeworkStatus: student.grade === 0 ? (kgProgress?.homeworkStatus || 'not-assigned') : null,
         kgLevel1Activities: kgProgress?.currentIndex ?? null,
-        kgLevel1Complete: Boolean(kgProgress?.completedAt),
+        kgLevel1Complete: kgComplete,
         unclearSpeechAttempts: Number(kg.unclear),
       },
       needsPractice: student.grade === 0 ? kgWeakLetters : weakSkills,

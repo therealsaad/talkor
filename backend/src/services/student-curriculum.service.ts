@@ -1,3 +1,4 @@
+// TALKORA_CLASS1_STUDENT_DEMO_ROUTE_V1
 import {
   ProgressService,
 } from './progress.service'
@@ -56,6 +57,7 @@ export const StudentCurriculumService = {
       student,
       curriculumClass,
       isKGPilot,
+      isClass1Demo,
     } =
       await CurriculumAccessService.context(
         studentId,
@@ -85,7 +87,7 @@ export const StudentCurriculumService = {
        EXACTLY THIS GRADE'S UNIT MAP
        ===================================================== */
 
-    const contentStatus = isKGPilot ? 'draft' : 'active'
+    const contentStatus = isKGPilot || isClass1Demo ? 'draft' : 'active'
     const units =
       await Level.find({
         classId:
@@ -94,7 +96,9 @@ export const StudentCurriculumService = {
         status: contentStatus,
         ...(isKGPilot
           ? { curriculumVersion: KG_CURRICULUM_VERSION, availability: 'UPCOMING' }
-          : {}),
+          : isClass1Demo
+            ? { curriculumVersion: 'talkora-class1-l01-demo-draft-v1', number: 1, availability: 'UPCOMING' }
+            : {}),
       })
         .sort({
           order: 1,
@@ -122,6 +126,7 @@ export const StudentCurriculumService = {
 
             status:
               contentStatus,
+            ...(isClass1Demo ? { 'settings.talkoraDemoDraft': true } : {}),
           })
             .sort({
               levelId: 1,
@@ -260,7 +265,9 @@ export const StudentCurriculumService = {
     ) {
       if (isKGPilot
         ? unit.curriculumVersion !== KG_CURRICULUM_VERSION || unit.status !== 'draft' || unit.availability !== 'UPCOMING'
-        : unit.availability !== 'PUBLISHED') {
+        : isClass1Demo
+          ? unit.curriculumVersion !== 'talkora-class1-l01-demo-draft-v1' || unit.number !== 1 || unit.status !== 'draft' || unit.availability !== 'UPCOMING'
+          : unit.availability !== 'PUBLISHED') {
         continue
       }
 
@@ -391,7 +398,9 @@ export const StudentCurriculumService = {
            */
           if (isKGPilot
             ? unit.curriculumVersion !== KG_CURRICULUM_VERSION || unit.status !== 'draft' || unit.availability !== 'UPCOMING'
-            : unit.availability !== 'PUBLISHED') {
+            : isClass1Demo
+              ? unit.curriculumVersion !== 'talkora-class1-l01-demo-draft-v1' || unit.number !== 1 || unit.status !== 'draft' || unit.availability !== 'UPCOMING'
+              : unit.availability !== 'PUBLISHED') {
             status =
               'UPCOMING'
           } else if (
@@ -572,7 +581,7 @@ export const StudentCurriculumService = {
         curriculumClass.name,
 
       curriculumVersion:
-        (isKGPilot ? KG_CURRICULUM_VERSION : progress.curriculumVersion) ??
+        (isKGPilot ? KG_CURRICULUM_VERSION : isClass1Demo ? 'talkora-class1-l01-demo-draft-v1' : progress.curriculumVersion) ??
         currentUnit
           ?.curriculumVersion ??
         result.find(
@@ -667,7 +676,7 @@ export const StudentCurriculumService = {
        LESSONS
        ===================================================== */
 
-    const contentStatus = access.isKGPilot ? 'draft' : 'active'
+    const contentStatus = access.isKGPilot || access.isClass1Demo ? 'draft' : 'active'
     const lessons =
       await Lesson.find({
         levelId:
@@ -675,6 +684,7 @@ export const StudentCurriculumService = {
 
         status:
           contentStatus,
+        ...(access.isClass1Demo ? { 'settings.talkoraDemoDraft': true } : {}),
       })
         .sort({
           order: 1,

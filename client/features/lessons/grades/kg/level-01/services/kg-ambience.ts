@@ -5,7 +5,7 @@
  */
 export type KGAmbienceMode = 'off' | 'ambient' | 'ducked' | 'silent'
 
-export const KG_AMBIENCE_TRACK = '/kg/audio/garden-ambience-v1.mp3'
+export const KG_AMBIENCE_TRACK = '/lessons/kg/audio/garden-ambience-v1.mp3'
 export const KG_AMBIENCE_VOLUME = 0.12
 export const KG_AMBIENCE_DUCKED_VOLUME = 0.018
 

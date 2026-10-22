@@ -14,13 +14,14 @@ describe('KG alphabet lesson v1', () => {
     expect(evaluateKGSpeech('cat', 'C')).toBe('correct')
     expect(evaluateKGSpeech('dee', 'D')).toBe('correct')
   })
-  it('never advances on wrong, blank, or filler speech', () => {
+  it('accepts a close child attempt but never advances on wrong, blank, or filler speech', () => {
     expect(evaluateKGSpeech('dog', 'C')).toBe('incorrect')
     expect(evaluateKGSpeech('', 'A')).toBe('unclear')
     expect(evaluateKGSpeech('um', 'B')).toBe('unclear')
-    expect(evaluateKGSpeech('appl', 'A')).toBe('unclear')
-    expect(evaluateKGSpeech('app', 'A')).toBe('unclear')
-    expect(evaluateKGSpeech('bell', 'B')).toBe('unclear')
+    expect(evaluateKGSpeech('appl', 'A')).toBe('correct')
+    expect(evaluateKGSpeech('app', 'A')).toBe('incorrect')
+    expect(evaluateKGSpeech('bell', 'B')).toBe('incorrect')
+    expect(evaluateKGSpeech('sun', 'D')).toBe('incorrect')
   })
   it('has a fixed offline audio manifest without student-specific speech', () => {
     expect(AUDIO_IDS).toContain('say-a')

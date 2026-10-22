@@ -23,7 +23,7 @@ export function buildKGPictureAssetManifest(units: readonly KGCurriculumUnit[] =
         assetKey,
         altText: `Child-friendly cartoon illustration of ${word.toLowerCase()}`,
         relativePath: `${assetKey}.webp`,
-        publicPath: `/kg/pictures/${assetKey}.webp`,
+        publicPath: `/lessons/kg/pictures/${assetKey}.webp`,
       })
     }
   }

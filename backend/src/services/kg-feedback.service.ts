@@ -5,7 +5,7 @@ import type { Letter } from '../kg/alphabet-content'
 export type KGFeedbackInput = {
   letter: Letter
   mode: 'speak' | 'touch'
-  outcome: 'correct' | 'incorrect' | 'unclear'
+  outcome: 'correct' | 'incorrect' | 'unclear' | 'supported'
   transcript?: string
   selected?: string
   noSpeech?: boolean
@@ -15,6 +15,7 @@ const WORDS: Record<Letter, string> = { A: 'apple', B: 'ball', C: 'cat', D: 'dog
 
 export function safeKGFeedback(input: KGFeedbackInput): string {
   const word = WORDS[input.letter]
+  if (input.outcome === 'supported') return `Great! You found the word! In English we say ${word}. Let’s keep learning!`
   if (input.outcome === 'correct') return `Yay! You did it! ${input.letter} is for ${word}. Wonderful!`
   if (input.noSpeech) return `I'm listening, superstar. Take your time! Say ${word} when you're ready.`
   if (input.outcome === 'unclear') return `Let's say ${word} together. Take your time. Koi baat nahi!`
@@ -24,7 +25,7 @@ export function safeKGFeedback(input: KGFeedbackInput): string {
 /** Groq supplies *wording only*. Speech/picture grades are computed by the backend, never by the LLM. */
 export async function generateKGFeedback(input: KGFeedbackInput): Promise<{ text: string; source: 'groq' | 'guided' }> {
   const fallback = safeKGFeedback(input)
-  if (!env.groqApiKey || input.noSpeech) return { text: fallback, source: 'guided' }
+  if (!env.groqApiKey || input.noSpeech || input.outcome === 'supported') return { text: fallback, source: 'guided' }
   const word = WORDS[input.letter]
   try {
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {

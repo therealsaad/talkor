@@ -12,6 +12,7 @@ router.get('/audio/:version/:id', requireRole('STUDENT'), KGAlphabetController.a
 router.get('/preview/audio/:version/:id', requireRole('TEACHER', 'SCHOOL_ADMIN'), KGAlphabetController.previewAudio)
 router.post('/preview/attempt', requireRole('TEACHER', 'SCHOOL_ADMIN'), KGAlphabetController.previewAttempt)
 router.post('/attempt', requireRole('STUDENT'), KGAlphabetController.attempt)
+router.post('/homework/complete', requireRole('STUDENT'), KGAlphabetController.completeHomework)
 router.get('/reports', requireRole('TEACHER', 'SCHOOL_ADMIN'), KGAlphabetController.reports)
 router.get('/reports/:studentId', requireRole('TEACHER', 'SCHOOL_ADMIN'), KGAlphabetController.report)
 export default router

@@ -1,9 +1,15 @@
 {
   "levelId": "g01-l01",
-  "status": "authored-assets-pending",
+  "status": "backdrop-ready-audio-review-pending",
   "assetsRoot": "/lessons/class-01/level-01/",
   "introVideo": null,
-  "images": [],
+  "images": [
+    {
+      "id": "two-letter-word-meadow",
+      "path": "/lessons/class-01/level-01/two-letter-word-meadow.webp",
+      "usage": "student lesson backdrop"
+    }
+  ],
   "animations": [],
   "audio": [],
   "music": null,

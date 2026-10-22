@@ -64,7 +64,7 @@ async function fixture({ outcome = 'correct', denied = false, lostResponse = fal
     const originalPlay = HTMLMediaElement.prototype.play
     HTMLMediaElement.prototype.play = function (...args) {
       if (window.__kgMedia.recorders) window.__kgMedia.overlap = true
-      if (this instanceof HTMLVideoElement && this.getAttribute('src')?.includes('/kg/videos/fullkg.mp4')) {
+      if (this instanceof HTMLVideoElement && this.getAttribute('src')?.includes('/lessons/kg/videos/fullkg.mp4')) {
         const video = this
         Object.defineProperty(video, 'duration', { configurable: true, value: 63.018 })
         Object.defineProperty(video, 'currentTime', { configurable: true, writable: true, value: 0 })
@@ -151,6 +151,10 @@ async function fixture({ outcome = 'correct', denied = false, lostResponse = fal
     }
   })
   await page.goto(`${base}/student/kg`, { waitUntil: 'domcontentloaded' })
+  // Fullscreen media normally needs one real gesture; microphone permission is
+  // requested only after the server-verified story completes.
+  await page.waitForSelector('.kg-story-play', { timeout: 20000 })
+  await page.click('.kg-story-play')
   try {
     if (denied) {
       await page.waitForFunction(() => document.body.innerText.includes('Please allow microphone access'), { timeout: 20000 })
@@ -224,7 +228,8 @@ test('real browser silence retries twice, saves only silence events, and offers 
   const { page, context, ids } = await fixture({ silent: true })
   try {
     try {
-      await page.waitForFunction(() => document.body.innerText.includes('That was quiet.') && window.__kgMedia.requests === 3, { timeout: 26000 })
+      // One permission preflight plus three silence recordings.
+      await page.waitForFunction(() => document.body.innerText.includes('That was quiet.') && window.__kgMedia.requests === 4, { timeout: 26000 })
     } catch (error) {
       console.error('Silence retry diagnostic:', JSON.stringify({ requests: await page.evaluate(() => window.__kgMedia), attempts: ids, text: await page.$eval('body', (element) => element.innerText) }))
       throw error

@@ -5,7 +5,8 @@ import { Play, SkipForward, Sparkles } from 'lucide-react'
 
 const lessonKeyPattern = /^kg-g0-u[1-8]-l[1-3]$/
 const MANDATORY_FIRST_LESSON = 'kg-g0-u1-l1'
-const FULL_VIDEO = '/kg/videos/fullkg.mp4'
+const KG_MEDIA_ROOT = '/lessons/kg'
+const FULL_VIDEO = `${KG_MEDIA_ROOT}/videos/fullkg.mp4`
 const REQUIRED_WATCH_SECONDS = 60
 
 async function findAvailableSources(lessonKey: string): Promise<string[]> {
@@ -14,10 +15,11 @@ async function findAvailableSources(lessonKey: string): Promise<string[]> {
     const controller = new AbortController()
     const timeout = window.setTimeout(() => controller.abort(), 1100)
     try {
-      const response = await fetch(`/kg/lesson-intros/${lessonKey}.${extension}`, {
+      const source = `${KG_MEDIA_ROOT}/lesson-intros/${lessonKey}.${extension}`
+      const response = await fetch(source, {
         method: 'HEAD', cache: 'no-store', signal: controller.signal,
       })
-      return response.ok ? `/kg/lesson-intros/${lessonKey}.${extension}` : null
+      return response.ok ? source : null
     } catch { return null }
     finally { window.clearTimeout(timeout) }
   }))
