@@ -1,6 +1,12 @@
 # dependencies
 node_modules/
+@"
 
+# Local backups and Python environments
+talkora-kg1-backup-*/
+.venv/
+**/.venv/
+"@ | Add-Content .gitignore
 # Next.js
 .next/
 out/

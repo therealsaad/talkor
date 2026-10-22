@@ -93,6 +93,11 @@ export const synthesizeVoiceSchema =
             .min(2)
             .max(16)
             .optional(),
+
+        activityId:
+          z.string()
+            .regex(/^[a-f0-9]{24}$/i)
+            .optional(),
       })
       .strict(),
   })

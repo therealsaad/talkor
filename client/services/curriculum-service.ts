@@ -237,6 +237,8 @@ export interface ActivityConversationGoal {
 export interface ActivityItem {
   id: string
 
+  activityKey?: string
+
   lessonId: string
 
   order: number
@@ -640,6 +642,7 @@ function hasDemoData(): boolean {
 
 export interface FastLessonPackage {
   grade: number
+  experienceId?: string
   curriculumClass: CurriculumClass
   level: LevelItem
   lesson: LessonItem

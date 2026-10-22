@@ -1,0 +1,5 @@
+
+# Local backups and Python environments
+talkora-kg1-backup-*/
+.venv/
+**/.venv/

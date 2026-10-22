@@ -18,6 +18,14 @@ pnpm-debug.log*
 # tests / coverage
 coverage/
 
+
+@"
+
+# Local backups and Python environments
+talkora-kg1-backup-*/
+.venv/
+**/.venv/
+"@ | Add-Content .gitignore
 # OS/editor
 .DS_Store
 Thumbs.db

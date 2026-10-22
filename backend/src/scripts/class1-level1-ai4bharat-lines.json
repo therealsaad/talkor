@@ -1,0 +1,63 @@
+{
+  "levelId": "g01-l01",
+  "revision": "v1",
+  "ttsProvider": "ai4bharat",
+  "status": "requires-human-voice-review",
+  "s3KeyPrefix": "class-01/level-01/v1/",
+  "lines": [
+    {
+      "id": "listen-at",
+      "language": "en-IN",
+      "text": "Listen carefully. Which word is at? At.",
+      "s3Key": "class-01/level-01/v1/listen-at.wav"
+    },
+    {
+      "id": "build-at",
+      "language": "en-IN",
+      "text": "Let us build the word at. A, T, at.",
+      "s3Key": "class-01/level-01/v1/build-at.wav"
+    },
+    {
+      "id": "listen-in",
+      "language": "en-IN",
+      "text": "Listen carefully. Which word is in? In.",
+      "s3Key": "class-01/level-01/v1/listen-in.wav"
+    },
+    {
+      "id": "build-in",
+      "language": "en-IN",
+      "text": "Let us build the word in. I, N, in.",
+      "s3Key": "class-01/level-01/v1/build-in.wav"
+    },
+    {
+      "id": "look-at-me",
+      "language": "en-IN",
+      "text": "Look at me. Which word is missing?",
+      "s3Key": "class-01/level-01/v1/look-at-me.wav"
+    },
+    {
+      "id": "i-am-sam",
+      "language": "en-IN",
+      "text": "Let us make a sentence. I am Sam.",
+      "s3Key": "class-01/level-01/v1/i-am-sam.wav"
+    },
+    {
+      "id": "try-again",
+      "language": "en-IN",
+      "text": "Good try. Listen again and have another go.",
+      "s3Key": "class-01/level-01/v1/try-again.wav"
+    },
+    {
+      "id": "well-done",
+      "language": "en-IN",
+      "text": "Wonderful! You did it.",
+      "s3Key": "class-01/level-01/v1/well-done.wav"
+    },
+    {
+      "id": "homework",
+      "language": "en-IN",
+      "text": "Your homework: say I am Sam and Look at me with someone at home.",
+      "s3Key": "class-01/level-01/v1/homework.wav"
+    }
+  ]
+}

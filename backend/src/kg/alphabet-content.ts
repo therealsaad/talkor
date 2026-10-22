@@ -86,52 +86,76 @@ export const ACTIVITY_AUDIO_MANIFEST = Object.fromEntries(
   ]),
 ) as Record<ActivityId, Array<{ id: AudioId; text: string; s3Key: string }>>
 
-function isPlausibleNearMatch(token: string, target: string): boolean {
-  if (token.length >= 2 && target.startsWith(token)) return true
-  if (Math.abs(token.length - target.length) > 1) return false
-  let previous = Array.from({ length: target.length + 1 }, (_, index) => index)
-  for (let row = 1; row <= token.length; row++) {
-    const current = [row]
-    for (let column = 1; column <= target.length; column++) {
-      current[column] = Math.min(
-        current[column - 1] + 1,
-        previous[column] + 1,
-        previous[column - 1] + (token[row - 1] === target[column - 1] ? 0 : 1),
-      )
-    }
-    previous = current
-  }
-  return previous[target.length] <= 1
+/**
+ * KG recognises the INTENDED word, not a phonetic examination.
+ * These aliases are deliberately narrow. Do not add ordinary unrelated words
+ * (such as "fall" for ball, "hat" for cat or "fog" for dog): they false-pass.
+ * Separate Hindi translations from English attempts so reports stay truthful.
+ */
+const CHILD_WORD_ALIASES: Record<Letter, readonly string[]> = {
+  A: ['aaple', 'aapple', 'aple', 'appl', 'appel', 'appul', 'epple', 'eple', 'epal', 'applee', 'applle', 'apleey'],
+  B: ['bol', 'bawl', 'baal', 'boll', 'bal', 'balll'],
+  C: ['kat', 'kaat', 'catt', 'katt'],
+  D: ['dhog', 'dawg', 'daug', 'dogg', 'doggy', 'dohg', 'dug'],
+}
+
+const HINDI_WORDS: Record<string, string> = {
+  'एप्पल': 'apple', 'ऐप्पल': 'apple', 'ऐपल': 'apple', 'एपल': 'apple',
+  'बॉल': 'ball', 'कैट': 'cat', 'डॉग': 'dog', 'डाग': 'dog',
+  'ए': 'a', 'बी': 'b', 'सी': 'c', 'डी': 'd',
+  'सेब': 'seb',
+}
+
+const LETTER_ALIASES: Record<Letter, readonly string[]> = {
+  A: ['a', 'ay', 'hey'], B: ['b', 'bee', 'be'],
+  C: ['c', 'see', 'sea'], D: ['d', 'dee'],
+}
+
+function normalizeKGWords(raw: string): string[] {
+  const text = raw.slice(0, 240)
+    .replace(/\p{L}[\p{L}\p{M}]*/gu, (token) => HINDI_WORDS[token] || token)
+    .toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ').trim()
+  if (!text) return []
+  // "aaaapple" and "appppple" are normal preschool stretching, not mistakes.
+  return text.split(' ').map((word) => word.replace(/([a-z])\1{2,}/g, '$1$1'))
+}
+
+function matchesWord(token: string, letter: Letter): boolean {
+  const expected = LETTERS.find((item) => item.letter === letter)!.word
+  // Stretching consonants and vowels should not make an otherwise clear apple wrong.
+  if (letter === 'A' && /^a+p+l+e+$/.test(token) && token.length >= 4 && token.length <= 20) return true
+  return token === expected || CHILD_WORD_ALIASES[letter].includes(token)
+}
+
+/** Hindi "seb/saib/sayb" expresses the right MEANING, not an English "apple" pronunciation. */
+export function isKGBilingualBridge(raw: string, letter: Letter): boolean {
+  if (letter !== 'A') return false
+  const tokens = normalizeKGWords(raw)
+  if (!tokens.length || tokens.length > 6) return false
+  if (tokens.some((token) => ['no', 'not', 'never', 'dont', 'wrong'].includes(token))) return false
+  if (LETTERS.some(({ letter: other }) => other !== letter && tokens.some((token) => matchesWord(token, other)))) return false
+  const bridge = tokens.filter((token) => ['seb', 'saib', 'sayb', 'seib'].includes(token))
+  if (bridge.length !== 1) return false
+  return tokens.every((token) => ['seb', 'saib', 'sayb', 'seib', 'i', 'said', 'say', 'it', 'is', 'a', 'the', 'this'].includes(token))
 }
 
 export function evaluateKGSpeech(raw: string, letter: Letter, target: 'word' | 'letter' | 'either' = 'either'): 'correct' | 'incorrect' | 'unclear' {
-  // Whisper may write an English word in Devanagari during Hindi/English speech.
-  // Accept that spelling, while still teaching the English curriculum word.
-  const phonetic: Record<string, string> = {
-    'एप्पल': 'apple', 'ऐप्पल': 'apple', 'ऐपल': 'apple', 'एपल': 'apple',
-    'बॉल': 'ball', 'कैट': 'cat', 'डॉग': 'dog', 'डाग': 'dog',
-    'ए': 'a', 'बी': 'b', 'सी': 'c', 'डी': 'd',
+  const tokens = normalizeKGWords(raw)
+  if (!tokens.length) return 'unclear'
+  // Several different target words, negation or recorded prompt echo is ambiguous.
+  if (tokens.some((token) => ['no', 'not', 'never', 'dont', 'wrong'].includes(token))) return 'unclear'
+  const mentioned = LETTERS.filter(({ letter: candidate }) => tokens.some((token) => matchesWord(token, candidate)))
+  if (mentioned.length > 1) return 'unclear'
+  if (mentioned.length === 1) return mentioned[0].letter === letter ? 'correct' : 'incorrect'
+  if (tokens.length === 1) {
+    const spokenLetter = (Object.entries(LETTER_ALIASES) as [Letter, readonly string[]][])
+      .find(([, aliases]) => aliases.includes(tokens[0]))?.[0]
+    if (spokenLetter) return spokenLetter === letter ? 'correct' : 'incorrect'
   }
-  const normalized = raw.slice(0, 240).replace(/\p{L}[\p{L}\p{M}]*/gu, (token) => phonetic[token] || token).toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
-    .replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ').trim()
-  if (!normalized) return 'unclear'
-  const word = LETTERS.find((item) => item.letter === letter)!.word
-  // A one-word answer or a simple sentence such as "It's an apple" is accepted.
-  const mentioned = LETTERS.filter((item) => new RegExp(`\\b${item.word}\\b`).test(normalized))
-  if (mentioned.length > 1 || /\b(not|no|isn t)\b/.test(normalized)) return 'unclear'
-  if (target !== 'letter' && mentioned.some((item) => item.word === word)) return 'correct'
-  // Single-letter speech is unreliable for four-year-olds. Accept common STT spellings
-  // only when the response is exclusively the target letter sound.
-  const aliases: Record<Letter, string[]> = {
-    A: ['a', 'ay', 'hey'], B: ['b', 'bee', 'be'], C: ['c', 'see', 'sea'], D: ['d', 'dee'],
-  }
-  if (aliases[letter].includes(normalized)) return target === 'word' ? 'unclear' : 'correct'
-  // Silence/Whisper fillers should never be recorded as a language mistake.
-  if (/^(uh|um|hmm|hm|ah|hello|you|thank you|okay|ok)$/.test(normalized)) return 'unclear'
-  // Groq Whisper does not return confidence. A short prefix or one-edit transcript
-  // is plausible child pronunciation and should be repeated, not graded as wrong.
-  const tokens = normalized.split(' ')
-  if (tokens.length === 1 && isPlausibleNearMatch(tokens[0], word)) return 'unclear'
+  if (isKGBilingualBridge(raw, letter)) return 'unclear'
+  if (tokens.every((token) => ['uh', 'um', 'hmm', 'hm', 'ah', 'hello', 'okay', 'ok'].includes(token))) return 'unclear'
+  // No unrestricted edit distance: cat->hat and dog->fog are different words.
   return 'incorrect'
 }
 

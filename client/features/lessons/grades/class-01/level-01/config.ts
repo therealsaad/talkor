@@ -12,7 +12,9 @@ export const config = {
   "description": "Letters and Sounds — a distinct petal garden adventure for Class 1 learners.",
   "syllabus": {
     "objectives": [
-      "Recognize, hear, and speak language connected to letters and sounds."
+      "Hear and identify the sounds in am, an, at, in, is, it, on, and up.",
+      "Blend, recognize, and build short words with visual support.",
+      "Use a familiar two-letter word in a short spoken sentence."
     ],
     "skills": [
       "listening",
@@ -26,8 +28,8 @@ export const config = {
   },
   "experience": {
     "themeId": "class-01-01-letters-and-sounds",
-    "world": "Petal Garden",
-    "sceneDescription": "flowers and gently floating butterflies",
+    "world": "Two-Letter Word Meadow",
+    "sceneDescription": "a sunny word meadow with bridges, lanterns, paths, and eight two-letter word signs",
     "layout": "split-story",
     "palette": {
       "background": "#fce2c2",
@@ -53,7 +55,7 @@ export const config = {
     "speechLanguage": "en-IN",
     "beginnerHindiSupport": true,
     "spontaneousFeedbackTTS": "azure-uncached",
-    "staticAudioStrategy": "s3-first-with-azure-fallback",
+    "staticAudioStrategy": "ai4bharat-s3-reviewed-audio",
     "sendMicrophoneAudioToBackend": true,
     "homeworkRequired": true
   },

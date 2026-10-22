@@ -10,6 +10,8 @@ import { School } from '../../src/models/School'
 import { Student } from '../../src/models/Student'
 import { S3Service } from '../../src/services/S3Service'
 import { KGSpeechService } from '../../src/services/kg-speech.service'
+import { clearKGStaticAudioCache } from '../../src/services/kg-static-audio-cache'
+import { AzureVoiceProvider } from '../../src/providers/voice/AzureVoiceProvider'
 import { ApiError } from '../../src/utils/ApiError'
 import { signToken } from '../../src/utils/jwt'
 import { clearTestDatabase, connectTestDatabase, disconnectTestDatabase } from './dbTestUtils'
@@ -32,6 +34,7 @@ afterAll(disconnectTestDatabase)
 afterEach(async () => {
   activePlaybackId = ''
   jest.restoreAllMocks()
+  clearKGStaticAudioCache()
   await clearTestDatabase()
 })
 
@@ -39,8 +42,8 @@ it('saves all ABCD speech attempts, handles low-confidence speech, resumes, and 
   const { student, authorization } = await makePilot()
   await approveIntro(authorization)
   const transcribe = jest.spyOn(KGSpeechService, 'transcribe')
-    .mockResolvedValueOnce({ transcript: 'apple', confidence: 0.1, available: true, provider: 'test' } as never)
-    .mockResolvedValueOnce({ transcript: 'apple', uncertain: true, available: true, provider: 'test' } as never)
+    .mockResolvedValueOnce({ transcript: 'um', confidence: 0.1, available: true, provider: 'test' } as never)
+    .mockResolvedValueOnce({ transcript: 'um', uncertain: true, available: true, provider: 'test' } as never)
   const speak = (id: string, submissionId: string) => request(app).post('/api/kg-alphabet/attempt').set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
     .send({ activityId: id, submissionId, audioBase64: 'Y'.repeat(160), mimeType: 'audio/webm', durationMs: 1000 })
   expect((await speak('say-a', 'quality-low-123456').expect(200)).body.data.outcome).toBe('unclear')
@@ -144,9 +147,12 @@ it('authenticates the student, resolves the stable ID to the versioned private S
   expect(getAudio).toHaveBeenCalledWith('kg/level-1/miss-julie/v1/say-a.mp3')
 })
 
-it('denies audio to students outside the authorized KG pilot and reports a recoverable missing-clip error', async () => {
+it('denies audio outside the authorized KG pilot and falls back to uncached Azure when an S3 clip is missing', async () => {
   const { student, authorization } = await makePilot()
   const getAudio = jest.spyOn(S3Service, 'getAudio').mockResolvedValue(null)
+  const fallbackAudio = Buffer.from('ID3 Azure KG fallback')
+  const azure = jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached')
+    .mockResolvedValue({ audio: fallbackAudio, contentType: 'audio/mpeg' })
 
   await request(app).get('/api/kg-alphabet/audio/v2/say-a').set('Authorization', authorization).expect(404)
   expect(getAudio).not.toHaveBeenCalled()
@@ -154,8 +160,15 @@ it('denies audio to students outside the authorized KG pilot and reports a recov
   const missing = await request(app)
     .get('/api/kg-alphabet/audio/v1/say-a')
     .set('Authorization', authorization)
-    .expect(404)
-  expect(missing.body.error.message).toMatch(/temporarily unavailable/i)
+    .buffer(true)
+    .parse((res, callback) => {
+      const chunks: Buffer[] = []
+      res.on('data', (chunk: Buffer) => chunks.push(chunk))
+      res.on('end', () => callback(null, Buffer.concat(chunks)))
+    })
+    .expect(200)
+  expect(missing.body).toEqual(fallbackAudio)
+  expect(azure).toHaveBeenCalledWith(expect.stringMatching(/apple/i))
   expect(await KGAlphabetProgress.countDocuments({ studentId: student._id })).toBe(0)
 
   const nonPilot = await Student.create({
@@ -237,8 +250,8 @@ it('scores KG speech on the server, retries unclear speech, advances once, and d
   await approveIntro(authorization)
   const transcribe = jest.spyOn(KGSpeechService, 'transcribe')
     .mockResolvedValueOnce({ transcript: 'ball', available: true, provider: 'test-whisper' } as never)
+    .mockResolvedValueOnce({ transcript: 'maybe', uncertain: true, available: true, provider: 'test-whisper' } as never)
     .mockResolvedValueOnce({ transcript: 'appl', available: true, provider: 'test-whisper' } as never)
-    .mockResolvedValueOnce({ transcript: 'apple', available: true, provider: 'test-whisper' } as never)
 
   const submitSpeech = (submissionId: string) => request(app)
     .post('/api/kg-alphabet/attempt')
@@ -334,4 +347,53 @@ it('rejects locked picture puzzles, validates the final answer, and records repl
   expect(replay.body.data.state.completedAt).toBe(final.body.data.state.completedAt)
   expect(await KGAlphabetAttempt.countDocuments({ studentId: student._id, replay: true })).toBe(1)
   expect(await KGAlphabetProgress.findOne({ studentId: student._id }).then((progress) => progress?.currentIndex)).toBe(8)
+})
+
+it('enforces two server-recorded speech failures before picture support and never falsely awards pronunciation mastery', async () => {
+  const { student, authorization } = await makePilot()
+  await approveIntro(authorization)
+  const endpoint = () => request(app).post('/api/kg-alphabet/attempt').set('Authorization', authorization)
+    .set('X-KG-Intro-Playback', activePlaybackId)
+  const speech = (submissionId: string) => endpoint().send({ activityId: 'say-a', submissionId,
+    audioBase64: 'Y'.repeat(160), mimeType: 'audio/webm', durationMs: 1000 })
+  const assisted = (submissionId: string, selected: string) => endpoint().send({ activityId: 'say-a',
+    submissionId, selected, assistedPicture: true })
+  const stt = jest.spyOn(KGSpeechService, 'transcribe').mockResolvedValue({
+    transcript: 'elephant', available: true, provider: 'test',
+  } as never)
+  await assisted('early-picture-1234', 'apple').expect(403)
+  const first = await speech('first-failure-1234').expect(200)
+  expect(first.body.data.state.fallbackAvailable).toBe(false)
+  const second = await speech('second-failure-1234').expect(200)
+  expect(second.body.data.state.fallbackAvailable).toBe(true)
+  expect((await request(app).get('/api/kg-alphabet/state').set('Authorization', authorization).expect(200)).body.data.fallbackAvailable).toBe(true)
+  expect((await assisted('wrong-picture-1234', 'ball').expect(200)).body.data.state.currentIndex).toBe(0)
+  const result = await assisted('correct-picture-1234', 'apple').expect(200)
+  expect(result.body.data.outcome).toBe('supported')
+  expect(result.body.data.state.currentIndex).toBe(1)
+  expect(result.body.data.state.pronunciationNeedsPractice).toContain('A')
+  expect(stt).toHaveBeenCalledTimes(2)
+  const progress = await KGAlphabetProgress.findOne({ studentId: student._id })
+  expect(progress?.pronunciationNeedsPractice).toContain('A')
+  const saved = await KGAlphabetAttempt.findOne({ studentId: student._id, submissionId: 'correct-picture-1234' })
+  expect(saved).toMatchObject({ outcome: 'supported', mode: 'touch', selected: 'apple' })
+  const duplicate = await assisted('correct-picture-1234', 'apple').expect(200)
+  expect(duplicate.body.data.duplicate).toBe(true)
+  expect(duplicate.body.data.state.currentIndex).toBe(1)
+})
+
+it('advances for Hindi vocabulary understanding without passing spoken-English mastery', async () => {
+  const { student, authorization } = await makePilot()
+  await approveIntro(authorization)
+  jest.spyOn(KGSpeechService, 'transcribe').mockResolvedValue({
+    transcript: 'saib', available: true, provider: 'test',
+  } as never)
+  const response = await request(app).post('/api/kg-alphabet/attempt').set('Authorization', authorization)
+    .set('X-KG-Intro-Playback', activePlaybackId).send({ activityId: 'say-a', submissionId: 'hindi-bridge-123456',
+      audioBase64: 'Y'.repeat(160), mimeType: 'audio/webm', durationMs: 1000 }).expect(200)
+  expect(response.body.data.outcome).toBe('supported')
+  expect(response.body.data.state.currentIndex).toBe(1)
+  expect(response.body.data.state.pronunciationNeedsPractice).toContain('A')
+  const saved = await KGAlphabetAttempt.findOne({ studentId: student._id, submissionId: 'hindi-bridge-123456' })
+  expect(saved?.outcome).toBe('supported')
 })

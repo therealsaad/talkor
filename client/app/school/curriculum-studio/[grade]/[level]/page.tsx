@@ -34,7 +34,7 @@ export default function CurriculumStudioPage() {
     <div style={{padding:16,borderRadius:12,background:'#fff8e8',marginBottom:16,border:'1px solid #ecc78e'}}>
      <strong>Editorial workspace — not student playable.</strong> MongoDB status: <b>{actual.status}</b>. Actual publishing remains in the existing secured backend curriculum workflow. Never use this design preview to record student progress.
     </div>
-    <module.LevelExperience />
+    <module.LevelExperience preview />
     <p style={{color:'#475569',fontSize:13,marginTop:20}}>Edit <code>client/features/lessons/grades/{grade===0?'kg':`class-${String(grade).padStart(2,'0')}`}/level-{String(level).padStart(2,'0')}/</code> in your teammate's branch.</p>
    </>:null}
  </SchoolShell>

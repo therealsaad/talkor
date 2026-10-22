@@ -76,6 +76,5 @@ export const LevelMapService = {
   async level(grade: number, level: number) {
     roadmapEntry(grade, level)
     const catalog = await this.grade(grade)
-    return { grade, classId: catalog.classId, ...catalog.levels[level - 1] }
-  },
+return { ...catalog.levels[level - 1], grade, classId: catalog.classId }  },
 }

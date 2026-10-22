@@ -4,7 +4,7 @@ import { auditKGPictureAssetDirectory, buildKGPictureAssetManifest } from '../cu
 async function main() {
   const assetDirectory = process.argv[2]
     ? path.resolve(process.argv[2])
-    : path.resolve(process.cwd(), '../talkora-client/public/kg/pictures')
+    : path.resolve(process.cwd(), '../client/public/lessons/kg/pictures')
   const manifest = buildKGPictureAssetManifest()
   const audit = await auditKGPictureAssetDirectory(assetDirectory, manifest)
   const ready = audit.filter((item) => item.status === 'READY')
