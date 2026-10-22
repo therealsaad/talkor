@@ -51,6 +51,7 @@ export const StudentContextService = {
 
     const klass = await CurriculumClass.findOne({ grade: student.grade }).lean()
 
+    let canonicalLevelId: string | undefined
     let levelTitle = 'Talkora Adventure'
     let lessonTitle = 'English Practice'
     let activityTitle: string | undefined
@@ -70,6 +71,10 @@ export const StudentContextService = {
         const level = await Level.findById(lesson.levelId).lean()
         if (level) {
           levelTitle = level.title
+          // Use the actual authorized MongoDB lesson's level; never infer from grade alone.
+          if (student.grade === 1 && level.number === 1 && String(level.classId) === String(klass?._id)) {
+            canonicalLevelId = 'g01-l01'
+          }
           unitNumber = level.unitNumber || level.number
           learningObjectives = level.learningObjectives || []
         }
@@ -210,6 +215,7 @@ export const StudentContextService = {
     return {
       studentName: student.fullName.split(' ')[0],
       grade: student.grade,
+      levelId: canonicalLevelId,
       avatarType: student.avatarType || 'BOY',
       levelTitle,
       lessonTitle,

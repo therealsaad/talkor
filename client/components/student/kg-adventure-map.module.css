@@ -1,0 +1,415 @@
+.map {
+  width: min(100%, 1380px);
+  min-height: calc(100dvh - 76px);
+  margin: 0 auto;
+  padding: clamp(12px, 2vw, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 1.8vw, 20px);
+  overflow-x: clip;
+  color: #234330;
+}
+
+.welcome {
+  position: relative;
+  min-height: 158px;
+  padding: clamp(18px, 2.8vw, 30px);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(62, 130, 76, .16);
+  border-radius: 24px;
+  background: linear-gradient(112deg, #fff9df 0%, #eff9e8 53%, #e4f5fa 100%);
+  box-shadow: 0 10px 28px rgba(40, 89, 49, .08);
+}
+
+.welcomeCopy {
+  position: relative;
+  z-index: 1;
+  max-width: 760px;
+  padding-right: clamp(100px, 16vw, 190px);
+}
+
+.kicker {
+  color: #4c8957;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .13em;
+}
+
+.welcome h1 {
+  margin: 7px 0 5px;
+  color: #244933;
+  font-size: clamp(24px, 3.2vw, 38px);
+  line-height: 1.08;
+  letter-spacing: -.035em;
+}
+
+.welcome p {
+  max-width: 620px;
+  margin: 0;
+  color: #546d5a;
+  font-size: clamp(13px, 1.35vw, 16px);
+  line-height: 1.45;
+}
+
+.continue {
+  min-height: 44px;
+  margin-top: 12px;
+  padding: 0 14px 0 17px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  border-radius: 14px;
+  color: #fff;
+  background: #39824e;
+  box-shadow: 0 4px 0 #2b693e;
+  font-size: 13px;
+  font-weight: 850;
+  text-decoration: none;
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+
+.continue:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #2b693e;
+}
+
+.continue:focus-visible,
+.levelButton:focus-visible {
+  outline: 3px solid #f4b83f;
+  outline-offset: 4px;
+}
+
+.julie {
+  position: absolute;
+  right: clamp(8px, 3vw, 34px);
+  bottom: -8px;
+  width: clamp(104px, 15vw, 170px);
+  height: 154px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.julie :global(.lesson-character-figure--julie) {
+  width: 100%;
+  min-height: 0;
+  height: 100%;
+}
+
+.julie :global(.lesson-julie-art img) {
+  height: 145px;
+  max-height: 145px;
+  filter: drop-shadow(0 7px 10px rgba(33, 77, 46, .16));
+}
+
+.julie :global(.lesson-character-aura) {
+  bottom: 5%;
+  width: 100%;
+}
+
+.julie :global(.lesson-julie-state-chip) {
+  bottom: 1px;
+  font-size: 8px;
+}
+
+.scene {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  margin: 0;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid rgba(57, 112, 52, .17);
+  border-radius: clamp(14px, 2vw, 24px);
+  background: #b8e68a;
+  box-shadow: 0 12px 34px rgba(38, 84, 44, .12);
+}
+
+.background {
+  z-index: -1;
+  object-fit: contain;
+}
+
+.levels {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.level {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+
+.progressRing {
+  width: clamp(46px, 6vw, 82px);
+  aspect-ratio: 1;
+  padding: 4px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(66, 104, 57, .34);
+  border-radius: 50%;
+  box-shadow: 0 4px 10px rgba(49, 69, 34, .25), inset 0 0 0 2px rgba(255, 255, 255, .72);
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+
+.levelButton {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(105, 111, 72, .38);
+  border-radius: 50%;
+  color: #62452d;
+  background: linear-gradient(145deg, #ffe49c, #f7bd69);
+  cursor: pointer;
+  font: inherit;
+  text-decoration: none;
+}
+
+.levelButton:disabled {
+  color: #66705c;
+  background: linear-gradient(145deg, #f0e5c7, #d8d1b6);
+  cursor: not-allowed;
+}
+
+.levelNumber {
+  font-size: clamp(18px, 2.3vw, 31px);
+  font-weight: 950;
+  line-height: 1;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .6);
+}
+
+.levelStatus {
+  position: absolute;
+  top: -3px;
+  right: -3px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  color: #fff;
+  background: #78866d;
+  box-shadow: 0 2px 5px rgba(28, 51, 31, .2);
+}
+
+.current .progressRing {
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, .82), 0 0 0 6px rgba(61, 155, 81, .78), 0 6px 14px rgba(36, 91, 45, .34);
+}
+
+.current .levelButton {
+  border-color: #297c3b;
+  background: linear-gradient(145deg, #fff0a9, #ffd469);
+}
+
+.current .levelStatus {
+  color: #fff;
+  background: #33874a;
+}
+
+.current .progressRing {
+  animation: ready-glow 2.8s ease-in-out infinite;
+}
+
+.completed .levelButton {
+  background: linear-gradient(145deg, #e5f5c4, #b4dc8d);
+}
+
+.completed .levelStatus {
+  background: #328b57;
+}
+
+.locked .progressRing {
+  box-shadow: 0 3px 8px rgba(49, 69, 34, .2), inset 0 0 0 2px rgba(255, 255, 255, .68);
+}
+
+.readyLabel {
+  padding: 2px 6px;
+  border: 1px solid rgba(41, 124, 59, .3);
+  border-radius: 999px;
+  color: #fff;
+  background: #32834a;
+  box-shadow: 0 1px 4px rgba(31, 72, 38, .28);
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.message {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 50%;
+  width: min(88%, 430px);
+  padding: 16px 18px;
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  transform: translate(-50%, -50%);
+  border: 1px solid rgba(76, 121, 69, .23);
+  border-radius: 18px;
+  color: #35543a;
+  background: rgba(255, 255, 255, .94);
+  box-shadow: 0 8px 24px rgba(33, 71, 39, .2);
+  text-align: center;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.message button {
+  min-height: 42px;
+  padding: 0 17px;
+  border: 0;
+  border-radius: 12px;
+  color: #fff;
+  background: #39824e;
+  font: inherit;
+  cursor: pointer;
+}
+
+.message button:focus-visible {
+  outline: 3px solid #f4b83f;
+  outline-offset: 3px;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 0 4px 2px;
+  color: #617363;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.footer span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.footer svg {
+  color: #438b50;
+}
+
+@keyframes ready-glow {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.045); }
+}
+
+@media (max-width: 600px) {
+  .map {
+    min-height: calc(100dvh - 64px);
+    padding: 10px;
+    gap: 11px;
+  }
+
+  .welcome {
+    min-height: 142px;
+    padding: 15px 13px;
+    border-radius: 19px;
+  }
+
+  .welcomeCopy {
+    padding-right: 82px;
+  }
+
+  .kicker {
+    font-size: 8px;
+  }
+
+  .welcome h1 {
+    max-width: 245px;
+    font-size: clamp(20px, 6vw, 27px);
+  }
+
+  .welcome p {
+    max-width: 245px;
+    font-size: 11px;
+  }
+
+  .continue {
+    min-height: 40px;
+    margin-top: 9px;
+    padding-inline: 11px;
+    font-size: 11px;
+  }
+
+  .julie {
+    right: -4px;
+    width: 94px;
+    height: 128px;
+  }
+
+  .julie :global(.lesson-julie-art img) {
+    height: 122px;
+    max-height: 122px;
+  }
+
+  .julie :global(.lesson-julie-state-chip) {
+    display: none;
+  }
+
+  .progressRing {
+    width: clamp(30px, 7vw, 44px);
+    padding: 3px;
+  }
+
+  .levelButton {
+    min-width: 28px;
+    min-height: 28px;
+  }
+
+  .levelNumber {
+    font-size: clamp(13px, 3.5vw, 18px);
+  }
+
+  .footer {
+    font-size: 10px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .current .progressRing {
+    animation: none;
+  }
+
+  .continue,
+  .progressRing {
+    transition: none;
+  }
+}
+
+/* Phase 3: child-sized homework check-in without changing the garden scene. */
+.homeworkCheckIn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  padding: 8px 16px;
+  margin-top: 6px;
+  border: 0;
+  border-radius: 12px;
+  background: #2f8550;
+  color: #fff;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.homeworkCheckIn:disabled { cursor: wait; opacity: .67; }
+.homeworkCheckIn:focus-visible { outline: 3px solid #dba733; outline-offset: 3px; }

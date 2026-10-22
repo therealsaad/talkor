@@ -290,7 +290,7 @@ export const MissJulieService = {
 
     // All student turns honor the same explicit AI_PROVIDER setting. This
     // avoids free-talk silently requiring a second, unconfigured provider.
-    const provider = getAIProvider()
+    const provider = getAIProvider(studentContext)
     let response = await provider.generate(studentContext)
     response = finalizeConversationTeacherResponse(response, finalTurn)
     if (lessonConversation || freeTalkConversation) response.activityComplete = finalTurn

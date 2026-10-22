@@ -8,7 +8,7 @@ export const KGSpeechService = {
   async transcribe(input: { audioBase64: string; mimeType: string; durationMs: number }) {
     const provider = process.env.KG_ALPHABET_STT_PROVIDER || 'groq'
     if (provider === 'groq') {
-      return new GroqSpeechProvider().transcribe({ ...input, mode: 'fast', qualityMetadata: true, languageOverride: '' })
+      return new GroqSpeechProvider().transcribe({ ...input, mode: 'accurate', qualityMetadata: true, languageOverride: '' })
     }
     if (provider !== 'python') throw ApiError.provider('Invalid KG speech provider configuration')
     const hostname = new URL(env.aiServiceUrl).hostname.toLowerCase()

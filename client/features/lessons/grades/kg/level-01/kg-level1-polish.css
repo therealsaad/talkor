@@ -75,7 +75,11 @@
   object-fit: contain;
   object-position: center bottom;
   animation: none !important;
+  opacity: 1;
+  transition: opacity 160ms ease-out;
 }
+
+.kg-julie-animated.is-video-visible .kg-julie-animated__pose { opacity: 0; }
 
 .kg-julie-animated .kg-julie-animated__video {
   position: absolute;

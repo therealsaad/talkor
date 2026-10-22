@@ -8,7 +8,7 @@ describe('KG picture asset manifest and audit', () => {
     const manifest = buildKGPictureAssetManifest()
     expect(manifest).toHaveLength(51)
     expect(new Set(manifest.map((item) => item.assetKey)).size).toBe(51)
-    expect(manifest.every((item) => item.relativePath === `${item.assetKey}.webp` && item.publicPath === `/kg/pictures/${item.assetKey}.webp`)).toBe(true)
+    expect(manifest.every((item) => item.relativePath === `${item.assetKey}.webp` && item.publicPath === `/lessons/kg/pictures/${item.assetKey}.webp`)).toBe(true)
     expect(manifest.some((item) => item.assetKey === 'kg-g0-u1-apple')).toBe(true)
   })
 

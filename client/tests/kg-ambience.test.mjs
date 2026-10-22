@@ -78,5 +78,5 @@ test('lesson actually wires ambience to real speaking, recording and scene contr
   assert.match(lesson, /silenceForMicrophone\(\)\s*micStartingRef\.current = true/)
   assert.match(lesson, /aria-label=\{musicEnabled \? 'Mute background music' : 'Enable background music'\}/)
   assert.match(hook, /pagehide/)
-  assert.equal(KG_AMBIENCE_TRACK, '/kg/audio/garden-ambience-v1.mp3')
+  assert.equal(KG_AMBIENCE_TRACK, '/lessons/kg/audio/garden-ambience-v1.mp3')
 })

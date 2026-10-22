@@ -37,7 +37,21 @@ export function makeKGPreviewState(currentIndex = 0): KGAlphabetState {
   return {
     version: 'kg-alphabet-v1-preview', level: 1, title: 'ABCD Picture Garden', audioVersion: 'v1',
     currentIndex, totalActivities: 8, introSeen: false, completed: currentIndex === 8,
-    completedAt: null, level2Unlocked: currentIndex === 8, level2Available: false,
+    completedAt: null,
+
+xp: currentIndex === 8 ? 100 : 0,
+stars: currentIndex === 8 ? 3 : 0,
+
+homework: {
+  id: 'kg-abcd-picture-homework-v1',
+  audioId: 'homework-abcd',
+  text: KG_PREVIEW_AUDIO['homework-abcd'],
+  status: currentIndex === 8 ? 'pending' : 'not-assigned',
+  assignedAt: null,
+  completedAt: null,
+},
+
+level2Unlocked: currentIndex === 8, level2Available: false,
     letters: [
       { letter: 'A', word: 'apple', emoji: '🍎', color: '#ff6f82' },
       { letter: 'B', word: 'ball', emoji: '⚽', color: '#ffbc56' },

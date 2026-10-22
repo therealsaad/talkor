@@ -40,7 +40,7 @@ export default function StudentLoginPage() {
     try {
       const signedIn = await loginStudentByPin(pin)
       setPin('')
-      router.replace(signedIn.student?.grade === 0 ? '/student/kg' : '/student/continue')
+      router.replace(signedIn.student?.grade === 0 ? '/student/kg/map' : '/student/continue')
     } catch {
       setError('That PIN did not work. Please ask your teacher for help.')
       setPin('')
