@@ -19,7 +19,7 @@
   filter: saturate(1.08);
 }
 
-.kg-alpha-garden-art { opacity: .54; transform: scale(1.025); }
+.kg-alpha-garden-art { opacity: 1; transform: scale(1.01); }
 .kg-alpha-garden-wash,
 .kg-intro-cinema__shade {
   position: absolute;
@@ -30,6 +30,12 @@
     radial-gradient(ellipse at 12% 8%, rgba(255, 246, 176, .56), transparent 35%),
     radial-gradient(ellipse at 91% 15%, rgba(206, 242, 255, .35), transparent 36%),
     linear-gradient(180deg, rgba(255, 247, 218, .22), rgba(48, 114, 63, .26));
+}
+
+.kg-alpha-garden-wash {
+  background:
+    radial-gradient(ellipse at 12% 8%, rgba(255, 250, 210, .24), transparent 38%),
+    linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(41, 105, 59, .13));
 }
 
 .kg-alpha-play {
@@ -591,8 +597,8 @@
 .kg-alpha-play {
   background: radial-gradient(circle at 24% 12%,#fcf6d5 0,transparent 36%),linear-gradient(135deg,#b1e6df 0%,#cef1cb 44%,#88d6ae 100%);
 }
-.kg-alpha-play > .kg-alpha-garden-art { opacity: .09; filter: blur(13px) saturate(.7); transform: scale(1.08); }
-.kg-alpha-play > .kg-alpha-garden-wash { opacity: .34; }
+.kg-alpha-play > .kg-alpha-garden-art { opacity: .92; filter: saturate(.96) brightness(1.03); transform: scale(1.02); }
+.kg-alpha-play > .kg-alpha-garden-wash { opacity: .16; }
 .kg-alpha-scene { grid-template-columns:minmax(235px,.72fr) minmax(430px,1.35fr);gap:clamp(12px,2.3vw,32px) }
 .kg-alpha-teacher { align-self:stretch; filter:drop-shadow(0 18px 15px #27665b35) }
 .kg-alpha-teacher-glow { top:4%; height:86%;background:radial-gradient(ellipse,#f9f2dc 0,#e5ffdf77 57%,transparent 76%) }

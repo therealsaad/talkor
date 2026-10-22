@@ -3,6 +3,8 @@ import { AIStructuredResponse } from '../../types'
 export interface MissJulieContext {
   studentName: string
   grade: number
+  /** Canonical lesson registry ID; present only when resolved from an authorized lesson. */
+  levelId?: string
   avatarType?: 'BOY' | 'GIRL'
   levelTitle: string
   lessonTitle: string

@@ -191,6 +191,8 @@ export const voiceService = {
 
   lastPriority: 'LESSON' as VoicePriority,
 
+  lastActivityId: undefined as string | undefined,
+
   activePriority: 'PAGE_GUIDANCE' as VoicePriority,
 
   playedTurns: new Set<string>(),
@@ -461,6 +463,7 @@ async submitTranscript(
     listener?: PlaybackListener,
     turnId?: string,
     priority: VoicePriority = 'LESSON',
+    activityId?: string,
   ): Promise<VoicePlaybackResult> {
     if (
       typeof window ===
@@ -485,7 +488,7 @@ async submitTranscript(
     const existing = this.turnPlayback.get(identity)
     if (existing) return existing
 
-    const playback = this.speakTurn(cleanedText, identity, listener, false, priority)
+    const playback = this.speakTurn(cleanedText, identity, listener, false, priority, activityId)
       .finally(() => this.turnPlayback.delete(identity))
     this.turnPlayback.set(identity, playback)
     return playback
@@ -497,6 +500,7 @@ async submitTranscript(
     listener?: PlaybackListener,
     replay = false,
     priority: VoicePriority = 'LESSON',
+    activityId?: string,
   ): Promise<VoicePlaybackResult> {
 
     const hasActivePlayback = Boolean(this.activeAbort || (this.activeAudio && !this.activeAudio.paused))
@@ -512,6 +516,8 @@ async submitTranscript(
 
     this.lastPriority =
       priority
+
+    this.lastActivityId = activityId
 
     this.stop()
     this.activePriority = priority
@@ -550,6 +556,7 @@ async submitTranscript(
           listener,
           turnId,
           priority,
+          activityId,
         )
 
       if (result === 'spoken' && !replay) this.playedTurns.add(turnId)
@@ -606,7 +613,7 @@ async submitTranscript(
     if (existing) return existing
     if (!this.lastText || !this.lastTurnId) return 'unavailable'
     const turnId = this.lastTurnId
-    const playback = this.speakTurn(this.lastText, turnId, listener, true, this.lastPriority)
+    const playback = this.speakTurn(this.lastText, turnId, listener, true, this.lastPriority, this.lastActivityId)
       .finally(() => this.turnPlayback.delete(turnId))
     this.turnPlayback.set(turnId, playback)
     return playback
@@ -692,6 +699,7 @@ async submitTranscript(
     listener?: PlaybackListener,
     turnId = '',
     priority: VoicePriority = 'LESSON',
+    activityId?: string,
   ): Promise<VoicePlaybackResult> {
     markLabSpeechActivity()
     const requestedAt =
@@ -700,7 +708,9 @@ async submitTranscript(
     // Fixed lesson prompts repeat across students. Cache by exact text only for
     // non-personalised lesson audio, never for live conversation/feedback.
     const cacheKey = priority === 'LESSON'
-      ? `lesson:${detectVoiceLanguage(text)}:${text.trim().toLowerCase()}`
+      ? activityId
+        ? `activity:${activityId}`
+        : `lesson:${detectVoiceLanguage(text)}:${text.trim().toLowerCase()}`
       : turnId
     try {
       let audioBlob = this.audioCache.get(cacheKey)
@@ -732,6 +742,7 @@ async submitTranscript(
                 text,
                 purpose: priority,
                 language: detectVoiceLanguage(text),
+                ...(activityId ? { activityId } : {}),
               }),
 
             signal,

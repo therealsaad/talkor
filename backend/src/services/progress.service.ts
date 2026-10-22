@@ -1,3 +1,4 @@
+// TALKORA_CLASS1_STUDENT_DEMO_ROUTE_V1
 import mongoose, {
   Types,
 } from 'mongoose'
@@ -47,6 +48,7 @@ import {
 } from './curriculum-access.service'
 import { KG_CURRICULUM_VERSION } from './kg-pilot-access'
 import { isMissingKGPilotPicture } from './kg-pilot-presentation'
+import { CLASS1_DEMO_VERSION } from './class1-demo-access'
 
 import {
   areRequiredActivitiesComplete,
@@ -294,8 +296,9 @@ export const ProgressService = {
         studentId,
         classId,
       )
-    const { curriculumClass, isKGPilot } = access
-    const levelStatus = isKGPilot ? 'draft' : 'active'
+    const { curriculumClass, isKGPilot, isClass1Demo } = access
+    const isDraftPilot = isKGPilot || isClass1Demo
+    const levelStatus = isDraftPilot ? 'draft' : 'active'
 
     /* =====================================================
        PUBLISHED LEVELS OR THE EXACT ALLOWLISTED KG PILOT
@@ -312,10 +315,17 @@ export const ProgressService = {
               status: 'draft',
               availability: 'UPCOMING',
             }
-          : {
-              status: 'active',
-              availability: 'PUBLISHED',
-            }),
+          : isClass1Demo
+            ? {
+                curriculumVersion: CLASS1_DEMO_VERSION,
+                number: 1,
+                status: 'draft',
+                availability: 'UPCOMING',
+              }
+            : {
+                status: 'active',
+                availability: 'PUBLISHED',
+              }),
       })
         .sort({
           order: 1,
@@ -329,7 +339,9 @@ export const ProgressService = {
       throw ApiError.businessRule(
       isKGPilot
         ? 'No KG pilot curriculum is available for this account.'
-        : 'No published curriculum is available for this class.',
+        : isClass1Demo
+          ? 'No approved Class 1 demo curriculum is available for this account.'
+          : 'No published curriculum is available for this class.',
       )
     }
 
@@ -559,6 +571,7 @@ export const ProgressService = {
     const activeLessons = await Lesson.find({
       levelId: { $in: levels.map((level) => level._id) },
       status: levelStatus,
+      ...(isClass1Demo ? { 'settings.talkoraDemoDraft': true } : {}),
     })
       .select('_id levelId')
       .lean()
@@ -723,7 +736,7 @@ export const ProgressService = {
     classId: string,
     levelId: string,
   ) {
-    const { isKGPilot } = await CurriculumAccessService.context(studentId)
+    const { isKGPilot, isClass1Demo } = await CurriculumAccessService.context(studentId)
     /*
      * ensureProgress already guarantees grade/class access.
      */
@@ -750,10 +763,17 @@ export const ProgressService = {
               status: 'draft',
               availability: 'UPCOMING',
             }
-          : {
-              status: 'active',
-              availability: 'PUBLISHED',
-            }),
+          : isClass1Demo
+            ? {
+                curriculumVersion: CLASS1_DEMO_VERSION,
+                number: 1,
+                status: 'draft',
+                availability: 'UPCOMING',
+              }
+            : {
+                status: 'active',
+                availability: 'PUBLISHED',
+              }),
       })
         .select(
           '_id',
@@ -842,7 +862,7 @@ export const ProgressService = {
     if (
       !activity ||
       activity.status !==
-        (activityAccess.isKGPilot ? 'draft' : 'active')
+        (activityAccess.isKGPilot || activityAccess.isClass1Demo ? 'draft' : 'active')
     ) {
       throw ApiError.notFound(
         'Activity not found',
@@ -1385,8 +1405,8 @@ export const ProgressService = {
         input.studentId,
         input.classId,
       )
-    const { isKGPilot } = await CurriculumAccessService.context(input.studentId)
-    const curriculumStatus = isKGPilot ? 'draft' : 'active'
+    const { isKGPilot, isClass1Demo } = await CurriculumAccessService.context(input.studentId)
+    const curriculumStatus = isKGPilot || isClass1Demo ? 'draft' : 'active'
 
     /* =====================================================
        LEVEL PROGRESS
@@ -1751,6 +1771,7 @@ export const ProgressService = {
 
           input.levelId,
           isKGPilot,
+          isClass1Demo,
         )
       }
     }
@@ -1807,7 +1828,12 @@ export const ProgressService = {
       string,
 
     isKGPilot = false,
+
+    isClass1Demo = false,
   ) {
+    // Completing the isolated draft demo must never unlock any other draft or
+    // published Class 1 unit. Normal progression resumes only after publication.
+    if (isClass1Demo) return
     /*
      * SECURITY:
      * never unlock UPCOMING curriculum.
@@ -1823,9 +1849,9 @@ export const ProgressService = {
               availability: 'UPCOMING',
             }
           : {
-              status: 'active',
-              availability: 'PUBLISHED',
-            }),
+                status: 'active',
+                availability: 'PUBLISHED',
+              }),
       })
         .sort({
           order: 1,

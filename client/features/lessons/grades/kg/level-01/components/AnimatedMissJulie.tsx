@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 
 /** Gentle state gestures, not phoneme-accurate lip sync. Audio remains a separate track. */
 export type MissJulieState = 'idle' | 'speaking' | 'listening' | 'thinking' | 'pointing' | 'encouraging' | 'celebrating'
@@ -16,29 +16,21 @@ const poses: Record<MissJulieState, string> = {
   celebrating: '/miss-julie/celebrating.webp',
 }
 
-// Avoid looping exaggerated arm gestures throughout a long spoken line.
-const gestureSeconds: Partial<Record<MissJulieState, number>> = {
-  speaking: 1.7,
-  pointing: 2.0,
-  encouraging: 1.8,
-  celebrating: 2.6,
-}
-
 export function AnimatedMissJulie({ state, reducedMotion = false }: { state: MissJulieState; reducedMotion?: boolean }) {
-  const [visibleVideo, setVisibleVideo] = useState(false)
+  const [visibleVideoState, setVisibleVideoState] = useState<MissJulieState | null>(null)
   const [videoFailed, setVideoFailed] = useState(false)
-  const videoRef = useRef<HTMLVideoElement>(null)
+  const visibleVideo = visibleVideoState === state
 
   useEffect(() => {
-    setVisibleVideo(false)
+    setVisibleVideoState(null)
     setVideoFailed(false)
   }, [state, reducedMotion])
 
-  // Still images are ALWAYS underneath the video. If playback stalls or ends,
-  // the character stays visible and transitions smoothly instead of flashing.
-  const playGesture = !reducedMotion && !videoFailed && gestureSeconds[state] !== undefined
+  // The still is a loading/error/reduced-motion fallback. It is hidden as soon
+  // as the matching public animation can play, avoiding two Julies on screen.
+  const playGesture = !reducedMotion && !videoFailed
   return (
-    <div className={`kg-alpha-teacher-image kg-julie-animated is-${state}`} data-julie-state={state}>
+    <div className={`kg-alpha-teacher-image kg-julie-animated is-${state} ${visibleVideo ? 'is-video-visible' : ''}`} data-julie-state={state}>
       <Image
         className="kg-julie-animated__pose"
         src={poses[state]}
@@ -50,25 +42,20 @@ export function AnimatedMissJulie({ state, reducedMotion = false }: { state: Mis
       {playGesture && (
         <video
           key={state}
-          ref={videoRef}
           className={`kg-julie-animated__video ${visibleVideo ? 'is-visible' : ''}`}
-          src={`/miss-julie-animations/${state}.webm`}
+          src={`/miss-julie-animations/transparent/${state}.webm`}
           autoPlay
+          loop
           muted
           playsInline
-          preload="metadata"
+          preload="auto"
           disablePictureInPicture
           aria-hidden="true"
-          onPlaying={() => setVisibleVideo(true)}
-          onTimeUpdate={(event) => {
-            if (event.currentTarget.currentTime >= (gestureSeconds[state] ?? 2)) {
-              event.currentTarget.pause()
-              setVisibleVideo(false)
-            }
-          }}
-          onEnded={() => setVisibleVideo(false)}
-          onStalled={() => setVisibleVideo(false)}
-          onError={() => { setVisibleVideo(false); setVideoFailed(true) }}
+          onCanPlay={() => setVisibleVideoState(state)}
+          onPlaying={() => setVisibleVideoState(state)}
+          onWaiting={() => setVisibleVideoState(null)}
+          onStalled={() => setVisibleVideoState(null)}
+          onError={() => { setVisibleVideoState(null); setVideoFailed(true) }}
         />
       )}
       {state === 'speaking' && !reducedMotion && (
