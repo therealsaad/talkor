@@ -57,6 +57,15 @@ export default function StudentLessonPage() {
     avatarType={session.student.avatarType}
     studentName={student?.fullName?.trim() || 'Explorer'}
     completedActivityIds={lesson.completedActivityIds}
+    backgroundSrc={lesson.experienceId === 'g01-l01'
+      ? '/lessons/class-01/level-01/two-letter-word-meadow.webp'
+      : undefined}
+    completionMessage={lesson.experienceId === 'g01-l01'
+      ? `You did it, ${student?.fullName?.trim() || 'Explorer'}! You listened, built, read, and spoke small English words. Your progress is saved.`
+      : undefined}
+    homeworkMessage={lesson.experienceId === 'g01-l01'
+      ? 'Homework: say “I am Sam” and “Look at me” with someone at home.'
+      : undefined}
     introVideoKey={lesson.grade === 0 && typeof lesson.lesson.settings?.lessonKey === 'string'
       ? lesson.lesson.settings.lessonKey
       : undefined}

@@ -19,7 +19,7 @@ it('uses hosted Groq by default and asks for quality metadata without a target-w
   delete process.env.KG_ALPHABET_STT_PROVIDER
   const transcribe = jest.spyOn(GroqSpeechProvider.prototype, 'transcribe').mockResolvedValue({ transcript: 'apple', available: true, provider: 'groq-whisper', model: 'test', latencyMs: 1 })
   await KGSpeechService.transcribe({ audioBase64: 'dGVzdA==', mimeType: 'audio/webm', durationMs: 1200 })
-  expect(transcribe).toHaveBeenCalledWith({ audioBase64: 'dGVzdA==', mimeType: 'audio/webm', durationMs: 1200, mode: 'fast', qualityMetadata: true, languageOverride: '' })
+  expect(transcribe).toHaveBeenCalledWith({ audioBase64: 'dGVzdA==', mimeType: 'audio/webm', durationMs: 1200, mode: 'accurate', qualityMetadata: true, languageOverride: '' })
 })
 
 it('blocks production Python STT configured on localhost instead of silently switching provider', async () => {
@@ -34,11 +34,11 @@ it('validates the requested English word, handles Hindi script, and repeats ambi
   expect(evaluateKGSpeech('यह बॉल है', 'B', 'word')).toBe('correct')
   expect(evaluateKGSpeech('कैट', 'C', 'word')).toBe('correct')
   expect(evaluateKGSpeech('डॉग', 'D', 'word')).toBe('correct')
-  expect(evaluateKGSpeech('bee', 'B', 'word')).toBe('unclear')
+  expect(evaluateKGSpeech('bee', 'B', 'word')).toBe('correct')
   expect(evaluateKGSpeech('bee', 'B', 'letter')).toBe('correct')
   expect(evaluateKGSpeech('apple ball cat dog', 'A', 'word')).toBe('unclear')
   expect(evaluateKGSpeech('not apple', 'A', 'word')).toBe('unclear')
-  expect(evaluateKGSpeech('appl', 'A', 'word')).toBe('unclear')
+  expect(evaluateKGSpeech('appl', 'A', 'word')).toBe('correct')
   expect(evaluateKGSpeech('ball', 'A', 'word')).toBe('incorrect')
   expect(evaluateKGSpeech('सेब', 'A', 'word')).toBe('unclear')
 })

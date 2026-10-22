@@ -1,3 +1,4 @@
+// TALKORA_CLASS1_STUDENT_DEMO_ROUTE_V1
 import {
   Student,
 } from '../models/Student'
@@ -27,6 +28,15 @@ import {
   isKGPilotLevel,
 } from './kg-pilot-access'
 import { isMissingKGPilotPicture } from './kg-pilot-presentation'
+import {
+  CLASS1_DEMO_VERSION,
+  isAuthorizedClass1DemoStudent,
+  isClass1DemoActivity,
+  isClass1DemoLevel,
+} from './class1-demo-access'
+
+/** Controlled, one-student demo; never opens draft Class 1 to the general student population. */
+export { CLASS1_DEMO_VERSION }
 
 export const CurriculumAccessService = {
   unpublishedCurriculumMessage(grade: number) {
@@ -62,10 +72,16 @@ export const CurriculumAccessService = {
       status: student.status,
     })
 
+    const class1DemoAllowlisted = isAuthorizedClass1DemoStudent({
+      id: student._id.toString(),
+      grade: student.grade,
+      status: student.status,
+    })
+
     const curriculumClass =
       await CurriculumClass.findOne({
         grade: student.grade,
-        status: pilotAllowlisted ? { $in: ['active', 'draft'] } : 'active',
+        status: pilotAllowlisted || class1DemoAllowlisted ? { $in: ['active', 'draft'] } : 'active',
       }).lean()
 
     if (!curriculumClass) {
@@ -77,6 +93,23 @@ export const CurriculumAccessService = {
     // Draft access is limited to the explicitly allowlisted Grade 0 student
     // and this exact pilot version. Ordinary students retain published-only access.
     const isKGPilot = pilotAllowlisted && curriculumClass.status === 'draft'
+    const isClass1Demo = class1DemoAllowlisted && curriculumClass.status === 'draft'
+    if (isClass1Demo) {
+      // Fail closed unless this is our exact seed and its reviewed demo marker.
+      const demoLevel = await Level.findOne({
+        classId: curriculumClass._id,
+        number: 1,
+        curriculumVersion: CLASS1_DEMO_VERSION,
+        status: 'draft',
+        availability: 'UPCOMING',
+      }).select('_id').lean()
+      const demoLesson = demoLevel && await Lesson.exists({
+        levelId: demoLevel._id,
+        status: 'draft',
+        'settings.talkoraDemoDraft': true,
+      })
+      if (!demoLesson) throw ApiError.businessRule('Class 1 demonstration lesson is not ready.')
+    }
     if (isKGPilot) {
       const pilotLevel = await Level.findOne({
         classId: curriculumClass._id,
@@ -100,6 +133,7 @@ export const CurriculumAccessService = {
       student,
       curriculumClass,
       isKGPilot,
+      isClass1Demo,
     }
   },
 
@@ -127,7 +161,7 @@ export const CurriculumAccessService = {
     levelId: string,
   ) {
     const access = await this.context(studentId)
-    const expectedStatus = access.isKGPilot ? 'draft' : 'active'
+    const expectedStatus = access.isKGPilot || access.isClass1Demo ? 'draft' : 'active'
     const level =
       await Level.findById(
         levelId,
@@ -142,7 +176,11 @@ export const CurriculumAccessService = {
       )
     }
 
-    if (access.isKGPilot ? !isKGPilotLevel(level) : level.availability !== 'PUBLISHED') {
+    if (access.isKGPilot
+      ? !isKGPilotLevel(level)
+      : access.isClass1Demo
+        ? !isClass1DemoLevel(level)
+        : level.availability !== 'PUBLISHED') {
       throw ApiError.activityUnavailable(
         'This unit is not published',
       )
@@ -160,7 +198,7 @@ export const CurriculumAccessService = {
     lessonId: string,
   ) {
     const access = await this.context(studentId)
-    const expectedStatus = access.isKGPilot ? 'draft' : 'active'
+    const expectedStatus = access.isKGPilot || access.isClass1Demo ? 'draft' : 'active'
     const lesson =
       await Lesson.findById(
         lessonId,
@@ -181,10 +219,15 @@ export const CurriculumAccessService = {
         lesson.levelId.toString(),
       )
 
+    if (access.isClass1Demo && lesson.settings?.talkoraDemoDraft !== true) {
+      throw ApiError.activityUnavailable('This lesson is not part of the approved Class 1 demo')
+    }
+
     return {
       lesson,
       level,
       isKGPilot: access.isKGPilot,
+      isClass1Demo: access.isClass1Demo,
     }
   },
 
@@ -193,7 +236,7 @@ export const CurriculumAccessService = {
     activityId: string,
   ) {
     const access = await this.context(studentId)
-    const expectedStatus = access.isKGPilot ? 'draft' : 'active'
+    const expectedStatus = access.isKGPilot || access.isClass1Demo ? 'draft' : 'active'
     const activity =
       await Activity.findById(
         activityId,
@@ -212,6 +255,10 @@ export const CurriculumAccessService = {
       throw ApiError.activityUnavailable('This picture activity is skipped until its picture asset is ready')
     }
 
+    if (access.isClass1Demo && !isClass1DemoActivity(activity)) {
+      throw ApiError.activityUnavailable('This activity is not part of the approved Class 1 demo')
+    }
+
     const {
       lesson,
       level,
@@ -226,6 +273,7 @@ export const CurriculumAccessService = {
       lesson,
       level,
       isKGPilot: access.isKGPilot,
+      isClass1Demo: access.isClass1Demo,
     }
   },
 }
