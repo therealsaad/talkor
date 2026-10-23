@@ -92,4 +92,39 @@ describe('student data isolation', () => {
     expect(directory.body.data.students.map((student: { fullName: string }) => student.fullName)).toContain('Assigned Student')
     expect(directory.body.data.students[0].progress.attemptCount).toBe(0)
   })
+
+  it('allows roll numbers to restart in each class while rejecting duplicates in the same section', async () => {
+    const school = await School.create({ name: 'Roll Scope School', code: 'ROLL01', passwordHash: await hashPassword('pw'), status: 'active' })
+    const adminToken = signToken({ sub: school._id.toString(), role: 'SCHOOL_ADMIN', schoolId: school._id.toString() })
+    const enroll = (fullName: string, grade: number, className: string, rollNumber: string) => request(app)
+      .post('/api/students')
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ fullName, grade, className, rollNumber, avatarType: 'BOY' })
+
+    await enroll('Class Four Roll One', 4, '4A', '1').expect(201)
+    await enroll('Class One Roll One', 1, '1A', '1').expect(201)
+    await enroll('Class One B Roll One', 1, '1B', '1').expect(201)
+
+    const duplicate = await enroll('Duplicate Class One Roll One', 1, '1A', '1').expect(409)
+    expect(duplicate.body.error).toMatchObject({
+      code: 'CONFLICT',
+      message: 'A student with this roll number already exists in this class or section',
+    })
+    expect(await Student.countDocuments({ schoolId: school._id })).toBe(3)
+  })
+
+  it('returns the same class-scoped conflict when editing a student', async () => {
+    const school = await School.create({ name: 'Roll Edit School', code: 'ROLL02', passwordHash: await hashPassword('pw'), status: 'active' })
+    const adminToken = signToken({ sub: school._id.toString(), role: 'SCHOOL_ADMIN', schoolId: school._id.toString() })
+    const first = await Student.create({ schoolId: school._id, fullName: 'First', rollNumber: '1', grade: 1, className: '1A', passwordHash: 'hash', avatarType: 'BOY' })
+    const second = await Student.create({ schoolId: school._id, fullName: 'Second', rollNumber: '2', grade: 1, className: '1A', passwordHash: 'hash', avatarType: 'GIRL' })
+
+    const duplicate = await request(app)
+      .patch(`/api/students/${second._id}`)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ rollNumber: first.rollNumber })
+      .expect(409)
+
+    expect(duplicate.body.error.message).toBe('A student with this roll number already exists in this class or section')
+  })
 })

@@ -21,6 +21,9 @@ describe('Grade 0 model and validation support', () => {
     expect(CurriculumClass.schema.path('grade').options.min).toBe(0)
     const pinIndex = Student.schema.indexes().find(([keys]) => keys.pinLookup === 1)
     expect(pinIndex?.[1].unique).toBe(true)
+    const rollIndex = Student.schema.indexes().find(([keys]) => keys.rollNumber === 1)
+    expect(rollIndex?.[0]).toEqual({ schoolId: 1, grade: 1, className: 1, rollNumber: 1 })
+    expect(rollIndex?.[1]).toMatchObject({ unique: true, name: 'student_roll_per_class_unique_v2' })
   })
 
   it('accepts Grade 0 in create, update and list filters while still rejecting an out-of-range grade', () => {

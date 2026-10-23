@@ -78,7 +78,8 @@ Role: `SCHOOL_ADMIN`.
 - `GET /` — query: `search, grade, className, status, page, limit, sort` → paginated list, scoped
   to the caller's school.
 - `POST /` — `{ fullName, rollNumber, grade, className?, teacherId?, avatar? }` → `201`,
-  `{ student, studentCode }`. `studentCode` is returned once, in plaintext, at creation.
+  `{ student, studentCode }`. `studentCode` is returned once, in plaintext, at creation. Roll numbers
+  are unique within a school + grade + section (`className`), so each class roster can restart at 1.
 - `GET /:id` — scoped to the caller's school (cross-school id → `404`).
 - `PATCH /:id` — partial update.
 - `DELETE /:id` — hard delete.
