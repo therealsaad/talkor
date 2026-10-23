@@ -35,12 +35,23 @@ async function main() {
       console.info('Replacing legacy Activity lesson/order index with its unique version')
     }
     const students = mongoose.connection.db!.collection('students')
+    // Build the narrower constraint before removing the school-wide one. The
+    // existing index is stricter, so this can be done without an unprotected
+    // window during a production migration.
+    await students.createIndex(
+      { schoolId: 1, grade: 1, className: 1, rollNumber: 1 },
+      { unique: true, name: 'student_roll_per_class_unique_v2' },
+    )
+    console.info('Ensured class-scoped Student roll-number index')
+
     const studentIndexes = await students.indexes()
     for (const index of studentIndexes) {
       const keys = index.key ? Object.keys(index.key) : []
       const isLegacyRollIndex = keys.length === 1 && keys[0] === 'rollNumber' && index.key?.rollNumber === 1
+      const isSchoolWideRollIndex = keys.length === 2 && keys[0] === 'schoolId' && keys[1] === 'rollNumber'
+        && index.key?.schoolId === 1 && index.key?.rollNumber === 1
       const isLegacyStudentCodeIndex = keys.length === 2 && keys[0] === 'schoolId' && keys[1] === 'studentCode'
-      if (index.name && (isLegacyRollIndex || isLegacyStudentCodeIndex)) {
+      if (index.name && (isLegacyRollIndex || isSchoolWideRollIndex || isLegacyStudentCodeIndex)) {
         await students.dropIndex(index.name)
         console.info(`Removed legacy Student index ${index.name}`)
       }

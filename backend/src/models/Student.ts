@@ -43,7 +43,13 @@ const studentSchema = new Schema<IStudent>(
 )
 
 studentSchema.index({ pinLookup: 1 }, { unique: true, partialFilterExpression: { pinLookup: { $type: 'string' } } })
-studentSchema.index({ schoolId: 1, rollNumber: 1 }, { unique: true })
+// Roll numbers restart for every class/section. Keeping grade and className in
+// the database constraint prevents accidental duplicates inside one roster
+// without reserving (for example) roll 1 across the whole school.
+studentSchema.index(
+  { schoolId: 1, grade: 1, className: 1, rollNumber: 1 },
+  { unique: true, name: 'student_roll_per_class_unique_v2' },
+)
 studentSchema.index({ schoolId: 1, fullName: 1 })
 studentSchema.index({ schoolId: 1, grade: 1, className: 1, fullName: 1 })
 studentSchema.index({ schoolId: 1, teacherId: 1, grade: 1, fullName: 1 })

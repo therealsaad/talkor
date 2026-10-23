@@ -15,6 +15,16 @@ async function assertTeacherInSchool(schoolId: string, teacherId?: string) {
   }
 }
 
+function isRollNumberConflict(error: unknown) {
+  if (typeof error !== 'object' || error === null || (error as { code?: number }).code !== 11000) return false
+  const keyPattern = (error as { keyPattern?: Record<string, unknown> }).keyPattern
+  return Boolean(keyPattern && Object.prototype.hasOwnProperty.call(keyPattern, 'rollNumber'))
+}
+
+function rollNumberConflict() {
+  return ApiError.conflict('A student with this roll number already exists in this class or section')
+}
+
 export interface ListStudentsParams {
   schoolId: string
   search?: string
@@ -123,9 +133,7 @@ export const StudentService = {
         if (typeof err === 'object' && err !== null && (err as { code?: number }).code === 11000) {
           const keyPattern = (err as { keyPattern?: Record<string, unknown> }).keyPattern
           if (keyPattern && Object.prototype.hasOwnProperty.call(keyPattern, 'pinLookup')) continue
-          if (keyPattern && Object.prototype.hasOwnProperty.call(keyPattern, 'rollNumber')) {
-            throw ApiError.conflict('A student with this roll number already exists in this school')
-          }
+          if (isRollNumberConflict(err)) throw rollNumberConflict()
         }
         throw err
       }
@@ -137,9 +145,14 @@ export const StudentService = {
   async update(schoolId: string, id: string, updates: Partial<Pick<IStudent, 'fullName' | 'rollNumber' | 'grade' | 'className' | 'teacherId' | 'avatar' | 'avatarType' | 'status'>>, teacherId?: string) {
     if (teacherId && updates.teacherId && updates.teacherId.toString() !== teacherId) throw ApiError.forbidden('Teachers cannot reassign students')
     await assertTeacherInSchool(schoolId, updates.teacherId?.toString())
-    const student = await Student.findOneAndUpdate({ _id: id, schoolId, ...(teacherId ? { teacherId } : {}) }, updates, { new: true, runValidators: true })
-    if (!student) throw ApiError.notFound('Student not found')
-    return student
+    try {
+      const student = await Student.findOneAndUpdate({ _id: id, schoolId, ...(teacherId ? { teacherId } : {}) }, updates, { new: true, runValidators: true })
+      if (!student) throw ApiError.notFound('Student not found')
+      return student
+    } catch (error) {
+      if (isRollNumberConflict(error)) throw rollNumberConflict()
+      throw error
+    }
   },
 
   async deactivate(schoolId: string, id: string, teacherId?: string) {
