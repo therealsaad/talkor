@@ -1,4 +1,4 @@
-# Talkora — Developer Handbook & Team Onboarding
+# Talkora — for Developer  & Team Onboarding
 
 > **Talkora** is a voice-first English-learning platform for school students from **KG through Class 10**, guided by **Miss Julie**. This README explains how teammates install, run, test, contribute to, and safely deploy the existing project. **Read it before editing code or pushing to GitHub.**
 >
