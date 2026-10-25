@@ -3,8 +3,6 @@
 > **Talkora** is a voice-first English-learning platform for school students from **KG through Class 10**, guided by **Miss Julie**. This README explains how teammates install, run, test, contribute to, and safely deploy the existing project. **Read it before editing code or pushing to GitHub.**
 >
 > Repository: **https://github.com/therealsaad/talkor**
->
-> **Documentation accuracy:** This handbook was prepared from the project's supplied **October 2026 GitHub ZIP** (including the existing team/architecture docs), plus later developer-verified Class 1 Qwen, MongoDB and demo-patch results. The live `main` branch could not be fetched during preparation. **The files in your checkout and current `package.json` scripts are the ultimate source of truth.** Some Class 1 scripts/features mentioned below were added *after* that ZIP and must be confirmed in your branch. This file does not claim to be installed or pushed to GitHub yet.
 
 ## Table of contents
 
