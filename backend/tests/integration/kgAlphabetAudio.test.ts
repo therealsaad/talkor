@@ -1,5 +1,4 @@
 import { createHash } from 'node:crypto'
-import { afterAll, afterEach, beforeAll, expect, it, jest } from '@jest/globals'
 import request from 'supertest'
 import { createApp } from '../../src/app'
 import { KGAlphabetProgress } from '../../src/models/KGAlphabetProgress'
@@ -147,28 +146,16 @@ it('authenticates the student, resolves the stable ID to the versioned private S
   expect(getAudio).toHaveBeenCalledWith('kg/level-1/miss-julie/v1/say-a.mp3')
 })
 
-it('denies audio outside the authorized KG pilot and falls back to uncached Azure when an S3 clip is missing', async () => {
+it('denies audio outside the authorized KG pilot and refuses repeated TTS when an S3 clip is missing', async () => {
   const { student, authorization } = await makePilot()
   const getAudio = jest.spyOn(S3Service, 'getAudio').mockResolvedValue(null)
-  const fallbackAudio = Buffer.from('ID3 Azure KG fallback')
   const azure = jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached')
-    .mockResolvedValue({ audio: fallbackAudio, contentType: 'audio/mpeg' })
 
   await request(app).get('/api/kg-alphabet/audio/v2/say-a').set('Authorization', authorization).expect(404)
   expect(getAudio).not.toHaveBeenCalled()
 
-  const missing = await request(app)
-    .get('/api/kg-alphabet/audio/v1/say-a')
-    .set('Authorization', authorization)
-    .buffer(true)
-    .parse((res, callback) => {
-      const chunks: Buffer[] = []
-      res.on('data', (chunk: Buffer) => chunks.push(chunk))
-      res.on('end', () => callback(null, Buffer.concat(chunks)))
-    })
-    .expect(200)
-  expect(missing.body).toEqual(fallbackAudio)
-  expect(azure).toHaveBeenCalledWith(expect.stringMatching(/apple/i))
+  await request(app).get('/api/kg-alphabet/audio/v1/say-a').set('Authorization', authorization).expect(502)
+  expect(azure).not.toHaveBeenCalled()
   expect(await KGAlphabetProgress.countDocuments({ studentId: student._id })).toBe(0)
 
   const nonPilot = await Student.create({
@@ -281,6 +268,35 @@ it('scores KG speech on the server, retries unclear speech, advances once, and d
   expect(await KGAlphabetAttempt.countDocuments({ studentId: student._id })).toBe(3)
   expect(await KGAlphabetAttempt.find({ studentId: student._id }).then((attempts) => attempts.reduce((sum, attempt) => sum + (attempt.timeSpentMs || 0), 0))).toBe(5700)
   expect(await KGAlphabetProgress.findOne({ studentId: student._id }).then((progress) => progress?.currentIndex)).toBe(1)
+})
+
+it('praises Hindi/Marathi meaning with reusable Priya feedback but advances only after English', async () => {
+  const { student, authorization } = await makePilot()
+  await approveIntro(authorization)
+  const transcribe = jest.spyOn(KGSpeechService, 'transcribe')
+    .mockResolvedValueOnce({ transcript: 'सेब', available: true, provider: 'sarvam' } as never)
+    .mockResolvedValueOnce({ transcript: 'सफरचंद', available: true, provider: 'sarvam' } as never)
+    .mockResolvedValueOnce({ transcript: 'apple', available: true, provider: 'sarvam' } as never)
+
+  const say = (submissionId: string) => request(app).post('/api/kg-alphabet/attempt')
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
+    .send({ activityId: 'say-a', submissionId, mimeType: 'audio/webm;codecs=opus',
+      audioBase64: 'Y'.repeat(160), durationMs: 1000 })
+
+  const hindi = await say('child-hindi-1234567').expect(200)
+  expect(hindi.body.data).toMatchObject({ outcome: 'supported', advance: false,
+    feedbackAudioId: 'bridge-a', feedbackVoice: 's3', feedbackAudioBase64: null,
+    state: { currentIndex: 0 } })
+  const marathi = await say('child-marathi-12345').expect(200)
+  expect(marathi.body.data).toMatchObject({ outcome: 'supported', advance: false,
+    feedbackAudioId: 'bridge-a', state: { currentIndex: 0 } })
+  expect(marathi.body.data.state.fallbackAvailable).toBe(true)
+
+  const english = await say('child-english-12345').expect(200)
+  expect(english.body.data).toMatchObject({ outcome: 'correct', advance: true,
+    feedbackAudioId: 'great', state: { currentIndex: 1 } })
+  expect(transcribe).toHaveBeenCalledTimes(3)
+  expect(await KGAlphabetAttempt.countDocuments({ studentId: student._id })).toBe(3)
 })
 
 it('keeps the current activity and saves no attempt when speech recognition is temporarily unavailable', async () => {
