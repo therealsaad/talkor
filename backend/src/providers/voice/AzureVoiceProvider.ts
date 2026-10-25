@@ -1,6 +1,5 @@
 import { ApiError } from '../../utils/ApiError'
 import { logger } from '../../utils/logger'
-import { AudioCacheService } from '../../services/AudioCacheService'
 import type { VoiceProvider, VoiceStreamResult, VoiceSynthesisResult } from './VoiceProvider'
 
 function escapeXml(text: string): string {
@@ -84,39 +83,14 @@ export class AzureVoiceProvider implements VoiceProvider {
     return { audio: await this.generate(normalized, true), contentType: this.contentType() }
   }
 
-  private identity(text: string) {
-    const s = this.settings()
-    return {
-      text,
-      provider: 'azure',
-      voice: s.voice,
-      rate: s.rate,
-      pitch: s.pitch,
-      format: s.format,
-      version: s.version,
-    }
-  }
-
   async synthesize(text: string): Promise<VoiceSynthesisResult> {
     const normalized = text.trim()
     if (!normalized) throw ApiError.badRequest('text is required')
     if (!this.settings().key) throw ApiError.provider('Azure Speech is not configured')
 
-    const identity = this.identity(normalized)
-    const cached = await AudioCacheService.get(identity)
-    if (cached) {
-      return {
-        audioUrl: null,
-        audioBase64: cached.audio.toString('base64'),
-        contentType: cached.contentType,
-        available: true,
-        provider: this.name,
-      }
-    }
-
+    // Live Class 1+ replies are ephemeral. Only human-reviewed curriculum
+    // narration is uploaded to S3; do not persist per-student corrections.
     const audio = await this.generate(normalized)
-    await AudioCacheService.put(identity, audio, this.contentType())
-
     return {
       audioUrl: null,
       audioBase64: audio.toString('base64'),
@@ -131,33 +105,14 @@ export class AzureVoiceProvider implements VoiceProvider {
     if (!normalized) throw ApiError.badRequest('text is required')
     if (!this.settings().key) throw ApiError.provider('Azure Speech is not configured')
 
-    const identity = this.identity(normalized)
-    const cached = await AudioCacheService.get(identity)
-    if (cached) {
-      return {
-        body: streamFromBuffer(cached.audio),
-        contentType: cached.contentType,
-        provider: this.name,
-        metadata: {
-          'x-talkora-cache': 'HIT',
-          'x-talkora-voice-id': this.settings().voice,
-        },
-      }
-    }
-
     const audio = await this.generate(normalized)
-    // Do not hold up a child's first audio response while uploading the cache
-    // to Atlas/S3. A later request can still use the persistent cache.
-    void AudioCacheService.put(identity, audio, this.contentType()).catch((error) => {
-      logger.warn('Azure TTS cache write failed', { error })
-    })
 
     return {
       body: streamFromBuffer(audio),
       contentType: this.contentType(),
       provider: this.name,
       metadata: {
-        'x-talkora-cache': 'MISS',
+        'x-talkora-cache': 'BYPASS',
         'x-talkora-voice-id': this.settings().voice,
       },
     }

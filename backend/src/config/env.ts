@@ -62,7 +62,7 @@ export const env = {
   azureSpeechRate: process.env.AZURE_SPEECH_RATE ?? '-8%',
   azureSpeechPitch: process.env.AZURE_SPEECH_PITCH ?? '+2%',
 
-  voiceProvider: process.env.VOICE_PROVIDER ?? 'python',
+  voiceProvider: process.env.VOICE_PROVIDER ?? 'azure',
   conversationVoiceProvider: (process.env.CONVERSATION_VOICE_PROVIDER ?? 'azure') as 'azure' | 'groq' | 'python' | 'sarvam' | 'mock',
   indicf5ServiceUrl: process.env.INDICF5_SERVICE_URL ?? '',
   indicf5ApiKey: process.env.INDICF5_API_KEY ?? '',
@@ -76,10 +76,13 @@ export const env = {
   sarvamTtsLanguage: process.env.SARVAM_TTS_LANGUAGE ?? 'en-IN',
   sarvamTtsPace: Number(process.env.SARVAM_TTS_PACE ?? 0.92),
   sarvamTtsTemperature: Number(process.env.SARVAM_TTS_TEMPERATURE ?? 0.6),
-  sarvamSttModel: process.env.SARVAM_STT_MODEL ?? 'saaras:v2.5',
-  sarvamSttLanguage: process.env.SARVAM_STT_LANGUAGE ?? 'en-IN',
+  sarvamSttModel: process.env.SARVAM_STT_MODEL ?? 'saaras:v4',
+  sarvamSttLanguage: process.env.SARVAM_STT_LANGUAGE ?? 'unknown',
+  sarvamSttMode: process.env.SARVAM_STT_MODE ?? 'codemix',
   sarvamTimeoutMs: Number(process.env.SARVAM_TIMEOUT_MS ?? 15000),
-  speechProvider: process.env.SPEECH_PROVIDER ?? (process.env.GROQ_API_KEY ? 'groq' : 'azure'),
+  // SPEECH_PROVIDER is canonical; accept the earlier STT_PROVIDER alias only
+  // when it is not defined. One setting serves every grade.
+  speechProvider: process.env.SPEECH_PROVIDER ?? process.env.STT_PROVIDER ?? (process.env.SARVAM_API_KEY ? 'sarvam' : process.env.GROQ_API_KEY ? 'groq' : 'azure'),
   pronunciationProvider: process.env.PRONUNCIATION_PROVIDER ?? 'python',
 
   seed: {
