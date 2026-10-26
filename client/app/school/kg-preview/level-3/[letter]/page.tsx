@@ -1,6 +1,6 @@
 'use client'
 
-import { lazy, Suspense, useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { SchoolShell } from '@/components/school/school-shell'
@@ -21,8 +21,12 @@ export default function KGLevel3LetterSchoolPreview() {
   const router = useRouter()
   const letter = LEVEL3_LETTERS.find((item) => item === params.letter)
   const [entryState, setEntryState] = useState<'checking' | 'allowed' | 'redirecting'>('checking')
+  const entryCheckStarted = useRef(false)
 
   useEffect(() => {
+    if (entryCheckStarted.current) return
+    entryCheckStarted.current = true
+
     if (sessionStorage.getItem(LEVEL3_INTRO_COMPLETED_KEY) === 'complete') {
       sessionStorage.removeItem(LEVEL3_INTRO_COMPLETED_KEY)
       setEntryState('allowed')

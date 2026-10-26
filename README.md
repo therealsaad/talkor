@@ -1,10 +1,8 @@
-# Talkora — Developer Handbook & Team Onboarding
+# Talkora — for Developer  & Team Onboarding
 
 > **Talkora** is a voice-first English-learning platform for school students from **KG through Class 10**, guided by **Miss Julie**. This README explains how teammates install, run, test, contribute to, and safely deploy the existing project. **Read it before editing code or pushing to GitHub.**
 >
 > Repository: **https://github.com/therealsaad/talkor**
->
-> **Documentation accuracy:** This handbook was prepared from the project's supplied **October 2026 GitHub ZIP** (including the existing team/architecture docs), plus later developer-verified Class 1 Qwen, MongoDB and demo-patch results. The live `main` branch could not be fetched during preparation. **The files in your checkout and current `package.json` scripts are the ultimate source of truth.** Some Class 1 scripts/features mentioned below were added *after* that ZIP and must be confirmed in your branch. This file does not claim to be installed or pushed to GitHub yet.
 
 ## Table of contents
 
@@ -12,7 +10,7 @@
 2. [What lives where](#2-what-lives-where)
 3. [Installation and environment variables](#3-installation-and-environment-variables)
 4. [Run the Python speech service and the Qwen AI brain](#4-run-the-python-speech-service-and-the-qwen-ai-brain)
-5. [Voice architecture: AI4Bharat, S3, Azure and Groq](#5-voice-architecture-ai4bharat-s3-azure-and-groq)
+5. [Voice architecture: Priya, S3, Sarvam and Azure](#5-voice-architecture-priya-s3-sarvam-and-azure)
 6. [Generate once, reuse many times: lesson audio](#6-generate-once-reuse-many-times-lesson-audio)
 7. [Lessons, curriculum and safe publishing](#7-lessons-curriculum-and-safe-publishing)
 8. [Git and GitHub: the workflow every teammate uses](#8-git-and-github-the-workflow-every-teammate-uses)
@@ -177,10 +175,11 @@ JWT_SECRET=<long-unique-secret-from-team-lead>
 # can override this ONLY if the latest routing patch is installed/tested.
 AI_PROVIDER=groq
 GROQ_API_KEY=<developer-key>
-SPEECH_PROVIDER=groq
-GROQ_STT_MODEL=whisper-large-v3
-GROQ_STT_ACCURATE_MODEL=whisper-large-v3
-GROQ_STT_LANGUAGE=
+SPEECH_PROVIDER=sarvam
+SARVAM_API_KEY=<developer-key>
+SARVAM_STT_MODEL=saaras:v4
+SARVAM_STT_LANGUAGE=unknown
+SARVAM_STT_MODE=codemix
 
 # Qwen pilot: separate FastAPI brain, NOT the local TTS service.
 TALKORA_CLASS1_QWEN_PILOT=true
@@ -295,7 +294,7 @@ The team previously saw **16 passing tests** in this Python workspace. Rerun aft
 
 ---
 
-## 5. Voice architecture: AI4Bharat, S3, Azure and Groq
+## 5. Voice architecture: Priya, S3, Sarvam and Azure
 
 **Never confuse LLM intelligence with text-to-speech (TTS).** They are different steps.
 
@@ -306,23 +305,26 @@ FIXED, HUMAN-REVIEWED LESSON LINE
   Student opens activity → authenticated Talkora backend → S3 clip → browser plays it
                           (same recording reused by many students)
 
-DYNAMIC CLASS 1 TEACHING TURN
-  Student microphone → Groq Whisper STT → authenticated Node activity context
+DYNAMIC CLASS 1+ TEACHING TURN
+  Student microphone → Sarvam Saaras v4 (English/Hindi/Marathi) → authenticated Node activity context
   → FastAPI :8002 → Ollama Qwen :11434 → structured Miss Julie coaching text
   → approved dynamic voice path (currently Azure) → browser playback
   → server-owned activity evaluation/progress (MongoDB)
 
 KG LEVEL 1
-  Scripted ABCD lesson → existing S3/static-audio system; NO Qwen required
+  Scripted ABCD lesson + positive, deterministic response after Sarvam STT
+  → reviewed Priya clips in private S3, reused between students/visits; NO Qwen required
+  Saying Hindi/Marathi meaning is praised, then English word is modeled;
+  it does not count as successful spoken English or unlock the next task.
 ```
 
 | Service | Responsibility | Rule |
 | --- | --- | --- |
 | **AI4Bharat TTS** | Generate **fixed/approved** lesson narration | Generate offline/in a controlled batch; human-review output |
 | **Amazon S3** | Store versioned narration recordings and compatible cache objects | Reuse clips; do not upload every time a student opens a level |
-| **Groq Whisper STT** | Transcribe child speech | A transcript alone is **not** proof of accurate pronunciation |
+| **Sarvam Saaras v4 STT** | Transcribe child speech in English, Hindi and Marathi | A transcript alone is **not** proof of accurate pronunciation |
 | **Qwen** | Guided Class 1 coaching and hints | Bounded to the approved lesson; never owns mastery or unlock rules |
-| **Azure voice** | Speak **new, dynamic** Miss Julie replies | Keep static and dynamic voice policies separate |
+| **Azure voice** | Speak **new, dynamic** Miss Julie replies | No persistent S3/Atlas cache for personal coaching; store only reviewed curriculum audio |
 | **MongoDB Atlas** | Curriculum, attempts, progress, voice cache metadata | Avoid destructive seeds; protect child data |
 
 The existing Node backend has `S3Service`, `AudioCacheService`, `kg-static-audio-cache` and authenticated voice/KG routes. **Reuse these services** rather than creating separate public S3 URLs or duplicating caching logic.
@@ -330,7 +332,8 @@ The existing Node backend has `S3Service`, `AudioCacheService`, `kg-static-audio
 ### Three important cache mechanisms
 
 1. **Immutable KG lesson clips:** versioned S3 objects such as `kg/level-1/miss-julie/v1/say-a.mp3`; the KG backend reads them with `S3Service.getAudio()` and a small bounded in-process cache. KG audio route: `/api/kg-alphabet/audio/{version}/{id}` for an authorized student (the same route is also mounted under `/api/v1`).
-2. **General TTS cache:** `AudioCacheService.cacheKey()` hashes normalized text + provider + voice + rate + pitch + format + version; the related MongoDB `AudioCache` record points to an S3 object. This is an existing mechanism, **not** proof that every lesson uses it today.
+   KG feedback IDs (`bridge-a` through `bridge-d`, `model-a` through `model-d`, `great`, `silence`, etc.) use the same manifest and S3 route; no per-child clip generation or upload. If a clip is missing, S3 mode reports an error so it can be reviewed/published, rather than silently spending Azure credits every retry.
+2. **Legacy general TTS cache:** `AudioCacheService.cacheKey()` hashes normalized text + provider + voice + rate + pitch + format + version. Azure live teaching/feedback **bypasses this S3 cache** under the new policy.
 3. **Login prewarming:** the existing `SyllabusVoiceWarmupService` can send shared fixed lesson lines to `/v1/tts/prewarm`, while personalized guidance has a separate context. Only active/published lesson content is included by default. Do not confuse prewarming with creating final approved S3 files.
 
 **Access:** Treat the S3 bucket as private. The backend should authenticate a student and authorize the activity before reading/streaming its recording. If a reviewed frontend lesson requires a CDN base URL, use an explicitly authorized distribution mechanism; **never** expose AWS write credentials in `NEXT_PUBLIC_*`, and do not assume a private S3 object URL is playable in the browser.

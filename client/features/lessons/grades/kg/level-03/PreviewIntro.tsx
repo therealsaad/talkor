@@ -51,7 +51,7 @@ export function Level3PreviewIntro({
     }, VIDEO_BUFFER_TIMEOUT_MS)
   }, [updatePlayback])
 
-  const startVideo = useCallback(async () => {
+  const startVideo = useCallback(async (userInitiated = false) => {
     const frame = frameRef.current
     const video = videoRef.current
     if (!frame || !video || completionHandledRef.current) return
@@ -62,14 +62,14 @@ export function Level3PreviewIntro({
     clearBufferTimeout()
     scheduleBufferTimeout()
 
-    if (frame.requestFullscreen && document.fullscreenElement !== frame) {
+    if (userInitiated && frame.requestFullscreen && document.fullscreenElement !== frame) {
       try {
         void frame.requestFullscreen({ navigationUI: 'hide' })
           .catch(() => setFullscreenFallback(true))
       } catch {
         setFullscreenFallback(true)
       }
-    } else if (!frame.requestFullscreen) {
+    } else if (userInitiated && !frame.requestFullscreen) {
       setFullscreenFallback(true)
     }
 
@@ -90,6 +90,17 @@ export function Level3PreviewIntro({
   useEffect(() => {
     void startVideo()
   }, [startVideo, videoAttempt])
+
+  useEffect(() => {
+    const htmlOverflow = document.documentElement.style.overflow
+    const bodyOverflow = document.body.style.overflow
+    document.documentElement.style.overflow = 'hidden'
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.documentElement.style.overflow = htmlOverflow
+      document.body.style.overflow = bodyOverflow
+    }
+  }, [])
 
   useEffect(() => () => {
     clearBufferTimeout()
@@ -206,7 +217,7 @@ export function Level3PreviewIntro({
                 playback === 'loading' ? <p role="status">Loading the introduction…</p> : null}
             {fullscreenFallback ? <p role="status">Continuing in the full-screen page view; browser fullscreen is unavailable.</p> : null}
             {playback === 'blocked' || playback === 'paused'
-              ? <button type="button" onClick={() => void startVideo()}><RotateCw size={18} /> {playback === 'paused' ? 'Resume introduction' : 'Play introduction'}</button>
+              ? <button type="button" onClick={() => void startVideo(true)}><RotateCw size={18} /> {playback === 'paused' ? 'Resume introduction' : 'Play introduction'}</button>
               : null}
             {playback === 'error'
               ? <button type="button" onClick={retryVideo}><RotateCw size={18} /> Try video again</button>
