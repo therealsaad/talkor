@@ -468,7 +468,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       pendingResultRef.current = { result, stepIndex }
       stateRef.current = result.state; setData(result.state)
       setHeardTranscript(result.transcript || '')
-      await handleOutcome(result.outcome, stepIndex, token, result.feedbackAudioId, result.teachingHint, result.feedbackText, result.feedbackAudioBase64)
+      await handleOutcome(result.outcome, stepIndex, token, result.feedbackAudioId, result.teachingHint, result.feedbackText, result.feedbackAudioBase64, (result as KGAttemptResponse & { advance?: boolean }).advance)
     } catch (error) {
       if (generation.current !== token) return
       if (error instanceof ApiError && error.status === 400) pendingSubmissionRef.current = null
@@ -483,7 +483,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
         } catch { /* Keep a recoverable retry if refreshing state is also offline. */ }
       }
       setFeedback(error instanceof ApiError && error.status >= 500
-        ? (preview ? 'Speech recognition could not connect. Check the Groq STT service, then tap Try again.' : 'Miss Julie could not listen just now. Check your connection, then tap Try again.')
+        ? (preview ? 'Speech recognition could not connect. Check the configured STT service, then tap Try again.' : 'Miss Julie could not listen just now. Check your connection, then tap Try again.')
         : error instanceof ApiError && error.status === 403
           ? 'This microphone test needs a signed-in teacher or student.'
           : 'I couldn’t check that answer. Tap Try again.')
@@ -565,10 +565,11 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
   }
 
   const handleOutcome = async (outcome: KGOutcome, stepIndex: number, token: number, serverFeedbackId?: string,
-    teachingHint?: string | null, feedbackText?: string, feedbackAudioBase64?: string | null) => {
+    teachingHint?: string | null, feedbackText?: string, feedbackAudioBase64?: string | null, advance?: boolean) => {
     if (generation.current !== token) return
-    // Supported bilingual comprehension advances, but is NOT a pronunciation pass.
-    const success = outcome === 'correct' || outcome === 'supported'
+    // Native-language comprehension receives praise and coaching, not speaking mastery.
+    // The server explicitly authorizes progression after assisted-picture support.
+    const success = advance ?? (outcome === 'correct' || (outcome === 'supported' && !preview && (stateRef.current?.currentIndex ?? 0) > stepIndex))
     if (preview && !success) previewErrorsRef.current += 1
     setFeedbackAnimation(success ? 'celebrating' : 'encouraging')
     const feedbackId = serverFeedbackId || (success ? 'great' : outcome === 'unclear' ? 'repeat' : 'try-again')
@@ -591,7 +592,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       } else pendingResultRef.current = null
       return
     }
-    setFeedback(feedbackText || (outcome === 'supported' ? 'Great! In English we say apple. Let’s move on!' : success ? 'Wonderful! You found it!' : teachingHint || (outcome === 'unclear' ? 'Let’s try that word together.' : 'Good try! Listen and have another go!')))
+    setFeedback(feedbackText || (outcome === 'supported' ? `Great effort! In English we say ${stepAt(stepIndex).word}. Let's say it together!` : success ? 'Wonderful! You found it!' : teachingHint || (outcome === 'unclear' ? 'Let’s try that word together.' : 'Good try! Listen and have another go!')))
     setPhase('feedback')
     try { await speakFeedback(feedbackId, feedbackAudioBase64) }
     catch {
@@ -669,7 +670,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     requestRef.current?.abort(); requestRef.current = new AbortController()
     try {
       if (pending) await sendPrepared(pending.stepIndex, pending.prepared, token)
-      else if (result) await handleOutcome(result.result.outcome, result.stepIndex, token, result.result.feedbackAudioId, result.result.teachingHint, result.result.feedbackText, result.result.feedbackAudioBase64)
+      else if (result) await handleOutcome(result.result.outcome, result.stepIndex, token, result.result.feedbackAudioId, result.result.teachingHint, result.result.feedbackText, result.result.feedbackAudioBase64, (result.result as KGAttemptResponse & { advance?: boolean }).advance)
     } finally { busy.current = false }
   }
 

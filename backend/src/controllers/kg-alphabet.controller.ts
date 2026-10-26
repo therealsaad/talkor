@@ -13,7 +13,6 @@ import { KGIntroPlayback } from '../models/KGIntroPlayback'
 import { AUDIO_IDS, AUDIO_LINES, LETTERS, activityAt, audioKey, evaluateKGSpeech, KG_ALPHABET_VERSION, KG_AUDIO_VERSION, type AudioId } from '../kg/alphabet-content'
 import { isAuthorizedKGAlphabetStudent } from '../services/kg-pilot-access'
 import { getKGStaticAudio } from '../services/kg-static-audio-cache'
-import { generateKGFeedback, type KGFeedbackInput } from '../services/kg-feedback.service'
 import { AzureVoiceProvider } from '../providers/voice/AzureVoiceProvider'
 import { KGSpeechService } from '../services/kg-speech.service'
 import { kgTeachingHint } from '../services/kg-teaching-hint'
@@ -105,7 +104,7 @@ async function canUsePictureSupport(studentId: Types.ObjectId, schoolId: Types.O
   const activity = activityAt(currentIndex)
   if (!activity || activity.mode !== 'speak') return false
   const failures = await KGAlphabetAttempt.countDocuments({ studentId, schoolId, activityId: activity.id,
-    mode: 'speak', replay: false, outcome: { $in: ['incorrect', 'unclear'] } })
+    mode: 'speak', replay: false, outcome: { $in: ['incorrect', 'unclear', 'supported'] } })
   return failures >= 2
 }
 
@@ -114,20 +113,19 @@ function validateSubmissionId(value: unknown): string {
   return value
 }
 
-function feedbackFor(outcome: string, reason?: string) {
-  return outcome === 'supported' ? 'great' : outcome === 'correct' ? 'great' : outcome === 'incorrect' ? 'try-again' : reason === 'silence' ? 'silence' : 'repeat'
+function feedbackFor(outcome: string, reason?: string, letter?: typeof LETTERS[number]['letter'], mode?: 'speak' | 'touch'): AudioId {
+  if (reason === 'silence') return 'silence'
+  if (outcome === 'supported' && mode === 'touch') return 'picture-support'
+  if (outcome === 'supported' && letter) return `bridge-${letter.toLowerCase()}` as AudioId
+  if (outcome === 'correct') return 'great'
+  if (mode === 'speak' && letter) return `model-${letter.toLowerCase()}` as AudioId
+  return outcome === 'incorrect' ? 'try-again' : 'repeat'
 }
 
-/** Personalized feedback speech is generated on-demand; audio bytes are never persisted. */
-async function spokenFeedback(input: KGFeedbackInput) {
-  const generated = await generateKGFeedback(input)
-  try {
-    const { audio } = await new AzureVoiceProvider().synthesizeUncached(generated.text)
-    return { feedbackText: generated.text, feedbackAudioBase64: audio.toString('base64'), feedbackVoice: 'azure', feedbackSource: generated.source }
-  } catch {
-    // Never roll back an already-graded attempt because TTS is temporarily unavailable.
-    return { feedbackText: generated.text, feedbackAudioBase64: null, feedbackVoice: 'unavailable', feedbackSource: generated.source }
-  }
+/** KG feedback selects a reviewed S3/Priya clip, not new LLM or TTS generation. */
+function spokenFeedback(input: { letter: typeof LETTERS[number]['letter']; mode: 'speak' | 'touch'; outcome: string; noSpeech?: boolean }) {
+  const id = feedbackFor(input.outcome, input.noSpeech ? 'silence' : undefined, input.letter, input.mode)
+  return { feedbackText: AUDIO_LINES[id], feedbackAudioBase64: null, feedbackVoice: 's3', feedbackSource: 'reviewed' }
 }
 
 async function sendKGVoice(res: Response, text: string) {
@@ -185,8 +183,10 @@ async function previewOutcome(input: Record<string, unknown>): Promise<KGPreview
   return { activity, outcome, transcript }
 }
 
-async function applyRecordedProgress(attempt: { studentId: Types.ObjectId; schoolId: Types.ObjectId; activityId: string; outcome: string; replay: boolean; createdAt: Date }) {
+async function applyRecordedProgress(attempt: { studentId: Types.ObjectId; schoolId: Types.ObjectId; activityId: string; mode: string; outcome: string; replay: boolean; createdAt: Date }) {
   if (!['correct', 'supported'].includes(attempt.outcome) || attempt.replay) return
+  // Native-language comprehension is praised but does not certify spoken English.
+  if (attempt.outcome === 'supported' && attempt.mode === 'speak') return
   const index = Array.from({ length: 8 }, (_, i) => i).find((i) => activityAt(i)?.id === attempt.activityId)
   if (index === undefined) return
   // This also repairs a request interrupted between saving the attempt and progress.
@@ -274,13 +274,12 @@ export const KGAlphabetController = {
   audio: catchAsync(async (req: Request, res: Response) => {
     await studentContext(req)
     const id = validatedAudioId(req)
-    // KG now defaults to Azure, so newly spoken teaching lines do not use the
-    // old monotone Priya library and are never written to a persistent cache.
-    if ((process.env.KG_VOICE_PROVIDER || 'azure').toLowerCase() !== 's3') return sendKGVoice(res, AUDIO_LINES[id])
+    // Approved KG teaching and coaching audio is reused from S3 by default.
+    if ((process.env.KG_VOICE_PROVIDER || 's3').toLowerCase() !== 's3') return sendKGVoice(res, AUDIO_LINES[id])
     const audio = await getKGStaticAudio(audioKey(id)).catch(() => null)
-    // For deployments explicitly preferring the old S3 clips, Azure is the
-    // fallback when a recording is absent or the bucket cannot be reached.
-    if (!audio) return sendKGVoice(res, AUDIO_LINES[id])
+    // Never silently synthesize the same KG feedback on every retry. Publish
+    // and verify the approved Priya clip first, or explicitly select Azure mode.
+    if (!audio) throw ApiError.provider(`Approved KG audio clip ${id} is not available in S3`)
     const etag = `"${createHash('sha256').update(audio).digest('hex')}"`
     if (req.headers['if-none-match'] === etag) return res.status(304).end()
     res.setHeader('Content-Type', 'audio/mpeg')
@@ -294,16 +293,20 @@ export const KGAlphabetController = {
   }),
   previewAudio: catchAsync(async (req: Request, res: Response) => {
     const id = validatedAudioId(req)
-    await sendKGVoice(res, AUDIO_LINES[id])
+    const audio = await getKGStaticAudio(audioKey(id)).catch(() => null)
+    if (!audio) throw ApiError.provider(`Approved KG audio clip ${id} is not available in S3`)
+    res.setHeader('Content-Type', 'audio/mpeg')
+    res.setHeader('Cache-Control', 'private, no-store')
+    res.send(audio)
   }),
   previewAttempt: catchAsync(async (req: Request, res: Response) => {
-    // Staff preview performs real Groq STT/feedback but never writes student results.
+    // Staff preview uses the KG-selected STT and reviewed feedback without progress writes.
     const result = await previewOutcome((req.body || {}) as Record<string, unknown>)
     const voice = await spokenFeedback({ letter: result.activity.letter, mode: result.selected ? 'touch' : result.activity.mode,
-      outcome: result.outcome, transcript: result.transcript, selected: result.selected, noSpeech: result.noSpeech })
+      outcome: result.outcome, noSpeech: result.noSpeech })
     res.setHeader('Cache-Control', 'no-store')
-    ok(res, { outcome: result.outcome, transcript: result.transcript || '',
-      feedbackAudioId: feedbackFor(result.outcome, result.noSpeech ? 'silence' : undefined),
+    ok(res, { outcome: result.outcome, advance: result.outcome === 'correct' || (result.outcome === 'supported' && Boolean(result.selected)), transcript: result.transcript || '',
+      feedbackAudioId: feedbackFor(result.outcome, result.noSpeech ? 'silence' : undefined, result.activity.letter, result.activity.mode),
       teachingHint: kgTeachingHint(result.activity.letter, result.activity.mode, result.outcome), ...voice, preview: true })
   }),
   attempt: catchAsync(async (req: Request, res: Response) => {
@@ -324,11 +327,12 @@ export const KGAlphabetController = {
       const latest = await KGAlphabetProgress.findOne({ studentId: student._id, schoolId: student.schoolId })
       const recoveredState = latest || state
       return ok(res, { outcome: attempt.outcome, replay: attempt.replay,
+        advance: attempt.outcome === 'correct' || (attempt.outcome === 'supported' && attempt.mode === 'touch'),
         state: { ...presentState(recoveredState), fallbackAvailable: await canUsePictureSupport(student._id, student.schoolId, recoveredState.currentIndex) }, duplicate: true,
-        feedbackAudioId: feedbackFor(attempt.outcome, attempt.recognitionReason),
+        feedbackAudioId: feedbackFor(attempt.outcome, attempt.recognitionReason, attempt.letter as typeof LETTERS[number]['letter'], attempt.mode),
         teachingHint: kgTeachingHint(attempt.letter as typeof LETTERS[number]['letter'], attempt.mode, attempt.outcome),
         ...(await spokenFeedback({ letter: attempt.letter as typeof LETTERS[number]['letter'], mode: attempt.mode,
-          outcome: attempt.outcome as 'correct' | 'incorrect' | 'unclear' | 'supported', transcript: attempt.transcript, selected: attempt.selected,
+          outcome: attempt.outcome as 'correct' | 'incorrect' | 'unclear' | 'supported',
           noSpeech: attempt.recognitionReason === 'silence' })) })
     }
     const existing = await KGAlphabetAttempt.findOne(identity)
@@ -421,11 +425,11 @@ export const KGAlphabetController = {
 
       const latest = await KGAlphabetProgress.findOne({ studentId: student._id, schoolId: student.schoolId })
       const voice = await spokenFeedback({ letter: activity.letter, mode: assistedPicture ? 'touch' : activity.mode, outcome,
-        transcript, selected, noSpeech: recognitionReason === 'silence' })
+        noSpeech: recognitionReason === 'silence' })
       res.setHeader('Cache-Control', 'no-store')
-      return ok(res, { outcome, replay, transcript: transcript || '', state: { ...presentState(latest || state),
+      return ok(res, { outcome, replay, advance: outcome === 'correct' || (outcome === 'supported' && assistedPicture), transcript: transcript || '', state: { ...presentState(latest || state),
         fallbackAvailable: await canUsePictureSupport(student._id, student.schoolId, (latest || state).currentIndex) },
-        feedbackAudioId: feedbackFor(outcome, recognitionReason), teachingHint: kgTeachingHint(activity.letter, assistedPicture ? 'touch' : activity.mode, outcome), ...voice })
+        feedbackAudioId: feedbackFor(outcome, recognitionReason, activity.letter, assistedPicture ? 'touch' : activity.mode), teachingHint: kgTeachingHint(activity.letter, assistedPicture ? 'touch' : activity.mode, outcome), ...voice })
     } finally {
       await KGAlphabetSubmission.deleteOne({ ...identity, owner })
     }

@@ -36,6 +36,17 @@ export const AUDIO_LINES = {
   'try-again': 'Nice try! Listen once more and try again!',
   'repeat': 'I did not hear clearly. Can you say it again?',
   'silence': 'I am still listening. Take your time, then say it for me!',
+  'picture-support': 'Lovely work, beta ji! You found the picture! We will practice the English word together again soon!',
+  // Approved, reusable KG response scripts. Generate them with the pinned Priya
+  // preset and upload their immutable S3 clips before enabling the S3 pilot.
+  'bridge-a': 'Achha, seb! Bilkul sahi, beta ji! English mein seb ko apple kehte hain. Mere saath bolo, apple!',
+  'bridge-b': 'Achha, gend! Bilkul sahi, beta ji! English mein gend ko ball kehte hain. Mere saath bolo, ball!',
+  'bridge-c': 'Achha, billi! Bilkul sahi, beta ji! English mein billi ko cat kehte hain. Mere saath bolo, cat!',
+  'bridge-d': 'Achha, kutta! Bilkul sahi, beta ji! English mein kutte ko dog kehte hain. Mere saath bolo, dog!',
+  'model-a': 'Nice try, beta ji! Listen: apple. A for apple. Now you say apple!',
+  'model-b': 'Nice try, beta ji! Listen: ball. B for ball. Now you say ball!',
+  'model-c': 'Nice try, beta ji! Listen: cat. C for cat. Now you say cat!',
+  'model-d': 'Nice try, beta ji! Listen: dog. D for dog. Now you say dog!',
   'celebrate': 'Hooray! You know A, B, C, and D! You are a superstar!',
   'level-complete': 'You finished Level 1! You learned A, B, C, and D. Hooray!',
   'homework-abcd': 'Your tiny homework: at home, point to an apple, a ball, a cat or a dog picture. Say its English name and tell someone its first letter. Do your best! See you soon!',
@@ -60,7 +71,7 @@ export const ACTIVITY_AUDIO_IDS: Record<ActivityId, AudioId[]> = {
   'find-d': ['recognize-intro', 'puzzle-intro', 'find-d'],
 }
 
-const SHARED_FEEDBACK_IDS: AudioId[] = ['great', 'try-again', 'repeat', 'silence']
+const SHARED_FEEDBACK_IDS: AudioId[] = ['great', 'try-again', 'repeat', 'silence', 'picture-support']
 const COMMON_NAVIGATION_IDS: AudioId[] = ['welcome', 'how-to-play', 'level-complete', 'navigation-map', 'replay-intro', 'replay-level', 'celebrate', 'homework-abcd']
 
 export const AUDIO_MANIFEST = AUDIO_IDS.map((id) => {
@@ -68,6 +79,7 @@ export const AUDIO_MANIFEST = AUDIO_IDS.map((id) => {
     .filter(([, ids]) => ids.includes(id))
     .map(([activityId]) => activityId)
   if (SHARED_FEEDBACK_IDS.includes(id)) activityIds = Object.keys(ACTIVITY_AUDIO_IDS) as ActivityId[]
+  if (id.startsWith('bridge-') || id.startsWith('model-')) activityIds = [`say-${id.slice(-1)}` as ActivityId]
   return {
     id,
     text: AUDIO_LINES[id],
@@ -82,7 +94,9 @@ export const AUDIO_MANIFEST = AUDIO_IDS.map((id) => {
 export const ACTIVITY_AUDIO_MANIFEST = Object.fromEntries(
   Object.entries(ACTIVITY_AUDIO_IDS).map(([activityId, audioIds]) => [
     activityId,
-    [...audioIds, ...SHARED_FEEDBACK_IDS].map((id) => ({ id, text: AUDIO_LINES[id], s3Key: audioKey(id) })),
+    [...audioIds, ...SHARED_FEEDBACK_IDS, ...(
+      activityId.startsWith('say-') ? [`bridge-${activityId.slice(-1)}`, `model-${activityId.slice(-1)}`] as AudioId[] : []
+    )].map((id) => ({ id, text: AUDIO_LINES[id], s3Key: audioKey(id) })),
   ]),
 ) as Record<ActivityId, Array<{ id: AudioId; text: string; s3Key: string }>>
 
@@ -99,11 +113,20 @@ const CHILD_WORD_ALIASES: Record<Letter, readonly string[]> = {
   D: ['dhog', 'dawg', 'daug', 'dogg', 'doggy', 'dohg', 'dug'],
 }
 
-const HINDI_WORDS: Record<string, string> = {
+const SCRIPT_WORDS: Record<string, string> = {
   'एप्पल': 'apple', 'ऐप्पल': 'apple', 'ऐपल': 'apple', 'एपल': 'apple',
   'बॉल': 'ball', 'कैट': 'cat', 'डॉग': 'dog', 'डाग': 'dog',
   'ए': 'a', 'बी': 'b', 'सी': 'c', 'डी': 'd',
   'सेब': 'seb',
+  'सफरचंद': 'safarchand', 'गेंद': 'gend', 'चेंडू': 'chendu',
+  'बिल्ली': 'billi', 'मांजर': 'manjar', 'कुत्ता': 'kutta', 'कुत्रा': 'kutra',
+}
+
+const BILINGUAL_BRIDGES: Record<Letter, readonly string[]> = {
+  A: ['seb', 'saib', 'sayb', 'seib', 'safarchand'],
+  B: ['gend', 'genda', 'chendu'],
+  C: ['billi', 'billy', 'manjar', 'maanjar'],
+  D: ['kutta', 'kuta', 'kutra', 'kutraa'],
 }
 
 const LETTER_ALIASES: Record<Letter, readonly string[]> = {
@@ -113,7 +136,7 @@ const LETTER_ALIASES: Record<Letter, readonly string[]> = {
 
 function normalizeKGWords(raw: string): string[] {
   const text = raw.slice(0, 240)
-    .replace(/\p{L}[\p{L}\p{M}]*/gu, (token) => HINDI_WORDS[token] || token)
+    .replace(/\p{L}[\p{L}\p{M}]*/gu, (token) => SCRIPT_WORDS[token] || token)
     .toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ').trim()
   if (!text) return []
@@ -136,16 +159,19 @@ function matchesWord(token: string, letter: Letter): boolean {
   return token === expected || CHILD_WORD_ALIASES[letter].includes(token)
 }
 
-/** Hindi "seb/saib/sayb" expresses the right MEANING, not an English "apple" pronunciation. */
+/** Hindi/Marathi meaning is supported comprehension, never an English pronunciation pass. */
 export function isKGBilingualBridge(raw: string, letter: Letter): boolean {
-  if (letter !== 'A') return false
   const tokens = normalizeKGWords(raw)
-  if (!tokens.length || tokens.length > 6) return false
+  if (!tokens.length || tokens.length > 8) return false
   if (tokens.some((token) => ['no', 'not', 'never', 'dont', 'wrong'].includes(token))) return false
   if (LETTERS.some(({ letter: other }) => other !== letter && tokens.some((token) => matchesWord(token, other)))) return false
-  const bridge = tokens.filter((token) => ['seb', 'saib', 'sayb', 'seib'].includes(token))
+  const target = BILINGUAL_BRIDGES[letter]
+  const bridge = tokens.filter((token) => target.includes(token))
   if (bridge.length !== 1) return false
-  return tokens.every((token) => ['seb', 'saib', 'sayb', 'seib', 'i', 'said', 'say', 'it', 'is', 'a', 'the', 'this'].includes(token))
+  const otherTranslations = (Object.entries(BILINGUAL_BRIDGES) as [Letter, readonly string[]][])
+    .filter(([candidate]) => candidate !== letter).flatMap(([, words]) => words)
+  if (tokens.some((token) => otherTranslations.includes(token))) return false
+  return tokens.every((token) => target.includes(token) || ['i', 'said', 'say', 'it', 'is', 'a', 'the', 'this'].includes(token))
 }
 
 export function evaluateKGSpeech(raw: string, letter: Letter, target: 'word' | 'letter' | 'either' = 'either'): 'correct' | 'incorrect' | 'unclear' {
