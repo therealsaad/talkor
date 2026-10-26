@@ -45,7 +45,8 @@
     "id": "g00-l03",
     "grade": 0,
     "level": 3,
-    "title": "My Body and Actions",
+    "title": "Letters K to P",
+    "roadmapTitle": "My Body and Actions",
     "designTheme": "kg-03-my-body-and-actions",
     "world": "Coral Lagoon",
     "palette": {
@@ -214,6 +215,7 @@
     "grade": 1,
     "level": 1,
     "title": "Little Words & My First Day",
+    "roadmapTitle": "Letters and Sounds",
     "designTheme": "class-01-01-letters-and-sounds",
     "world": "First Day Word Meadow",
     "palette": {
