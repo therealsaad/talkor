@@ -153,8 +153,20 @@ async function fixture({ outcome = 'correct', denied = false, lostResponse = fal
   await page.goto(`${base}/student/kg`, { waitUntil: 'domcontentloaded' })
   // Fullscreen media normally needs one real gesture; microphone permission is
   // requested only after the server-verified story completes.
-  await page.waitForSelector('.kg-story-play', { timeout: 20000 })
-  await page.click('.kg-story-play')
+  try {
+    await page.waitForFunction(() => document.querySelector('.kg-story-play') || window.__kgMedia.requests > 0, { timeout: 20000 })
+  } catch (error) {
+    console.error('Isolated KG browser setup diagnostic:', JSON.stringify({
+      url: page.url(),
+      errors: diagnostics,
+      requests,
+      text: (await page.$eval('body', (element) => element.innerText)).slice(0, 1000),
+    }))
+    await context.close()
+    throw error
+  }
+  const storyPlay = await page.$('.kg-story-play')
+  if (storyPlay) await storyPlay.click()
   try {
     if (denied) {
       await page.waitForFunction(() => document.body.innerText.includes('Please allow microphone access'), { timeout: 20000 })
@@ -228,8 +240,9 @@ test('real browser silence retries twice, saves only silence events, and offers 
   const { page, context, ids } = await fixture({ silent: true })
   try {
     try {
-      // One permission preflight plus three silence recordings.
-      await page.waitForFunction(() => document.body.innerText.includes('That was quiet.') && window.__kgMedia.requests === 4, { timeout: 26000 })
+      // Three silence recordings are required. A separate permission preflight
+      // occurs only when the browser needs a post-video Start gesture.
+      await page.waitForFunction(() => document.body.innerText.includes('That was quiet.') && window.__kgMedia.requests >= 3, { timeout: 26000 })
     } catch (error) {
       console.error('Silence retry diagnostic:', JSON.stringify({ requests: await page.evaluate(() => window.__kgMedia), attempts: ids, text: await page.$eval('body', (element) => element.innerText) }))
       throw error

@@ -8,7 +8,12 @@ import { CurriculumAccessService } from './curriculum-access.service'
 import { ProgressService } from './progress.service'
 import { KG_CURRICULUM_VERSION } from './kg-pilot-access'
 import { isMissingKGPilotPicture, presentKGPilotActivity } from './kg-pilot-presentation'
-import { CLASS1_DEMO_EXPERIENCE_ID, CLASS1_DEMO_VERSION } from './class1-demo-access'
+import {
+  CLASS1_DEMO_ACTIVITY_FILTER,
+  CLASS1_DEMO_EXPERIENCE_ID,
+  CLASS1_DEMO_LESSON_FILTER,
+  CLASS1_DEMO_VERSION,
+} from './class1-demo-access'
 
 /**
  * One grade-authoritative read for the hands-free lab lesson flow.
@@ -36,12 +41,15 @@ export const StudentLessonFastService = {
     for (const unit of units) {
       const unitProgress = progress.levels.find(item => item.levelId.toString() === unit._id.toString())
       const unitIsAccessible = Boolean(unitProgress && ['unlocked', 'in-progress'].includes(unitProgress.status))
-      const lessons = await Lesson.find({ levelId: unit._id, status: contentStatus, ...(isClass1Demo ? { 'settings.talkoraDemoDraft': true } : {}) })
+      const lessons = await Lesson.find({
+        levelId: unit._id,
+        ...(isClass1Demo ? CLASS1_DEMO_LESSON_FILTER : { status: contentStatus }),
+      })
         .select('_id order').sort('order').lean()
       for (const lesson of lessons) {
         const activities = await Activity.find({
           lessonId: lesson._id,
-          status: contentStatus,
+          ...(isClass1Demo ? CLASS1_DEMO_ACTIVITY_FILTER : { status: contentStatus }),
           core: { $ne: false },
           required: { $ne: false },
           ...(isKGPilot ? { $nor: [{ type: 'PICTURE_CHOICE', 'content.pictureAsset.status': 'MISSING' }] } : {}),
@@ -76,8 +84,7 @@ export const StudentLessonFastService = {
       ProgressService.getForStudent(studentId, curriculumClass._id.toString()),
       Activity.find({
         lessonId: lesson._id,
-        status: contentStatus,
-        ...(isClass1Demo ? { curriculumVersion: CLASS1_DEMO_VERSION, activityKey: /^class1-l01-/ } : {}),
+        ...(isClass1Demo ? CLASS1_DEMO_ACTIVITY_FILTER : { status: contentStatus }),
       })
         .select('-answer -answerConfig')
         .sort('order').lean(),
