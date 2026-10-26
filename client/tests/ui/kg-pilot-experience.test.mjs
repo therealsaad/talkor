@@ -53,10 +53,14 @@ test('Level 1 requires the complete server-verified fullscreen story on every en
  assert.match(controller,/INTRO_MINIMUM_MS/)
  assert.match(controller,/Watch Miss Julie/)
 })
-test('Azure TTS speech clips, corrected feedback and real microphone are connected',()=>{
+test('S3 Priya feedback, Sarvam-ready listening and real microphone are connected',()=>{
  assert.match(routes,/KGAlphabetController\.audio/)
- assert.match(controller,/sendKGVoice/)
+ assert.match(controller,/getKGStaticAudio\(audioKey\(id\)\)/)
  assert.match(controller,/spokenFeedback/)
+ assert.match(controller,/feedbackVoice: 's3'/)
+ assert.match(controller,/feedbackAudioBase64: null/)
+ assert.match(controller,/outcome === 'supported' && attempt\.mode === 'speak'/)
+ assert.match(lesson,/const success = advance/)
  assert.match(service,/previewSubmitPrepared/)
  assert.match(service,/playFeedback/)
  assert.match(lesson,/kgAlphabetService\.play/)

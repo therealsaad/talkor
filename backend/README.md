@@ -40,7 +40,9 @@ AI_PROVIDER=groq          # groq | openai | mock
 GROQ_API_KEY=...          # required if AI_PROVIDER=groq
 OPENAI_API_KEY=...        # required if AI_PROVIDER=openai
 
-VOICE_PROVIDER=sarvam     # sarvam | kokoro | mock
+VOICE_PROVIDER=azure      # dynamic TTS; KG fixed scripts use private S3
+CONVERSATION_VOICE_PROVIDER=azure
+SPEECH_PROVIDER=sarvam    # one STT setting for KG AND Classes 1–10
 SARVAM_API_KEY=...        # server-side only; never use NEXT_PUBLIC_
 SARVAM_TTS_MODEL=bulbul:v3
 SARVAM_TTS_SPEAKER=ishita
@@ -48,8 +50,10 @@ SARVAM_TTS_LANGUAGE=en-IN
 SARVAM_TTS_PACE=0.92
 SARVAM_TTS_TEMPERATURE=0.6
 SARVAM_TIMEOUT_MS=15000
-SARVAM_STT_MODEL=saaras:v2.5
-SARVAM_STT_LANGUAGE=en-IN
+SARVAM_STT_MODEL=saaras:v4
+SARVAM_STT_LANGUAGE=unknown
+SARVAM_STT_MODE=codemix
+KG_VOICE_PROVIDER=s3
 ```
 
 MongoDB Atlas is required (not a local standalone `mongod`) because `ProgressService` relies
@@ -193,6 +197,10 @@ Abandoned recordings can be marked `cancelled`; cancellation never submits progr
 Set `SPEECH_PROVIDER=azure` to use Azure Speech fast transcription for explicitly recorded
 audio. `SPEECH_PROVIDER=sarvam`, `groq`, and `python` select their respective STT providers;
 `SPEECH_PROVIDER=mock` remains the no-credential fallback.
+Use Sarvam v4 in `codemix` mode with `language_code=unknown` for KG bilingual
+recognition. Do not define a separate STT provider for every grade. The old
+`KG_ALPHABET_STT_PROVIDER` is supported as a temporary compatibility override;
+remove it when migrating to the unified setting.
 
 ## 9. Scoring, unlocking, and achievements — where the rules live
 
@@ -262,6 +270,19 @@ and `AWS_S3_BUCKET` configuration through `S3Service`; it does not add browser A
 public ACLs, or a second bucket configuration. Immutable objects use
 `kg/level-1/miss-julie/v1/<audio-id>.mp3`. Each uploaded object is checked for its size, MIME type,
 SHA-256 metadata, private cache policy, and AES256 server-side encryption.
+
+The manifest now includes reviewed Priya feedback clips for bilingual meaning
+(`bridge-a`–`bridge-d`) and retry models (`model-a`–`model-d`). They are chosen
+deterministically *after* Sarvam STT; they are NOT generated again on each
+attempt and are shared across students. Positive native-language recognition
+does not grant English speaking mastery. In `KG_VOICE_PROVIDER=s3` mode a
+missing recording returns a provider error; generate, review and upload the
+missing IDs before enabling the school pilot. Explicit `KG_VOICE_PROVIDER=azure`
+is an emergency live voice option and does not produce reusable approved clips.
+
+For Classes 1–10, Azure `synthesize`/`synthesizeStream` replies are ephemeral:
+no `AudioCache` or S3 write for individualized coaching. Only the reviewed,
+versioned curriculum narration belongs in the private bucket.
 
 Student playback is `GET /api/kg-alphabet/audio/v1/<audio-id>` with the normal authenticated
 student bearer token. The backend checks that the student is authorized for the KG pilot, resolves
