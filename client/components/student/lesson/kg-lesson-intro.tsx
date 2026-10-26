@@ -4,27 +4,59 @@ import { useEffect, useRef, useState } from 'react'
 import { Play, SkipForward, Sparkles } from 'lucide-react'
 
 const lessonKeyPattern = /^kg-g0-u[1-8]-l[1-3]$/
+
 const MANDATORY_FIRST_LESSON = 'kg-g0-u1-l1'
-const KG_MEDIA_ROOT = '/lessons/kg'
-const FULL_VIDEO = `${KG_MEDIA_ROOT}/videos/fullkg.mp4`
+const LEVEL_4_LESSON_KEY = 'kg-g0-u4-l1'
+
+const FULL_VIDEO = '/kg/videos/fullkg.mp4'
+const LEVEL_4_VIDEO =
+  '/lessons/kg/level-04/animal-sounds-intro.mp4'
+
 const REQUIRED_WATCH_SECONDS = 60
+const LEVEL_4_REQUIRES_FULLSCREEN = false
+
+function isMandatoryIntro(lessonKey: string) {
+  return (
+    lessonKey === MANDATORY_FIRST_LESSON ||
+    lessonKey === LEVEL_4_LESSON_KEY
+  )
+}
+
 
 async function findAvailableSources(lessonKey: string): Promise<string[]> {
   const extensions = ['webm', 'mp4']
-  const checks = await Promise.all(extensions.map(async (extension) => {
-    const controller = new AbortController()
-    const timeout = window.setTimeout(() => controller.abort(), 1100)
-    try {
-      const source = `${KG_MEDIA_ROOT}/lesson-intros/${lessonKey}.${extension}`
-      const response = await fetch(source, {
-        method: 'HEAD', cache: 'no-store', signal: controller.signal,
-      })
-      return response.ok ? source : null
-    } catch { return null }
-    finally { window.clearTimeout(timeout) }
-  }))
-  return checks.filter((source): source is string => Boolean(source))
+
+  const checks = await Promise.all(
+    extensions.map(async (extension) => {
+      const controller = new AbortController()
+      const timeout = window.setTimeout(
+        () => controller.abort(),
+        1100,
+      )
+
+      try {
+        const source = `/kg/lesson-intros/${lessonKey}.${extension}`
+
+        const response = await fetch(source, {
+          method: 'HEAD',
+          cache: 'no-store',
+          signal: controller.signal,
+        })
+
+        return response.ok ? source : null
+      } catch {
+        return null
+      } finally {
+        window.clearTimeout(timeout)
+      }
+    }),
+  )
+
+  return checks.filter(
+    (source): source is string => Boolean(source),
+  )
 }
+
 
 /** Legacy/general lesson introductions. KG Level 1 always requires the complete
  * 60+ second clip in fullscreen, without an in-app skip. Actual ABCD progression
@@ -39,7 +71,7 @@ export function KGLessonIntro({
   onAvailable: () => void
   onDone: () => void
 }) {
-  const mandatory = lessonKey === MANDATORY_FIRST_LESSON
+const mandatory = isMandatoryIntro(lessonKey)
   const frame = useRef<HTMLDivElement>(null)
   const video = useRef<HTMLVideoElement>(null)
   const maxWatched = useRef(0)
@@ -60,7 +92,14 @@ export function KGLessonIntro({
       if (!mandatory) {
         try { seen = replayRequest === 0 && localStorage.getItem(`talkora:kg-intro:${lessonKey}`) === 'seen' } catch { /* storage optional */ }
       }
-      const available = mandatory ? [FULL_VIDEO] : await findAvailableSources(lessonKey)
+
+const available =
+  lessonKey === LEVEL_4_LESSON_KEY
+    ? [LEVEL_4_VIDEO]
+    : mandatory
+      ? [FULL_VIDEO]
+      : await findAvailableSources(lessonKey)
+
       if (!alive) return
       if (!available.length) { onDone(); return } // Only OPTIONAL intros can be absent.
       onAvailable()
@@ -101,13 +140,33 @@ export function KGLessonIntro({
     try { localStorage.setItem(`talkora:kg-intro:${lessonKey}`, 'seen') } catch { /* optional */ }
   }
   function finishIntro() {
-    if (mandatory) {
-      if (maxWatched.current < REQUIRED_WATCH_SECONDS || document.fullscreenElement !== frame.current) {
-        setError('Watch the full story in fullscreen before starting your lesson.')
-        video.current?.pause(); setNeedsTap(true)
-        return
-      }
-    }
+
+const requiresFullscreen =
+  lessonKey === MANDATORY_FIRST_LESSON ||
+  (mandatory && LEVEL_4_REQUIRES_FULLSCREEN)
+
+if (mandatory) {
+  const watchedEnough =
+    lessonKey === LEVEL_4_LESSON_KEY
+      ? video.current?.ended === true
+      : maxWatched.current >= REQUIRED_WATCH_SECONDS
+
+  const fullscreenOkay =
+    !requiresFullscreen ||
+    document.fullscreenElement === frame.current
+
+  if (!watchedEnough || !fullscreenOkay) {
+    setError(
+      lessonKey === LEVEL_4_LESSON_KEY
+        ? 'Please watch the complete video before starting your lesson.'
+        : 'Watch the full story in fullscreen before starting your lesson.',
+    )
+    video.current?.pause()
+    setNeedsTap(true)
+    return
+  }
+}
+
     video.current?.pause()
     markIntroSeen()
     onDone()
