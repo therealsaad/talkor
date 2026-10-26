@@ -61,13 +61,15 @@ export default function StudentLessonPage() {
       ? '/lessons/class-01/level-01/two-letter-word-meadow.webp'
       : undefined}
     completionMessage={lesson.experienceId === 'g01-l01'
-      ? `You did it, ${student?.fullName?.trim() || 'Explorer'}! You listened, built, read, and spoke small English words. Your progress is saved.`
+      ? `You did it, ${student?.fullName?.trim() || 'Explorer'}! You practised little words and started learning about your first day at school. Your progress is saved.`
       : undefined}
     homeworkMessage={lesson.experienceId === 'g01-l01'
-      ? 'Homework: say “I am Sam” and “Look at me” with someone at home.'
+      ? 'Homework: say “I am Sam” and “I walk to school” with someone at home.'
       : undefined}
-    introVideoKey={lesson.grade === 0 && typeof lesson.lesson.settings?.lessonKey === 'string'
-      ? lesson.lesson.settings.lessonKey
-      : undefined}
+    introVideoKey={lesson.experienceId === 'g01-l01' && lesson.completedActivityIds.length === 0
+      ? 'class1-g01-l01'
+      : lesson.grade === 0 && typeof lesson.lesson.settings?.lessonKey === 'string'
+        ? lesson.lesson.settings.lessonKey
+        : undefined}
   />
 }

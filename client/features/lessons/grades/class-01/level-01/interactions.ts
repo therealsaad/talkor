@@ -6,7 +6,8 @@ export const interactions: LevelInteractionConfig = {
     "guided-dialogue",
     "word-builder",
     "sentence-builder",
-    "listen-and-find"
+    "listen-and-find",
+    "repeat-after-julie"
   ],
   "requireMicrophone": true,
   "disableMusicDuringSpeech": true,

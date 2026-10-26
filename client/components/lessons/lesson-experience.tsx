@@ -18,6 +18,7 @@ import { getWarmupPrompts, isWarmupActivity, resolveActivityTeacherLine, warmupQ
 import { progressService } from '@/services/progress-service'
 import { firstUnfinishedActivity, isOpenLessonConversation, personalizeLessonText, shouldUseLessonVoice } from '@/services/lesson-progress'
 import { KGLessonIntro } from '@/components/student/lesson/kg-lesson-intro'
+import { Class1LessonIntro } from '@/components/student/lesson/class1-lesson-intro'
 
 /**
  * Local matching for spoken answers to published lesson choices.
@@ -954,13 +955,21 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         )}
       </div>
       {introVideoKey && introState !== 'done' ? (
-        <KGLessonIntro
-          key={`${introVideoKey}:${introReplayRequest}`}
-          lessonKey={introVideoKey}
-          replayRequest={introReplayRequest}
-          onAvailable={markIntroAvailable}
-          onDone={finishIntro}
-        />
+        introVideoKey === 'class1-g01-l01' ? (
+          <Class1LessonIntro
+            key={`${introVideoKey}:${introReplayRequest}`}
+            onAvailable={markIntroAvailable}
+            onDone={finishIntro}
+          />
+        ) : (
+          <KGLessonIntro
+            key={`${introVideoKey}:${introReplayRequest}`}
+            lessonKey={introVideoKey}
+            replayRequest={introReplayRequest}
+            onAvailable={markIntroAvailable}
+            onDone={finishIntro}
+          />
+        )
       ) : null}
     </LessonWorld>
   )
