@@ -1,8 +1,14 @@
 {
   "levelId": "g01-l01",
-  "status": "backdrop-ready-audio-review-pending",
+  "status": "backdrop-ready-video-and-audio-review-pending",
   "assetsRoot": "/lessons/class-01/level-01/",
   "introVideo": null,
+  "plannedIntro": {
+    "durationSeconds": 90,
+    "provider": "approved Miss Julie / Priya narration",
+    "delivery": "private S3 via approved media CDN",
+    "status": "AWAITING_RENDER_AND_REVIEW"
+  },
   "images": [
     {
       "id": "two-letter-word-meadow",
@@ -18,5 +24,5 @@
     "dynamicFeedback": "azure-uncached",
     "preauthoredTTS": "S3 CDN"
   },
-  "note": "Do not add placeholders pointing at missing assets. Upload approved optimized media here."
+  "note": "Do not add placeholder media URLs. The student intro fails closed until the reviewed 90-second video is supplied through the configured S3-backed media URL."
 }
