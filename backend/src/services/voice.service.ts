@@ -67,6 +67,7 @@ function evaluateOpenResponse(transcript: string) {
 
 export const VoiceService = {
   async startSession(studentId: string, input: { lessonId?: string; activityId?: string; expectedPhrase?: string }) {
+    let authoritativeExpectedPhrase: string | undefined
     if (input.activityId) {
       // assertActivity is the authority for both ordinary published activities
       // and explicitly allowlisted KG pilot drafts. Re-fetching and requiring
@@ -74,7 +75,15 @@ export const VoiceService = {
       const access = await CurriculumAccessService.assertActivity(studentId, input.activityId)
       const expectedStatus = access.isKGPilot || access.isClass1Demo ? 'draft' : 'active'
       if (access.activity.status !== expectedStatus) throw ApiError.notFound('Activity not found')
+      // A Class 1 student may speak with an accent, but must not pick their
+      // own marking target through an API payload. Use the lesson's server
+      // target for controlled speech, keeping open conversations flexible.
+      if (access.isClass1Demo && access.activity.type !== 'CONVERSATION') {
+        authoritativeExpectedPhrase = access.activity.target?.trim()
+        if (!authoritativeExpectedPhrase) throw ApiError.badRequest('This activity is missing its approved speaking target')
+      }
     }
+    const expectedPhrase = authoritativeExpectedPhrase ?? input.expectedPhrase
     return VoiceSession.create({
       studentId,
       lessonId: input.lessonId,
@@ -82,7 +91,7 @@ export const VoiceService = {
       startedAt: new Date(),
       provider: getSpeechProvider().name,
       status: 'active',
-      metadata: input.expectedPhrase ? { expectedPhrase: input.expectedPhrase } : undefined,
+      metadata: expectedPhrase ? { expectedPhrase } : undefined,
     })
   },
 
