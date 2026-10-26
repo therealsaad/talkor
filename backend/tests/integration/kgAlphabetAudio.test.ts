@@ -18,6 +18,11 @@ import { clearTestDatabase, connectTestDatabase, disconnectTestDatabase } from '
 
 const app = createApp()
 let activePlaybackId = ''
+// The audio route streams static S3 clips only when the deployment opts in via
+// KG_VOICE_PROVIDER=s3. Pin it for this suite (and restore it after) so the S3
+// streaming and Azure-fallback assertions are deterministic, not .env-dependent.
+const previousVoiceProvider = process.env.KG_VOICE_PROVIDER
+
 async function approveIntro(authorization: string) {
   const started = await request(app).post('/api/kg-alphabet/intro/start').set('Authorization', authorization).expect(200)
   activePlaybackId = started.body.data.playbackId
@@ -29,8 +34,15 @@ async function approveIntro(authorization: string) {
 }
 
 
-beforeAll(connectTestDatabase)
-afterAll(disconnectTestDatabase)
+beforeAll(() => {
+  process.env.KG_VOICE_PROVIDER = 's3'
+  return connectTestDatabase()
+})
+afterAll(() => {
+  if (previousVoiceProvider === undefined) delete process.env.KG_VOICE_PROVIDER
+  else process.env.KG_VOICE_PROVIDER = previousVoiceProvider
+  return disconnectTestDatabase()
+})
 afterEach(async () => {
   activePlaybackId = ''
   jest.restoreAllMocks()

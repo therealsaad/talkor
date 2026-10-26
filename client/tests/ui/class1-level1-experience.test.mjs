@@ -10,12 +10,14 @@ const lessonWorld = await read('../../components/student/lesson/lesson-world.tsx
 const voice = await read('../../services/voice-service.ts')
 const backendFastRoute = await read('../../../backend/src/services/student-lesson-fast.service.ts')
 const backendVoice = await read('../../../backend/src/services/voice.service.ts')
+const backendDemoAccess = await read('../../../backend/src/services/class1-demo-access.ts')
 
 test('Class 1 Level 1 has one authoritative seven-activity experience', () => {
   const keys = activities.match(/id: 'class1-l01-[^']+'/g) || []
   assert.equal(keys.length, 7)
   assert.match(activities, /class1-l01-repeat-at/)
-  assert.match(backendFastRoute, /activityKey: \/\^class1-l01-\//)
+  assert.match(backendFastRoute, /CLASS1_DEMO_ACTIVITY_FILTER/)
+  assert.match(backendDemoAccess, /activityKey: \/\^class1-l01-\//)
   assert.match(backendFastRoute, /experienceId: isClass1Demo/)
 })
 

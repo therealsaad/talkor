@@ -125,6 +125,14 @@ function matchesWord(token: string, letter: Letter): boolean {
   const expected = LETTERS.find((item) => item.letter === letter)!.word
   // Stretching consonants and vowels should not make an otherwise clear apple wrong.
   if (letter === 'A' && /^a+p+l+e+$/.test(token) && token.length >= 4 && token.length <= 20) return true
+  // Preschool stretching happens on EVERY word, not just apple: "baall", "caatt",
+  // "doog" are the same enthusiastic attempt as "aaaple". Each pattern below is
+  // anchored on the word's true first sound and only allows stretched vowels and
+  // doubled endings, so unrelated words (fall, bowl, cap, dig, fog) still fail.
+  if (letter === 'A' && (/^a+p+(a|u|o)+l+$/.test(token) || /^a?p+a+l+e*$/.test(token)) && token.length <= 20) return true
+  if (letter === 'B' && /^(b+(a|o)+l+l*|b+a+w+l+)$/.test(token) && token.length <= 20) return true
+  if (letter === 'C' && /^[kc]+a+t+s?$/.test(token) && token.length <= 20) return true
+  if (letter === 'D' && /^(d+o+g+(g|s|y|gy)?|d+h?o+g+|d+a+(u|w)?g+)$/.test(token) && token.length <= 20) return true
   return token === expected || CHILD_WORD_ALIASES[letter].includes(token)
 }
 

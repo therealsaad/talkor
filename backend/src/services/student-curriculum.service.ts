@@ -22,6 +22,11 @@ import {
   KG_CURRICULUM_VERSION,
 } from './kg-pilot-access'
 import { isMissingKGPilotPicture, presentKGPilotActivity } from './kg-pilot-presentation'
+import {
+  CLASS1_DEMO_ACTIVITY_FILTER,
+  CLASS1_DEMO_LESSON_FILTER,
+  CLASS1_DEMO_VERSION,
+} from './class1-demo-access'
 
 /* =========================================================
    STUDENT CURRICULUM SERVICE
@@ -97,7 +102,7 @@ export const StudentCurriculumService = {
         ...(isKGPilot
           ? { curriculumVersion: KG_CURRICULUM_VERSION, availability: 'UPCOMING' }
           : isClass1Demo
-            ? { curriculumVersion: 'talkora-class1-l01-demo-draft-v1', number: 1, availability: 'UPCOMING' }
+            ? { curriculumVersion: CLASS1_DEMO_VERSION, number: 1, availability: 'UPCOMING' }
             : {}),
       })
         .sort({
@@ -124,9 +129,7 @@ export const StudentCurriculumService = {
                 unitIds,
             },
 
-            status:
-              contentStatus,
-            ...(isClass1Demo ? { 'settings.talkoraDemoDraft': true } : {}),
+            ...(isClass1Demo ? CLASS1_DEMO_LESSON_FILTER : { status: contentStatus }),
           })
             .sort({
               levelId: 1,
@@ -155,8 +158,7 @@ export const StudentCurriculumService = {
                 lessonIds,
             },
 
-            status:
-              contentStatus,
+            ...(isClass1Demo ? CLASS1_DEMO_ACTIVITY_FILTER : { status: contentStatus }),
           })
             /*
              * Student curriculum must never expose answer keys.
@@ -266,7 +268,7 @@ export const StudentCurriculumService = {
       if (isKGPilot
         ? unit.curriculumVersion !== KG_CURRICULUM_VERSION || unit.status !== 'draft' || unit.availability !== 'UPCOMING'
         : isClass1Demo
-          ? unit.curriculumVersion !== 'talkora-class1-l01-demo-draft-v1' || unit.number !== 1 || unit.status !== 'draft' || unit.availability !== 'UPCOMING'
+          ? unit.curriculumVersion !== CLASS1_DEMO_VERSION || unit.number !== 1 || unit.status !== 'draft' || unit.availability !== 'UPCOMING'
           : unit.availability !== 'PUBLISHED') {
         continue
       }
@@ -399,7 +401,7 @@ export const StudentCurriculumService = {
           if (isKGPilot
             ? unit.curriculumVersion !== KG_CURRICULUM_VERSION || unit.status !== 'draft' || unit.availability !== 'UPCOMING'
             : isClass1Demo
-              ? unit.curriculumVersion !== 'talkora-class1-l01-demo-draft-v1' || unit.number !== 1 || unit.status !== 'draft' || unit.availability !== 'UPCOMING'
+              ? unit.curriculumVersion !== CLASS1_DEMO_VERSION || unit.number !== 1 || unit.status !== 'draft' || unit.availability !== 'UPCOMING'
               : unit.availability !== 'PUBLISHED') {
             status =
               'UPCOMING'
@@ -581,7 +583,7 @@ export const StudentCurriculumService = {
         curriculumClass.name,
 
       curriculumVersion:
-        (isKGPilot ? KG_CURRICULUM_VERSION : isClass1Demo ? 'talkora-class1-l01-demo-draft-v1' : progress.curriculumVersion) ??
+        (isKGPilot ? KG_CURRICULUM_VERSION : isClass1Demo ? CLASS1_DEMO_VERSION : progress.curriculumVersion) ??
         currentUnit
           ?.curriculumVersion ??
         result.find(
@@ -682,9 +684,7 @@ export const StudentCurriculumService = {
         levelId:
           currentUnit.id,
 
-        status:
-          contentStatus,
-        ...(access.isClass1Demo ? { 'settings.talkoraDemoDraft': true } : {}),
+        ...(access.isClass1Demo ? CLASS1_DEMO_LESSON_FILTER : { status: contentStatus }),
       })
         .sort({
           order: 1,
@@ -710,8 +710,7 @@ export const StudentCurriculumService = {
                 lessonIds,
             },
 
-            status:
-              contentStatus,
+            ...(access.isClass1Demo ? CLASS1_DEMO_ACTIVITY_FILTER : { status: contentStatus }),
           })
             .select(
               '-answer -answerConfig',

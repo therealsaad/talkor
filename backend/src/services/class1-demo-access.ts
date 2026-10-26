@@ -2,6 +2,19 @@ export const CLASS1_DEMO_VERSION = 'talkora-class1-l01-demo-draft-v1'
 export const CLASS1_DEMO_EXPERIENCE_ID = 'g01-l01'
 export const CLASS1_DEMO_ACTIVITY_PREFIX = 'class1-l01-'
 
+/** Shared database filters keep every demo read pinned to the same draft. */
+export const CLASS1_DEMO_LESSON_FILTER = {
+  status: 'draft' as const,
+  'settings.talkoraDemoDraft': true,
+  'settings.experienceId': CLASS1_DEMO_EXPERIENCE_ID,
+}
+
+export const CLASS1_DEMO_ACTIVITY_FILTER = {
+  status: 'draft' as const,
+  curriculumVersion: CLASS1_DEMO_VERSION,
+  activityKey: /^class1-l01-/,
+}
+
 export interface Class1DemoStudentIdentity {
   id: string
   grade: number
@@ -26,7 +39,7 @@ export function isAuthorizedClass1DemoStudent(
   const configuredId = (options.studentId ?? process.env.TALKORA_CLASS1_DEMO_STUDENT_ID ?? '').trim().toLowerCase()
   const studentId = student.id.trim().toLowerCase()
 
-  return nodeEnv !== 'production' &&
+  return nodeEnv === 'development' &&
     enabled === 'true' &&
     student.grade === 1 &&
     student.status === 'active' &&
@@ -44,6 +57,15 @@ export function isClass1DemoLevel(level: {
     level.curriculumVersion === CLASS1_DEMO_VERSION &&
     level.status === 'draft' &&
     level.availability === 'UPCOMING'
+}
+
+export function isClass1DemoLesson(lesson: {
+  status?: string
+  settings?: Record<string, unknown>
+}): boolean {
+  return lesson.status === 'draft' &&
+    lesson.settings?.talkoraDemoDraft === true &&
+    lesson.settings?.experienceId === CLASS1_DEMO_EXPERIENCE_ID
 }
 
 export function isClass1DemoActivity(activity: {
