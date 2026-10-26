@@ -292,7 +292,7 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
           </button>
         </form>
 
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}><Link href="/school/kg-preview" style={{ display: 'inline-flex', alignItems: 'center', background: '#f3eaff', color: '#5533a1', borderRadius: 12, padding: '12px 16px', fontWeight: 850, textDecoration: 'none' }}>▶ Preview KG Level 1</Link>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}><Link href="/school/kg-preview/level-1" style={{ display: 'inline-flex', alignItems: 'center', background: '#f3eaff', color: '#5533a1', borderRadius: 12, padding: '12px 16px', fontWeight: 850, textDecoration: 'none' }}>▶ Preview KG Level 1</Link>
         <button
           className="school-student-enroll-button"
           type="button"
@@ -571,8 +571,8 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
                 {grade === 0 ? <div className={`school-student-enrollment-notice ${kgCurriculumCheck.state === 'published' ? 'is-published' : ''}`} role="status" aria-live="polite">
                   {kgCurriculumCheck.state === 'checking' ? 'Checking KG curriculum availability…' : null}
                   {kgCurriculumCheck.state === 'published' ? <>Published KG curriculum found. The ABCD Level 1 pilot below still needs separate approval for the new voice-first adventure. <Link href={kgCurriculumCheck.classId ? `/school/classes/${kgCurriculumCheck.classId}` : '/school/classes'}>Preview curriculum</Link></> : null}
-                  {kgCurriculumCheck.state === 'unpublished' ? <>The older KG foundation curriculum is still a draft. The new <strong>ABCD Level 1</strong> is a separate, playable pilot. Enable ABCD access below to test it with this student's PIN. <Link href="/school/kg-preview">Preview the Level 1 UI</Link>.</> : null}
-                  {kgCurriculumCheck.state === 'error' ? <>The old KG curriculum status could not be checked. You can still enroll for the separate ABCD Level 1 pilot using the approval option below. <Link href="/school/kg-preview">Preview Level 1</Link>.</> : null}
+                  {kgCurriculumCheck.state === 'unpublished' ? <>The older KG foundation curriculum is still a draft. The new <strong>ABCD Level 1</strong> is a separate, playable pilot. Enable ABCD access below to test it with this student's PIN. <Link href="/school/kg-preview/level-1">Preview the Level 1 UI</Link>.</> : null}
+                  {kgCurriculumCheck.state === 'error' ? <>The old KG curriculum status could not be checked. You can still enroll for the separate ABCD Level 1 pilot using the approval option below. <Link href="/school/kg-preview/level-1">Preview Level 1</Link>.</> : null}
                 </div> : null}
                 {grade === 0 && role === 'SCHOOL_ADMIN' ? <label className="school-student-enrollment-field school-student-enrollment-full-row" style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: 12, background: '#edf9f3', border: '1px solid #9edcbb', borderRadius: 12, cursor: 'pointer' }}>
                   <input type="checkbox" checked={kgAlphabetPilotEnabled} onChange={(event) => setKgAlphabetPilotEnabled(event.target.checked)} style={{ marginTop: 4, width: 19, height: 19 }} />

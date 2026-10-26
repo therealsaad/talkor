@@ -6,18 +6,19 @@ export const config = {
   "grade": 0,
   "level": 3,
   "gradeLabel": "Kindergarten",
-  "title": "My Body and Actions",
+  "title": "Letters K to P",
   "editorialStatus": "draft",
   "studentPlayable": false,
-  "description": "My Body and Actions — a distinct coral lagoon adventure for KG learners.",
+  "description": "A staff-only draft preview introducing uppercase letters K, L, M, N, O, and P.",
   "syllabus": {
     "objectives": [
-      "Recognize, hear, and speak language connected to my body and actions."
+      "Recognize the uppercase letters K, L, M, N, O, and P.",
+      "Listen to and say the names of letters K through P."
     ],
     "skills": [
       "listening",
       "speaking",
-      "picture-recognition"
+      "letter-recognition"
     ],
     "boardReviewRequired": true,
     "sourceBook": null,
@@ -27,8 +28,8 @@ export const config = {
   "experience": {
     "themeId": "kg-03-my-body-and-actions",
     "world": "Coral Lagoon",
-    "sceneDescription": "colorful coral, bubbles and friendly fish",
-    "layout": "card-carousel",
+    "sceneDescription": "a calm coral lagoon with bubbles and six letter cards",
+    "layout": "big-board",
     "palette": {
       "background": "#fcc9c2",
       "backgroundDeep": "#e6ae91",
@@ -48,8 +49,8 @@ export const config = {
     "voiceFirst": true,
     "invisibleAdaptive": true,
     "autoResume": true,
-    "introRequired": false,
-    "introMustComplete": false,
+    "introRequired": true,
+    "introMustComplete": true,
     "speechLanguage": "en-IN",
     "beginnerHindiSupport": true,
     "spontaneousFeedbackTTS": "azure-uncached",
