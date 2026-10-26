@@ -4,6 +4,9 @@ import { readFile } from 'node:fs/promises'
 import { test } from 'node:test'
 const read=(file)=>readFile(new URL(file,import.meta.url),'utf8')
 const login=await read('../../app/login/student/page.tsx')
+const loginRedirect=await read('../../components/auth/auth-provider.tsx')
+const loginLayout=await read('../../app/login/layout.tsx')
+const resume=await read('../../app/student/continue/page.tsx')
 const layout=await read('../../app/student/layout.tsx')
 const garden=await read('../../components/student/kg-adventure-map.tsx')
 const gardenPage=await read('../../app/student/kg/map/page.tsx')
@@ -14,9 +17,14 @@ const service=await read('../../features/lessons/grades/kg/level-01/services/kg-
 const controller=await read('../../../backend/src/controllers/kg-alphabet.controller.ts')
 const routes=await read('../../../backend/src/routes/kg-alphabet.routes.ts')
 
-test('KG PIN login opens the ten-level garden and Level 1 keeps its canonical lesson route',()=>{
- assert.match(login,/signedIn\.student\?\.grade === 0 \? '\/student\/kg\/map'/)
- assert.match(layout,/mustKeepKGStudentInGarden/)
+test('KG PIN login automatically enters Level 1; the ten-level garden remains optional review',()=>{
+ assert.match(login,/await loginStudentByPin\(pin\)/)
+ assert.match(loginLayout,/router\.replace\(homeForRole\(role\)\)/)
+ assert.doesNotMatch(login,/router\.replace/)
+ assert.doesNotMatch(login,/router\.replace\('\/student\/kg\/map'\)/)
+ assert.match(loginRedirect,/role === 'STUDENT' \? '\/student\/continue'/)
+ assert.match(resume,/student\?\.grade === 0\) \{ router\.replace\('\/student\/kg'\)/)
+ assert.match(layout,/showKGGardenHub/)
  assert.match(gardenPage,/kgAlphabetService\.state\(\)/)
  assert.doesNotMatch(gardenPage,/curriculumService\.getMyCurriculum/)
  assert.match(gardenPage,/student\?\.id/)
@@ -36,7 +44,7 @@ test('KG PIN login opens the ten-level garden and Level 1 keeps its canonical le
  assert.match(replayMap,/lessons\/kg\/images\/kg-simple-garden\.webp/)
  assert.match(replayMap,/kg-garden__node--locked/)
  assert.match(replayMap,/onPreviewPlay\?\.\(0\)/)
- assert.match(layout,/mustKeepKGStudentInGarden/)
+ assert.doesNotMatch(layout,/mustKeepKGStudentInGarden/)
 })
 test('Level 1 requires the complete server-verified fullscreen story on every entry',()=>{
  assert.match(lesson,/INTRO_VIDEO = '\/lessons\/kg\/videos\/fullkg\.mp4'/)
