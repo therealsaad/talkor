@@ -1,7 +1,6 @@
 // TALKORA_CLASS1_STUDENT_DEMO_ROUTE_V1
 import { VoiceSession } from '../models/VoiceSession'
 import { getSpeechProvider } from '../providers/speech'
-import { GroqSpeechProvider } from '../providers/speech/GroqSpeechProvider'
 import { getVoiceProvider } from '../providers/voice'
 import { getPronunciationProvider } from '../providers/pronunciation'
 import { ApiError } from '../utils/ApiError'
@@ -20,6 +19,10 @@ import { S3Service } from './S3Service'
 
 
 export type VoicePurpose = 'PAGE_GUIDANCE' | 'LESSON' | 'CONVERSATION' | 'FEEDBACK'
+
+// A lesson's reviewed S3 key must use the immutable class/level/version layout.
+// Never accept arbitrary bucket paths from a curriculum activity.
+const APPROVED_LESSON_AUDIO_KEY = /^class-(?:0[1-9]|10)\/level-(?:0[1-9]|10)\/v[1-9]\d*\/[a-z0-9][a-z0-9_-]*\.(?:mp3|wav)$/
 
 function streamFromBuffer(audio: Buffer): ReadableStream<Uint8Array> {
   return new ReadableStream<Uint8Array>({
@@ -64,7 +67,6 @@ function evaluateOpenResponse(transcript: string) {
 
 export const VoiceService = {
   async startSession(studentId: string, input: { lessonId?: string; activityId?: string; expectedPhrase?: string }) {
-    let sessionProvider: string | undefined
     if (input.activityId) {
       // assertActivity is the authority for both ordinary published activities
       // and explicitly allowlisted KG pilot drafts. Re-fetching and requiring
@@ -72,16 +74,13 @@ export const VoiceService = {
       const access = await CurriculumAccessService.assertActivity(studentId, input.activityId)
       const expectedStatus = access.isKGPilot || access.isClass1Demo ? 'draft' : 'active'
       if (access.activity.status !== expectedStatus) throw ApiError.notFound('Activity not found')
-      // KG pilot transcriptions are routed to Groq Whisper below. Keep the
-      // persisted provider label consistent with the provider actually used.
-      if (access.isKGPilot || access.isClass1Demo) sessionProvider = 'groq-whisper'
     }
     return VoiceSession.create({
       studentId,
       lessonId: input.lessonId,
       activityId: input.activityId,
       startedAt: new Date(),
-      provider: sessionProvider ?? getSpeechProvider().name,
+      provider: getSpeechProvider().name,
       status: 'active',
       metadata: input.expectedPhrase ? { expectedPhrase: input.expectedPhrase } : undefined,
     })
@@ -189,14 +188,15 @@ export const VoiceService = {
   ) {
     const purpose = options.purpose ?? 'LESSON'
 
-    // Reviewed, reusable narration wins when this authenticated draft activity
-    // owns an approved S3 key. A missing object falls through to dynamic voice.
+    // For every school grade, an authorized lesson's reviewed immutable S3
+    // narration wins. Dynamic Azure speech remains available for genuinely
+    // new teaching, personal feedback, or a missing approved object.
     if (purpose === 'LESSON' && options.studentId && options.activityId) {
       const access = await CurriculumAccessService.assertActivity(options.studentId, options.activityId)
       const key = typeof access.activity.content?.audioKey === 'string'
         ? access.activity.content.audioKey.trim()
         : ''
-      if (access.isClass1Demo && key.startsWith('class-01/level-01/v1/')) {
+      if (APPROVED_LESSON_AUDIO_KEY.test(key)) {
         try {
           const audio = await S3Service.getAudio(key)
           if (audio?.length) {
@@ -207,9 +207,9 @@ export const VoiceService = {
               metadata: { 'X-Talkora-Cache': 'STATIC-HIT' },
             }
           }
-          logger.warn('Reviewed Class 1 audio is missing; using dynamic voice fallback', { activityId: options.activityId })
+          logger.warn('Reviewed lesson audio is missing; using dynamic voice fallback', { activityId: options.activityId })
         } catch (error) {
-          logger.warn('Class 1 static audio lookup failed; using dynamic voice fallback', { activityId: options.activityId, error })
+          logger.warn('Static lesson audio lookup failed; using dynamic voice fallback', { activityId: options.activityId, error })
         }
       }
     }
@@ -244,12 +244,7 @@ export const VoiceService = {
     studentId?: string,
   ) {
     if (studentId) {
-      const access = await CurriculumAccessService.context(studentId)
-      if (access.isKGPilot || access.isClass1Demo) {
-        // Keep the pilot's Whisper path server-selected. The browser cannot
-        // choose a provider, and other grades retain their configured STT.
-        return new GroqSpeechProvider().transcribe(input)
-      }
+      await CurriculumAccessService.context(studentId)
     }
     return getSpeechProvider().transcribe(input)
   },
