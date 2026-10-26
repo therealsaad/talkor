@@ -48,7 +48,11 @@ import {
 } from './curriculum-access.service'
 import { KG_CURRICULUM_VERSION } from './kg-pilot-access'
 import { isMissingKGPilotPicture } from './kg-pilot-presentation'
-import { CLASS1_DEMO_VERSION } from './class1-demo-access'
+import {
+  CLASS1_DEMO_ACTIVITY_FILTER,
+  CLASS1_DEMO_LESSON_FILTER,
+  CLASS1_DEMO_VERSION,
+} from './class1-demo-access'
 
 import {
   areRequiredActivitiesComplete,
@@ -570,15 +574,14 @@ export const ProgressService = {
 
     const activeLessons = await Lesson.find({
       levelId: { $in: levels.map((level) => level._id) },
-      status: levelStatus,
-      ...(isClass1Demo ? { 'settings.talkoraDemoDraft': true } : {}),
+      ...(isClass1Demo ? CLASS1_DEMO_LESSON_FILTER : { status: levelStatus }),
     })
       .select('_id levelId')
       .lean()
     const activeActivities = activeLessons.length
       ? await Activity.find({
           lessonId: { $in: activeLessons.map((lesson) => lesson._id) },
-          status: levelStatus,
+          ...(isClass1Demo ? CLASS1_DEMO_ACTIVITY_FILTER : { status: levelStatus }),
         })
           .select('_id lessonId required core type content')
           .lean()

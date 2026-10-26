@@ -44,7 +44,7 @@
 .kg-level3-intro__title h1 { margin: 5px 0; font-size: clamp(22px, 3vw, 38px); }
 .kg-level3-intro__title p { margin: 0; font-size: 14px; font-weight: 700; }
 .kg-level3-intro__video-frame { position: absolute; inset: 0; display: grid; width: 100%; height: 100%; place-items: center; overflow: hidden; background: #101411; }
-.kg-level3-intro__video-frame video { display: block; width: 100%; height: 100%; object-fit: contain; background: #101411; }
+.kg-level3-intro__video-frame video { display: block; width: 100%; height: 100%; min-width: 0; min-height: 0; object-fit: contain; background: #101411; }
 .kg-level3-intro.is-video-playing .kg-level3-intro__header,
 .kg-level3-intro.is-video-playing .kg-level3-intro__title { display: none; }
 .kg-level3-intro__recovery { position: absolute; z-index: 3; right: 16px; bottom: max(16px, env(safe-area-inset-bottom)); left: 16px; display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 16px; padding: 12px 16px; border: 1px solid #ffffff52; border-radius: 18px; background: #191d1ddd; color: #fff4df; text-align: center; }

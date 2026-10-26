@@ -30,6 +30,8 @@ test('the introduction has no microphone controls and opens a separate letter pi
   assert.doesNotMatch(route, /RegisteredLevelExperience|kgLevel3PreviewService|requestKGMicrophone/)
   assert.match(activityRoute, /workspace\.config\.staffOnlyPreview/)
   assert.match(activityRoute, /previewStartLetter=\{letter\}/)
+  assert.match(activityRoute, /entryCheckStarted\.current\) return/)
+  assert.match(activityRoute, /entryCheckStarted\.current = true/)
   assert.match(activityRoute, /sessionStorage\.removeItem\(LEVEL3_INTRO_COMPLETED_KEY\)/)
   assert.match(activityRoute, /router\.replace\('\/school\/kg-preview'\)/)
   assert.equal(LEVEL3_INTRO_COMPLETED_KEY, 'talkora:kg-level3-intro-completed')

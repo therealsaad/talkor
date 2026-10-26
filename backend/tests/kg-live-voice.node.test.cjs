@@ -78,7 +78,7 @@ test('Azure KG synthesis is transient: no AudioCacheService read/write, and XML 
   } finally { globalThis.fetch = original; delete process.env.AZURE_SPEECH_KEY }
 })
 
-test('staff preview routes real captured audio through STT and returns Azure-spoken correction, no progress writes', async () => {
+test('staff preview routes audio through STT and returns reusable Priya/S3 feedback, no progress writes', async () => {
   const calls = { stt: 0, azure: 0, db: 0 }
   const blockDatabase = new Proxy({}, { get() { calls.db++; throw new Error('Preview must not access student MongoDB') } })
   const { KGAlphabetController } = loadTS('controllers/kg-alphabet.controller.ts', {
@@ -93,14 +93,14 @@ test('staff preview routes real captured audio through STT and returns Azure-spo
     '../models/KGAlphabetSubmission': { KGAlphabetSubmission: blockDatabase },
     '../models/KGIntroPlayback': { KGIntroPlayback: blockDatabase },
     '../kg/alphabet-content': {
-      AUDIO_IDS: ['say-a'], AUDIO_LINES: { 'say-a': 'Say apple!' }, LETTERS: [{ letter: 'A', word: 'apple' }],
+      AUDIO_IDS: ['say-a', 'model-a'], AUDIO_LINES: { 'say-a': 'Say apple!', 'model-a': 'Nice try, beta ji! Listen: apple.' }, LETTERS: [{ letter: 'A', word: 'apple' }],
       audioKey: () => '', KG_ALPHABET_VERSION: 'v1', KG_AUDIO_VERSION: 'v1',
       activityAt: (i) => i === 0 ? { id: 'say-a', letter: 'A', mode: 'speak' } : null,
       evaluateKGSpeech: (transcript) => transcript === 'apple' ? 'correct' : 'incorrect',
     },
+    '../kg/kg-child-grading': { gradeKGTranscription: ({ transcript }) => transcript === 'apple' ? 'correct' : 'incorrect' },
     '../services/kg-pilot-access': { isAuthorizedKGAlphabetStudent: () => true },
     '../services/kg-static-audio-cache': { getKGStaticAudio: async () => null },
-    '../services/kg-feedback.service': { generateKGFeedback: async () => ({ text: 'Good try! Apple begins with A. Say apple!', source: 'groq' }) },
     '../providers/voice/AzureVoiceProvider': { AzureVoiceProvider: class { async synthesizeUncached() { calls.azure++; return { audio: Buffer.from([9,8,7]), contentType: 'audio/mpeg' } } } },
     '../services/kg-speech.service': { KGSpeechService: { transcribe: async () => { calls.stt++; return { available: true, transcript: 'banana', provider: 'groq' } } } },
     '../services/kg-teaching-hint': { kgTeachingHint: () => 'Say apple!' },
@@ -112,7 +112,9 @@ test('staff preview routes real captured audio through STT and returns Azure-spo
   await KGAlphabetController.previewAttempt(req, res)
   assert.equal(res.payload.outcome, 'incorrect')
   assert.equal(res.payload.transcript, 'banana')
-  assert.equal(res.payload.feedbackVoice, 'azure')
-  assert.equal(res.payload.feedbackAudioBase64, Buffer.from([9,8,7]).toString('base64'))
-  assert.deepEqual(calls, { stt: 1, azure: 1, db: 0 })
+  assert.equal(res.payload.feedbackVoice, 's3')
+  assert.equal(res.payload.feedbackAudioId, 'model-a')
+  assert.equal(res.payload.feedbackAudioBase64, null)
+  assert.equal(res.payload.advance, false)
+  assert.deepEqual(calls, { stt: 1, azure: 0, db: 0 })
 })
