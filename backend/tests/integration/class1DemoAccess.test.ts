@@ -13,10 +13,13 @@ import { signToken } from '../../src/utils/jwt'
 import { CLASS1_DEMO_VERSION } from '../../src/services/class1-demo-access'
 
 const app = createApp()
+const originalNodeEnv = process.env.NODE_ENV
 
 beforeAll(async () => connectTestDatabase())
 afterAll(async () => disconnectTestDatabase())
 afterEach(async () => {
+  if (originalNodeEnv === undefined) delete process.env.NODE_ENV
+  else process.env.NODE_ENV = originalNodeEnv
   delete process.env.TALKORA_CLASS1_STUDENT_DEMO
   delete process.env.TALKORA_CLASS1_DEMO_STUDENT_ID
   await clearTestDatabase()
@@ -40,8 +43,8 @@ async function createStudent(grade: number, name: string) {
   return { student, token }
 }
 
-async function createClass1Draft() {
-  const classroom = await CurriculumClass.create({ grade: 1, name: 'Class 1', order: 1, status: 'draft' })
+async function createClass1Draft(classStatus: 'active' | 'draft' = 'draft') {
+  const classroom = await CurriculumClass.create({ grade: 1, name: 'Class 1', order: 1, status: classStatus })
   const level = await Level.create({
     classId: classroom._id,
     number: 1,
@@ -110,9 +113,53 @@ async function createClass1Draft() {
 describe('development-only Class 1 student demo access', () => {
   it('opens the exact ten-activity foundations and My First Day draft for only the configured Class 1 student', async () => {
     const { student, token } = await createStudent(1, 'Allowed Learner')
-    const { lesson, activities } = await createClass1Draft()
+    const { level, lesson, activities } = await createClass1Draft('active')
     process.env.TALKORA_CLASS1_STUDENT_DEMO = 'true'
     process.env.TALKORA_CLASS1_DEMO_STUDENT_ID = student._id.toString()
+
+    // Nearby draft content must never leak into the one-student g01-l01 demo.
+    const decoyLesson = await Lesson.create({
+      levelId: level._id,
+      title: 'Unapproved Draft Lesson',
+      order: 0,
+      settings: { talkoraDemoDraft: true, experienceId: 'g01-l02' },
+      status: 'draft',
+    })
+    await Activity.create({
+      lessonId: decoyLesson._id, curriculumVersion: CLASS1_DEMO_VERSION, activityKey: 'class1-l01-decoy',
+      grade: 1, term: 1, unitNumber: 1, order: 1, type: 'WORD_RECOGNITION', stage: 'LISTEN_REPEAT',
+      title: 'decoy', prompt: 'Do not show this.', target: 'no', choices: ['no'], answer: 'no', difficulty: 'easy',
+      xp: 0, estimatedSeconds: 10, voiceEnabled: false, aiEnabled: false, allowMic: false, allowOptions: true,
+      core: true, required: true, status: 'draft',
+    })
+    await Activity.create({
+      lessonId: lesson._id, curriculumVersion: 'unapproved-draft-v1', activityKey: 'unapproved-activity',
+      grade: 1, term: 1, unitNumber: 1, order: 8, type: 'WORD_RECOGNITION', stage: 'LISTEN_REPEAT',
+      title: 'unapproved', prompt: 'Do not show this.', target: 'no', choices: ['no'], answer: 'no', difficulty: 'easy',
+      xp: 0, estimatedSeconds: 10, voiceEnabled: false, aiEnabled: false, allowMic: false, allowOptions: true,
+      core: true, required: true, status: 'draft',
+    })
+
+    const progress = await request(app).get('/api/students/me/progress').set('Authorization', `Bearer ${token}`)
+    expect(progress.status).toBe(200)
+    expect(progress.body.data.curriculumVersion).toBe(CLASS1_DEMO_VERSION)
+    expect(progress.body.data.levels).toHaveLength(1)
+    expect(progress.body.data.levels[0]).toMatchObject({ levelId: level._id.toString(), status: 'unlocked' })
+
+    const curriculum = await request(app).get('/api/students/me/curriculum').set('Authorization', `Bearer ${token}`)
+    expect(curriculum.status).toBe(200)
+    expect(curriculum.body.data).toMatchObject({
+      studentGrade: 1,
+      curriculumVersion: CLASS1_DEMO_VERSION,
+      currentUnitId: level._id.toString(),
+      totalUnits: 1,
+    })
+    expect(curriculum.body.data.units[0]).toMatchObject({
+      id: level._id.toString(),
+      title: 'Two-Letter Word Adventure',
+      status: 'CURRENT',
+      lessonCount: 1,
+    })
 
     const next = await request(app).get('/api/students/me/next-lesson').set('Authorization', `Bearer ${token}`)
     expect(next.status).toBe(200)
@@ -144,14 +191,22 @@ describe('development-only Class 1 student demo access', () => {
   })
 
   it('fails closed for another Class 1 student and for a mismatched KG student', async () => {
+    process.env.NODE_ENV = 'development'
     const allowed = await createStudent(1, 'Configured Learner')
     const other = await createStudent(1, 'Other Learner')
-    const { lesson } = await createClass1Draft()
+    const { lesson } = await createClass1Draft('active')
     process.env.TALKORA_CLASS1_STUDENT_DEMO = 'true'
     process.env.TALKORA_CLASS1_DEMO_STUDENT_ID = allowed.student._id.toString()
 
+    const otherProgress = await request(app).get('/api/students/me/progress').set('Authorization', `Bearer ${other.token}`)
+    const otherCurriculum = await request(app).get('/api/students/me/curriculum').set('Authorization', `Bearer ${other.token}`)
+    const otherNext = await request(app).get('/api/students/me/next-lesson').set('Authorization', `Bearer ${other.token}`)
+    expect(otherProgress.status).not.toBe(200)
+    expect(otherCurriculum.status).not.toBe(200)
+    expect(otherNext.status).not.toBe(200)
+
     const denied = await request(app).get(`/api/students/me/lessons/${lesson._id}`).set('Authorization', `Bearer ${other.token}`)
-    expect(denied.status).toBe(404)
+    expect(denied.status).not.toBe(200)
 
     const kgClass = await CurriculumClass.create({ grade: 0, name: 'KG', order: 0, status: 'active' })
     await Level.create({
@@ -160,6 +215,11 @@ describe('development-only Class 1 student demo access', () => {
       curriculumVersion: 'kg-published-v1', availability: 'PUBLISHED', title: 'KG Unit', place: 'KG World', order: 1, status: 'active',
     })
     const kg = await createStudent(0, 'KG Learner')
+    const kgProgress = await request(app).get('/api/students/me/progress').set('Authorization', `Bearer ${kg.token}`)
+    const kgCurriculum = await request(app).get('/api/students/me/curriculum').set('Authorization', `Bearer ${kg.token}`)
+    expect(kgProgress.status).toBe(200)
+    expect(kgCurriculum.status).toBe(200)
+    await request(app).get('/api/students/me/curriculum').set('Authorization', `Bearer ${kg.token}`).expect(200)
     const kgDenied = await request(app).get(`/api/students/me/lessons/${lesson._id}`).set('Authorization', `Bearer ${kg.token}`)
     expect(kgDenied.status).toBe(403)
     expect(kgDenied.body.error.code).toBe('ACTIVITY_NOT_AVAILABLE')

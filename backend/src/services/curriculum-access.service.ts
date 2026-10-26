@@ -29,9 +29,11 @@ import {
 } from './kg-pilot-access'
 import { isMissingKGPilotPicture } from './kg-pilot-presentation'
 import {
+  CLASS1_DEMO_LESSON_FILTER,
   CLASS1_DEMO_VERSION,
   isAuthorizedClass1DemoStudent,
   isClass1DemoActivity,
+  isClass1DemoLesson,
   isClass1DemoLevel,
 } from './class1-demo-access'
 
@@ -90,10 +92,10 @@ export const CurriculumAccessService = {
         : ApiError.notFound(this.unpublishedCurriculumMessage(student.grade))
     }
 
-    // Draft access is limited to the explicitly allowlisted Grade 0 student
-    // and this exact pilot version. Ordinary students retain published-only access.
+    // Draft access is limited to the explicitly allowlisted pilot students.
+    // Ordinary students retain published-only access.
     const isKGPilot = pilotAllowlisted && curriculumClass.status === 'draft'
-    const isClass1Demo = class1DemoAllowlisted && curriculumClass.status === 'draft'
+    const isClass1Demo = class1DemoAllowlisted
     if (isClass1Demo) {
       // Fail closed unless this is our exact seed and its reviewed demo marker.
       const demoLevel = await Level.findOne({
@@ -105,8 +107,7 @@ export const CurriculumAccessService = {
       }).select('_id').lean()
       const demoLesson = demoLevel && await Lesson.exists({
         levelId: demoLevel._id,
-        status: 'draft',
-        'settings.talkoraDemoDraft': true,
+        ...CLASS1_DEMO_LESSON_FILTER,
       })
       if (!demoLesson) throw ApiError.businessRule('Class 1 demonstration lesson is not ready.')
     }
@@ -219,7 +220,7 @@ export const CurriculumAccessService = {
         lesson.levelId.toString(),
       )
 
-    if (access.isClass1Demo && lesson.settings?.talkoraDemoDraft !== true) {
+    if (access.isClass1Demo && !isClass1DemoLesson(lesson)) {
       throw ApiError.activityUnavailable('This lesson is not part of the approved Class 1 demo')
     }
 
