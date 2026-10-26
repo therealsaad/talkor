@@ -3,7 +3,11 @@ import { GRADE_ROADMAP } from './roadmap'
 /** Staff editorial designs are metadata, NEVER publish or unlock student levels. */
 const catalog = new Map(manifest.map((item) => [item.id, item]))
 if (catalog.size !== 110 || GRADE_ROADMAP.length !== 110 ||
- GRADE_ROADMAP.some((entry)=>catalog.get(entry.id)?.title !== entry.title)) {
+ GRADE_ROADMAP.some((entry) => {
+  const design = catalog.get(entry.id)
+  const roadmapTitle = design && 'roadmapTitle' in design ? design.roadmapTitle : design?.title
+  return roadmapTitle !== entry.title
+ })) {
  throw new Error('110-level design catalog is out of sync with the curriculum roadmap')
 }
 export function studioDesignForLevel(grade:number,level:number) {

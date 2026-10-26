@@ -26,7 +26,7 @@ export const config = {
     "syllabusVerified": false
   },
   "experience": {
-    "themeId": "kg-03-letters-k-p",
+    "themeId": "kg-03-my-body-and-actions",
     "world": "Coral Lagoon",
     "sceneDescription": "a calm coral lagoon with bubbles and six letter cards",
     "layout": "big-board",
