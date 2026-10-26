@@ -162,45 +162,11 @@ export const StudentController = {
   ok(res, progress)
 }),
   myCurriculum: catchAsync(async (req: Request, res: Response) => {
-  if (!req.auth) {
-    throw ApiError.unauthorized()
-  }
-
-  try {
-    const result =
-      await StudentCurriculumService.get(
-        req.auth.id,
-      )
-
-    ok(res, result)
-  } catch (error) {
-    console.error(
-      '[MY CURRICULUM ERROR]',
-      error,
-    )
-
-    throw error
-  }
-}),
+    if (!req.auth) throw ApiError.unauthorized()
+    ok(res, await StudentCurriculumService.get(req.auth.id))
+  }),
   myCurrentCurriculum: catchAsync(async (req: Request, res: Response) => {
-  if (!req.auth) {
-    throw ApiError.unauthorized()
-  }
-
-  try {
-    const result =
-      await StudentCurriculumService.current(
-        req.auth.id,
-      )
-
-    ok(res, result)
-  } catch (error) {
-    console.error(
-      '[MY CURRENT CURRICULUM ERROR]',
-      error,
-    )
-
-    throw error
-  }
-}),
+    if (!req.auth) throw ApiError.unauthorized()
+    ok(res, await StudentCurriculumService.current(req.auth.id))
+  }),
 }
