@@ -21,6 +21,7 @@ const uniqueThemes=new Set(); const uniquePalettes=new Set(); let count=0;
 // 108 workspaces must remain empty, unpublished educator-only drafts.
 const liveKG='g00-l01';
 const class1Pilot='g01-l01';
+const level3Preview='g00-l03';
 for(let grade=0;grade<=10;grade++){
  const slug=grade===0?'kg':`class-${String(grade).padStart(2,'0')}`;
  for(let level=1;level<=10;level++){
@@ -39,10 +40,10 @@ for(let grade=0;grade<=10;grade++){
    assert.equal(config.staffOnlyPreview,true,`${id} must remain staff-only`);
    assert.equal(config.studentPlayable,false,`${id} cannot be published by a workspace edit`);
   }
-  if(id===class1Pilot){
-   // Older PRs have no intro; the first-day pilot adds a required video.
-   // In either case an intro cannot be marked required but skippable.
+  if(id===class1Pilot||id===level3Preview){
+   // These previews may require an intro, but it cannot be skippable.
    assert.equal(config.learningPolicy.introRequired,config.learningPolicy.introMustComplete);
+   if(id===level3Preview) assert.equal(config.learningPolicy.introRequired,true);
   }else{
    assert.equal(config.learningPolicy.introRequired,id===liveKG);
   }
@@ -64,7 +65,9 @@ for(let grade=0;grade<=10;grade++){
   // in its shared garden folder rather than 10 empty placeholder folders.
   if(grade>0) assert.ok(fs.existsSync(path.join(root,`client/public/lessons/${slug}/level-${String(level).padStart(2,'0')}/.gitkeep`)));
   const matching=catalog.find(x=>x.id===id);assert.ok(matching);
-  assert.equal(matching.title,config.title);assert.equal(matching.designTheme,config.experience.themeId);
+  const expectedRoadmapTitle = config.roadmapTitle ?? config.title;
+assert.equal(matching.title, expectedRoadmapTitle);
+assert.equal(matching.designTheme, config.experience.themeId);
   assert.equal(matching.readyForPublication,false);
   uniqueThemes.add(config.experience.themeId);uniquePalettes.add(config.experience.palette.background);
   count++;
