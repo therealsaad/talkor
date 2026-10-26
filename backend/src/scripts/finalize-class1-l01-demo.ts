@@ -11,6 +11,8 @@ import { CurriculumClass } from '../models/CurriculumClass'
 import { Level } from '../models/Level'
 import { Lesson } from '../models/Lesson'
 import { Activity } from '../models/Activity'
+import { ActivityAttempt } from '../models/ActivityAttempt'
+import { Progress } from '../models/Progress'
 import { CLASS1_DEMO_ACTIVITY_PREFIX, CLASS1_DEMO_VERSION } from '../services/class1-demo-access'
 
 const applyRequested = process.argv.includes('--apply')
@@ -22,6 +24,9 @@ const expectedKeys = [
   'look-at-me',
   'i-am-sam',
   'repeat-at',
+  'say-walk',
+  'find-school',
+  'school-talk',
 ].map((key) => `${CLASS1_DEMO_ACTIVITY_PREFIX}${key}`)
 
 async function main() {
@@ -55,11 +60,29 @@ async function main() {
     if (activities.length !== expectedKeys.length ||
         expectedKeys.some((key) => !actualKeys.includes(key)) ||
         activities.some((item) => item.status !== 'draft' || item.curriculumVersion !== CLASS1_DEMO_VERSION)) {
-      throw new Error('The seven owned draft activities do not match the expected manifest; no changes were made.')
+      throw new Error('The ten owned draft activities do not match the expected manifest; no changes were made.')
     }
 
     const guided = activities.find((item) => item.activityKey === `${CLASS1_DEMO_ACTIVITY_PREFIX}repeat-at`)
     if (!guided) throw new Error('The guided Class 1 activity is missing.')
+
+    if (applyRequested) {
+      const [attempts, savedProgress] = await Promise.all([
+        ActivityAttempt.exists({ activityId: { $in: activities.map(item => item._id) } }),
+        Progress.exists({
+          classId: classroom._id,
+          levels: { $elemMatch: {
+            levelId: level._id,
+            lessons: { $elemMatch: { lessonId: lesson._id, $or: [
+              { completed: true }, { 'completedActivityIds.0': { $exists: true } },
+            ] } },
+          } },
+        }),
+      ])
+      if (attempts || savedProgress) {
+        throw new Error('Existing student progress needs a reviewed migration before rewriting lesson metadata.')
+      }
+    }
 
     console.log(JSON.stringify({
       action: applyRequested ? 'APPLY_OWNED_DRAFT_UPDATE' : 'PREVIEW_ONLY',
@@ -74,30 +97,41 @@ async function main() {
 
     await Level.updateOne({ _id: level._id, curriculumVersion: CLASS1_DEMO_VERSION, status: 'draft' }, {
       $set: {
-        title: 'Two-Letter Word Adventure',
-        place: 'Two-Letter Word Meadow',
-        visualTheme: 'Two-Letter Word Meadow',
-        description: 'Listen, recognize, build, say, and use beginner two-letter English words.',
+        title: 'Little Words & My First Day',
+        place: 'First Day Word Meadow',
+        visualTheme: 'First Day Word Meadow',
+        description: 'A 90-second welcome story, tiny-word practice, and an original speaking bridge to Balbharati Unit One 1.1.',
         learningObjectives: [
           'Recognize and build at and in',
           'Use at and am in short beginner phrases',
+          'Say walk and recognize school from My First Day',
         ],
-        speakingGoals: ['Say at and complete a two-turn guided word conversation with Miss Julie'],
+        speakingGoals: ['Say at and walk; complete two short supportive conversations with Miss Julie'],
+        sourceBook: 'English Balbharati Grade One (2025), Unit One 1.1 My First Day',
+        sourcePages: [1],
       },
     })
 
     await Lesson.updateOne({ _id: lesson._id, status: 'draft', 'settings.talkoraDemoDraft': true }, {
       $set: {
-        title: 'Two-Letter Word Adventure',
-        subtitle: 'Listen, build, say, and use small words',
-        teacherIntroduction: 'We will listen, build, read, and say small English words.',
+        title: 'Little Words & My First Day',
+        subtitle: 'Watch Miss Julie, build little words, and talk about school',
+        estimatedMinutes: 12,
+        teacherIntroduction: 'Watch Miss Julie’s short welcome story. First we will practise little words. Then we will talk about your first day at school.',
         settings: {
           ...(lesson.settings || {}),
           talkoraDemoDraft: true,
           experienceId: 'g01-l01',
           frontendStudentPlayable: true,
           progressPersisted: true,
-          homework: 'Say I am Sam and Look at me with someone at home.',
+          introVideoKey: 'class1-g01-l01',
+          introDurationSeconds: 90,
+          introVideoReviewStatus: 'AWAITING_UPLOAD',
+          lessonPlanRevision: 'first-day-bridge-v1',
+          sourceBook: 'English Balbharati Grade One (2025), Unit One 1.1 My First Day',
+          sourcePages: [1],
+          syllabusVerified: false,
+          homework: 'Say I am Sam and I walk to school with someone at home.',
         },
       },
     })

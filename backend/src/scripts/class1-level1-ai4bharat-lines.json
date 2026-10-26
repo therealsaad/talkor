@@ -58,6 +58,36 @@
       "language": "en-IN",
       "text": "Your homework: say I am Sam and Look at me with someone at home.",
       "s3Key": "class-01/level-01/v1/homework.wav"
+    },
+    {
+      "id": "repeat-at",
+      "language": "en-IN",
+      "text": "You built a little word! Say at with me. At! You can try again, beta ji.",
+      "s3Key": "class-01/level-01/v1/repeat-at.wav"
+    },
+    {
+      "id": "say-walk",
+      "language": "en-IN",
+      "text": "Now we are going to school. Look, I am walking! Walk, walk. Can you say walk, beta ji?",
+      "s3Key": "class-01/level-01/v1/say-walk.wav"
+    },
+    {
+      "id": "find-school",
+      "language": "en-IN",
+      "text": "Look around our little garden. Can you find the school? Say school or point to it.",
+      "s3Key": "class-01/level-01/v1/find-school.wav"
+    },
+    {
+      "id": "school-talk",
+      "language": "en-IN",
+      "text": "Wonderful! Tell me one small thing you like to do at school. You may start with: I play.",
+      "s3Key": "class-01/level-01/v1/school-talk.wav"
+    },
+    {
+      "id": "homework-first-day",
+      "language": "en-IN",
+      "text": "Today you learnt little words and talked about school. At home, show someone your best school walk and say: I walk to school.",
+      "s3Key": "class-01/level-01/v1/homework-first-day.wav"
     }
   ]
 }

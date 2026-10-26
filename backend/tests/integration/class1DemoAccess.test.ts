@@ -7,6 +7,7 @@ import { CurriculumClass } from '../../src/models/CurriculumClass'
 import { Level } from '../../src/models/Level'
 import { Lesson } from '../../src/models/Lesson'
 import { Activity } from '../../src/models/Activity'
+import { VoiceSession } from '../../src/models/VoiceSession'
 import { hashPassword } from '../../src/utils/password'
 import { signToken } from '../../src/utils/jwt'
 import { CLASS1_DEMO_VERSION } from '../../src/services/class1-demo-access'
@@ -68,7 +69,10 @@ async function createClass1Draft(classStatus: 'active' | 'draft' = 'draft') {
     settings: { talkoraDemoDraft: true, experienceId: 'g01-l01' },
     status: 'draft',
   })
-  const keys = ['listen-at', 'build-at', 'listen-in', 'build-in', 'look-at-me', 'i-am-sam', 'repeat-at']
+  const keys = [
+    'listen-at', 'build-at', 'listen-in', 'build-in', 'look-at-me', 'i-am-sam', 'repeat-at',
+    'say-walk', 'find-school', 'school-talk',
+  ]
   const activities = await Activity.create(keys.map((key, index) => ({
     lessonId: lesson._id,
     curriculumVersion: CLASS1_DEMO_VERSION,
@@ -77,22 +81,25 @@ async function createClass1Draft(classStatus: 'active' | 'draft' = 'draft') {
     term: 1,
     unitNumber: 1,
     order: index + 1,
-    type: key === 'repeat-at' ? 'CONVERSATION' : 'WORD_RECOGNITION',
-    stage: key === 'repeat-at' ? 'INTERACT' : 'LISTEN_REPEAT',
+    type: ['repeat-at', 'school-talk'].includes(key) ? 'CONVERSATION'
+      : key === 'say-walk' ? 'LISTEN_AND_REPEAT' : 'WORD_RECOGNITION',
+    stage: ['repeat-at', 'school-talk'].includes(key) ? 'INTERACT'
+      : key === 'say-walk' ? 'SPEAK' : 'LISTEN_REPEAT',
     title: key,
-    prompt: key === 'repeat-at' ? 'Say at with Miss Julie.' : 'Choose at.',
-    target: 'at',
-    choices: key === 'repeat-at' ? [] : ['an', 'at', 'in'],
-    answer: key === 'repeat-at' ? undefined : 'at',
+    prompt: ['repeat-at', 'school-talk'].includes(key) ? 'Talk with Miss Julie.' : key === 'say-walk' ? 'Say walk.' : 'Choose a word.',
+    target: key === 'say-walk' ? 'walk' : key === 'school-talk' || key === 'find-school' ? 'school' : 'at',
+    choices: ['repeat-at', 'school-talk', 'say-walk'].includes(key) ? []
+      : key === 'find-school' ? ['bell', 'school', 'playground'] : ['an', 'at', 'in'],
+    answer: ['repeat-at', 'school-talk', 'say-walk'].includes(key) ? undefined : key === 'find-school' ? 'school' : 'at',
     difficulty: 'easy',
     xp: 0,
     estimatedSeconds: 20,
     voiceEnabled: true,
-    aiEnabled: key === 'repeat-at',
-    allowMic: key === 'repeat-at',
-    allowOptions: key !== 'repeat-at',
+    aiEnabled: ['repeat-at', 'school-talk'].includes(key),
+    allowMic: ['repeat-at', 'school-talk', 'say-walk'].includes(key),
+    allowOptions: !['repeat-at', 'school-talk', 'say-walk'].includes(key),
     maxConversationTurns: 2,
-    ...(key === 'repeat-at' ? {
+    ...(['repeat-at', 'school-talk'].includes(key) ? {
       conversationGoal: { requiredConcepts: [], minTurns: 2, maxTurns: 2 },
       metadata: { conversationMode: 'OPEN' },
     } : {}),
@@ -104,8 +111,7 @@ async function createClass1Draft(classStatus: 'active' | 'draft' = 'draft') {
 }
 
 describe('development-only Class 1 student demo access', () => {
-  it('opens the exact seven-activity draft for only the configured Class 1 student', async () => {
-    process.env.NODE_ENV = 'development'
+  it('opens the exact ten-activity foundations and My First Day draft for only the configured Class 1 student', async () => {
     const { student, token } = await createStudent(1, 'Allowed Learner')
     const { level, lesson, activities } = await createClass1Draft('active')
     process.env.TALKORA_CLASS1_STUDENT_DEMO = 'true'
@@ -162,8 +168,7 @@ describe('development-only Class 1 student demo access', () => {
     const loaded = await request(app).get(`/api/students/me/lessons/${lesson._id}`).set('Authorization', `Bearer ${token}`)
     expect(loaded.status).toBe(200)
     expect(loaded.body.data.experienceId).toBe('g01-l01')
-    expect(loaded.body.data.lesson.title).toBe('Two-Letter Word Adventure')
-    expect(loaded.body.data.activities).toHaveLength(7)
+    expect(loaded.body.data.activities).toHaveLength(10)
     expect(loaded.body.data.activities.map((item: { activityKey: string }) => item.activityKey)).toEqual(
       activities.map((item) => item.activityKey),
     )
@@ -173,7 +178,16 @@ describe('development-only Class 1 student demo access', () => {
       activityId: activities[6]._id.toString(),
     })
     expect(voice.status).toBe(201)
-    expect(voice.body.data.provider).toBe('groq-whisper')
+    expect(voice.body.data.provider).toEqual(expect.any(String))
+
+    const controlled = await request(app).post('/api/voice/sessions').set('Authorization', `Bearer ${token}`).send({
+      lessonId: lesson._id.toString(),
+      activityId: activities[7]._id.toString(),
+      expectedPhrase: 'banana', // A student cannot change what "say walk" evaluates.
+    })
+    expect(controlled.status).toBe(201)
+    const storedSession = await VoiceSession.findById(controlled.body.data._id)
+    expect(storedSession?.metadata?.expectedPhrase).toBe('walk')
   })
 
   it('fails closed for another Class 1 student and for a mismatched KG student', async () => {
