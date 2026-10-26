@@ -93,6 +93,8 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
   const [feedbackAnimation, setFeedbackAnimation] = useState<'encouraging' | 'celebrating'>('encouraging')
   const autoIntroAttemptRef = useRef(-1)
   const [videoAttempt, setVideoAttempt] = useState(0)
+  const [soundBlocked, setSoundBlocked] = useState(false)
+  const fullscreenEverRef = useRef(false)
   const videoRef = useRef<HTMLVideoElement>(null)
   const introFrameRef = useRef<HTMLDivElement>(null)
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -348,6 +350,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     if (!isIntro) return
     const fullscreenChanged = () => {
       const video = videoRef.current
+      if (document.fullscreenElement === introFrameRef.current) fullscreenEverRef.current = true
       if (!video || introEndedRef.current) return
       if (document.fullscreenElement !== introFrameRef.current && !video.paused) {
         video.pause()
@@ -388,14 +391,39 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       const enterFullscreen = document.fullscreenElement === frame
         ? Promise.resolve()
         : frame.requestFullscreen({ navigationUI: 'hide' })
+      video.muted = false
       const startPlayback = video.play()
       await Promise.all([enterFullscreen, startPlayback])
+      setSoundBlocked(false)
       setPhase('intro-playing')
     } catch {
-      video.pause()
-      setVideoError('Your browser needs one tap to enable fullscreen sound. Tap the story to begin.')
-      setPhase('intro-error')
+      // School-lab auto path: browsers block unmuted autoplay and fullscreen
+      // without a gesture. Start the story silently NOW so a child never waits,
+      // then let one tap restore Miss Julie's voice inside the video.
+      try {
+        video.pause()
+        video.muted = true
+        await video.play()
+        setSoundBlocked(true)
+        setPhase('intro-playing')
+      } catch {
+        video.pause()
+        setVideoError('Your browser needs one tap to enable fullscreen sound. Tap the story to begin.')
+        setPhase('intro-error')
+      }
     }
+  }
+
+  const unlockStorySound = async () => {
+    const video = videoRef.current
+    const frame = introFrameRef.current
+    if (!video) return
+    video.muted = false
+    video.volume = 1
+    if (frame && document.fullscreenElement !== frame && frame.requestFullscreen) {
+      await frame.requestFullscreen({ navigationUI: 'hide' }).catch(() => undefined)
+    }
+    setSoundBlocked(false)
   }
 
   // Best effort only: unmuted media and fullscreen normally require a real tap.
@@ -705,7 +733,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
           ref={videoRef}
           src={INTRO_VIDEO}
           playsInline
-          preload="metadata"
+          preload="auto"
           controls={false}
           disablePictureInPicture
           disableRemotePlayback
@@ -724,9 +752,11 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
           onPause={() => { if (!introEndedRef.current) setPhase((value) => value === 'intro-playing' ? 'intro-paused' : value) }}
           onEnded={() => {
             const video = videoRef.current
+            // Accept the natural end when fullscreen truly worked OR when the
+            // browser never allowed fullscreen (muted auto-start school labs).
+            const fullscreenOkay = document.fullscreenElement === introFrameRef.current || !fullscreenEverRef.current
             if (!video || !Number.isFinite(video.duration) || video.duration <= 0 ||
-                maxVideoTimeRef.current < video.duration - 1.5 ||
-                document.fullscreenElement !== introFrameRef.current) {
+                maxVideoTimeRef.current < video.duration - 1.5 || !fullscreenOkay) {
               setVideoError('The video ended outside fullscreen. Tap Try the story again to watch it completely.')
               setPhase('intro-error')
               return
@@ -741,6 +771,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       <div className="kg-intro-cinema__controls">
         {videoError ? <p className="kg-friendly-alert" role="alert">{videoError}</p> : null}
         {phase === 'saving-intro' ? <p className="kg-intro-saving" role="status"><LoaderCircle size={20} /> Saving your story progressâ€¦</p> : null}
+        {soundBlocked && phase === 'intro-playing' ? <button type="button" className="kg-story-play" onClick={() => void unlockStorySound()}><Volume2 size={19} /> Tap for Miss Julie&apos;s sound</button> : null}
         {phase === 'intro-paused' ? <button type="button" className="kg-story-play" onClick={() => void startVideo()}><Play size={19} fill="currentColor" /> Continue full screen</button> : null}
         {phase === 'intro' ? <p className="kg-intro-saving" role="status">Opening your fullscreen storyâ€¦</p> : null}
         {phase === 'intro-error' && !introEndedRef.current ? <button type="button" className="kg-story-play" onClick={() => { if (kgAlphabetService.hasIntroTicket()) void startVideo(); else void retryVideo() }}><Play size={19} /> Tap to allow fullscreen</button> : null}
