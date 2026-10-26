@@ -2421,6 +2421,7 @@ function pictureEmoji(word: string): string {
     apple: '🍎', banana: '🍌', cat: '🐱', dog: '🐶', ball: '⚽',
     car: '🚗', sun: '☀️', book: '📚', pencil: '✏️', bag: '🎒',
     hello: '👋', friend: '🧑‍🤝‍🧑', school: '🏫', home: '🏠',
+    bell: '🔔', playground: '🛝', walk: '🚶', run: '🏃',
     what: '❓', where: '📍', when: '🕒', why: '🤔',
     morning: '🌞', hobby: '🎨', opinion: '💭', reason: '💡',
     choice: '✅', respect: '🤝', first: '1️⃣', then: '➡️',
