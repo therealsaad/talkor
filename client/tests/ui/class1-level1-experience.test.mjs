@@ -13,6 +13,7 @@ const draftSeed = await read('../../../backend/src/scripts/prepare-class1-l01-dr
 const voice = await read('../../services/voice-service.ts')
 const backendFastRoute = await read('../../../backend/src/services/student-lesson-fast.service.ts')
 const backendVoice = await read('../../../backend/src/services/voice.service.ts')
+const backendDemoAccess = await read('../../../backend/src/services/class1-demo-access.ts')
 
 test('Class 1 Level 1 retains seven tiny-word foundations then adds three Balbharati bridge activities', () => {
   const keys = activities.match(/id: 'class1-l01-[^']+'/g) || []
