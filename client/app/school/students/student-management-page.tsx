@@ -3,12 +3,14 @@
 import React, { useEffect, useState, FormEvent } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { ArrowRight, BookOpen, ChevronLeft, ChevronRight, GraduationCap, Plus, Search, UsersRound } from 'lucide-react'
 import { SchoolShell } from '@/components/school/school-shell'
 import { schoolService, StudentListItem } from '@/services/school-service'
 import { AvatarTypePicker } from '@/components/school/avatar-type-picker'
 import { learnerAvatar } from '@/config/talkora-assets'
 import { useAuth } from '@/components/auth/auth-provider'
 import { curriculumService } from '@/services/curriculum-service'
+import './students.css'
 
 type KgCurriculumCheck = { state: 'idle' | 'checking' | 'published' | 'unpublished' | 'error'; classId?: string }
 
@@ -18,6 +20,7 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
   const [teachers, setTeachers] = useState<Array<{ id: string; name: string; status: 'active' | 'suspended' }>>([])
   const [teacherError, setTeacherError] = useState('')
   const [loading, setLoading] = useState(true)
+  const [studentsError, setStudentsError] = useState('')
   const [search, setSearch] = useState('')
   const [submittedSearch, setSubmittedSearch] = useState('')
   const [gradeFilter, setGradeFilter] = useState<number | undefined>(initialGradeFilter)
@@ -106,6 +109,7 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
   async function fetchStudents() {
     try {
       setLoading(true)
+      setStudentsError('')
       const data = await schoolService.listStudents({
         search: submittedSearch || undefined,
         grade: gradeFilter,
@@ -116,6 +120,7 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
       setTotal(data.total)
     } catch (err) {
       console.error('Failed to list students', err)
+      setStudentsError('Students could not be loaded. Please try again.')
     } finally {
       setLoading(false)
     }
@@ -232,40 +237,37 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
 
   return (
     <SchoolShell
-      title="Student Management"
+      title="Students"
       subtitle="View, enroll, edit, and monitor students across all grades."
     >
-      {/* Top Action Bar */}
-      <div className="school-student-toolbar" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '14px' }}>
-        {/* Search & Filter */}
-        <form className="school-student-search" onSubmit={handleSearchSubmit} style={{ display: 'flex', gap: '10px', alignItems: 'center', flex: 1, maxWidth: '540px' }}>
+      <main className="school-students" aria-label="Student management">
+        <section className="school-students__intro">
+          <div className="school-students__intro-icon" aria-hidden="true"><UsersRound size={24} /></div>
+          <div>
+            <span className="school-students__eyebrow">STUDENT DIRECTORY</span>
+            <h2>Manage your learners</h2>
+            <p>Find a student, review their progress, or update their profile.</p>
+          </div>
+        </section>
+
+        <div className="school-student-toolbar">
+        <form className="school-student-search" onSubmit={handleSearchSubmit}>
+          <label className="school-student-search-field">
+            <Search size={18} aria-hidden="true" />
           <input
             className="school-student-search-input"
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search by student name or roll number..."
-            style={{
-              flex: 1,
-              padding: '10px 14px',
-              borderRadius: '10px',
-              border: '1px solid #cbd5e1',
-              background: '#ffffff',
-              fontSize: '14px',
-            }}
+            aria-label="Search by student name or roll number"
           />
+          </label>
           <select
             className="school-student-grade-filter"
             value={gradeFilter ?? ''}
             onChange={(e) => setGradeFilter(e.target.value ? Number(e.target.value) : undefined)}
-            style={{
-              padding: '10px 14px',
-              borderRadius: '10px',
-              border: '1px solid #cbd5e1',
-              background: '#ffffff',
-              fontSize: '14px',
-              fontWeight: 700,
-            }}
+            aria-label="Filter by grade"
           >
             <option value="">All Grades</option>
             {Array.from({ length: 11 }, (_, i) => i).map((g) => (
@@ -277,146 +279,110 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
           <button
             className="school-student-search-submit"
             type="submit"
-            style={{
-              background: '#0f172a',
-              color: '#ffffff',
-              border: 'none',
-              borderRadius: '10px',
-              padding: '10px 16px',
-              fontWeight: 800,
-              fontSize: '13px',
-              cursor: 'pointer',
-            }}
           >
             Search
           </button>
         </form>
 
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}><Link href="/school/kg-preview/level-1" style={{ display: 'inline-flex', alignItems: 'center', background: '#f3eaff', color: '#5533a1', borderRadius: 12, padding: '12px 16px', fontWeight: 850, textDecoration: 'none' }}>▶ Preview KG Level 1</Link>
+        <div className="school-student-toolbar__actions">
+        <Link className="school-student-preview-link" href="/school/kg-preview/level-1">
+          <BookOpen size={16} aria-hidden="true" /> Preview KG Level 1
+        </Link>
         <button
           className="school-student-enroll-button"
           type="button"
           onClick={() => setIsAddOpen(true)}
-          style={{
-            background: '#ffd83d',
-            color: '#0f172a',
-            border: '2px solid #0f172a',
-            borderRadius: '12px',
-            padding: '10px 20px',
-            fontWeight: 900,
-            fontSize: '14px',
-            cursor: 'pointer',
-            boxShadow: '3px 3px 0 #0f172a',
-          }}
         >
-          + Enroll New Student
+          <Plus size={17} aria-hidden="true" /> Enroll student
         </button></div>
       </div>
 
-      {/* Students Table Panel */}
-      <section style={{ background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '18px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-        <div className="school-student-table-header" style={{ padding: '16px 24px', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <strong style={{ fontSize: '16px', color: '#0f172a' }}>{students.length} Students Enrolled</strong>
-          <small style={{ color: '#64748b' }}>Real-time persistence in MongoDB Atlas</small>
+      <section className="school-student-table-panel" aria-label="Students">
+        <div className="school-student-table-header">
+          <div className="school-student-table-heading">
+            <span className="school-student-table-icon" aria-hidden="true"><GraduationCap size={19} /></span>
+            <div>
+              <strong>{total} {total === 1 ? 'student' : 'students'}</strong>
+              <small>Student directory</small>
+            </div>
+          </div>
+          {students.length > 0 && !loading ? <small className="school-student-page-summary">Showing {students.length} on this page</small> : null}
         </div>
 
         {loading ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>Loading students...</div>
+          <div className="school-student-empty" role="status" aria-busy="true">Loading students…</div>
+        ) : studentsError ? (
+          <div className="school-student-empty school-student-empty--error" role="alert">
+            <strong>We couldn’t load the student list</strong>
+            <span>{studentsError}</span>
+            <button type="button" onClick={() => void fetchStudents()}>Try again</button>
+          </div>
         ) : students.length === 0 ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: '#64748b' }}>
+          <div className="school-student-empty" role="status">
             No students found matching your criteria.
           </div>
         ) : (
-          <div className="school-student-table-scroll" style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+          <div className="school-student-table-scroll">
+            <table className="school-student-table">
               <thead>
-                <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#64748b' }}>
-                  <th style={{ padding: '14px 20px', fontWeight: 800 }}>Student</th>
-                  <th style={{ padding: '14px 20px', fontWeight: 800 }}>Class / Section</th>
-                  <th style={{ padding: '14px 20px', fontWeight: 800 }}>Character</th>
-                  <th style={{ padding: '14px 20px', fontWeight: 800 }}>Accuracy</th>
-                  <th style={{ padding: '14px 20px', fontWeight: 800 }}>Levels</th>
-                  <th style={{ padding: '14px 20px', fontWeight: 800 }}>Status</th>
-                  <th style={{ padding: '14px 20px', fontWeight: 800, textAlign: 'right' }}>Actions</th>
+                <tr>
+                  <th scope="col">Student</th>
+                  <th scope="col">Class / Section</th>
+                  <th scope="col">Character</th>
+                  <th scope="col">Accuracy</th>
+                  <th scope="col">Levels</th>
+                  <th scope="col">Status</th>
+                  <th scope="col" className="school-student-actions-heading">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {students.map((student) => {
                   const acc = student.progress?.attemptCount ? student.progress.accuracy : undefined
                   return (
-                    <tr key={student.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
-                      <td style={{ padding: '14px 20px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                          <div
-                            style={{
-                              width: '34px',
-                              height: '34px',
-                              borderRadius: '50%',
-                              background: '#ffd83d',
-                              border: '1px solid #cbd5e1',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              overflow: 'hidden',
-                              position: 'relative',
-                            }}
-                          >
-                            <Image src={learnerAvatar(student.avatarType || 'BOY')} alt="" fill sizes="34px" style={{ objectFit: 'cover', objectPosition: 'top' }} />
+                    <tr key={student.id}>
+                      <td className="school-student-identity-cell">
+                        <div className="school-student-identity">
+                          <div className="school-student-avatar">
+                            <Image src={learnerAvatar(student.avatarType || 'BOY')} alt="" fill sizes="42px" />
                           </div>
-                          <div>
-                            <Link href={`/school/students/${student.id}`} style={{ fontWeight: 800, color: '#0f172a', textDecoration: 'none' }}>
+                          <div className="school-student-identity-copy">
+                            <Link className="school-student-name" href={`/school/students/${student.id}`}>
                               {student.fullName}
                             </Link>
-                            <small style={{ display: 'block', color: '#64748b' }}>Roll No. {student.rollNumber}</small>
+                            <small>Roll No. {student.rollNumber}</small>
                           </div>
                         </div>
                       </td>
 
-                      <td style={{ padding: '14px 20px', fontWeight: 700, color: '#334155' }}>
+                      <td className="school-student-class-cell">
                         {student.grade === 0 ? 'KG' : `Class ${student.grade}`} {student.className ? `(${student.className})` : ''}
                       </td>
 
-                      <td style={{ padding: '14px 20px' }}>
-                        <span style={{ fontWeight: 800 }}>{student.avatarType === 'GIRL' ? 'Girl' : 'Boy'}</span>
+                      <td>
+                        <span className="school-student-character"><span aria-hidden="true">{student.avatarType === 'GIRL' ? 'G' : 'B'}</span>{student.avatarType === 'GIRL' ? 'Girl' : 'Boy'}</span>
                       </td>
 
-                      <td style={{ padding: '14px 20px' }}>
-                        <strong style={{ color: acc === undefined ? '#64748b' : acc >= 75 ? '#16a34a' : '#ea580c' }}>{acc === undefined ? 'No attempts' : `${acc}%`}</strong>
+                      <td>
+                        <strong className={`school-student-accuracy${acc === undefined ? ' is-unavailable' : acc >= 75 ? ' is-strong' : ' is-developing'}`}>
+                          {acc === undefined ? 'No attempts' : `${acc}%`}
+                        </strong>
                       </td>
 
-                      <td style={{ padding: '14px 20px', fontWeight: 700, color: '#334155' }}>
-                        {student.progress?.completedLevels ?? 0}/{student.progress?.totalLevels || '—'}
-                      </td>
-
-                      <td style={{ padding: '14px 20px' }}>
-                        <span
-                          style={{
-                            background: student.status === 'active' ? '#f0fdf4' : '#fef2f2',
-                            color: student.status === 'active' ? '#166534' : '#991b1b',
-                            padding: '3px 8px',
-                            borderRadius: '999px',
-                            fontSize: '11px',
-                            fontWeight: 800,
-                          }}
-                        >
-                          {student.status}
+                      <td>
+                        <span className="school-student-levels">
+                          {student.progress?.completedLevels ?? 0}<span aria-hidden="true"> / </span>{student.progress?.totalLevels || '—'}
                         </span>
                       </td>
 
-                      <td style={{ padding: '14px 20px', textAlign: 'right' }}>
-                        <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-                          <Link
-                            href={`/school/students/${student.id}`}
-                            style={{
-                              background: '#f1f5f9',
-                              color: '#0f172a',
-                              padding: '5px 10px',
-                              borderRadius: '6px',
-                              fontSize: '12px',
-                              fontWeight: 800,
-                              textDecoration: 'none',
-                            }}
-                          >
+                      <td>
+                        <span className={`school-student-status ${student.status === 'active' ? 'is-active' : 'is-inactive'}`}>
+                          <span aria-hidden="true" />{student.status}
+                        </span>
+                      </td>
+
+                      <td className="school-student-actions-cell">
+                        <div className="school-student-row-actions">
+                          <Link className="school-student-action school-student-action--report" href={`/school/students/${student.id}`}>
                             Report
                           </Link>
 
@@ -424,7 +390,7 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
                             type="button" disabled={pilotUpdating === student.id}
                             onClick={() => void toggleKGAlphabetPilot(student)}
                             title="Approve this student for the separate ABCD pilot"
-                            style={{ background: student.kgAlphabetPilotEnabled ? '#d1fae5' : '#fff4d7', border: 'none', color: '#124936', padding: '5px 10px', borderRadius: 6, fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
+                            className={`school-student-action ${student.kgAlphabetPilotEnabled ? 'school-student-action--enabled' : 'school-student-action--pilot'}`}>
                             {pilotUpdating === student.id ? 'Saving…' : student.kgAlphabetPilotEnabled ? 'ABCD enabled ✓' : 'Enable ABCD'}
                           </button> : null}
                           <button
@@ -438,16 +404,7 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
                               setEditAvatarType(student.avatarType || 'BOY')
                               setEditTeacherId(student.teacherId || '')
                             }}
-                            style={{
-                              background: '#f1f5f9',
-                              border: 'none',
-                              color: '#0f172a',
-                              padding: '5px 10px',
-                              borderRadius: '6px',
-                              fontSize: '12px',
-                              fontWeight: 800,
-                              cursor: 'pointer',
-                            }}
+                            className="school-student-action school-student-action--edit"
                           >
                             Edit
                           </button>
@@ -456,16 +413,7 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
                             type="button"
                             onClick={() => handleResetCode(student.id, student.fullName)}
                             title="Issue a new 5-digit student PIN"
-                            style={{
-                              background: '#fef3c7',
-                              border: 'none',
-                              color: '#92400e',
-                              padding: '5px 10px',
-                              borderRadius: '6px',
-                              fontSize: '12px',
-                              fontWeight: 800,
-                              cursor: 'pointer',
-                            }}
+                            className="school-student-action school-student-action--pin"
                           >
                             Reset PIN
                           </button>
@@ -479,7 +427,14 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
           </div>
         )}
       </section>
-      {total > pageSize && <nav aria-label="Student pages" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '14px' }}><small style={{ color: '#64748b' }}>Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total}</small><div style={{ display: 'flex', gap: '8px' }}><button disabled={page === 1} onClick={() => setPage((value) => value - 1)} style={{ minHeight: '44px', padding: '0 15px', borderRadius: '9px', border: '1px solid #dbe0e8', background: '#fff' }}>Previous</button><button disabled={page * pageSize >= total} onClick={() => setPage((value) => value + 1)} style={{ minHeight: '44px', padding: '0 15px', borderRadius: '9px', border: '1px solid #dbe0e8', background: '#fff' }}>Next</button></div></nav>}
+      {total > pageSize && <nav className="school-student-pagination" aria-label="Student pages">
+        <small>Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, total)} of {total}</small>
+        <div>
+          <button type="button" disabled={page === 1} onClick={() => setPage((value) => value - 1)}><ChevronLeft size={17} /> Previous</button>
+          <button type="button" disabled={page * pageSize >= total} onClick={() => setPage((value) => value + 1)}>Next <ChevronRight size={17} /></button>
+        </div>
+      </nav>}
+      </main>
 
       {/* Add Student Modal */}
       {isAddOpen && (

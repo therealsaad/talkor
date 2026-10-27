@@ -1,8 +1,8 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { ArrowLeft, RotateCw, Sparkles } from 'lucide-react'
-import { canCompleteIntroVideo, LEVEL3_LETTERS, type Letter } from './level3-flow'
+import { RotateCw } from 'lucide-react'
+import { canCompleteIntroVideo } from './level3-flow'
 import './level-03.css'
 
 const INTRO_VIDEO =
@@ -11,13 +11,10 @@ const VIDEO_BUFFER_TIMEOUT_MS = 15_000
 type PlaybackState = 'loading' | 'playing' | 'paused' | 'blocked' | 'error'
 
 export function Level3PreviewIntro({
-  onSelectLetter,
-  onPreviewBack,
+  onComplete,
 }: {
-  onSelectLetter: (letter: Letter) => void
-  onPreviewBack?: () => void
+  onComplete: () => void
 }) {
-  const [view, setView] = useState<'story' | 'selection'>('story')
   const [playback, setPlayback] = useState<PlaybackState>('loading')
   const [videoError, setVideoError] = useState('')
   const [videoAttempt, setVideoAttempt] = useState(0)
@@ -126,24 +123,14 @@ export function Level3PreviewIntro({
     scheduleBufferTimeout()
   }
 
-  if (view === 'story') {
-    return (
-      <main
-        className={`kg-intro-cinema kg-level3-intro ${playback === 'playing' ? 'is-video-playing' : ''}`}
-        ref={frameRef}
-        aria-label="Level 3 staff preview introduction"
-      >
-        <header className="kg-level3-intro__header">
-          <span><Sparkles size={18} /> TALKORA · STAFF PREVIEW</span>
-          <span>LEVEL 3 · LETTERS K–P</span>
-        </header>
-        <div className="kg-level3-intro__title">
-          <span>FULL INTRODUCTION</span>
-          <h1>Letters K to P</h1>
-          <p>Watch Miss Julie&apos;s complete introduction before choosing a letter.</p>
-        </div>
-        <div className="kg-level3-intro__video-frame">
-          <video
+  return (
+    <main
+      className="kg-intro-cinema kg-level3-intro"
+      ref={frameRef}
+      aria-label="Level 3 introductory video"
+    >
+      <div className="kg-level3-intro__video-frame">
+        <video
             key={videoAttempt}
             ref={videoRef}
             src={INTRO_VIDEO}
@@ -190,66 +177,40 @@ export function Level3PreviewIntro({
               if (completionHandledRef.current || !video ||
                   !canCompleteIntroVideo(video, maximumTimeRef.current)) {
                 if (!completionHandledRef.current) {
-                  setVideoError('The full introduction did not finish. Replay it to unlock the letters.')
+                  setVideoError('The introduction did not finish. Replay it to continue.')
                   updatePlayback('error')
                 }
                 return
               }
               completionHandledRef.current = true
               clearBufferTimeout()
-              setView('selection')
               if (document.fullscreenElement === frameRef.current) {
                 void document.exitFullscreen?.().catch(() => undefined)
               }
+              onComplete()
             }}
             onError={() => {
               clearBufferTimeout()
               setVideoError('The lesson video could not load. Check the connection and try again.')
               updatePlayback('error')
             }}
-            aria-label="Full-screen introduction video for letters K to P"
-          />
+            aria-label="Introduction video for letters K to P"
+        />
+      </div>
+      {playback !== 'playing' || videoError ? (
+        <div className="kg-level3-intro__recovery" aria-live="polite">
+          {videoError ? <p role="alert">{videoError}</p> :
+            playback === 'paused' ? <p>The introduction is paused. Resume to continue watching.</p> :
+              playback === 'loading' ? <p role="status">Loading the introduction…</p> : null}
+          {fullscreenFallback ? <p role="status">Continuing in the full-screen page view; browser fullscreen is unavailable.</p> : null}
+          {playback === 'blocked' || playback === 'paused'
+            ? <button type="button" onClick={() => void startVideo(true)}><RotateCw size={18} /> {playback === 'paused' ? 'Resume introduction' : 'Play introduction'}</button>
+            : null}
+          {playback === 'error'
+            ? <button type="button" onClick={retryVideo}><RotateCw size={18} /> Try video again</button>
+            : null}
         </div>
-        {playback !== 'playing' || videoError ? (
-          <div className="kg-level3-intro__recovery" aria-live="polite">
-            {videoError ? <p role="alert">{videoError}</p> :
-              playback === 'paused' ? <p>The introduction is paused. Resume to continue watching.</p> :
-                playback === 'loading' ? <p role="status">Loading the introduction…</p> : null}
-            {fullscreenFallback ? <p role="status">Continuing in the full-screen page view; browser fullscreen is unavailable.</p> : null}
-            {playback === 'blocked' || playback === 'paused'
-              ? <button type="button" onClick={() => void startVideo(true)}><RotateCw size={18} /> {playback === 'paused' ? 'Resume introduction' : 'Play introduction'}</button>
-              : null}
-            {playback === 'error'
-              ? <button type="button" onClick={retryVideo}><RotateCw size={18} /> Try video again</button>
-              : null}
-          </div>
-        ) : null}
-      </main>
-    )
-  }
-
-  return (
-    <main className="kg-level3-selection" aria-label="Choose a Level 3 letter">
-      <header className="kg-level3-selection__header">
-        {onPreviewBack
-          ? <button type="button" onClick={onPreviewBack}><ArrowLeft size={17} /> Preview list</button>
-          : <span />}
-        <span><Sparkles size={15} /> STAFF-ONLY DRAFT</span>
-      </header>
-      <section className="kg-level3-selection__card" aria-label="Select a letter activity">
-        <span className="kg-level3-selection__eyebrow"><Sparkles size={17} /> INTRODUCTION COMPLETE</span>
-        <h1>Which letter would you like to explore?</h1>
-        <p>Choose a letter. Miss Julie will introduce it and then ask you to say its name.</p>
-        <div className="kg-level3-letter-options">
-          {LEVEL3_LETTERS.map((letter, index) => (
-            <button type="button" key={letter} onClick={() => onSelectLetter(letter)} aria-label={`Open letter ${letter} activity`}>
-              <span>{letter}</span>
-              <small>{index + 1} of {LEVEL3_LETTERS.length}</small>
-            </button>
-          ))}
-        </div>
-        <p className="kg-level3-selection__note">No student progress or speech attempts are saved in this preview.</p>
-      </section>
+      ) : null}
     </main>
   )
 }
