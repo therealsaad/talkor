@@ -2,6 +2,7 @@
 
 import Image from 'next/image'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { useEffect, useState } from 'react'
 import { talkoraAssets } from '@/config/talkora-assets'
 
 export type JulieVisualState =
@@ -38,11 +39,32 @@ export function MissJulieCharacter({
   const reducedMotion = useReducedMotion()
   const poseKey = isSpeaking ? 'speaking' : poseForState(state)
   const pose = talkoraAssets.julie[poseKey] || talkoraAssets.julie.standing
+  const animationName = isSpeaking || state === 'speaking'
+    ? 'speaking'
+    : state === 'celebrating' || state === 'proud'
+      ? 'celebrating'
+      : state === 'listening' || state === 'curious'
+        ? 'listening'
+        : state === 'thinking'
+          ? 'thinking'
+          : state === 'modeling'
+            ? 'pointing'
+            : state === 'encouraging' || state === 'gentle-correction'
+              ? 'encouraging'
+              : 'idle'
+  const animationSrc = reducedMotion
+    ? null
+    : `/miss-julie-animations/transparent/${animationName}.webm`
+  const [animationReady, setAnimationReady] = useState(false)
   const chipLabel = isSpeaking ? 'Speaking' : state === 'listening' ? 'Listening to you'
     : state === 'thinking' ? 'Thinking…'
     : state === 'celebrating' || state === 'proud' ? 'Celebrating!'
     : state === 'encouraging' || state === 'gentle-correction' ? 'Encouraging'
     : 'Miss Julie'
+
+  useEffect(() => {
+    setAnimationReady(false)
+  }, [animationSrc])
 
   return (
     <div className="lesson-character-figure lesson-character-figure--julie" data-julie-state={isSpeaking ? 'speaking' : state}>
@@ -51,7 +73,7 @@ export function MissJulieCharacter({
       <AnimatePresence mode="sync" initial={false}>
         <motion.div
           key={pose}
-          className="lesson-julie-art"
+          className={`lesson-julie-art${animationReady ? ' has-transparent-animation' : ''}`}
           initial={reducedMotion ? { opacity: 1 } : { opacity: 0, x: 10, scale: .98 }}
           animate={{ opacity: 1, x: 0, scale: 1 }}
           exit={reducedMotion ? { opacity: 0 } : { opacity: 0, x: -8, scale: .99 }}
@@ -70,6 +92,20 @@ export function MissJulieCharacter({
               sizes="(max-width: 640px) 60vw, (max-width: 1024px) 36vw, 440px"
               className="lesson-julie-img"
             />
+            {animationSrc ? <video
+              key={animationSrc}
+              className="lesson-julie-animation"
+              src={animationSrc}
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="auto"
+              aria-hidden="true"
+              onCanPlay={() => setAnimationReady(true)}
+              onPlaying={() => setAnimationReady(true)}
+              onError={() => setAnimationReady(false)}
+            /> : null}
           </motion.div>
         </motion.div>
       </AnimatePresence>

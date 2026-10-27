@@ -17,7 +17,7 @@ async function main() {
     const existing = await S3Service.headAudio(line.s3Key)
     if (existing) { console.log(`EXISTS ${line.s3Key}`); continue }
     if (!upload) { console.log(`DRY RUN ${line.s3Key} (${bytes.length} bytes)`); continue }
-    await S3Service.putAudio(line.s3Key, bytes, 'audio/wav', { provider: 'ai4bharat', level: 'g01-l01', revision: 'v1' }, '*')
+    await S3Service.putAudio(line.s3Key, bytes, 'audio/wav', { provider: 'ai4bharat', level: 'g01-l01', revision: manifest.revision }, '*')
     console.log(`UPLOADED ${line.s3Key}`)
   }
 }

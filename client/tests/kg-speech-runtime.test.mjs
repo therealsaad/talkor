@@ -31,6 +31,19 @@ test('network retries reuse the submitted payload, while authorization and valid
     await assert.rejects(kgRequest(async () => { count++; throw { status } }, undefined, quickly))
     assert.equal(count, 1)
   }
+  let missingCalls = 0
+  await assert.rejects(kgRequest(async () => { missingCalls++; throw { status: 404, code: 'KG_AUDIO_MISSING' } }, undefined, quickly))
+  assert.equal(missingCalls, 1)
+  let deniedCalls = 0
+  await assert.rejects(kgRequest(async () => { deniedCalls++; throw { status: 502, details: { retryable: false } } }, undefined, quickly))
+  assert.equal(deniedCalls, 1)
+  let transientCalls = 0
+  const recovered = await kgRequest(async () => {
+    transientCalls++
+    if (transientCalls === 1) throw { status: 503, details: { retryable: true } }
+    return 'audio'
+  }, undefined, { retries: 1, delayMs: 1 })
+  assert.equal(recovered, 'audio'); assert.equal(transientCalls, 2)
 })
 
 test('a request timeout retries a bounded number of times and navigation cancels immediately', async () => {
@@ -101,7 +114,7 @@ test('audio completion resolves playback only, and aborted playback releases its
   let posts = 0
   const { kgAlphabetService } = await load('../features/lessons/grades/kg/level-01/services/kg-alphabet-service.ts', {
     '@/lib/api-client': { apiClient: async () => { posts++; return {} }, apiClientBlob: async () => new Blob(['test audio'], { type: 'audio/mpeg' }) },
-    './kg-request': { kgRequest: (operation, signal) => kgRequest(operation, signal, quickly) },
+    './kg-request': { kgRequest: (operation, signal, options = {}) => kgRequest(operation, signal, { ...options, timeoutMs: 50, delayMs: 1 }) },
   })
   try {
     const audio = { paused: true, play: async () => { audio.paused = false }, pause: () => { audio.paused = true } }
@@ -117,4 +130,41 @@ test('audio completion resolves playback only, and aborted playback releases its
     assert.equal(audio.paused, true); assert.equal(audio.onended, null)
     kgAlphabetService.clearAudioCache()
   } finally { globalThis.window = oldWindow }
+})
+
+test('audio requests deduplicate in flight, negative-cache missing clips, and retry a retryable TTS outage once', async () => {
+  const oldCreate = URL.createObjectURL
+  const oldRevoke = URL.revokeObjectURL
+  URL.createObjectURL = () => 'blob:kg-test'
+  URL.revokeObjectURL = () => {}
+  let missingCalls = 0
+  let dynamicCalls = 0
+  const missing = Object.assign(new Error('missing'), { code: 'KG_AUDIO_MISSING', status: 404 })
+  const outage = Object.assign(new Error('Priya unavailable'), { code: 'TTS_SERVICE_UNAVAILABLE', status: 503, details: { retryable: true } })
+  const { kgAlphabetService } = await load('../features/lessons/grades/kg/level-01/services/kg-alphabet-service.ts', {
+    '@/lib/api-client': {
+      apiClient: async () => ({}),
+      apiClientBlob: async (key) => {
+        if (key.endsWith('/say-a')) { missingCalls++; throw missing }
+        dynamicCalls++
+        if (dynamicCalls === 1) throw outage
+        return new Blob(['live Priya audio'], { type: 'audio/wav' })
+      },
+    },
+    './kg-request': { kgRequest: (operation, signal, options = {}) => kgRequest(operation, signal, { ...options, delayMs: 1, timeoutMs: 50 }) },
+  })
+  try {
+    const first = kgAlphabetService.ensure('say-a')
+    const concurrent = kgAlphabetService.ensure('say-a')
+    await Promise.all([assert.rejects(first, { code: 'KG_AUDIO_MISSING' }), assert.rejects(concurrent, { code: 'KG_AUDIO_MISSING' })])
+    await assert.rejects(kgAlphabetService.ensure('say-a'), { code: 'KG_AUDIO_MISSING' })
+    assert.equal(missingCalls, 1)
+
+    await kgAlphabetService.ensure('bridge-c', undefined, 'dynamic_tts')
+    assert.equal(dynamicCalls, 2)
+  } finally {
+    kgAlphabetService.clearAudioCache()
+    URL.createObjectURL = oldCreate
+    URL.revokeObjectURL = oldRevoke
+  }
 })

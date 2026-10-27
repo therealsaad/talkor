@@ -13,7 +13,7 @@ describe('Class 1 reviewed static lesson audio', () => {
   it('serves the authorized activity S3 object before dynamic TTS', async () => {
     ;(CurriculumAccessService.assertActivity as jest.Mock).mockResolvedValue({
       isClass1Demo: true,
-      activity: { content: { audioKey: 'class-01/level-01/v1/listen-at.wav' } },
+      activity: { content: { audioKey: 'class-01/level-01/v2/listen-at.wav' } },
     })
     ;(S3Service.getAudio as jest.Mock).mockResolvedValue(Buffer.from('reviewed-audio'))
 
@@ -27,7 +27,7 @@ describe('Class 1 reviewed static lesson audio', () => {
       '64b000000000000000000001',
       '64b000000000000000000002',
     )
-    expect(S3Service.getAudio).toHaveBeenCalledWith('class-01/level-01/v1/listen-at.wav')
+    expect(S3Service.getAudio).toHaveBeenCalledWith('class-01/level-01/v2/listen-at.wav')
     expect(stream.provider).toBe('ai4bharat-s3')
     expect(stream.contentType).toBe('audio/wav')
     expect(Buffer.from(await new Response(stream.body).arrayBuffer()).toString()).toBe('reviewed-audio')
