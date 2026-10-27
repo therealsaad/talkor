@@ -39,9 +39,11 @@ export default function KGAlphabetSchoolPreview() {
             {levels.map((level) => {
               const href = level.level === 1
                 ? '/school/kg-preview/level-1'
-                : level.level === 3
-                  ? '/school/kg-preview/level-3'
-                  : null
+                : level.level === 2
+                  ? '/school/kg-preview/level-2'
+                  : level.level === 3
+                    ? '/school/kg-preview/level-3'
+                    : null
               const label = `Level ${level.level}: ${level.title}`
 
               return href ? (
