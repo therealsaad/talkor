@@ -6,20 +6,20 @@ import { config } from './config'
 
 type Exercise = { id: string; prompt: string; voice: string; choices: string[]; answer: string; kind: 'choice' | 'build' | 'mic-preview' }
 const exercises: Exercise[] = [
-  { id: activities[0].id, prompt: 'Listen carefully. Which word is at?', voice: 'listen-at', choices: ['an', 'at', 'in'], answer: 'at', kind: 'choice' },
-  { id: activities[1].id, prompt: 'Build the word at.', voice: 'build-at', choices: ['t', 'a'], answer: 'at', kind: 'build' },
-  { id: activities[2].id, prompt: 'Listen carefully. Which word is in?', voice: 'listen-in', choices: ['is', 'on', 'in'], answer: 'in', kind: 'choice' },
-  { id: activities[3].id, prompt: 'Build the word in.', voice: 'build-in', choices: ['n', 'i'], answer: 'in', kind: 'build' },
-  { id: activities[4].id, prompt: 'Look __ me. Choose the missing word.', voice: 'look-at-me', choices: ['in', 'at', 'on'], answer: 'at', kind: 'choice' },
-  { id: activities[5].id, prompt: 'Build a sentence.', voice: 'i-am-sam', choices: ['Sam.', 'am', 'I'], answer: 'I am Sam.', kind: 'build' },
-  { id: activities[6].id, prompt: 'Say at, then use it with Miss Julie.', voice: 'repeat-at', choices: [], answer: '', kind: 'mic-preview' },
+  { id: activities[0].id, prompt: 'Listen carefully. Which word is am?', voice: 'listen-am', choices: ['an', 'am', 'at'], answer: 'am', kind: 'choice' },
+  { id: activities[1].id, prompt: 'Build the word an.', voice: 'build-an', choices: ['n', 'a'], answer: 'an', kind: 'build' },
+  { id: activities[2].id, prompt: 'Listen carefully. Which word is at?', voice: 'listen-at', choices: ['in', 'at', 'on'], answer: 'at', kind: 'choice' },
+  { id: activities[3].id, prompt: 'Listen carefully. Which word is in?', voice: 'listen-in', choices: ['is', 'on', 'in'], answer: 'in', kind: 'choice' },
+  { id: activities[4].id, prompt: 'The book is __ the table. Choose the missing word.', voice: 'use-on', choices: ['in', 'on', 'at'], answer: 'on', kind: 'choice' },
+  { id: activities[5].id, prompt: 'Read: It is up. Which little word says where?', voice: 'it-is-up', choices: ['up', 'it', 'is'], answer: 'up', kind: 'choice' },
+  { id: activities[6].id, prompt: 'Practise am, an, at, in, is, it, on, and up with Miss Julie.', voice: 'review-little-words', choices: [], answer: '', kind: 'mic-preview' },
   { id: activities[7].id, prompt: 'Watch Miss Julie walking. Now say WALK.', voice: 'say-walk', choices: [], answer: '', kind: 'mic-preview' },
   { id: activities[8].id, prompt: 'Which picture shows a school?', voice: 'find-school', choices: ['school', 'bell', 'playground'], answer: 'school', kind: 'choice' },
   { id: activities[9].id, prompt: 'Tell Miss Julie: What do you do at school?', voice: 'school-talk', choices: [], answer: '', kind: 'mic-preview' },
 ]
 // Public, CDN-backed S3 audio only. Never embed AWS credentials in the client.
 const audioBase = (process.env.NEXT_PUBLIC_TALKORA_CLASS1_AUDIO_BASE_URL || '').replace(/\/$/, '')
-function audioUrl(id: string) { return audioBase ? `${audioBase}/class-01/level-01/v1/${id}.wav` : null }
+function audioUrl(id: string) { return audioBase ? `${audioBase}/class-01/level-01/v2/${id}.wav` : null }
 
 /** Authenticated student publication remains gated by registry.ts. This is a
  * fully interactive STAFF PREVIEW; preview results are intentionally not persisted. */
@@ -41,7 +41,7 @@ export default function LevelExperience({ onPreviewBack }: LevelExperienceProps)
     try { await next.play() } catch { setAudioError('Audio unavailable. Verify the uploaded S3 object and CDN permissions.') }
   }, [])
   useEffect(() => () => { player.current?.pause() }, [])
-  const current = picked.join(exercise.kind === 'build' && index === 5 ? ' ' : '')
+  const current = picked.join('')
   const submit = () => {
     if (exercise.kind === 'mic-preview') return // Only the authenticated engine can submit real STT evidence.
     if (current.trim().toLowerCase() !== exercise.answer.toLowerCase()) {
@@ -60,11 +60,11 @@ export default function LevelExperience({ onPreviewBack }: LevelExperienceProps)
         <div><small>CLASS 1 · LEVEL 1 · STAFF PREVIEW</small><h1 style={{ fontSize: 32, fontWeight: 800 }}>{config.title} 🌼</h1></div>
         {onPreviewBack && <button type="button" onClick={onPreviewBack} style={{ padding: 12, borderRadius: 12, background: 'white' }}>Back</button>}
       </header>
-      <p><strong>Student order:</strong> 90-second Miss Julie video → tiny English words → Balbharati 1.1 My First Day. The video must be rendered and uploaded before a student can start.</p>
+      <p><strong>Student order:</strong> PIN → required 90-second Miss Julie story → eight little words → Balbharati 1.1 My First Day.</p>
       <p style={{ fontSize: 14 }}>This is a staff-only screen preview. Live speech, Qwen, Azure, server grading and MongoDB progress are available only through an authenticated student lesson; this preview cannot certify them.</p>
       {complete ? <section style={{ background: '#fff', padding: 28, borderRadius: 22, display: 'grid', gap: 14 }}>
         <h2 style={{ fontSize: 26, fontWeight: 800 }}>Wonderful work! 🌟</h2>
-        <p>Homework: Say “I am Sam” and “I walk to school” with a family member.</p>
+        <p>Homework: Say “It is up” and “I walk to school” with a family member.</p>
         <button type="button" onClick={() => void play('homework-first-day')} style={{ padding: 14, borderRadius: 12, background: '#e6f4df' }}>🔊 Hear homework</button>
         <p style={{ fontSize: 13 }}>Staff preview only: completion is not saved to MongoDB.</p>
         <button type="button" onClick={() => { setIndex(0); setPicked([]); setFeedback(''); setComplete(false) }} style={{ padding: 14, borderRadius: 12, background: '#e6f4df' }}>Practice again</button>

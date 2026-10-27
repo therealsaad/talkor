@@ -73,23 +73,30 @@ export interface DailyChallengeItem {
 }
 
 export interface HomePracticeReflection {
+  unitKey?: string
   reflection: string
   submittedAt: string
   hasAudio: boolean
 }
 
+export type HomePracticeUnitSlug = 'favourites' | 'class1-first-day'
+
+function homePracticePath(unit: HomePracticeUnitSlug) {
+  return `/progress/home-practice/${unit}`
+}
+
 export const progressService = {
-  async getHomePractice(): Promise<HomePracticeReflection | null> {
-    return apiClient<HomePracticeReflection | null>('/progress/home-practice/favourites')
+  async getHomePractice(unit: HomePracticeUnitSlug = 'favourites'): Promise<HomePracticeReflection | null> {
+    return apiClient<HomePracticeReflection | null>(homePracticePath(unit))
   },
-  async getHomePracticeAudio(): Promise<Blob> {
-    return apiClientBlob('/progress/home-practice/favourites/audio')
+  async getHomePracticeAudio(unit: HomePracticeUnitSlug = 'favourites'): Promise<Blob> {
+    return apiClientBlob(`${homePracticePath(unit)}/audio`)
   },
-  async saveHomePractice(reflection: string, audio?: Blob): Promise<HomePracticeReflection> {
+  async saveHomePractice(reflection: string, audio?: Blob, unit: HomePracticeUnitSlug = 'favourites'): Promise<HomePracticeReflection> {
     const formData = new FormData()
     formData.append('reflection', reflection)
     if (audio) formData.append('audio', audio, 'home-practice-recording')
-    return apiClient<HomePracticeReflection>('/progress/home-practice/favourites', {
+    return apiClient<HomePracticeReflection>(homePracticePath(unit), {
       method: 'PUT',
       body: formData,
     })

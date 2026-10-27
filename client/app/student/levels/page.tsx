@@ -7023,6 +7023,7 @@ import {
 import {
   AnimatePresence,
   motion,
+  useReducedMotion,
 } from 'framer-motion'
 
 import {
@@ -7108,6 +7109,9 @@ type CameraState = {
  */
 const MAP_BACKGROUND =
   '/assets/levelmap.png'
+
+const CLASS1_MAP_BACKGROUND =
+  '/lessons/class-01/level-01/map.png'
 
 const MISS_JULIE_IMAGE =
   '/miss-julie-welcome.png'
@@ -7230,9 +7234,26 @@ const WORLDS: World[] = [
   },
 ]
 
+/** Class 1 has ten roadmap levels; it must not reuse the eight-unit trail. */
+const CLASS1_WORLDS: World[] = [
+  // Coordinates are measured against map.png itself. The first nine stops sit
+  // on its circular pads; the tenth finishes at the school entrance.
+  { number: 1, id: 'little-words-first-day', icon: BookOpen, name: 'First Day Meadow', syllabus: 'Little Words & My First Day', x: 9.8, y: 84.7, studentX: 0, studentY: 0 },
+  { number: 2, id: 'my-school', icon: Home, name: 'School Corner', syllabus: 'My School', x: 26.1, y: 77.1, studentX: 0, studentY: 0 },
+  { number: 3, id: 'people-family', icon: UsersRound, name: 'Family Grove', syllabus: 'People and Family', x: 35.0, y: 76.0, studentX: 0, studentY: 0 },
+  { number: 4, id: 'colours-counting', icon: Sparkles, name: 'Colour Creek', syllabus: 'Colours and Counting', x: 46.6, y: 75.5, studentX: 0, studentY: 0 },
+  { number: 5, id: 'things-i-like', icon: Heart, name: 'Favourite Fair', syllabus: 'Things I Like', x: 64.2, y: 58.5, studentX: 0, studentY: 0 },
+  { number: 6, id: 'animals-around-us', icon: Star, name: 'Animal Meadow', syllabus: 'Animals Around Us', x: 60.7, y: 39.0, studentX: 0, studentY: 0 },
+  { number: 7, id: 'action-words', icon: Megaphone, name: 'Action Path', syllabus: 'Action Words', x: 83.4, y: 35.3, studentX: 0, studentY: 0 },
+  { number: 8, id: 'simple-questions', icon: UsersRound, name: 'Question Bridge', syllabus: 'Simple Questions', x: 77.5, y: 23.7, studentX: 0, studentY: 0 },
+  { number: 9, id: 'my-day', icon: CalendarDays, name: 'Daytime Garden', syllabus: 'My Day', x: 87.2, y: 15.9, studentX: 0, studentY: 0 },
+  { number: 10, id: 'story-time', icon: BookOpen, name: 'Story Hill', syllabus: 'Story Time', x: 88.7, y: 8.5, studentX: 0, studentY: 0 },
+]
+
 export default function AdventureMapPage() {
   const router =
     useRouter()
+  const reduceMotion = useReducedMotion()
 
   const { session, logout } = useAuth()
 
@@ -7283,6 +7304,8 @@ export default function AdventureMapPage() {
     useState<VoicePlaybackState>(
       'idle',
     )
+
+  const [julieAnimationReady, setJulieAnimationReady] = useState(false)
 
   const [
     voiceError,
@@ -7371,6 +7394,9 @@ export default function AdventureMapPage() {
   const student =
     session?.student
 
+  const worlds = student?.grade === 1 ? CLASS1_WORLDS : WORLDS
+  const mapBackground = student?.grade === 1 ? CLASS1_MAP_BACKGROUND : MAP_BACKGROUND
+
   const firstName =
     student?.fullName
       ?.trim()
@@ -7399,14 +7425,14 @@ export default function AdventureMapPage() {
     }, [curriculum])
 
   const currentWorld =
-    WORLDS.find(
+    worlds.find(
       (world) =>
         world.number ===
         currentUnit,
-    ) || WORLDS[0]
+    ) || worlds[0]
 
   const selectedWorld =
-    WORLDS.find(
+    worlds.find(
       (world) =>
         world.number ===
         selected,
@@ -7430,6 +7456,26 @@ export default function AdventureMapPage() {
       'UPCOMING'
     )
   }
+
+  const selectedStatus = statusFor(selectedWorld.number)
+  const mapJuliePose = voiceState === 'speaking'
+    ? 'speaking'
+    : voiceState === 'loading'
+      ? 'thinking'
+      : selectedStatus === 'COMPLETED'
+        ? 'celebrating'
+        : selectedStatus === 'CURRENT'
+          ? 'pointing'
+          : selectedStatus === 'LOCKED'
+            ? 'encouraging'
+            : 'idle'
+  const mapJulieAnimation = reduceMotion
+    ? null
+    : `/miss-julie-animations/transparent/${mapJuliePose}.webm`
+
+  useEffect(() => {
+    setJulieAnimationReady(false)
+  }, [mapJulieAnimation])
 
   useEffect(() => {
     setSelected(
@@ -7756,6 +7802,13 @@ export default function AdventureMapPage() {
 
     setSelected(world.number)
 
+    if (error && student?.grade === 1 && world.number === 1) {
+      const message = 'Class 1 Level 1 could not load. Check that the Class 1 demo curriculum is seeded, then retry.'
+      setJulieMessage(message)
+      void speakJulie(message)
+      return
+    }
+
     if (
       status === 'CURRENT' ||
       status === 'COMPLETED'
@@ -7814,7 +7867,7 @@ export default function AdventureMapPage() {
         <TalkoraLoader
           compact
           message="Opening your English adventure..."
-          worldSrc={MAP_BACKGROUND}
+          worldSrc={mapBackground}
         />
 
         <AdventureStyles />
@@ -7822,7 +7875,7 @@ export default function AdventureMapPage() {
     )
   }
 
-  if (error) {
+  if (error && student?.grade !== 1) {
     return (
       <main className="tk-map-error">
         <div>
@@ -7968,6 +8021,14 @@ export default function AdventureMapPage() {
           resetPointer
         }
       >
+        {error && student?.grade === 1 ? (
+          <aside className="tk-class1-map-notice" role="status">
+            <strong>Class 1 map is ready</strong>
+            <span>The Class 1 curriculum could not be loaded. Check that the Level 1 demo curriculum is seeded in the backend, then retry.</span>
+            <button type="button" onClick={() => window.location.reload()}>Retry</button>
+          </aside>
+        ) : null}
+
         {/* ====================================================
             WORLD CAMERA
         ==================================================== */}
@@ -8013,33 +8074,29 @@ export default function AdventureMapPage() {
             mass: 0.72,
           }}
         >
-          {/* NEW JUNGLE IMAGE */}
+          <div className={student?.grade === 1 ? 'tk-map-artwork tk-map-artwork--class1' : 'tk-map-artwork'}>
+            {/* Keep the art and its percentage positioned stops in the same aspect-ratio canvas. */}
+            <div className={student?.grade === 1 ? 'tk-world-bg tk-world-bg--class1' : 'tk-world-bg'}>
+              <Image
+                src={mapBackground}
+                alt={student?.grade === 1 ? 'Talkora Class 1 ten-level adventure map' : 'Talkora jungle English adventure map'}
+                fill
+                priority
+                sizes="100vw"
+                className="tk-world-bg-image"
+              />
 
-          <div className="tk-world-bg">
-            <Image
-              src={
-                MAP_BACKGROUND
-              }
-              alt="Talkora jungle English adventure map"
-              fill
-              priority
-              sizes="100vw"
-              className="tk-world-bg-image"
-            />
+              <div className="tk-world-depth-overlay" />
+            </div>
 
-            <div className="tk-world-depth-overlay" />
-          </div>
+            {/* ==================================================
+                LEVEL DESTINATIONS
 
-          {/* ==================================================
-              LEVEL DESTINATIONS
+                The Class 1 stops use the same uncropped artwork canvas as map.png.
+            ================================================== */}
 
-              NO YELLOW RAIL.
-              NO SVG ROUTE.
-              THE IMAGE ITSELF HAS REAL PATHS + BRIDGES.
-          ================================================== */}
-
-          <div className="tk-level-layer">
-            {WORLDS.map(
+            <div className="tk-level-layer">
+            {worlds.map(
               (
                 world,
                 index,
@@ -8076,6 +8133,10 @@ export default function AdventureMapPage() {
                     className={[
                       'tk-level',
 
+                      student?.grade === 1
+                        ? 'is-class1'
+                        : '',
+
                       current
                         ? 'is-current'
                         : '',
@@ -8099,12 +8160,15 @@ export default function AdventureMapPage() {
                     style={{
                       left: `${world.x}%`,
                       top: `${world.y}%`,
+                      transformOrigin: student?.grade === 1 ? 'center top' : undefined,
                     }}
+                    transformTemplate={(_, generatedTransform) => student?.grade === 1
+                      ? `translateX(-50%) ${generatedTransform}`
+                      : `translate(-50%, -50%) translateZ(75px) ${generatedTransform}`}
                     initial={{
                       opacity: 0,
-                      scale:
-                        0.72,
-                      y: 22,
+                      scale: reduceMotion ? 1 : 0.72,
+                      y: student?.grade === 1 || reduceMotion ? 0 : 22,
                     }}
                     animate={{
                       opacity: 1,
@@ -8112,21 +8176,13 @@ export default function AdventureMapPage() {
                       y: 0,
                     }}
                     transition={{
-                      delay:
-                        index *
-                        0.065,
-
-                      duration:
-                        0.42,
+                      delay: reduceMotion ? 0 : index * 0.065,
+                      duration: reduceMotion ? 0 : 0.42,
                     }}
-                    whileHover={{
-                      y: -8,
-                      scale: 1.07,
-                    }}
-                    whileTap={{
-                      scale:
-                        0.96,
-                    }}
+                    whileHover={reduceMotion
+                      ? undefined
+                      : { y: student?.grade === 1 ? -3 : -8, scale: student?.grade === 1 ? 1.04 : 1.07 }}
+                    whileTap={reduceMotion ? undefined : { scale: 0.96 }}
                     onClick={() =>
                       chooseWorld(
                         world,
@@ -8135,10 +8191,11 @@ export default function AdventureMapPage() {
                   >
                     <span className="tk-level-ground-shadow" />
 
-                    {current ? (
+                    {current && !reduceMotion ? (
                       <>
                         <motion.span
                           className="tk-level-pulse pulse-a"
+                          transformTemplate={(_, generatedTransform) => `translateX(-50%) ${generatedTransform}`}
                           animate={{
                             scale: [
                               0.8,
@@ -8161,6 +8218,7 @@ export default function AdventureMapPage() {
 
                         <motion.span
                           className="tk-level-pulse pulse-b"
+                          transformTemplate={(_, generatedTransform) => `translateX(-50%) ${generatedTransform}`}
                           animate={{
                             scale: [
                               0.8,
@@ -8210,13 +8268,14 @@ export default function AdventureMapPage() {
                 )
               },
             )}
+            </div>
           </div>
 
           {/* ==================================================
               STUDENT MARKER
           ================================================== */}
 
-          <motion.div
+          {student?.grade !== 1 ? <motion.div
             className="tk-you-marker"
             style={{
               left: `${currentWorld.studentX}%`,
@@ -8254,7 +8313,7 @@ export default function AdventureMapPage() {
             <span>
               YOU
             </span>
-          </motion.div>
+          </motion.div> : null}
         </motion.div>
 
         {/* ====================================================
@@ -8326,18 +8385,12 @@ export default function AdventureMapPage() {
           }}
         >
           <motion.div
-            className="tk-julie-character"
-            animate={{
-              y: [
-                0,
-                -5,
-                0,
-              ],
-            }}
+            className={`tk-julie-character${julieAnimationReady ? ' has-transparent-animation' : ''}`}
+            animate={reduceMotion ? { y: 0 } : { y: [0, -5, 0] }}
             transition={{
               duration: 4,
               repeat:
-                Infinity,
+                reduceMotion ? 0 : Infinity,
               ease:
                 'easeInOut',
             }}
@@ -8350,6 +8403,20 @@ export default function AdventureMapPage() {
               priority
               className="tk-julie-img"
             />
+            {mapJulieAnimation ? <video
+              key={mapJulieAnimation}
+              className="tk-julie-animation"
+              src={mapJulieAnimation}
+              autoPlay
+              loop
+              muted
+              playsInline
+              preload="auto"
+              aria-hidden="true"
+              onCanPlay={() => setJulieAnimationReady(true)}
+              onPlaying={() => setJulieAnimationReady(true)}
+              onError={() => setJulieAnimationReady(false)}
+            /> : null}
           </motion.div>
 
           <div className="tk-julie-bubble">
@@ -8540,6 +8607,97 @@ function AdventureStyles() {
         perspective: 1500px;
         background: #101915;
       }
+
+      .tk-map-artwork {
+        position: absolute;
+        inset: 0;
+        transform-style: preserve-3d;
+      }
+
+      /* map.png and its button layer share one uncropped 1672:941 canvas. */
+      .tk-map-artwork--class1 {
+        inset: auto;
+        top: 50%;
+        left: 50%;
+        right: auto;
+        bottom: auto;
+        width: max(100vw, 177.79dvh);
+        height: max(100dvh, 56.28vw);
+        aspect-ratio: 1672 / 941;
+        transform: translate(-50%, -50%);
+      }
+
+      .tk-world-bg--class1 {
+        transform: none;
+      }
+
+      .tk-world-bg--class1 .tk-world-bg-image {
+        object-fit: fill;
+      }
+
+      .tk-class1-map-notice {
+        position: absolute;
+        z-index: 6000;
+        top: 18px;
+        right: 18px;
+        width: min(370px, calc(100vw - 36px));
+        display: grid;
+        gap: 7px;
+        padding: 14px 16px;
+        border: 1px solid rgba(255,255,255,.24);
+        border-radius: 16px;
+        color: #17351f;
+        background: rgba(255,255,255,.94);
+        box-shadow: 0 12px 36px rgba(0,0,0,.24);
+        font-size: 13px;
+        line-height: 1.4;
+      }
+
+      .tk-class1-map-notice strong { font-size: 15px; }
+      .tk-class1-map-notice button {
+        justify-self: start;
+        margin-top: 2px;
+        padding: 7px 12px;
+        border: 0;
+        border-radius: 999px;
+        color: white;
+        background: #286a38;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .tk-level.is-class1 .tk-level-name {
+        position: absolute;
+        top: 48px;
+        left: 50%;
+        width: clamp(86px, 6.5vw, 112px);
+        min-width: 0;
+        max-width: 112px;
+        margin: 0;
+        padding: 8px 7px;
+        transform: translateX(-50%);
+      }
+
+      .tk-level.is-class1 .tk-level-name strong { font-size: 12px; }
+      .tk-level.is-class1 .tk-level-name small { font-size: 8px; }
+
+      .tk-level.is-class1 {
+        width: 150px;
+        height: 112px;
+        min-width: 0;
+        transform-origin: center top;
+      }
+
+      .tk-level.is-class1 .tk-level-orb {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        transform: translate(-50%, -50%);
+      }
+
+      .tk-level.is-class1 .tk-level-ground-shadow { display: none; }
+      .tk-level.is-class1 .tk-level-pulse { top: -46px; }
 
       /* =====================================================
          MINI HOVER DASHBOARD
@@ -9388,6 +9546,7 @@ function AdventureStyles() {
       }
 
       .tk-julie-character {
+        position: relative;
         width: clamp(145px, 11vw, 205px);
         height: clamp(235px, 31vh, 315px);
 
@@ -9406,7 +9565,25 @@ function AdventureStyles() {
         object-position: bottom center;
         filter: drop-shadow(0 16px 13px rgba(0,0,0,.40));
         transform-origin: bottom center;
+        transition: opacity .16s ease-out;
       }
+
+      .tk-julie-character.has-transparent-animation .tk-julie-img { opacity: 0; }
+
+      .tk-julie-animation {
+        position: absolute;
+        inset: 0;
+        z-index: 3;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        object-position: bottom center;
+        opacity: 0;
+        pointer-events: none;
+        filter: drop-shadow(0 16px 13px rgba(0,0,0,.40));
+      }
+
+      .tk-julie-character.has-transparent-animation .tk-julie-animation { opacity: 1; }
 
       .tk-julie-bubble {
         position: relative;

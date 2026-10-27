@@ -57,14 +57,15 @@ export default function StudentLessonPage() {
     avatarType={session.student.avatarType}
     studentName={student?.fullName?.trim() || 'Explorer'}
     completedActivityIds={lesson.completedActivityIds}
+    experienceId={lesson.experienceId}
     backgroundSrc={lesson.experienceId === 'g01-l01'
       ? '/lessons/class-01/level-01/two-letter-word-meadow.webp'
       : undefined}
     completionMessage={lesson.experienceId === 'g01-l01'
-      ? `You did it, ${student?.fullName?.trim() || 'Explorer'}! You practised little words and started learning about your first day at school. Your progress is saved.`
+      ? `You did it, ${student?.fullName?.trim() || 'Explorer'}! You practised am, an, at, in, is, it, on, and up, then began learning about your first day at school. Your progress is saved.`
       : undefined}
     homeworkMessage={lesson.experienceId === 'g01-l01'
-      ? 'Homework: say “I am Sam” and “I walk to school” with someone at home.'
+      ? 'Homework: say “It is up” and “I walk to school” with someone at home.'
       : undefined}
     introVideoKey={lesson.experienceId === 'g01-l01' && lesson.completedActivityIds.length === 0
       ? 'class1-g01-l01'

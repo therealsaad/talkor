@@ -10,7 +10,7 @@ export const LETTERS = [
 export type Letter = typeof LETTERS[number]['letter']
 export type ActivityId = `say-${Lowercase<Letter>}` | `find-${Lowercase<Letter>}`
 
-/** Authoritative KG script lines: prerecorded S3 mode or uncached Azure live synthesis. */
+/** Authoritative, server-controlled KG utterances. Dynamic lines never accept client text. */
 export const AUDIO_LINES = {
   'welcome': 'Hello, superstar! Welcome to our ABCD adventure!',
   'how-to-play': 'Listen to me, then say the word. I am listening!',
@@ -37,8 +37,8 @@ export const AUDIO_LINES = {
   'repeat': 'I did not hear clearly. Can you say it again?',
   'silence': 'I am still listening. Take your time, then say it for me!',
   'picture-support': 'Lovely work, beta ji! You found the picture! We will practice the English word together again soon!',
-  // Approved, reusable KG response scripts. Generate them with the pinned Priya
-  // preset and upload their immutable S3 clips before enabling the S3 pilot.
+  // Reviewed, server-owned coaching lines. They use live Python/Priya TTS and
+  // are not required to have an S3 object.
   'bridge-a': 'Achha, seb! Bilkul sahi, beta ji! English mein seb ko apple kehte hain. Mere saath bolo, apple!',
   'bridge-b': 'Achha, gend! Bilkul sahi, beta ji! English mein gend ko ball kehte hain. Mere saath bolo, ball!',
   'bridge-c': 'Achha, billi! Bilkul sahi, beta ji! English mein billi ko cat kehte hain. Mere saath bolo, cat!',
@@ -58,8 +58,23 @@ export type AudioId = keyof typeof AUDIO_LINES
 export const AUDIO_IDS = Object.keys(AUDIO_LINES) as AudioId[]
 export const audioKey = (id: AudioId) => `kg/level-1/miss-julie/${KG_AUDIO_VERSION}/${id}.mp3`
 
-/** Each activity points at the voice clips that teach or prompt it. Shared feedback and
- * navigation clips are tied to every relevant activity instead of copied into a second script. */
+export type KGAudioKind = 'curriculum_static' | 'dynamic_tts'
+
+/**
+ * Static lines are fixed teaching narration or approved pronunciation models.
+ * Feedback and transitions are contextual speech and use the existing live
+ * Priya service. In particular, bridge-c is selected after a child answers
+ * with the Hindi word "billi", so it is coaching feedback, not curriculum audio.
+ */
+const DYNAMIC_TTS_IDS = new Set<AudioId>([
+  'welcome', 'great', 'try-again', 'repeat', 'silence', 'picture-support',
+  'bridge-a', 'bridge-b', 'bridge-c', 'bridge-d',
+  'model-a', 'model-b', 'model-c', 'model-d',
+  'celebrate', 'level-complete', 'navigation-map', 'replay-intro', 'replay-level',
+])
+
+/** Each activity points at its teaching and feedback utterance IDs. Shared feedback and
+ * navigation lines are tied to every relevant activity instead of copied into another script. */
 export const ACTIVITY_AUDIO_IDS: Record<ActivityId, AudioId[]> = {
   'say-a': ['letter-a', 'word-apple', 'say-a'],
   'say-b': ['letter-b', 'word-ball', 'say-b'],
@@ -83,6 +98,7 @@ export const AUDIO_MANIFEST = AUDIO_IDS.map((id) => {
   return {
     id,
     text: AUDIO_LINES[id],
+    kind: DYNAMIC_TTS_IDS.has(id) ? 'dynamic_tts' as const : 'curriculum_static' as const,
     activityIds,
     scope: activityIds.length ? 'activity' as const : COMMON_NAVIGATION_IDS.includes(id) ? 'level' as const : 'feedback' as const,
     output: `${id}.mp3`,
@@ -91,14 +107,22 @@ export const AUDIO_MANIFEST = AUDIO_IDS.map((id) => {
   }
 })
 
+/** Only these fixed teaching clips are generated, uploaded, and verified in S3. */
+export const CURRICULUM_STATIC_AUDIO_MANIFEST = AUDIO_MANIFEST.filter((line) => line.kind === 'curriculum_static')
+
 export const ACTIVITY_AUDIO_MANIFEST = Object.fromEntries(
   Object.entries(ACTIVITY_AUDIO_IDS).map(([activityId, audioIds]) => [
     activityId,
     [...audioIds, ...SHARED_FEEDBACK_IDS, ...(
       activityId.startsWith('say-') ? [`bridge-${activityId.slice(-1)}`, `model-${activityId.slice(-1)}`] as AudioId[] : []
-    )].map((id) => ({ id, text: AUDIO_LINES[id], s3Key: audioKey(id) })),
+    )].map((id) => ({
+      id,
+      text: AUDIO_LINES[id],
+      kind: DYNAMIC_TTS_IDS.has(id) ? 'dynamic_tts' as const : 'curriculum_static' as const,
+      s3Key: audioKey(id),
+    })),
   ]),
-) as Record<ActivityId, Array<{ id: AudioId; text: string; s3Key: string }>>
+) as Record<ActivityId, Array<{ id: AudioId; text: string; kind: KGAudioKind; s3Key: string }>>
 
 /**
  * KG recognises the INTENDED word, not a phonetic examination.

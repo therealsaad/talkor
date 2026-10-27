@@ -84,3 +84,45 @@ it('saves the student recording and lets the student, assigned teacher, and scho
     .expect(200)
   expect(schoolAudio.body).toEqual(audio)
 })
+
+it('saves Class 1 first-day speaking homework for the active Class 1 learner and exposes it to their teacher', async () => {
+  const school = await School.create({ name: 'First Day School', code: 'DAY001', passwordHash: 'hash', status: 'active' })
+  const teacherId = new mongoose.Types.ObjectId()
+  const student = await Student.create({ schoolId: school._id, teacherId, fullName: 'Mina', rollNumber: '1', passwordHash: 'hash', grade: 1, avatarType: 'GIRL', status: 'active' })
+  const otherGrade = await Student.create({ schoolId: school._id, teacherId, fullName: 'Ravi', rollNumber: '2', passwordHash: 'hash', grade: 2, avatarType: 'BOY', status: 'active' })
+  const inactive = await Student.create({ schoolId: school._id, teacherId, fullName: 'Neha', rollNumber: '3', passwordHash: 'hash', grade: 1, avatarType: 'GIRL', status: 'inactive' })
+  const studentToken = signToken({ sub: student._id.toString(), role: 'STUDENT', schoolId: school._id.toString() })
+  const otherGradeToken = signToken({ sub: otherGrade._id.toString(), role: 'STUDENT', schoolId: school._id.toString() })
+  const inactiveToken = signToken({ sub: inactive._id.toString(), role: 'STUDENT', schoolId: school._id.toString() })
+  const teacherToken = signToken({ sub: teacherId.toString(), role: 'TEACHER', schoolId: school._id.toString() })
+  const audio = Buffer.from('I walk to school')
+
+  const saved = await request(app)
+    .put('/api/progress/home-practice/class1-first-day')
+    .set('Authorization', `Bearer ${studentToken}`)
+    .field('reflection', 'I said: I walk to school.')
+    .attach('audio', audio, { filename: 'first-day.webm', contentType: 'audio/webm' })
+    .expect(200)
+  expect(saved.body.data).toMatchObject({ unitKey: 'CLASS1_L01_FIRST_DAY', reflection: 'I said: I walk to school.', hasAudio: true })
+
+  const mine = await request(app).get('/api/progress/home-practice/class1-first-day').set('Authorization', `Bearer ${studentToken}`).expect(200)
+  expect(mine.body.data.reflection).toBe('I said: I walk to school.')
+  expect((await HomePractice.findOne({ studentId: student._id }).lean())?.unitKey).toBe('CLASS1_L01_FIRST_DAY')
+
+  const teacher = await request(app).get(`/api/students/${student._id}`).set('Authorization', `Bearer ${teacherToken}`).expect(200)
+  expect(teacher.body.data.homePractice).toMatchObject({ unitKey: 'CLASS1_L01_FIRST_DAY', hasAudio: true })
+  const teacherAudio = await request(app)
+    .get(`/api/students/${student._id}/home-practice/class1-first-day/audio`)
+    .set('Authorization', `Bearer ${teacherToken}`)
+    .buffer(true)
+    .parse((response, callback) => {
+      const chunks: Buffer[] = []
+      response.on('data', (chunk: Buffer) => chunks.push(Buffer.from(chunk)))
+      response.on('end', () => callback(null, Buffer.concat(chunks)))
+    })
+    .expect(200)
+  expect(teacherAudio.body).toEqual(audio)
+
+  await request(app).put('/api/progress/home-practice/class1-first-day').set('Authorization', `Bearer ${otherGradeToken}`).field('reflection', 'I walk.').attach('audio', audio, { filename: 'other.webm', contentType: 'audio/webm' }).expect(403)
+  await request(app).put('/api/progress/home-practice/class1-first-day').set('Authorization', `Bearer ${inactiveToken}`).field('reflection', 'I walk.').attach('audio', audio, { filename: 'inactive.webm', contentType: 'audio/webm' }).expect(401)
+})

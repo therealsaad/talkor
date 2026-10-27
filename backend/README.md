@@ -53,7 +53,6 @@ SARVAM_TIMEOUT_MS=15000
 SARVAM_STT_MODEL=saaras:v4
 SARVAM_STT_LANGUAGE=unknown
 SARVAM_STT_MODE=codemix
-KG_VOICE_PROVIDER=s3
 ```
 
 MongoDB Atlas is required (not a local standalone `mongod`) because `ProgressService` relies
@@ -239,7 +238,9 @@ checks the existing local AI service's OpenAPI request schema, sends only the pi
 voice (`talkora-priya-v6-indian-kids-teacher`, `en-IN`), validates/converts returned audio to
 small MP3 clips, and records activity links, version, duration, size, and SHA-256 in a local
 manifest. It never falls back to Azure or another voice. The old Python filename is retained as
-a compatibility launcher and uses this same TypeScript pipeline.
+a compatibility launcher and uses this same TypeScript pipeline. The manifest retains every audio
+ID and activity association, while generation, upload, and S3 verification include only the lines
+marked `curriculum_static`; `dynamic_tts` entries stay on the live Priya route.
 
 Run in Windows PowerShell:
 
@@ -271,25 +272,12 @@ public ACLs, or a second bucket configuration. Immutable objects use
 `kg/level-1/miss-julie/v1/<audio-id>.mp3`. Each uploaded object is checked for its size, MIME type,
 SHA-256 metadata, private cache policy, and AES256 server-side encryption.
 
-The manifest now includes reviewed Priya feedback clips for bilingual meaning
-(`bridge-a`–`bridge-d`) and retry models (`model-a`–`model-d`). They are chosen
-deterministically *after* Sarvam STT; they are NOT generated again on each
-attempt and are shared across students. Positive native-language recognition
-does not grant English speaking mastery. In `KG_VOICE_PROVIDER=s3` mode a
-missing recording returns a provider error; generate, review and upload the
-missing IDs before enabling the school pilot. Explicit `KG_VOICE_PROVIDER=azure`
-is an emergency live voice option and does not produce reusable approved clips.
-
+The manifest explicitly classifies fixed teaching narration and pronunciation as `curriculum_static`, and feedback/transition lines as `dynamic_tts`. The `bridge-a` through `bridge-d` bilingual coaching lines and `model-a` through `model-d` retry models are selected after server-side speech evaluation and use the existing live Python/Priya service. For example, `bridge-c` follows a child answering “billi” and coaches them to say “cat”; it does not require an S3 object. Static clips always resolve from S3. A missing static clip reports its exact key and is never silently replaced with generated teaching audio.
 For Classes 1–10, Azure `synthesize`/`synthesizeStream` replies are ephemeral:
 no `AudioCache` or S3 write for individualized coaching. Only the reviewed,
 versioned curriculum narration belongs in the private bucket.
 
-Student playback is `GET /api/kg-alphabet/audio/v1/<audio-id>` with the normal authenticated
-student bearer token. The backend checks that the student is authorized for the KG pilot, resolves
-the stable ID to the versioned S3 key, and streams actual `audio/mpeg` bytes with private,
-versioned cache headers and an ETag. The client fetches those bytes with its student token, keeps a
-bounded in-memory Blob URL cache, and prefetches the next clip; lesson playback does not call the
-old AI service or synthesize TTS.
+Student playback is `GET /api/kg-alphabet/audio/v1/<audio-id>` with the normal authenticated student bearer token. The backend checks KG pilot authorization and selects S3 or live Python/Priya from the audio manifest. Static MP3s receive private, versioned cache headers and an ETag; dynamic audio uses the provider MIME type and `private, no-store`. The client fetches those bytes with its student token and keeps a bounded in-memory Blob URL cache; live lines do not require S3 objects.
 
 Verify the backend playback contract with:
 

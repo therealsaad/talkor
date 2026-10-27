@@ -7,7 +7,7 @@ Levels 2–10 remain drafts until their activities, audio, tests and approval ex
 
 | Grade | Hearing a fixed curriculum line | Hearing a response to the student's speech | Listening to the student |
 | --- | --- | --- | --- |
-| KG (0) | Approved AI4Bharat **Priya v6** MP3 from private S3 | Deterministic, positive **Priya v6 S3 clip** chosen by server outcome and lesson target. No per-student S3 objects. | **Sarvam Saaras v4**, English/Hindi/Marathi, codemix |
+| KG (0) | Fixed narration and approved teaching pronunciation: **Priya v6** MP3 from private S3 | Greetings, encouragement, answer feedback, explanations and transitions: existing live **Priya** TTS service. No per-student S3 objects. | **Sarvam Saaras v4**, English/Hindi/Marathi, codemix |
 | Classes 1–10 | Human-reviewed, versioned private S3 narration when an approved `activity.content.audioKey` exists | **Azure** TTS for genuinely new replies; no persistent S3/Atlas cache for individualized coaching | **Sarvam Saaras v4**, same global STT provider |
 
 ## Kindergarten learning contract
@@ -15,9 +15,7 @@ Levels 2–10 remain drafts until their activities, audio, tests and approval ex
 1. Speak the fixed prompt: "A for apple! Can you say apple?"
 2. Capture short student speech. Only server-side Sarvam transcription can be
    used for grading, not a transcript asserted by the browser.
-3. If the child says *seb*, *सेब* or *सफरचंद*, record `supported`, speak the
-   approved `bridge-a` Priya clip, praise their understanding, model *apple*,
-   and invite another English attempt. **Do not advance speaking progress.**
+3. If the child says *seb*, record `supported`, send the reviewed `bridge-a` coaching line through live Priya TTS, praise their understanding, model *apple*, and invite another English attempt. **Do not advance speaking progress.**
 4. A clear English *apple* or an explicitly allowed preschool approximation
    records `correct` and progresses. Wrong or unclear speech selects a positive
    `model-a` or `silence` clip and retries without shame.
@@ -27,13 +25,7 @@ Levels 2–10 remain drafts until their activities, audio, tests and approval ex
 6. The intro/video ticket, student PIN, school/grade authorization,
    idempotency, replay and progress writes remain server-owned and intact.
 
-KG response clips are shared immutable recordings: no Qwen call per answer,
-no live Azure synthesis in the normal S3 mode, and no student-specific S3 key.
-Reused S3 audio is delivered by an authenticated backend route and a bounded
-worker cache. Staff must review the **pinned Priya voice** and upload all new
-manifest IDs before a rollout. `KG_VOICE_PROVIDER=azure` exists only as an
-explicit emergency alternative and **does not cache**.
-
+The KG audio manifest classifies each fixed ID as `curriculum_static` or `dynamic_tts`. Fixed narration/pronunciation uses private S3 with the existing bounded worker cache. Reviewed, server-owned feedback lines use the existing Python/Priya TTS endpoint; no arbitrary browser text is accepted and no individual voice objects are stored in S3. `bridge-c` is dynamic coaching selected after a child says “billi”; `word-cat` and `say-c` remain fixed S3 teaching clips.
 ## Class 1–10 rules
 
 - Keep content, level and activity IDs in the existing curriculum models.
@@ -57,7 +49,6 @@ SARVAM_API_KEY=<server-only-key>
 SARVAM_STT_MODEL=saaras:v4
 SARVAM_STT_LANGUAGE=unknown
 SARVAM_STT_MODE=codemix
-KG_VOICE_PROVIDER=s3
 VOICE_PROVIDER=azure
 CONVERSATION_VOICE_PROVIDER=azure
 ```
