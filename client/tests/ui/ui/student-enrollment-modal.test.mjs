@@ -36,7 +36,7 @@ test('KG enrollment explicitly offers the separate ABCD pilot with school-admin 
   assert.match(modal, /Enable ABCD Level 1 pilot for this KG student/)
   assert.match(modal, /grade === 0 && role === 'SCHOOL_ADMIN'/)
   assert.match(modal, /kgAlphabetPilotEnabled/)
-  assert.match(modal, /href="\/school\/kg-preview"/)
+  assert.match(modal, /href="\/school\/kg-preview\/level-1"/)
   assert.doesNotMatch(modal, /KG_PILOT_STUDENT_IDS|pilot student ids/i)
 })
 
