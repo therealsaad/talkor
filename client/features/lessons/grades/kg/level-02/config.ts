@@ -1,23 +1,24 @@
 import type { LevelDesignConfig } from '../../../types'
 
-/** Distinct, editable theme and pedagogy for g00-l02. Authoring is NOT publishing. */
+/** Staff-only E–J preview configuration. Authoring is NOT publishing. */
 export const config = {
   "id": "g00-l02",
   "grade": 0,
   "level": 2,
   "gradeLabel": "Kindergarten",
-  "title": "Colours and Shapes",
+  "title": "Letters E to J",
   "editorialStatus": "draft",
   "studentPlayable": false,
-  "description": "Colours and Shapes — a distinct treasure cove adventure for KG learners.",
+  "description": "A staff-only speaking preview for uppercase letters E, F, G, H, I, and J.",
   "syllabus": {
     "objectives": [
-      "Recognize, hear, and speak language connected to colours and shapes."
+      "Recognize the uppercase letters E, F, G, H, I, and J.",
+      "Listen to and say the names of letters E through J."
     ],
     "skills": [
       "listening",
       "speaking",
-      "picture-recognition"
+      "letter-recognition"
     ],
     "boardReviewRequired": true,
     "sourceBook": null,
@@ -25,10 +26,10 @@ export const config = {
     "syllabusVerified": false
   },
   "experience": {
-    "themeId": "kg-02-colours-and-shapes",
-    "world": "Treasure Cove",
-    "sceneDescription": "floating islands and treasure lanterns",
-    "layout": "split-story",
+    "themeId": "kg-02-letters-e-to-j",
+    "world": "Letter Garden",
+    "sceneDescription": "a calm garden with six letter cards",
+    "layout": "big-board",
     "palette": {
       "background": "#fcc6c2",
       "backgroundDeep": "#e6aa91",
@@ -38,9 +39,9 @@ export const config = {
       "ink": "#183246",
       "surface": "#ffffff"
     },
-    "motif": "compass",
-    "animationMood": "float",
-    "musicMood": "soft-piano",
+    "motif": "flower",
+    "animationMood": "sway",
+    "musicMood": "gentle-marimba",
     "useReducedMotionFallback": true,
     "minTouchTargetPx": 48
   },
@@ -48,8 +49,8 @@ export const config = {
     "voiceFirst": true,
     "invisibleAdaptive": true,
     "autoResume": true,
-    "introRequired": false,
-    "introMustComplete": false,
+    "introRequired": true,
+    "introMustComplete": true,
     "speechLanguage": "en-IN",
     "beginnerHindiSupport": true,
     "spontaneousFeedbackTTS": "azure-uncached",
