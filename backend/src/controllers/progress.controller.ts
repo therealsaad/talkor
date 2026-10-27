@@ -6,8 +6,19 @@ import { AdaptiveFeedbackService } from '../services/adaptive-feedback.service'
 import { ApiError } from '../utils/ApiError'
 import { Activity } from '../models/Activity'
 import { canCompleteLocalActivity } from '../services/localActivity'
-import { HomePractice } from '../models/HomePractice'
+import { HomePractice, homePracticeUnitKey } from '../models/HomePractice'
+import { Student } from '../models/Student'
 import type { VoiceUploadRequest } from '../middleware/voice-upload'
+
+async function resolveHomePracticeKey(studentId: string, rawUnit: unknown) {
+  const unitKey = homePracticeUnitKey(rawUnit)
+  if (!unitKey) throw ApiError.badRequest('Unknown home-practice assignment')
+  if (unitKey === 'CLASS1_L01_FIRST_DAY') {
+    const student = await Student.findById(studentId).select('grade status').lean()
+    if (student?.grade !== 1 || student.status !== 'active') throw ApiError.forbidden('This home-practice assignment is for active Class 1 students')
+  }
+  return unitKey
+}
 
 export const ProgressController = {
   recommendation: catchAsync(async (req: Request, res: Response) => {
@@ -17,12 +28,14 @@ export const ProgressController = {
   }),
   getHomePractice: catchAsync(async (req: Request, res: Response) => {
     if (!req.auth || req.auth.role !== 'STUDENT') throw ApiError.forbidden()
-    const submission = await HomePractice.findOne({ studentId: req.auth.id, unitKey: 'UNIT1_FAVOURITES' }).select('reflection submittedAt audioSizeBytes').lean()
-    ok(res, submission ? { reflection: submission.reflection, submittedAt: submission.submittedAt, hasAudio: Boolean(submission.audioSizeBytes) } : null)
+    const unitKey = await resolveHomePracticeKey(req.auth.id, req.params.unitKey)
+    const submission = await HomePractice.findOne({ studentId: req.auth.id, unitKey }).select('unitKey reflection submittedAt audioSizeBytes').lean()
+    ok(res, submission ? { unitKey: submission.unitKey, reflection: submission.reflection, submittedAt: submission.submittedAt, hasAudio: Boolean(submission.audioSizeBytes) } : null)
   }),
   getHomePracticeAudio: catchAsync(async (req: Request, res: Response) => {
     if (!req.auth || req.auth.role !== 'STUDENT') throw ApiError.forbidden()
-    const submission = await HomePractice.findOne({ studentId: req.auth.id, unitKey: 'UNIT1_FAVOURITES' }).select('audioData audioContentType')
+    const unitKey = await resolveHomePracticeKey(req.auth.id, req.params.unitKey)
+    const submission = await HomePractice.findOne({ studentId: req.auth.id, unitKey }).select('audioData audioContentType')
     if (!submission?.audioData) throw ApiError.notFound('Home practice recording not found')
     res.setHeader('Content-Type', submission.audioContentType || 'application/octet-stream')
     res.setHeader('Content-Length', submission.audioData.length)
@@ -32,6 +45,7 @@ export const ProgressController = {
   }),
   saveHomePractice: catchAsync(async (req: Request, res: Response) => {
     if (!req.auth || req.auth.role !== 'STUDENT') throw ApiError.forbidden()
+    const unitKey = await resolveHomePracticeKey(req.auth.id, req.params.unitKey)
     const upload = req as VoiceUploadRequest
     const file = upload.voiceFile
     let audioContentType: string | undefined
@@ -42,7 +56,7 @@ export const ProgressController = {
         throw ApiError.badRequest('Unsupported audio type')
       }
     }
-    const filter = { studentId: req.auth.id, unitKey: 'UNIT1_FAVOURITES' as const }
+    const filter = { studentId: req.auth.id, unitKey }
     if (!file) {
       const existing = await HomePractice.findOne(filter).select('audioSizeBytes').lean()
       if (!existing?.audioSizeBytes) throw ApiError.badRequest('An audio recording is required')
@@ -57,7 +71,7 @@ export const ProgressController = {
       { $set: fields },
       { upsert: true, new: true, runValidators: true },
     ).lean()
-    ok(res, { reflection: submission!.reflection, submittedAt: submission!.submittedAt, hasAudio: Boolean(submission!.audioSizeBytes) })
+    ok(res, { unitKey: submission!.unitKey, reflection: submission!.reflection, submittedAt: submission!.submittedAt, hasAudio: Boolean(submission!.audioSizeBytes) })
   }),
   completeLocalActivity: catchAsync(async (req: Request, res: Response) => {
     if (!req.auth || req.auth.role !== 'STUDENT') throw ApiError.forbidden()

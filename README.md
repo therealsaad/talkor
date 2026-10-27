@@ -190,7 +190,6 @@ AI_SERVICE_TIMEOUT_MS=90000
 AI_SERVICE_URL=http://127.0.0.1:8001
 VOICE_PROVIDER=azure
 CONVERSATION_VOICE_PROVIDER=azure
-KG_VOICE_PROVIDER=s3
 AZURE_SPEECH_KEY=<developer-key>
 AZURE_SPEECH_REGION=centralindia
 
@@ -331,8 +330,7 @@ The existing Node backend has `S3Service`, `AudioCacheService`, `kg-static-audio
 
 ### Three important cache mechanisms
 
-1. **Immutable KG lesson clips:** versioned S3 objects such as `kg/level-1/miss-julie/v1/say-a.mp3`; the KG backend reads them with `S3Service.getAudio()` and a small bounded in-process cache. KG audio route: `/api/kg-alphabet/audio/{version}/{id}` for an authorized student (the same route is also mounted under `/api/v1`).
-   KG feedback IDs (`bridge-a` through `bridge-d`, `model-a` through `model-d`, `great`, `silence`, etc.) use the same manifest and S3 route; no per-child clip generation or upload. If a clip is missing, S3 mode reports an error so it can be reviewed/published, rather than silently spending Azure credits every retry.
+1. **KG Level 1 audio:** fixed curriculum narration and approved pronunciation IDs use versioned private S3 objects such as `kg/level-1/miss-julie/v1/say-a.mp3`, read through `S3Service.getAudio()` and a bounded in-process cache. Feedback and transition IDs—including `bridge-a` through `bridge-d`, `model-a` through `model-d`, `great` and `silence`—use the existing live Python/Priya TTS service. The authenticated route is `/api/kg-alphabet/audio/{version}/{id}` (also mounted under `/api/v1`). Missing static clips report the exact S3 key; access and provider failures are distinct.
 2. **Legacy general TTS cache:** `AudioCacheService.cacheKey()` hashes normalized text + provider + voice + rate + pitch + format + version. Azure live teaching/feedback **bypasses this S3 cache** under the new policy.
 3. **Login prewarming:** the existing `SyllabusVoiceWarmupService` can send shared fixed lesson lines to `/v1/tts/prewarm`, while personalized guidance has a separate context. Only active/published lesson content is included by default. Do not confuse prewarming with creating final approved S3 files.
 
@@ -395,7 +393,7 @@ Local generation writes under `backend/tmp/kg-level1-audio/` by default. The S3 
 kg/level-1/miss-julie/v1/<clip-id>.mp3
 ```
 
-**The lesson itself should load the existing authenticated backend audio URL**, rather than synthesize the same line again. When `KG_VOICE_PROVIDER=s3`, the KG controller retrieves the approved clip; if unavailable, inspect the current controller's fallback/error behavior and report missing recordings instead of silently claiming successful caching.
+**The lesson itself should load the existing authenticated backend audio URL.** The KG manifest classifies each line: static curriculum clips resolve from S3, while feedback and transitions use live Priya TTS. Static S3 misses are never replaced with generated teaching audio.
 
 ### B. Class 1 Level 1 — nine-line AI4Bharat manifest (integration in progress)
 
@@ -404,13 +402,13 @@ The post-ZIP Class 1 patch introduced these files **if present in your checkout*
 - `backend/src/scripts/class1-level1-ai4bharat-lines.json`
 - `backend/src/scripts/upload-class1-level1-audio.ts`
 
-The currently supplied manifest defines **nine** reviewable lines for activities such as `listen-at`, `build-at`, `listen-in`, `build-in`, encouragement and homework. The planned private S3 key shape is:
+The current manifest defines **14** lines for the eight little words, school activities, encouragement and homework. Its wording is a new immutable **v2** revision. The private S3 key shape is:
 
 ```text
-class-01/level-01/v1/<clip-id>.wav
+class-01/level-01/v2/<clip-id>.wav
 ```
 
-**No generated WAV files were included in the patch.** The voice must be generated with the approved AI4Bharat runtime and reviewed. Once files have been placed locally as `<clip-id>.wav` in one folder:
+The manifest is marked `requires-human-voice-review`; do not upload generated speech until a teacher has heard and approved every WAV. Once approved files have been placed locally as `<clip-id>.wav` in one folder:
 
 ```powershell
 cd path\to\talkor\backend
@@ -422,7 +420,7 @@ pnpm exec tsx src/scripts/upload-class1-level1-audio.ts "D:\talkora-approved-aud
 pnpm exec tsx src/scripts/upload-class1-level1-audio.ts "D:\talkora-approved-audio\class1" --upload
 ```
 
-The uploader checks WAV signatures, calls `S3Service.headAudio()` and skips keys that already exist; uploads use a no-overwrite condition. **This uploader does not make Class 1 student playback work by itself.** The existing staff preview's optional `NEXT_PUBLIC_TALKORA_CLASS1_AUDIO_BASE_URL` requires an authorized audio distribution path; the real authenticated student route still needs end-to-end verification. Never put private S3 bucket URLs into a public client environment variable.
+The uploader checks WAV signatures, calls `S3Service.headAudio()` and skips keys that already exist; uploads use a no-overwrite condition. The authenticated student voice route reads each activity's `content.audioKey` through `S3Service` and uses the existing dynamic voice fallback when a reviewed clip is unavailable. The staff preview's optional `NEXT_PUBLIC_TALKORA_CLASS1_AUDIO_BASE_URL` needs an authorized browser distribution path. Never put private S3 bucket URLs or write credentials into a public client environment variable.
 
 ### C. How to add or change a voice line safely
 
@@ -453,21 +451,23 @@ The uploader checks WAV signatures, calls `S3Service.headAudio()` and skips keys
 ### Class 1 Level 1
 
 - Canonical ID: `g01-l01`
-- Student learning goal: **two-letter English words** (`am`, `an`, `at`, `in`, `is`, `it`, `on`, `up`), with phonics and speaking practice
-- Intended sequence: **listen → recognize → build → speak → short use-in-context → guided Qwen coaching → homework**
-- Static, reviewed narration: AI4Bharat → S3 (planned/partly wired)
-- Dynamic guidance: authenticated Node provider → FastAPI `8002` → Qwen (provider bridge verified in development)
+- Student learning goal: explicitly teach and practise **all eight** short words (`am`, `an`, `at`, `in`, `is`, `it`, `on`, `up`) through listening, building, sentence work and guided speaking
+- Login route: student PIN → next lesson; the first visit to `g01-l01` requires the supplied 90-second story video before activity one. There is no in-app skip or close control.
+- Class 1 map art: `client/public/lessons/class-01/level-01/map.png`; place levels 1–9 on its circular pads and level 10 at the school entrance. Keep button coordinates in the same uncropped 1672×941 artwork canvas and hide the student `YOU` picture on this grade's map.
+- Miss Julie movement: use the alpha-channel WebM files from `client/public/miss-julie-animations/transparent/` across student maps and lesson stages (`idle`, `listening`, `thinking`, `speaking`, `encouraging`, `pointing`, `celebrating`); keep still-image fallbacks and respect reduced-motion settings.
+- Static narration: reviewed AI4Bharat WAVs use immutable S3 keys under `class-01/level-01/v2/`; the activity audio route reuses them. The manifest still requires human voice review before upload.
+- Dynamic guidance: authenticated Node provider → Python FastAPI brain `8002` → Ollama `11434` (`qwen3:4b-instruct`). The separate internal AI/TTS service on `8001` exposes `/v1/tts`; do not confuse it with the Qwen brain.
 
-**Observed during development (Oct 22, 2026):** the Class 1 pilot seed created a **draft** `CurriculumClass`, `Level`, `Lesson`, and **seven** MongoDB activities; a second seed inserted **zero duplicates**. The Node Qwen bridge passed, with a roughly 3.5-second response. At that time, the Class 1 student-authenticated lesson, voice/audio and MongoDB progress still required end-to-end validation. **Do not claim a draft is published or that a successful provider test proves student playback.** Inspect the latest Codex branch for subsequent fixes.
+**Observed during development (Oct 27, 2026):** the local Node→Python→Qwen bridge returned a successful response. This verifies provider connectivity only; it does not prove student login, mic capture, static audio, MongoDB progress or lesson completion. The local story MP4 is 90 seconds. Keep the Class 1 curriculum unpublished until the full authenticated student flow and media have been reviewed.
 
 Normal student access requires publication/access checks. Development-only access flags (if your branch implements them):
 
 ```dotenv
 TALKORA_CLASS1_STUDENT_DEMO=true
-TALKORA_CLASS1_DEMO_STUDENT_ID=<approved-24-character-test-student-object-id>
+TALKORA_CLASS1_DEMO_ALL_STUDENTS=true
 ```
 
-Use only a test account in development, with server-side identity checks; disable the demo after review. **Never bypass school/grade ownership or enable global draft access.**
+The current user-approved setup opens this specific Level 1 draft to **active Class 1 students only, in development**. Production stays published-only; the server verifies the authenticated student's grade and active status. The draft refresh preserves prior activity IDs and attempts as optional legacy history, then uses fresh IDs for the revised required lesson. Disable the demo after review. Do not broaden access to other grades or drafts.
 
 ### Syllabus and content review
 

@@ -22,9 +22,10 @@ export interface Class1DemoStudentIdentity {
 }
 
 /**
- * Development-only draft access for one explicitly configured student.
+ * Development-only draft access for an explicitly configured student or,
+ * when the separate all-students flag is enabled, every active Class 1 student.
  * The authenticated Student document supplies this identity; browser input is
- * never used to select a grade, curriculum version, or allowlisted student.
+ * never used to select a grade or curriculum version.
  */
 export function isAuthorizedClass1DemoStudent(
   student: Class1DemoStudentIdentity,
@@ -32,10 +33,12 @@ export function isAuthorizedClass1DemoStudent(
     nodeEnv?: string
     enabled?: string
     studentId?: string
+    allStudents?: string
   } = {},
 ): boolean {
   const nodeEnv = options.nodeEnv ?? process.env.NODE_ENV
   const enabled = options.enabled ?? process.env.TALKORA_CLASS1_STUDENT_DEMO
+  const allStudents = options.allStudents ?? process.env.TALKORA_CLASS1_DEMO_ALL_STUDENTS
   const configuredId = (options.studentId ?? process.env.TALKORA_CLASS1_DEMO_STUDENT_ID ?? '').trim().toLowerCase()
   const studentId = student.id.trim().toLowerCase()
 
@@ -43,8 +46,7 @@ export function isAuthorizedClass1DemoStudent(
     enabled === 'true' &&
     student.grade === 1 &&
     student.status === 'active' &&
-    /^[a-f0-9]{24}$/.test(configuredId) &&
-    configuredId === studentId
+    (allStudents === 'true' || (/^[a-f0-9]{24}$/.test(configuredId) && configuredId === studentId))
 }
 
 export function isClass1DemoLevel(level: {
@@ -75,5 +77,5 @@ export function isClass1DemoActivity(activity: {
 }): boolean {
   return activity.status === 'draft' &&
     activity.curriculumVersion === CLASS1_DEMO_VERSION &&
-    activity.activityKey?.startsWith(CLASS1_DEMO_ACTIVITY_PREFIX) === true
+    activity.activityKey?.startsWith(`${CLASS1_DEMO_ACTIVITY_PREFIX}v2-`) === true
 }

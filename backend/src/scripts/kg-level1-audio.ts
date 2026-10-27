@@ -4,7 +4,7 @@ import { execFile as execFileCallback } from 'node:child_process'
 import { access, mkdir, readFile, rename, rm, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { promisify } from 'node:util'
-import { AUDIO_MANIFEST, KG_AUDIO_VERSION } from '../kg/alphabet-content'
+import { CURRICULUM_STATIC_AUDIO_MANIFEST, KG_AUDIO_VERSION } from '../kg/alphabet-content'
 import { S3Service } from '../services/S3Service'
 
 const execFile = promisify(execFileCallback)
@@ -22,7 +22,7 @@ const SAMPLE_ID = 'say-a'
 const MAX_AUDIO_BYTES = 12 * 1024 * 1024
 const MAX_CLIP_SECONDS = 18
 
-type ManifestLine = (typeof AUDIO_MANIFEST)[number]
+type ManifestLine = (typeof CURRICULUM_STATIC_AUDIO_MANIFEST)[number]
 type StoredClip = ManifestLine & {
   voicePreset: string
   voiceId: string
@@ -93,12 +93,12 @@ function printHelp() {
     'KG Level 1 Miss Julie voice pipeline',
     '',
     '  npm run kg:audio -- --sample              Generate only the A/apple approval sample.',
-    '  npm run kg:audio -- --all                 Generate the complete local voice library.',
+    '  npm run kg:audio -- --all                 Generate all static curriculum narration/pronunciation clips.',
     '  npm run kg:audio -- --all --resume        Continue; skip clips whose manifest and checksum match.',
     '  npm run kg:audio -- --all --dry-run       List clips without TTS calls or file writes.',
-    '  npm run kg:audio -- --upload               Upload the completed library; existing mismatched keys are never overwritten.',
+    '  npm run kg:audio -- --upload               Upload static curriculum clips; existing mismatched keys are never overwritten.',
     '  npm run kg:audio -- --upload --dry-run     Validate files and list S3 keys without AWS writes.',
-    '  npm run kg:audio -- --verify                Check every versioned S3 clip and its checksum metadata.',
+    '  npm run kg:audio -- --verify                Check every static S3 clip and its checksum metadata.',
     '',
     'Sample files: tmp/kg-level1-audio/sample/',
     'Full library: tmp/kg-level1-audio/v1/',
@@ -241,7 +241,7 @@ async function readManifest(folder: string): Promise<LocalManifest> {
 }
 
 async function generate(mode: 'sample' | 'all', resume: boolean, dryRun: boolean) {
-  const lines = mode === 'sample' ? AUDIO_MANIFEST.filter((line) => line.id === SAMPLE_ID) : AUDIO_MANIFEST
+  const lines = mode === 'sample' ? CURRICULUM_STATIC_AUDIO_MANIFEST.filter((line) => line.id === SAMPLE_ID) : CURRICULUM_STATIC_AUDIO_MANIFEST
   if (!lines.length) throw new Error(`The curriculum voice manifest is missing sample clip ${SAMPLE_ID}.`)
   const folder = path.join(DEFAULT_OUTPUT_ROOT, mode === 'sample' ? 'sample' : KG_AUDIO_VERSION)
   console.log(`${dryRun ? 'DRY RUN · ' : ''}Mode: ${mode}; clips: ${lines.length}; voice: ${VOICE_PRESET.voiceId}`)
@@ -342,8 +342,10 @@ async function generate(mode: 'sample' | 'all', resume: boolean, dryRun: boolean
   }
 
   const finalManifest = await readManifest(folder)
-  if (mode === 'all' && finalManifest.clips.length !== AUDIO_MANIFEST.length) {
-    throw new Error(`Manifest has ${finalManifest.clips.length}/${AUDIO_MANIFEST.length} clips. Resume the generation to finish missing lines.`)
+  const generatedIds = new Set(finalManifest.clips.map((clip) => clip.id))
+  const missingStatic = CURRICULUM_STATIC_AUDIO_MANIFEST.filter((line) => !generatedIds.has(line.id))
+  if (mode === 'all' && missingStatic.length) {
+    throw new Error(`Manifest is missing ${missingStatic.length}/${CURRICULUM_STATIC_AUDIO_MANIFEST.length} static curriculum clips. Resume the generation to finish missing lines.`)
   }
   console.log(`Saved local manifest: ${path.join(folder, 'manifest.json')}`)
   console.log(`Saved MP3 directory: ${folder}`)
@@ -352,10 +354,10 @@ async function generate(mode: 'sample' | 'all', resume: boolean, dryRun: boolean
 async function loadUploadSet(folder: string): Promise<StoredClip[]> {
   const local = await readManifest(folder)
   const byId = new Map(local.clips.map((clip) => [clip.id, clip]))
-  if (byId.size !== AUDIO_MANIFEST.length || AUDIO_MANIFEST.some((line) => !byId.has(line.id))) {
-    throw new Error(`Upload requires the complete ${AUDIO_MANIFEST.length}-clip v1 manifest. Generate --all after approving the sample.`)
+  if (CURRICULUM_STATIC_AUDIO_MANIFEST.some((line) => !byId.has(line.id))) {
+    throw new Error(`Upload requires all ${CURRICULUM_STATIC_AUDIO_MANIFEST.length} static curriculum clips. Generate --all after approving the sample.`)
   }
-  for (const line of AUDIO_MANIFEST) {
+  for (const line of CURRICULUM_STATIC_AUDIO_MANIFEST) {
     const clip = byId.get(line.id)!
     if (clip.text !== line.text || clip.s3Key !== line.s3Key || clip.activityIds.join('|') !== line.activityIds.join('|') || clip.voiceVersion !== VOICE_PRESET.version) {
       throw new Error(`Local clip ${line.id} does not match current curriculum/version; refusing upload.`)
@@ -363,7 +365,7 @@ async function loadUploadSet(folder: string): Promise<StoredClip[]> {
     const bytes = await readFile(path.join(folder, `${line.id}.mp3`))
     if (sha256(bytes) !== clip.sha256 || bytes.length !== clip.bytes) throw new Error(`Checksum/size mismatch: ${line.id}.mp3`)
   }
-  return AUDIO_MANIFEST.map((line) => byId.get(line.id)!)
+  return CURRICULUM_STATIC_AUDIO_MANIFEST.map((line) => byId.get(line.id)!)
 }
 
 function assertRemoteMatch(remote: Awaited<ReturnType<typeof S3Service.headAudio>>, clip: StoredClip) {
@@ -417,12 +419,12 @@ async function uploadAll(dryRun: boolean) {
 }
 
 async function verifyAll(dryRun: boolean) {
-  console.log(`${dryRun ? 'DRY RUN · ' : ''}S3 verification targets: ${AUDIO_MANIFEST.length}`)
-  for (const line of AUDIO_MANIFEST) console.log(`  ${line.id} · ${line.s3Key}`)
+  console.log(`${dryRun ? 'DRY RUN · ' : ''}Static S3 verification targets: ${CURRICULUM_STATIC_AUDIO_MANIFEST.length}`)
+  for (const line of CURRICULUM_STATIC_AUDIO_MANIFEST) console.log(`  ${line.id} · ${line.s3Key}`)
   if (dryRun) return
   const missing: string[] = []
   const mismatched: string[] = []
-  for (const line of AUDIO_MANIFEST) {
+  for (const line of CURRICULUM_STATIC_AUDIO_MANIFEST) {
     const remote = await S3Service.headAudio(line.s3Key)
     if (!remote) { missing.push(line.id); continue }
     if (remote.contentLength === null || remote.contentLength < 512 || remote.contentType !== 'audio/mpeg' ||
@@ -432,7 +434,7 @@ async function verifyAll(dryRun: boolean) {
     }
     console.log(`OK ${line.id} · ${remote.contentLength} bytes · AES256 · private cache`)
   }
-  console.log(JSON.stringify({ checked: AUDIO_MANIFEST.length, verified: AUDIO_MANIFEST.length - missing.length - mismatched.length, missing, mismatched }, null, 2))
+  console.log(JSON.stringify({ checked: CURRICULUM_STATIC_AUDIO_MANIFEST.length, verified: CURRICULUM_STATIC_AUDIO_MANIFEST.length - missing.length - mismatched.length, missing, mismatched }, null, 2))
   if (missing.length || mismatched.length) throw new Error('S3 audio verification found missing or mismatched clips.')
 }
 

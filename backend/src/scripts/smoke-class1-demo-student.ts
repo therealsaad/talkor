@@ -18,7 +18,7 @@ async function main() {
     const next = await StudentLessonFastService.next(studentId)
     if (!next.lessonId) throw new Error('No resumable Class 1 lesson was returned.')
     const lesson = await StudentLessonFastService.lesson(studentId, next.lessonId)
-    const guided = lesson.activities.find((activity) => activity.activityKey === 'class1-l01-repeat-at')
+    const guided = lesson.activities.find((activity) => activity.activityKey === 'class1-l01-v2-review-little-words')
     if (!guided || guided.type !== 'CONVERSATION' || guided.metadata?.conversationMode !== 'OPEN') {
       throw new Error('The guided Qwen activity is not correctly configured.')
     }

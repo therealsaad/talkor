@@ -159,6 +159,7 @@ export const StudentCurriculumService = {
             },
 
             ...(isClass1Demo ? CLASS1_DEMO_ACTIVITY_FILTER : { status: contentStatus }),
+            ...(isClass1Demo ? { core: { $ne: false }, required: { $ne: false } } : {}),
           })
             /*
              * Student curriculum must never expose answer keys.
@@ -711,6 +712,7 @@ export const StudentCurriculumService = {
             },
 
             ...(access.isClass1Demo ? CLASS1_DEMO_ACTIVITY_FILTER : { status: contentStatus }),
+            ...(access.isClass1Demo ? { core: { $ne: false }, required: { $ne: false } } : {}),
           })
             .select(
               '-answer -answerConfig',
