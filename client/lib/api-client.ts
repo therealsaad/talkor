@@ -142,7 +142,7 @@ export async function apiClientBlob(endpoint: string, options: RequestInit = {})
     handleUnauthorizedResponse(response.status)
     const type = response.headers.get('content-type') || ''
     const error = type.includes('application/json') ? await response.json().catch(() => null) : null
-    throw new ApiError(error?.error?.message || `File request failed (${response.status})`, error?.error?.code || 'FILE_REQUEST_FAILED', response.status)
+    throw new ApiError(error?.error?.message || `File request failed (${response.status})`, error?.error?.code || 'FILE_REQUEST_FAILED', response.status, error?.error?.details)
   }
   return response.blob()
 }

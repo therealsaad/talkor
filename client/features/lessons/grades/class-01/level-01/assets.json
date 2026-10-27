@@ -1,28 +1,36 @@
 {
   "levelId": "g01-l01",
-  "status": "backdrop-ready-video-and-audio-review-pending",
+  "status": "local-story-and-map-present-audio-review-pending",
   "assetsRoot": "/lessons/class-01/level-01/",
-  "introVideo": null,
-  "plannedIntro": {
+  "introVideo": {
+    "id": "miss-julie-first-day-intro",
+    "path": "/lessons/class-01/level-01/miss-julie-first-day-intro.mp4",
     "durationSeconds": 90,
-    "provider": "approved Miss Julie / Priya narration",
-    "delivery": "private S3 via approved media CDN",
-    "status": "AWAITING_RENDER_AND_REVIEW"
+    "status": "present-locally-review-required"
   },
   "images": [
-    {
-      "id": "two-letter-word-meadow",
-      "path": "/lessons/class-01/level-01/two-letter-word-meadow.webp",
-      "usage": "student lesson backdrop"
-    }
+    { "id": "class1-levels-map", "path": "/lessons/class-01/level-01/map.png", "usage": "Class 1 levels map" },
+    { "id": "two-letter-word-meadow", "path": "/lessons/class-01/level-01/two-letter-word-meadow.webp", "usage": "student lesson backdrop" }
   ],
-  "animations": [],
-  "audio": [],
+  "animations": [
+    { "id": "idle", "path": "/miss-julie-animations/transparent/idle.webm", "alpha": true },
+    { "id": "listening", "path": "/miss-julie-animations/transparent/listening.webm", "alpha": true },
+    { "id": "thinking", "path": "/miss-julie-animations/transparent/thinking.webm", "alpha": true },
+    { "id": "speaking", "path": "/miss-julie-animations/transparent/speaking.webm", "alpha": true },
+    { "id": "encouraging", "path": "/miss-julie-animations/transparent/encouraging.webm", "alpha": true },
+    { "id": "pointing", "path": "/miss-julie-animations/transparent/pointing.webm", "alpha": true },
+    { "id": "celebrating", "path": "/miss-julie-animations/transparent/celebrating.webm", "alpha": true }
+  ],
+  "audio": {
+    "manifest": "backend/src/scripts/class1-level1-ai4bharat-lines.json",
+    "revision": "v2",
+    "storage": "S3",
+    "status": "requires-human-voice-review"
+  },
   "music": null,
   "recommended": {
-    "julieAnimations": "/miss-julie-animations",
-    "dynamicFeedback": "azure-uncached",
-    "preauthoredTTS": "S3 CDN"
+    "dynamicFeedback": "Qwen coaching with dynamic uncached voice",
+    "preauthoredTTS": "reviewed AI4Bharat S3 clips; reuse by immutable key"
   },
-  "note": "Do not add placeholder media URLs. The student intro fails closed until the reviewed 90-second video is supplied through the configured S3-backed media URL."
+  "note": "The local first-visit video is required and has no in-app skip/close control. Static narration remains on dynamic fallback until v2 clips are reviewed and uploaded."
 }
