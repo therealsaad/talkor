@@ -240,19 +240,17 @@ export function ImmersiveLessonStage({
     juliePortraitByPose[pose] ||
     talkoraAssets.julie.welcome
 
-  const julieAnimationName = pose === 'celebrating' || pose === 'celebrate' || pose === 'correct' || pose === 'proud'
+  const julieAnimationName = pose === 'celebrating'
     ? 'celebrating'
-    : pose === 'try_again' || pose === 'retry' || pose === 'encouraging'
+    : pose === 'try_again'
       ? 'encouraging'
-      : pose === 'listening' || pose === 'curious'
+      : pose === 'listening'
         ? 'listening'
         : pose === 'thinking'
           ? 'thinking'
           : pose === 'speaking'
             ? 'speaking'
-            : pose === 'pointing'
-              ? 'pointing'
-              : 'idle'
+            : 'idle'
   const julieAnimation = !reduceMotion
     ? `/miss-julie-animations/transparent/${julieAnimationName}.webm`
     : null
