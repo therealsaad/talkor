@@ -1,14 +1,11 @@
 'use client'
 
-import { lazy, Suspense, useState } from 'react'
+import { useState } from 'react'
 import Link from 'next/link'
 import { ArrowLeft } from 'lucide-react'
 import { SchoolShell } from '@/components/school/school-shell'
-
-const KGAlphabetMap = lazy(() => import('@/features/lessons/grades/kg/level-01/components/LevelMap')
-  .then(({ KGAlphabetMap: Component }) => ({ default: Component })))
-const KGLevel1Experience = lazy(() => import('@/features/lessons/grades/kg/level-01/LevelExperience')
-  .then(({ KGAlphabetLesson }) => ({ default: KGAlphabetLesson })))
+import { KGAlphabetMap } from '@/features/lessons/grades/kg/level-01/components/LevelMap'
+import KGLevel1Experience from '@/features/lessons/grades/kg/level-01/LevelExperience'
 
 export default function KGLevel1SchoolPreview() {
   const [step, setStep] = useState<number | null>(null)
@@ -18,15 +15,9 @@ export default function KGLevel1SchoolPreview() {
       <Link href="/school/kg-preview" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, margin: '14px 0', color: '#4b5563', fontWeight: 750, textDecoration: 'none' }}>
         <ArrowLeft size={17} /> Level 3 preview
       </Link>
-      {step === null ? (
-        <Suspense fallback={<p role="status">Opening Level 1 preview…</p>}>
-          <KGAlphabetMap preview onPreviewPlay={setStep} />
-        </Suspense>
-      ) : (
-        <Suspense fallback={<p role="status">Opening Level 1 preview…</p>}>
-          <KGLevel1Experience key={step} preview previewStartIndex={step} onPreviewBack={() => setStep(null)} />
-        </Suspense>
-      )}
+      {step === null
+        ? <KGAlphabetMap preview onPreviewPlay={setStep} />
+        : <KGLevel1Experience key={step} preview previewStartIndex={step} onPreviewBack={() => setStep(null)} />}
     </SchoolShell>
   )
 }
