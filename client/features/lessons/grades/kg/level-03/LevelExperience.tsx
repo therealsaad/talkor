@@ -29,6 +29,7 @@ export default function LevelExperience({ preview = false, previewStartLetter = 
   const [julieState, setJulieState] = useState<'idle' | 'speaking'>('idle')
   const [phase, setPhase] = useState<'narrating' | 'requesting' | 'listening' | 'checking' | 'feedback' | 'error' | 'finished'>('narrating')
   const [feedback, setFeedback] = useState('')
+  const [feedbackOutcome, setFeedbackOutcome] = useState<'correct' | 'incorrect' | 'unclear' | ''>('')
   const [retryAvailable, setRetryAvailable] = useState(false)
   const [attemptCycle, setAttemptCycle] = useState(0)
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -138,6 +139,7 @@ export default function LevelExperience({ preview = false, previewStartLetter = 
         }).then(async (result) => {
           if (!active || controller.signal.aborted) return
           const transition = resolveLevel3Attempt(selected, result.outcome)
+          setFeedbackOutcome(result.outcome)
           setFeedback(transition.retry
             ? result.outcome === 'unclear'
               ? 'I could not hear the letter clearly. Let’s try again!'
@@ -198,6 +200,7 @@ export default function LevelExperience({ preview = false, previewStartLetter = 
 
     const startTurn = async () => {
       setFeedback('')
+      setFeedbackOutcome('')
       setRetryAvailable(false)
       setJulieState('speaking')
       setPhase('narrating')
@@ -234,6 +237,7 @@ export default function LevelExperience({ preview = false, previewStartLetter = 
 
   const retryTurn = () => {
     setFeedback('')
+    setFeedbackOutcome('')
     setRetryAvailable(false)
     setAttemptCycle((cycle) => cycle + 1)
   }
@@ -242,8 +246,33 @@ export default function LevelExperience({ preview = false, previewStartLetter = 
     return <main className="kg-alpha kg-level3-blocked"><strong>Staff-only draft preview.</strong><span>This Level 3 lesson is not available to students.</span></main>
   }
 
+  const characterState = phase === 'listening'
+    ? 'listening'
+    : phase === 'checking'
+      ? 'thinking'
+      : phase === 'finished'
+        ? 'celebrating'
+        : phase === 'error'
+          ? 'encouraging'
+          : phase === 'feedback'
+            ? feedbackOutcome === 'correct' ? 'celebrating' : 'encouraging'
+            : julieState
+
   return (
-    <main className="kg-alpha kg-alpha-play kg-level3-play" aria-label="Staff preview of Level 3 letters K to P">
+    <main
+      className="kg-alpha kg-alpha-play kg-level3-play"
+      data-phase={phase}
+      data-outcome={feedbackOutcome}
+      aria-label="Staff preview of Level 3 letters K to P"
+    >
+      <div className="kg-level3-sky" aria-hidden="true">
+        <span className="kg-level3-sky__cloud kg-level3-sky__cloud--one" />
+        <span className="kg-level3-sky__cloud kg-level3-sky__cloud--two" />
+        <span className="kg-level3-sky__star kg-level3-sky__star--one" />
+        <span className="kg-level3-sky__star kg-level3-sky__star--two" />
+        <span className="kg-level3-sky__bubble kg-level3-sky__bubble--one" />
+        <span className="kg-level3-sky__bubble kg-level3-sky__bubble--two" />
+      </div>
       <header className="kg-alpha-play-top">
         {onPreviewBack ? <button type="button" className="kg-alpha-map-link" onClick={onPreviewBack}><ArrowLeft size={18} /> Choose a letter</button> : <span />}
         <div className="kg-alpha-progress-wrap" aria-label={`Letter ${selectedIndex + 1} of ${LETTERS.length}`}>
@@ -256,7 +285,7 @@ export default function LevelExperience({ preview = false, previewStartLetter = 
       <div className="kg-alpha-scene">
         <aside className={`kg-alpha-teacher ${julieState === 'speaking' ? 'is-speaking' : ''}`}>
           <div className="kg-alpha-teacher-glow" aria-hidden="true" />
-          <AnimatedMissJulie state={julieState} reducedMotion={Boolean(reduceMotion)} />
+          <AnimatedMissJulie state={characterState} reducedMotion={Boolean(reduceMotion)} />
           <div className="kg-alpha-speech" role={phase === 'error' ? 'alert' : 'status'} aria-live="polite">
             {phase === 'finished' ? 'Wonderful! You explored letters K through P.' :
               phase === 'feedback' ? feedback :
@@ -274,8 +303,8 @@ export default function LevelExperience({ preview = false, previewStartLetter = 
               className="kg-alpha-learning kg-level3-learning"
               initial={reduceMotion ? false : { opacity: 0, y: 18, scale: 0.97 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={reduceMotion ? undefined : { opacity: 0, y: -10 }}
-              transition={{ duration: 0.32 }}
+              exit={reduceMotion ? undefined : { opacity: 0, y: -8 }}
+              transition={{ duration: 0.46, ease: [0.22, 1, 0.36, 1] }}
             >
               <span className="kg-alpha-activity-label"><Sparkles size={17} /> EXPLORE THE LETTERS</span>
               <div className="kg-level3-letter-display">
