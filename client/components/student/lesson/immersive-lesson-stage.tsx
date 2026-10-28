@@ -199,6 +199,7 @@ export function ImmersiveLessonStage({
     ['OPEN_CONVERSATION', 'FOLLOW_UP_CONVERSATION', 'FINAL_CONVERSATION', 'CONVERSATION'].includes(type) ||
     ['INTERACT', 'FOLLOW_UP', 'REASONS', 'RESPECT_DIFFERENCES', 'FINAL_TALK'].includes(stage)
   const isClass1AIConversation = experienceId === 'g01-l01' && isConversation && activity.aiEnabled
+  const isClass1Classroom = experienceId === 'g01-l01'
   const class1CoachStatus = isRecording ? 'Listening to your answer'
     : isProcessing ? 'Thinking about your answer'
       : isJulieSpeaking ? 'Miss Julie is speaking'
@@ -445,6 +446,16 @@ export function ImmersiveLessonStage({
         </motion.aside>
 
         <div className="tk-learning-stack">
+          {isClass1Classroom ? (
+            <div className="tk-class1-classroom-banner" aria-label="Miss Julie interactive classroom">
+              <div className="tk-class1-school-mark"><School size={23} aria-hidden="true" /></div>
+              <div>
+                <small>ENGLISH BALBHARATI · CLASS 1</small>
+                <strong>Miss Julie&apos;s Learning Studio</strong>
+              </div>
+              <span className="tk-class1-three-steps"><Headphones size={15} /> Listen <Mic size={15} /> Speak <Sparkles size={15} /> Learn</span>
+            </div>
+          ) : null}
           <motion.section
             className="tk-julie-bubble"
             key={visibleJulieMessage}
@@ -526,6 +537,14 @@ export function ImmersiveLessonStage({
                 <small>{coachCue.tip}</small>
               </div>
             </div>
+
+            {isClass1Classroom && !isQuiz ? (
+              <div className="tk-class1-board-prompt" aria-label="Live English practice board">
+                <span>{isClass1AIConversation ? 'LET’S TALK TOGETHER' : 'TODAY’S ENGLISH PRACTICE'}</span>
+                <strong>{activeTaskPrompt}</strong>
+                {modelSentence && isRetry ? <em>Try saying: {modelSentence}</em> : null}
+              </div>
+            ) : null}
 
             {skippedPictureActivityCount > 0 ? <p className="tk-kg-skipped-note" role="status">{skippedPictureActivityCount} picture {skippedPictureActivityCount === 1 ? 'activity is' : 'activities are'} skipped until the illustrations are ready. They do not count as completed.</p> : null}
 
@@ -728,6 +747,17 @@ export function ImmersiveLessonStage({
               </div>
             ) : null}
 
+            {isClass1Classroom ? (
+              <div className={`tk-class1-student-voice${isRecording ? ' is-listening' : ''}${isProcessing ? ' is-thinking' : ''}`} role="status" aria-live="polite">
+                <span className="tk-class1-voice-icon"><Mic size={21} aria-hidden="true" /></span>
+                <div>
+                  <small>{isRecording ? 'YOUR MICROPHONE IS LISTENING' : isProcessing ? 'MISS JULIE IS THINKING' : 'YOUR TURN · SPEAK TO MISS JULIE'}</small>
+                  <strong>{studentTurnText || transcript || (isRecording ? 'Say your answer in your own words…' : 'You can ask for help in Hindi or Marathi.')}</strong>
+                </div>
+                <span className="tk-class1-voice-pulse" aria-hidden="true" />
+              </div>
+            ) : null}
+
             <AnimatePresence>
               {statusText ? (
                 <motion.div className="tk-status" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
@@ -762,7 +792,7 @@ export function ImmersiveLessonStage({
           </section>
         </div>
 
-        <motion.aside
+        {!isClass1Classroom ? <motion.aside
           className="tk-student"
           initial={{ opacity: 0, x: 46, y: 10 }}
           animate={{ opacity: 1, x: 0, y: 0 }}
@@ -785,7 +815,7 @@ export function ImmersiveLessonStage({
               </motion.div>
             ) : null}
           </AnimatePresence>
-        </motion.aside>
+        </motion.aside> : null}
       </section>
 
       <Styles />

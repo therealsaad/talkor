@@ -3,6 +3,7 @@ import { aiStructuredResponseSchema } from '../../schemas/ai.schema'
 import { AIStructuredResponse } from '../../types'
 import { AIProvider, MissJulieContext, unitTeachingGuidance } from './AIProvider'
 import { GroqProvider } from './GroqProvider'
+import { class1ExplanationLanguage } from './class1-language'
 import { ApiError } from '../../utils/ApiError'
 
 export class PythonAIProvider implements AIProvider {
@@ -71,7 +72,7 @@ export class PythonAIProvider implements AIProvider {
             waitingForRetry: Boolean(context.waitingForRetry),
             retryTargetSkill: context.retryTargetSkill || '',
             recentJulieOpeners: context.recentJulieOpeners || [],
-            preferredExplanationLanguage: 'English',
+            preferredExplanationLanguage: isClass1Pilot && pilotEnabled ? class1ExplanationLanguage(context) : 'English',
             studentMessage: context.studentMessage,
           }),
         },

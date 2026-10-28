@@ -1,23 +1,9 @@
 import type { LevelActivity, SuggestedActivity } from '../../../types'
+import { class1DraftActivities, class1DraftSuggestions } from '../balbharati-curriculum'
 
-/** Add reviewed, working exercises. Empty means NOT student-playable. */
-export const activities: LevelActivity[] = []
+/** Original lesson drafts anchored to individual English Balbharati chapters.
+ *  Deliberately not published: a qualified educator must sign off every prompt,
+ *  bilingual scaffold, asset and evidence rubric before student deployment. */
+export const activities: LevelActivity[] = class1DraftActivities(3)
 
-/** Editorial ideas only; not exposed to students or grading. */
-export const suggestedActivities: SuggestedActivity[] = [
-  {
-    "label": "Listen and explore: People and Family",
-    "mode": "picture-choice",
-    "educatorNote": "Teacher defines visual scene and sound cues here."
-  },
-  {
-    "label": "Speak about People and Family",
-    "mode": "guided-dialogue",
-    "educatorNote": "Teacher supplies sample answer, corrective hints and language support."
-  },
-  {
-    "label": "Show what you know about People and Family",
-    "mode": "word-builder",
-    "educatorNote": "Teacher sets scoring rubric, touch choices and mastery threshold."
-  }
-]
+export const suggestedActivities: SuggestedActivity[] = class1DraftSuggestions(3)
