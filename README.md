@@ -21,7 +21,6 @@
 
 ---
 
-## 1. Quick start: run the app
 
 The primary GitHub repository contains **two independently installed applications**:
 
