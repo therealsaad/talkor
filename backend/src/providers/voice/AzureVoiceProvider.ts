@@ -1,4 +1,5 @@
 import { ApiError } from '../../utils/ApiError'
+import { chooseTalkoraBilingualVoice } from './class1-voice-language'
 import { logger } from '../../utils/logger'
 import type { VoiceProvider, VoiceStreamResult, VoiceSynthesisResult } from './VoiceProvider'
 
@@ -39,11 +40,12 @@ export class AzureVoiceProvider implements VoiceProvider {
   private async generate(text: string, kindergarten = false): Promise<Buffer> {
     const s = this.settings()
     if (!s.key) throw ApiError.provider('Azure Speech is not configured')
+    const selected = chooseTalkoraBilingualVoice(text, s.voice)
 
     const url = `https://${s.region}.tts.speech.microsoft.com/cognitiveservices/v1`
     const rate = kindergarten ? (process.env.KG_AZURE_SPEECH_RATE?.trim() || "+5%") : s.rate
     const pitch = kindergarten ? (process.env.KG_AZURE_SPEECH_PITCH?.trim() || "+6%") : s.pitch
-    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-IN"><voice name="${s.voice}"><prosody rate="${rate}" pitch="${pitch}">${escapeXml(text)}</prosody></voice></speak>`
+    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${selected.locale}"><voice name="${selected.voice}"><prosody rate="${rate}" pitch="${pitch}">${escapeXml(text)}</prosody></voice></speak>`
 
     let response: Response
     try {
@@ -113,7 +115,7 @@ export class AzureVoiceProvider implements VoiceProvider {
       provider: this.name,
       metadata: {
         'x-talkora-cache': 'BYPASS',
-        'x-talkora-voice-id': this.settings().voice,
+        'x-talkora-voice-id': chooseTalkoraBilingualVoice(text, this.settings().voice).voice,
       },
     }
   }

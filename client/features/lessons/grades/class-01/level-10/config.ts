@@ -9,10 +9,12 @@ export const config = {
   "title": "Story Time",
   "editorialStatus": "draft",
   "studentPlayable": false,
-  "description": "Story Time — a distinct festival square adventure for Class 1 learners.",
+  "description": "Original voice-first Balbharati activities for chapters 4.7–4.11, with English practice and optional Hindi/Marathi support. Educator sign-off pending.",
   "syllabus": {
     "objectives": [
-      "Recognize, hear, and speak language connected to story time."
+      "Use kind English in simple stories, home routines and holiday talk.",
+      "Explain one step in Hindi or Marathi when requested; always return to short English speaking.",
+      "Use modeled feedback for repeated difficulty and extend only when the student is ready."
     ],
     "skills": [
       "listening",
@@ -20,8 +22,8 @@ export const config = {
       "reading"
     ],
     "boardReviewRequired": true,
-    "sourceBook": null,
-    "sourcePages": [],
+    "sourceBook": "English Balbharati Standard One (2025; 2026 reprint)",
+    "sourcePages": [71, 73, 75, 77, 78],
     "syllabusVerified": false
   },
   "experience": {

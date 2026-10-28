@@ -9,10 +9,12 @@ export const config = {
   "title": "Animals Around Us",
   "editorialStatus": "draft",
   "studentPlayable": false,
-  "description": "Animals Around Us — a distinct rainbow valley adventure for Class 1 learners.",
+  "description": "Original voice-first Balbharati activities for chapters 2.9–2.12, with English practice and optional Hindi/Marathi support. Educator sign-off pending.",
   "syllabus": {
     "objectives": [
-      "Recognize, hear, and speak language connected to animals around us."
+      "Identify transport, plants and celebrations with simple descriptive English.",
+      "Explain one step in Hindi or Marathi when requested; always return to short English speaking.",
+      "Use modeled feedback for repeated difficulty and extend only when the student is ready."
     ],
     "skills": [
       "listening",
@@ -20,8 +22,8 @@ export const config = {
       "reading"
     ],
     "boardReviewRequired": true,
-    "sourceBook": null,
-    "sourcePages": [],
+    "sourceBook": "English Balbharati Standard One (2025; 2026 reprint)",
+    "sourcePages": [33, 35, 37, 38],
     "syllabusVerified": false
   },
   "experience": {
