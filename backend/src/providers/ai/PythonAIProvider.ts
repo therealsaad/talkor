@@ -16,6 +16,11 @@ export class PythonAIProvider implements AIProvider {
     const unitGuidance = unitTeachingGuidance(context)
     const isClass1Pilot = context.grade === 1 && context.levelId === 'g01-l01'
     const pilotEnabled = process.env.TALKORA_CLASS1_QWEN_PILOT === 'true'
+    const serviceKey = env.talkoraServiceKey.trim()
+    if (pilotEnabled && isClass1Pilot && env.isProd && serviceKey.length < 32) {
+      // Never call a production bridge without server-to-server authentication.
+      throw ApiError.provider('CLASS1_AI_SERVICE_AUTH_NOT_CONFIGURED')
+    }
     const baseUrl = pilotEnabled && isClass1Pilot
       ? process.env.TALKORA_CLASS1_AI_URL || 'http://127.0.0.1:8002'
       : env.aiServiceUrl
@@ -23,10 +28,9 @@ export class PythonAIProvider implements AIProvider {
     try {
       if (env.nodeEnv !== 'production') {
         console.info('[TALKORA AI] QWEN_REQUEST', {
-          student: context.studentName,
-          unit: context.unitNumber,
-          activity: context.activityTitle,
-          message: context.studentMessage,
+          grade: context.grade,
+          levelId: context.levelId,
+          messageLength: context.studentMessage.length,
         })
       }
 
@@ -34,7 +38,10 @@ export class PythonAIProvider implements AIProvider {
         `${baseUrl.replace(/\/$/, '')}/v1/brain/respond`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            ...(serviceKey ? { 'X-Talkora-Service-Key': serviceKey } : {}),
+          },
           signal: controller.signal,
           body: JSON.stringify({
             studentName: context.studentName,
@@ -71,10 +78,8 @@ export class PythonAIProvider implements AIProvider {
       )
 
       if (!response.ok) {
-        const detail = await response.text().catch(() => '')
-        throw new Error(
-          `Python AI service returned ${response.status}: ${detail.slice(0, 400)}`,
-        )
+        // Avoid echoing upstream response bodies or student text to logs.
+        throw new Error(`Python AI service returned HTTP ${response.status}`)
       }
 
       const brain = (await response.json()) as {
@@ -140,8 +145,8 @@ export class PythonAIProvider implements AIProvider {
       if (env.nodeEnv !== 'production') {
         console.info('[TALKORA AI] QWEN_RESPONSE', {
           latencyMs: Date.now() - startedAt,
-          message: result.message,
-          followUpQuestion: result.followUpQuestion,
+          responseQuality: result.responseQuality,
+          activityComplete: result.activityComplete,
         })
       }
 
@@ -151,6 +156,12 @@ export class PythonAIProvider implements AIProvider {
         '[TALKORA AI] Local Qwen unavailable.',
         error instanceof Error ? error.message : error,
       )
+
+      // Never route an unavailable Class 1 curriculum turn to an unrestricted
+      // provider: it could switch syllabus or make unsupported claims.
+      if (isClass1Pilot && pilotEnabled) {
+        throw ApiError.provider('AI_SERVICE_UNAVAILABLE')
+      }
 
       // A configured real cloud provider is an acceptable explicit fallback.
       // Never silently replace a failed Qwen turn with MockAIProvider because
