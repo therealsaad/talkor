@@ -186,6 +186,7 @@ export const MissJulieService = {
       context?: string
       inputMode?: 'OPTION' | 'MIC' | 'TEXT'
       currentTarget?: string
+      preferredExplanationLanguage?: 'English' | 'Hindi' | 'Marathi'
     },
   ) {
     const studentContext = await StudentContextService.buildContext(studentId, {
@@ -194,6 +195,7 @@ export const MissJulieService = {
       activityId: input.activityId,
       promptContext: input.context || 'conversation',
       currentTarget: input.currentTarget,
+      preferredExplanationLanguage: input.preferredExplanationLanguage,
     })
 
     const activity = input.activityId ? await Activity.findById(input.activityId).lean() : null

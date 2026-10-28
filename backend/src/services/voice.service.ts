@@ -15,6 +15,7 @@ import { GroqVoiceProvider } from '../providers/voice/GroqVoiceProvider'
 import { AzureVoiceProvider } from '../providers/voice/AzureVoiceProvider'
 import { PythonVoiceProvider } from '../providers/voice/PythonVoiceProvider'
 import { S3Service } from './S3Service'
+import { class1SupportFromSarvam } from '../providers/ai/class1-stt-language'
 import class1VoiceManifest from '../scripts/class1-level1-ai4bharat-lines.json'
 
 
@@ -166,7 +167,11 @@ export const VoiceService = {
     })
   },
 
-  async submitTranscript(studentId: string, sessionId: string, input: { transcript: string; expected?: string }) {
+  async submitTranscript(studentId: string, sessionId: string, input: {
+    transcript: string
+    expected?: string
+    detectedLanguage?: 'en-IN' | 'hi-IN' | 'mr-IN'
+  }) {
     const session = await VoiceSession.findOne({ _id: sessionId, studentId })
     if (!session) throw ApiError.notFound('Voice session not found')
     if (session.status === 'completed') {
@@ -178,9 +183,13 @@ export const VoiceService = {
     }
     if (session.status !== 'active') throw ApiError.conflict('Voice session is no longer active')
 
-    const activity = session.activityId ? await Activity.findById(session.activityId).select('target prompt type aiEnabled metadata lessonId') : null
+    const activity = session.activityId ? await Activity.findById(session.activityId).select('target prompt type aiEnabled activityKey metadata lessonId') : null
     const sessionExpected = typeof session.metadata?.expectedPhrase === 'string' ? session.metadata.expectedPhrase : undefined
     const conversationMode = activity?.metadata?.conversationMode === 'OPEN' || activity?.type === 'CONVERSATION'
+    // The code comes from Sarvam's single existing STT request. A missing or
+    // ambiguous code leaves explicit spoken requests and conversation history
+    // in charge. Only canonical Class 1 demo tutoring uses this preference.
+    const class1Language = class1SupportFromSarvam(activity?.activityKey, input.detectedLanguage)
     const expected = sessionExpected || (typeof activity?.metadata?.expectedPhrase === 'string' ? activity.metadata.expectedPhrase : activity?.target)
     if (!conversationMode && !expected) throw ApiError.badRequest('This voice activity has no pronunciation target')
     let evaluation
@@ -233,6 +242,7 @@ export const VoiceService = {
           context: conversationMode ? 'speaking' : 'pronunciation',
           inputMode: 'MIC',
           currentTarget: expected || activity.prompt || undefined,
+          preferredExplanationLanguage: class1Language,
         })
       : undefined
 

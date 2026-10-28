@@ -38,6 +38,7 @@ export const StudentContextService = {
       activityId?: string
       promptContext?: string
       currentTarget?: string
+      preferredExplanationLanguage?: 'English' | 'Hindi' | 'Marathi'
     } = {},
   ): Promise<CompactTutorContext> {
     const student = await Student.findById(studentId).lean()
@@ -233,6 +234,7 @@ export const StudentContextService = {
           .map((item) => `${item.skill}: ${item.support.toLowerCase()}`),
       ].slice(-8),
       promptContext: options.promptContext || 'conversation',
+      preferredExplanationLanguage: options.preferredExplanationLanguage,
       studentMessage: options.message || '',
       unitNumber,
       stage,
