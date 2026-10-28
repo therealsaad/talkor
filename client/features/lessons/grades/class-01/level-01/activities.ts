@@ -4,13 +4,13 @@ import type { LevelActivity, SuggestedActivity } from '../../../types'
  * of Balbharati Grade One (2025), Unit One 1.1, page 1. This is not a copy of
  * the textbook's protected rhyme. Student publication still needs teacher QA. */
 export const activities: LevelActivity[] = [
-  { id: 'class1-l01-listen-at', type: 'listen-and-find', prompt: 'Listen to the word at. Find at.', successCriteria: 'Select at from three choices.', difficulty: 1, approved: true },
-  { id: 'class1-l01-build-at', type: 'word-builder', prompt: 'Put a and t together to make at.', successCriteria: 'Build at in order.', difficulty: 1, approved: true },
-  { id: 'class1-l01-listen-in', type: 'listen-and-find', prompt: 'Listen to the word in. Find in.', successCriteria: 'Select in from three choices.', difficulty: 1, approved: true },
-  { id: 'class1-l01-build-in', type: 'word-builder', prompt: 'Put i and n together to make in.', successCriteria: 'Build in in order.', difficulty: 1, approved: true },
-  { id: 'class1-l01-look-at-me', type: 'picture-choice', prompt: 'Choose the missing word: Look __ me.', successCriteria: 'Select at.', difficulty: 2, approved: true },
-  { id: 'class1-l01-i-am-sam', type: 'sentence-builder', prompt: 'Put these words in order: I / am / Sam.', successCriteria: 'Build I am Sam.', difficulty: 2, approved: true },
-  { id: 'class1-l01-repeat-at', type: 'guided-dialogue', prompt: 'Say at, then use it with Miss Julie.', successCriteria: 'Complete two short, activity-grounded turns.', difficulty: 2, approved: true },
+  { id: 'class1-l01-listen-am', type: 'listen-and-find', prompt: 'Listen for am. Choose the word you hear.', successCriteria: 'Select am from three choices.', difficulty: 1, approved: true },
+  { id: 'class1-l01-build-an', type: 'word-builder', prompt: 'Put a and n together to make an.', successCriteria: 'Build an in order.', difficulty: 1, approved: true },
+  { id: 'class1-l01-listen-at', type: 'listen-and-find', prompt: 'Listen for at. Choose the word you hear.', successCriteria: 'Select at from three choices.', difficulty: 1, approved: true },
+  { id: 'class1-l01-listen-in', type: 'listen-and-find', prompt: 'Listen for in. Choose the word you hear.', successCriteria: 'Select in from three choices.', difficulty: 1, approved: true },
+  { id: 'class1-l01-use-on', type: 'listen-and-answer', prompt: 'The book is __ the table. Choose the little word.', successCriteria: 'Use on to tell where the book is.', difficulty: 1, approved: true },
+  { id: 'class1-l01-it-is-up', type: 'listen-and-answer', prompt: 'Read: It is up. Which little word says where?', successCriteria: 'Choose up from the sentence.', difficulty: 1, approved: true },
+  { id: 'class1-l01-review-little-words', type: 'guided-dialogue', prompt: 'Practise am, an, at, in, is, it, on, and up with Miss Julie.', successCriteria: 'Complete two short, activity-grounded turns using a little word.', difficulty: 2, approved: true },
   { id: 'class1-l01-say-walk', type: 'repeat-after-julie', prompt: 'Look at Miss Julie walking. Can you say walk?', successCriteria: 'Try the English action word walk with supportive retries.', difficulty: 1, approved: true },
   { id: 'class1-l01-find-school', type: 'listen-and-find', prompt: 'Look at the pictures. Which one is a school?', successCriteria: 'Recognize school from three choices.', difficulty: 1, approved: true },
   { id: 'class1-l01-school-talk', type: 'guided-dialogue', prompt: 'Tell Miss Julie one thing you do at school.', successCriteria: 'Complete a short supported conversation using beginner English.', difficulty: 2, approved: true },

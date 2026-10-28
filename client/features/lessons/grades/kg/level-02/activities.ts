@@ -1,23 +1,27 @@
 import type { LevelActivity, SuggestedActivity } from '../../../types'
 
-/** Add reviewed, working exercises. Empty means NOT student-playable. */
-export const activities: LevelActivity[] = []
+/** Working staff-preview activities; the draft remains unavailable to students. */
+export const activities: LevelActivity[] = [
+  ...(['E', 'F', 'G', 'H', 'I', 'J'] as const).map((letter) => ({
+    id: `say-${letter.toLowerCase()}`,
+    type: 'repeat-after-julie' as const,
+    prompt: `Listen to Miss Julie, then say the letter ${letter}.`,
+    successCriteria: `Server-side speech recognition identifies the letter ${letter}.`,
+    difficulty: 1,
+    approved: false,
+  })),
+]
 
-/** Editorial ideas only; not exposed to students or grading. */
+/** Editorial ideas only; not exposed to student routes or grading. */
 export const suggestedActivities: SuggestedActivity[] = [
   {
-    "label": "Listen and explore: Colours and Shapes",
-    "mode": "tap-picture",
-    "educatorNote": "Teacher defines visual scene and sound cues here."
-  },
-  {
-    "label": "Speak about Colours and Shapes",
+    "label": "Listen and say letters E to J",
     "mode": "repeat-after-julie",
-    "educatorNote": "Teacher supplies sample answer, corrective hints and language support."
+    "educatorNote": "The staff preview uses authenticated server-side speech grading for E–J."
   },
   {
-    "label": "Show what you know about Colours and Shapes",
-    "mode": "listen-and-find",
-    "educatorNote": "Teacher sets scoring rubric, touch choices and mastery threshold."
+    "label": "Practise one letter at a time",
+    "mode": "repeat-after-julie",
+    "educatorNote": "Incorrect, unclear, and silent answers stay on the same letter for another try."
   }
 ]

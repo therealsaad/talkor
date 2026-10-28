@@ -19,7 +19,7 @@ router.get('/me/lessons/:lessonId', authenticate, requireRole('STUDENT'), Studen
 router.use(authenticate, requireRole('SCHOOL_ADMIN', 'TEACHER'))
 router.get('/', validate(listStudentsQuerySchema), StudentController.list)
 router.post('/', validate(createStudentSchema), StudentController.create)
-router.get('/:id/home-practice/favourites/audio', StudentController.homePracticeAudio)
+router.get('/:id/home-practice/:unitKey/audio', StudentController.homePracticeAudio)
 router.get('/:id', StudentController.get)
 router.patch('/:id', validate(updateStudentSchema), StudentController.update)
 router.delete('/:id', StudentController.remove)

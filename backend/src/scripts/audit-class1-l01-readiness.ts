@@ -27,13 +27,14 @@ async function main(): Promise<void> {
       const lessons = await Lesson.find({ levelId: level._id })
         .select('_id title order status').sort({ order: 1 }).lean()
       const details = await Promise.all(lessons.map(async (lesson) => {
-        const [allActivities, activeActivities, guidedDialogueActivities] = await Promise.all([
-          Activity.countDocuments({ lessonId: lesson._id }),
+        const [allActivities, activeActivities, guidedDialogueActivities, retainedLegacyActivities] = await Promise.all([
+          Activity.countDocuments({ lessonId: lesson._id, required: { $ne: false }, core: { $ne: false } }),
           Activity.countDocuments({ lessonId: lesson._id, status: 'active' }),
-          Activity.countDocuments({ lessonId: lesson._id, type: { $in: ['CONVERSATION','OPEN_CONVERSATION','FOLLOW_UP_CONVERSATION','SPEAKING','LISTEN_AND_REPEAT'] } }),
+          Activity.countDocuments({ lessonId: lesson._id, required: { $ne: false }, core: { $ne: false }, type: { $in: ['CONVERSATION','OPEN_CONVERSATION','FOLLOW_UP_CONVERSATION','SPEAKING','LISTEN_AND_REPEAT'] } }),
+          Activity.countDocuments({ lessonId: lesson._id, activityKey: /^class1-l01-legacy-/ }),
         ])
         return { title: lesson.title, order: lesson.order, status: lesson.status,
-          activities: allActivities, activeActivities, guidedDialogueActivities }
+          activities: allActivities, retainedLegacyActivities, activeActivities, guidedDialogueActivities }
       }))
       const activeLessonWithActivities = details.some((lesson) => lesson.status === 'active' && lesson.activeActivities > 0)
       console.log(JSON.stringify({
