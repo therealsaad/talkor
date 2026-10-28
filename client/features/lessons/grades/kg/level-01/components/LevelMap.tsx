@@ -13,13 +13,17 @@ const STONES = [
   [62.5, 57.2], [15.7, 66.8], [39, 75.3], [64.8, 78.3], [89, 76.5],
 ] as const
 
-/** KG Level 1 map. Other levels stay locked until their actual lessons are available. */
+/** Student map unlocks only Level 1; staff previews can target one draft level. */
 export function KGAlphabetMap({
   preview = false,
   onPreviewPlay,
+  previewLevel = 1,
+  previewLabel = 'Level 1',
 }: {
   preview?: boolean
   onPreviewPlay?: (index: number) => void
+  previewLevel?: number
+  previewLabel?: string
 } = {}) {
   const [state, setState] = useState<KGAlphabetState | null>(null)
   const [error, setError] = useState('')
@@ -59,7 +63,7 @@ export function KGAlphabetMap({
           const level = index + 1
           const style = { left: `${x}%`, top: `${y}%` }
 
-          if (level === 1) {
+          if (level === (preview ? previewLevel : 1)) {
             if (preview) {
               return (
                 <button
@@ -68,9 +72,9 @@ export function KGAlphabetMap({
                   style={style}
                   className="kg-garden__node kg-garden__node--ready"
                   onClick={() => onPreviewPlay?.(0)}
-                  aria-label="Preview Level 1"
+                  aria-label={`Preview ${previewLabel}`}
                 >
-                  1
+                  {level}
                 </button>
               )
             }
@@ -115,9 +119,11 @@ export function KGAlphabetMap({
         ) : !state ? (
           'Loading your garden...'
         ) : state.completed ? (
-          'Level 1 complete! Tap the checkmark to practise again.'
+          `${previewLabel} complete! Tap the checkmark to practise again.`
+        ) : previewLevel !== 1 ? (
+          `${previewLabel} · Q–V — Ready to explore`
         ) : (
-          `Level 1 · ABCD — ${Math.min(state.currentIndex, state.totalActivities)} of ${state.totalActivities} activities completed`
+          `${previewLabel} · ABCD — ${Math.min(state.currentIndex, state.totalActivities)} of ${state.totalActivities} activities completed`
         )}
       </div>
     </main>

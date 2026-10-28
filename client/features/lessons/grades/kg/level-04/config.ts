@@ -1,31 +1,34 @@
+
 import type { LevelDesignConfig } from '../../../types'
 
-/** Distinct, editable theme and pedagogy for g00-l04. Authoring is NOT publishing. */
+/**
+ * Level 4 — draft based on the pictures visible in the supplied video.
+ * Exact spoken content and syllabus mapping still require verification.
+ * This configuration does not publish the lesson to students.
+ */
 export const config = {
   "id": "g00-l04",
   "grade": 0,
   "level": 4,
   "gradeLabel": "Kindergarten",
-  "title": "Animal Sounds",
+  "title": "Picture Words: Q–V",
   "editorialStatus": "draft",
   "studentPlayable": false,
-  "description": "Animal Sounds — a distinct star observatory adventure for KG learners.",
+  "description": "A picture-based vocabulary lesson using the images visible in the supplied introductory video.",
   "syllabus": {
     "objectives": [
-      "Recognize, hear, and speak language connected to animal sounds."
+      "Recognize and name the picture words presented in the lesson video.",
+      "Listen to Miss Julie and practise saying the vocabulary aloud.",
+      "Match spoken words to their corresponding pictures."
     ],
-    "skills": [
-      "listening",
-      "speaking",
-      "picture-recognition"
-    ],
+    "skills": ["listening", "speaking", "picture-recognition"],
     "boardReviewRequired": true,
     "sourceBook": null,
     "sourcePages": [],
     "syllabusVerified": false
   },
   "experience": {
-    "themeId": "kg-04-animal-sounds",
+    "themeId": "kg-04-picture-words",
     "world": "Star Observatory",
     "sceneDescription": "orbiting stars, planets and glowing trails",
     "layout": "explorer-trail",
@@ -48,8 +51,8 @@ export const config = {
     "voiceFirst": true,
     "invisibleAdaptive": true,
     "autoResume": true,
-    "introRequired": false,
-    "introMustComplete": false,
+    "introRequired": true,
+    "introMustComplete": true,
     "speechLanguage": "en-IN",
     "beginnerHindiSupport": true,
     "spontaneousFeedbackTTS": "azure-uncached",

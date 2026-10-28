@@ -43,12 +43,14 @@ export default function KGAlphabetSchoolPreview() {
                   ? '/school/kg-preview/level-2'
                   : level.level === 3
                     ? '/school/kg-preview/level-3'
+                  : level.level === 4
+                    ? '/school/kg-preview/level-4'
                     : null
               const label = `Level ${level.level}: ${level.title}`
 
               return href ? (
                 <Link
-                  className={`kg-preview-garden__level${level.level === 3 ? ' kg-preview-garden__level--featured' : ''}`}
+                  className={`kg-preview-garden__level${level.level === 3 || level.level === 4 ? ' kg-preview-garden__level--featured' : ''}`}
                   href={href}
                   key={level.id}
                   aria-label={`Open ${label}`}
