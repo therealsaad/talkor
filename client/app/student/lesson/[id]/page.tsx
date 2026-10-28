@@ -6,6 +6,7 @@ import { ActivityEngine } from '@/components/lessons/activity-engine'
 import { TalkoraLoader } from '@/components/student/talkora-loader'
 import { useAuth } from '@/components/auth/auth-provider'
 import { curriculumService, type FastLessonPackage } from '@/services/curriculum-service'
+import { Class1Immersion } from '@/features/lessons/grades/class-01/level-01/Class1Immersion'
 
 /** A single grade-authoritative request replaces the old five-request waterfall.
  * The server checks student grade and unit unlock status; URL parameters never
@@ -48,7 +49,7 @@ export default function StudentLessonPage() {
       <button type="button" onClick={() => router.replace('/student/home')}>Back to classroom</button>
     </main>
   }
-  return <ActivityEngine
+  const experience = <ActivityEngine
     key={`${lesson.level.id}:${lesson.lesson.id}`}
     activities={lesson.activities}
     levelTitle={lesson.level.place || lesson.level.title}
@@ -73,4 +74,7 @@ export default function StudentLessonPage() {
         ? lesson.lesson.settings.lessonKey
         : undefined}
   />
+  return lesson.experienceId === 'g01-l01'
+    ? <Class1Immersion>{experience}</Class1Immersion>
+    : experience
 }

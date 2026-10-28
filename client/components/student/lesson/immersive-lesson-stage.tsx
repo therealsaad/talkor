@@ -198,6 +198,13 @@ export function ImmersiveLessonStage({
   const isConversation =
     ['OPEN_CONVERSATION', 'FOLLOW_UP_CONVERSATION', 'FINAL_CONVERSATION', 'CONVERSATION'].includes(type) ||
     ['INTERACT', 'FOLLOW_UP', 'REASONS', 'RESPECT_DIFFERENCES', 'FINAL_TALK'].includes(stage)
+  const isClass1AIConversation = experienceId === 'g01-l01' && isConversation && activity.aiEnabled
+  const class1CoachStatus = isRecording ? 'Listening to your answer'
+    : isProcessing ? 'Thinking about your answer'
+      : isJulieSpeaking ? 'Miss Julie is speaking'
+        : isCompleted ? 'Great work!'
+          : isRetry ? 'Let us try together'
+            : 'Your turn to learn and speak'
 
   const pose: MissJulieState = isCompleted
     ? 'celebrating'
@@ -469,6 +476,13 @@ export function ImmersiveLessonStage({
                 <span>Listen</span>
               </button> : null}
             </div>
+
+            {experienceId === 'g01-l01' ? (
+              <div className={`tk-class1-teaching-mode${isClass1AIConversation ? ' is-ai' : ''}`} role="status" aria-live="polite">
+                <span>{isClass1AIConversation ? '✦ AI-guided conversation' : '✦ Miss Julie’s guided lesson'}</span>
+                <span>{class1CoachStatus}</span>
+              </div>
+            ) : null}
 
             <p>{visibleJulieMessage}</p>
 
