@@ -6,21 +6,9 @@ import { Play, SkipForward, Sparkles } from 'lucide-react'
 const lessonKeyPattern = /^kg-g0-u[1-8]-l[1-3]$/
 
 const MANDATORY_FIRST_LESSON = 'kg-g0-u1-l1'
-const LEVEL_4_LESSON_KEY = 'kg-g0-u4-l1'
-
-const FULL_VIDEO = '/kg/videos/fullkg.mp4'
-const LEVEL_4_VIDEO =
-  '/lessons/kg/level-04/animal-sounds-intro.mp4'
-
+const KG_MEDIA_ROOT = '/lessons/kg'
+const FULL_VIDEO = `${KG_MEDIA_ROOT}/videos/fullkg.mp4`
 const REQUIRED_WATCH_SECONDS = 60
-const LEVEL_4_REQUIRES_FULLSCREEN = false
-
-function isMandatoryIntro(lessonKey: string) {
-  return (
-    lessonKey === MANDATORY_FIRST_LESSON ||
-    lessonKey === LEVEL_4_LESSON_KEY
-  )
-}
 
 
 async function findAvailableSources(lessonKey: string): Promise<string[]> {
@@ -35,7 +23,7 @@ async function findAvailableSources(lessonKey: string): Promise<string[]> {
       )
 
       try {
-        const source = `/kg/lesson-intros/${lessonKey}.${extension}`
+        const source = `${KG_MEDIA_ROOT}/lesson-intros/${lessonKey}.${extension}`
 
         const response = await fetch(source, {
           method: 'HEAD',
@@ -71,7 +59,7 @@ export function KGLessonIntro({
   onAvailable: () => void
   onDone: () => void
 }) {
-const mandatory = isMandatoryIntro(lessonKey)
+  const mandatory = lessonKey === MANDATORY_FIRST_LESSON
   const frame = useRef<HTMLDivElement>(null)
   const video = useRef<HTMLVideoElement>(null)
   const maxWatched = useRef(0)
@@ -93,12 +81,7 @@ const mandatory = isMandatoryIntro(lessonKey)
         try { seen = replayRequest === 0 && localStorage.getItem(`talkora:kg-intro:${lessonKey}`) === 'seen' } catch { /* storage optional */ }
       }
 
-const available =
-  lessonKey === LEVEL_4_LESSON_KEY
-    ? [LEVEL_4_VIDEO]
-    : mandatory
-      ? [FULL_VIDEO]
-      : await findAvailableSources(lessonKey)
+      const available = mandatory ? [FULL_VIDEO] : await findAvailableSources(lessonKey)
 
       if (!alive) return
       if (!available.length) { onDone(); return } // Only OPTIONAL intros can be absent.
@@ -140,33 +123,12 @@ const available =
     try { localStorage.setItem(`talkora:kg-intro:${lessonKey}`, 'seen') } catch { /* optional */ }
   }
   function finishIntro() {
-
-const requiresFullscreen =
-  lessonKey === MANDATORY_FIRST_LESSON ||
-  (mandatory && LEVEL_4_REQUIRES_FULLSCREEN)
-
-if (mandatory) {
-  const watchedEnough =
-    lessonKey === LEVEL_4_LESSON_KEY
-      ? video.current?.ended === true
-      : maxWatched.current >= REQUIRED_WATCH_SECONDS
-
-  const fullscreenOkay =
-    !requiresFullscreen ||
-    document.fullscreenElement === frame.current
-
-  if (!watchedEnough || !fullscreenOkay) {
-    setError(
-      lessonKey === LEVEL_4_LESSON_KEY
-        ? 'Please watch the complete video before starting your lesson.'
-        : 'Watch the full story in fullscreen before starting your lesson.',
-    )
-    video.current?.pause()
-    setNeedsTap(true)
-    return
-  }
-}
-
+    if (mandatory && (maxWatched.current < REQUIRED_WATCH_SECONDS || document.fullscreenElement !== frame.current)) {
+      setError('Watch the full story in fullscreen before starting your lesson.')
+      video.current?.pause()
+      setNeedsTap(true)
+      return
+    }
     video.current?.pause()
     markIntroSeen()
     onDone()
