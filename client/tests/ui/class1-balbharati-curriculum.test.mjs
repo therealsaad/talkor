@@ -42,7 +42,10 @@ test('Class 1 levels 2-10 link their original chapter activities and stay staff-
     assert.match(config, /"boardReviewRequired": true/)
     assert.match(config, /"syllabusVerified": false/)
     assert.match(config, /"staffOnlyPreview": true/)
-    assert.match(config, /CLASS1_BALBHARATI_SOURCE/)
+    assert.match(config, /"sourceBook": "English Balbharati Standard One/)
+    const staticConfig = config.match(/export const config = (\{[\s\S]*\}) as const satisfies LevelDesignConfig\s*$/)
+    assert.ok(staticConfig, `Level ${n} must remain JSON-parseable for the 110-level validator`)
+    assert.equal(JSON.parse(staticConfig[1]).level, n)
   }
 })
 
