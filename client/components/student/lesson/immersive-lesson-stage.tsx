@@ -5,7 +5,6 @@ import { FormEvent, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import {
   ArrowRight,
-  BookOpen,
   Check,
   ChevronLeft,
   ChevronRight,
@@ -16,7 +15,6 @@ import {
   PencilLine,
   Send,
   Bell,
-  Footprints,
   School,
   Sparkles,
   Square,
@@ -29,6 +27,7 @@ import { learnerAvatar, talkoraAssets, type MissJulieState } from '@/config/talk
 import type { JulieVisualState } from '@/components/student/lesson/miss-julie-character'
 import { personalizeLessonText } from '@/services/lesson-progress'
 import { class1TeachingCue } from '@/features/lessons/grades/class-01/level-01/first-day-voice-guide'
+import { Class1StorybookBoard } from '@/features/lessons/grades/class-01/level-01/first-day-storybook-board'
 import {
   getWarmupPrompts,
   isWarmupActivity,
@@ -551,24 +550,14 @@ export function ImmersiveLessonStage({
             ) : null}
 
             {class1Cue ? (
-              <div className={`tk-class1-first-day-guide is-${class1Cue.scene}`} aria-label="Miss Julie's current teaching activity">
-                <div className="tk-class1-guide-topline">
-                  <span>{class1Cue.badge}</span>
-                  <span>{class1Cue.phase === 'FOUNDATION' ? '1 · LEARN SOUNDS' : '2 · MY FIRST DAY'}</span>
-                </div>
-                <div className="tk-class1-guide-scene" aria-hidden="true">
-                  {class1Cue.scene === 'movement' ? <Footprints size={54} strokeWidth={1.7} /> : null}
-                  {class1Cue.scene === 'school' ? <School size={56} strokeWidth={1.8} /> : null}
-                  {class1Cue.scene === 'conversation' ? <MessageCircle size={48} strokeWidth={1.8} /> : null}
-                  {class1Cue.scene === 'letters' ? <BookOpen size={48} strokeWidth={1.8} /> : null}
-                  {class1Cue.scene === 'school' ? <Bell size={27} /> : null}
-                </div>
-                <strong>{class1Cue.headline}</strong>
-                <div className="tk-class1-guide-words" aria-label="Words to practise">
-                  {class1Cue.words.map((word) => <span key={word}>{word}</span>)}
-                </div>
-                <p>{class1Cue.spokenGoal}</p>
-              </div>
+              <Class1StorybookBoard
+                cue={class1Cue}
+                isListening={isRecording}
+                isSpeaking={isJulieSpeaking}
+                isProcessing={isProcessing}
+                isCompleted={isCompleted}
+                isRetry={isRetry}
+              />
             ) : null}
 
             {skippedPictureActivityCount > 0 ? <p className="tk-kg-skipped-note" role="status">{skippedPictureActivityCount} picture {skippedPictureActivityCount === 1 ? 'activity is' : 'activities are'} skipped until the illustrations are ready. They do not count as completed.</p> : null}
@@ -2575,65 +2564,6 @@ function Styles() {
         .tk-lesson-world[data-experience-id="g01-l01"] .tk-task-float {
           margin-left: calc(-1 * (clamp(96px, 24vw, 155px) + 10px));
         }
-      }
-      .tk-lesson-world[data-experience-id="g01-l01"] .tk-class1-first-day-guide {
-        display: grid;
-        justify-items: center;
-        gap: 9px;
-        margin: 13px 0;
-        padding: clamp(13px, 1.5vw, 20px);
-        border: 2px solid rgba(39, 119, 87, .22);
-        border-radius: 22px;
-        color: #214a38;
-        text-align: center;
-        background: linear-gradient(150deg, #f4ffe9, #e6f7ff);
-      }
-      .tk-class1-guide-topline {
-        display: flex;
-        justify-content: space-between;
-        width: 100%;
-        gap: 12px;
-        color: #336b55;
-        font-size: clamp(9px, 1vw, 12px);
-        font-weight: 900;
-        letter-spacing: .035em;
-      }
-      .tk-class1-guide-scene {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 5px;
-        color: #378362;
-        min-height: 52px;
-      }
-      .tk-class1-first-day-guide.is-movement .tk-class1-guide-scene {
-        animation: tk-class1-step 1.5s ease-in-out infinite;
-      }
-      @keyframes tk-class1-step { 50% { transform: translateY(-7px) rotate(-5deg); } }
-      .tk-class1-first-day-guide > strong {
-        color: #194f3e;
-        font-size: clamp(20px, 2.4vw, 32px);
-        line-height: 1.2;
-      }
-      .tk-class1-guide-words { display: flex; justify-content: center; flex-wrap: wrap; gap: 8px; }
-      .tk-class1-guide-words > span {
-        min-width: 42px;
-        padding: 7px 13px;
-        border: 1px solid #a9d9bc;
-        border-radius: 14px;
-        background: #fffefb;
-        color: #215d46;
-        font-size: clamp(17px, 1.8vw, 24px);
-        font-weight: 900;
-      }
-      .tk-class1-first-day-guide > p {
-        color: #3f6456;
-        font-size: clamp(12px, 1.2vw, 16px);
-        font-weight: 700;
-        line-height: 1.4;
-      }
-      @media (prefers-reduced-motion: reduce) {
-        .tk-class1-first-day-guide.is-movement .tk-class1-guide-scene { animation: none; }
       }
       .tk-lesson-world[data-experience-id="g01-l01"] .tk-julie-bubble {
         border-color: rgba(255,255,255,.96);

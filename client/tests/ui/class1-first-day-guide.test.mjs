@@ -14,6 +14,20 @@ test('Level 1 explicitly moves from foundation to Balbharati 1.1', () => {
   assert.equal(guide.class1TeachingCue('class1-l02-other'), null)
 })
 
+test('every canonical Level 1 activity shows an original voice-first storybook page', () => {
+  const names = ['listen-am', 'build-an', 'listen-at', 'listen-in', 'use-on', 'it-is-up', 'review-little-words', 'say-walk', 'find-school', 'school-talk']
+  for (const name of names) {
+    const cue = guide.class1TeachingCue(`class1-l01-v2-${name}`)
+    assert.ok(cue, `Missing storybook cue for ${name}`)
+    assert.ok(cue.storybook.focus)
+    assert.ok(cue.storybook.example)
+    assert.ok(cue.storybook.tiles.length)
+  }
+  assert.deepEqual(guide.class1TeachingCue('class1-l01-v2-listen-am')?.storybook.tiles, ['A', 'M'])
+  assert.equal(guide.class1TeachingCue('class1-l01-v2-use-on')?.storybook.illustration, 'ball-on-box')
+  assert.equal(guide.class1TeachingCue('class1-l01-v2-say-walk')?.phase, 'BALBHARATI')
+})
+
 test('mic-spelled foundation letters can replace physical keyboard', () => {
   assert.equal(guide.class1SpokenSpelling('a and n', 'an'), 'an')
   assert.equal(guide.class1SpokenSpelling('A N', 'an'), 'an')
@@ -29,6 +43,10 @@ test('the live lesson keeps server progress and Class 1-only voice route', () =>
   assert.match(source, /progressService\.submitAttempt/)
   assert.match(source, /if \(!wantsMic/)
   assert.match(stage, /class1TeachingCue\(activity\.activityKey\)/)
+  assert.match(stage, /<Class1StorybookBoard/)
   assert.match(stage, /grid-template-columns: clamp\(270px, 29vw, 440px\)/)
+  const book = readFileSync(new URL('../../features/lessons/grades/class-01/level-01/first-day-storybook-board.tsx', import.meta.url), 'utf8')
+  assert.match(book, /isCompleted \? 'You did it! On to the next page.'/)
+  assert.doesNotMatch(book, /onSelectChoice|submitAttempt|onSpeakText|fetch\(/)
   assert.match(readFileSync(guidePath, 'utf8'), /NOT the copyrighted rhyme/)
 })
