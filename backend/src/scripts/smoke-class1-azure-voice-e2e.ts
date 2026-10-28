@@ -1,6 +1,6 @@
 /**
  * Supervised Class 1 voice acceptance test: --check (free HTTP only),
- * --live (exactly one Azure STT + TTS), --live --commit (also one Qwen turn).
+ * --live (one Sarvam STT + one Azure TTS), --live --commit (also one Qwen turn).
  * PowerShell examples are in docs/class1-azure-voice-e2e.md.
  * Never print student PIN, transcript, tokens, or record audio to outputs.
  */
@@ -39,18 +39,27 @@ async function api<T>(route: string, token: string, init: RequestInit = {}): Pro
 async function main() {
   if (commit && !live) throw new Error('--commit requires --live')
   console.log('Class 1 E2E: connectivity check (zero Azure speech calls)')
-  const backend = await request<{ status: string }>(apiUrl + '/health')
-  await request<{ status?: string }>(pythonUrl + '/health')
+  let backend: { status: string }
+  try {
+    backend = await request<{ status: string }>(apiUrl + '/health')
+  } catch {
+    throw new Error('Node backend not reachable (' + new URL(apiUrl).host + '). Start pnpm dev in backend and check /health.')
+  }
   if (backend.status !== 'ok') throw new Error('Node backend unhealthy')
+  try {
+    await request<{ status?: string }>(pythonUrl + '/health')
+  } catch {
+    throw new Error('Python service not reachable (' + new URL(pythonUrl).host + '). Start uvicorn server.main:app on port 8002.')
+  }
   console.log('PASS: Node and Python HTTP health endpoints are reachable')
   console.log('NOTE: Health does not prove service-key authentication.')
 
   if (!live) {
-    console.log('No Azure calls or progress writes. Use --live for one STT+TTS pair.')
+    console.log('No paid speech calls or progress writes. Use --live for one Sarvam STT + Azure TTS pair.')
     return
   }
-  if (process.env.TALKORA_E2E_ALLOW_AZURE_CHARGES !== 'YES') {
-    throw new Error('Set TALKORA_E2E_ALLOW_AZURE_CHARGES=YES before --live')
+  if (process.env.TALKORA_E2E_ALLOW_PAID_SPEECH !== 'YES') {
+    throw new Error('Set TALKORA_E2E_ALLOW_PAID_SPEECH=YES before --live (Sarvam STT + Azure TTS may be billed)')
   }
   if (commit && process.env.TALKORA_E2E_ALLOW_PROGRESS_WRITE !== 'YES') {
     throw new Error('Set TALKORA_E2E_ALLOW_PROGRESS_WRITE=YES before --commit')
@@ -82,7 +91,7 @@ async function main() {
   }
   console.log('PASS: 5-digit PIN authenticated; Class 1 next lesson resolved')
 
-  // Validate progress-write eligibility BEFORE spending the Azure STT credit.
+  // Validate progress-write eligibility BEFORE spending the Sarvam STT credit.
   if (commit) {
     const lesson = await api<{ activities: Array<{ id: string; type: string; aiEnabled?: boolean }> }>(
       '/students/me/lessons/' + next.lessonId, token,
@@ -93,18 +102,20 @@ async function main() {
     }
   }
 
-  // Exactly one audio upload, no silent automatic retries that drain credits.
+  // Exactly one Sarvam audio upload, no automatic paid retries.
   const upload = new FormData()
   upload.append('audio', new Blob([await readFile(file)], { type: mimeType }), path.basename(file))
   upload.append('mode', 'fast')
   const recognized = await api<{ transcript: string | null; provider?: string }>(
     '/voice/transcribe', token, { method: 'POST', body: upload },
   )
-  if (!recognized.transcript?.trim()) throw new Error('Azure returned no speech; stop rather than retry')
-  if (!recognized.provider?.includes('azure')) {
-    throw new Error('Expected Azure STT: set SPEECH_PROVIDER=azure in backend/.env')
+  if (!recognized.transcript?.trim()) throw new Error('STT returned no speech; stop rather than retry')
+  const expectedStt = process.env.TALKORA_E2E_EXPECTED_STT_PROVIDER?.trim().toLowerCase() || 'sarvam'
+  if (!['sarvam', 'azure'].includes(expectedStt)) throw new Error('Unsupported TALKORA_E2E_EXPECTED_STT_PROVIDER')
+  if (!recognized.provider?.toLowerCase().includes(expectedStt)) {
+    throw new Error('Expected ' + expectedStt + ' STT; check SPEECH_PROVIDER in running backend .env')
   }
-  console.log('PASS: Azure STT recognized an utterance (transcript hidden)')
+  console.log('PASS: ' + expectedStt + ' STT recognized an utterance (transcript hidden)')
 
   let teacherLine = 'Let us learn English together.'
   if (commit) {
@@ -142,7 +153,7 @@ async function main() {
     throw new Error('Expected Azure TTS; check provider configuration/fallback')
   }
   console.log('PASS: Azure TTS received (' + bytes + ' bytes); no student audio/text logged')
-  console.log('RESULT: one STT + one TTS request. Supervised browser listening still required.')
+  console.log('RESULT: one ' + expectedStt + ' STT + one Azure TTS request. Supervised browser listening still required.')
 }
 
 main().catch((error: unknown) => {
