@@ -30,6 +30,8 @@ export const env = {
   aiProvider: (process.env.AI_PROVIDER ?? (process.env.GROQ_API_KEY ? 'groq' : 'qwen')) as 'qwen' | 'groq' | 'openai' | 'python' | 'mock',
   aiServiceUrl: process.env.AI_SERVICE_URL ?? 'http://127.0.0.1:8001',
   aiServiceApiKey: process.env.AI_SERVICE_API_KEY ?? '',
+  // Separate server-to-server secret for the Class 1 brain endpoint (not for browsers).
+  talkoraServiceKey: process.env.TALKORA_SERVICE_KEY ?? '',
   aiServiceTimeoutMs: Number(process.env.AI_SERVICE_TIMEOUT_MS ?? 16000),
   sttTimeoutMs: Number(process.env.STT_TIMEOUT_MS ?? 18000),
   ttsTimeoutMs: Number(process.env.TTS_TIMEOUT_MS ?? 12000),
