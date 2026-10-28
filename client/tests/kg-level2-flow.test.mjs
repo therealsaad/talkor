@@ -14,6 +14,7 @@ const root = new URL('../', import.meta.url)
 const read = (path) => readFile(new URL(path, root), 'utf8')
 const intro = await read('features/lessons/grades/kg/level-02/PreviewIntro.tsx')
 const activity = await read('features/lessons/grades/kg/level-02/LevelExperience.tsx')
+const level2Styles = await read('features/lessons/grades/kg/level-02/level-02.css')
 const service = await read('features/lessons/grades/kg/level-02/services/kg-level2-preview-service.ts')
 const introRoute = await read('app/school/kg-preview/level-2/page.tsx')
 const activityRoute = await read('app/school/kg-preview/level-2/[letter]/page.tsx')
@@ -62,6 +63,27 @@ test('the Level 2 route uses its one-use marker and starts the lesson at E', () 
   assert.match(landing, /level\.level === 2[\s\S]*?\/school\/kg-preview\/level-2/)
   assert.notEqual(LEVEL2_INTRO_COMPLETED_KEY, 'talkora:kg-level3-intro-completed')
   assert.doesNotMatch(activity, /LEVEL3_LETTERS|kg-level3-preview|K–P/)
+})
+
+test('Level 2 displays the confirmed letter-word-picture mappings', async () => {
+  for (const [letter, word] of Object.entries({ E: 'elephant', F: 'fish', G: 'goat', H: 'hat', I: 'igloo', J: 'jam' })) {
+    assert.match(activity, new RegExp(`${letter}: '/kg/pictures/level-2/${word}\\.svg'`))
+    await access(new URL(`../public/kg/pictures/level-2/${word}.svg`, import.meta.url))
+  }
+  assert.match(activity, /<LetterWordPicture/)
+  assert.doesNotMatch(activity, /letter\.toLowerCase|is for/)
+})
+
+test('Level 2 E–J share bounded layout rules and complete SVG assets', async () => {
+  assert.match(level2Styles, /grid-template-columns: minmax\(112px, 0\.48fr\) minmax\(190px, 0\.9fr\) minmax\(240px, 1fr\)/)
+  assert.match(level2Styles, /white-space: nowrap/)
+  assert.match(level2Styles, /object-fit: contain/)
+  assert.match(level2Styles, /\/lessons\/kg\/jungle-background\.png/)
+  for (const word of ['elephant', 'fish', 'goat', 'hat', 'igloo', 'jam']) {
+    const svg = await read(`public/kg/pictures/level-2/${word}.svg`)
+    assert.match(svg, /viewBox="0 0 (240 180|320 240)"/)
+    assert.doesNotMatch(svg, /<clipPath|clip-path:/)
+  }
 })
 
 test('only correct E–J attempts advance; incorrect and unclear responses retry', () => {

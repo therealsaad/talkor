@@ -447,6 +447,21 @@
   .kg-level3-play .kg-alpha-quest { padding-inline: 10px; }
 }
 
+.kg-level3-play {
+  background-color: #c9e8a9;
+  background-image: url('/lessons/kg/jungle-background.png') !important;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+.kg-level3-play::before { display:none; }
+.kg-level3-play .kg-alpha-quest { overflow:visible; }
+.kg-level3-letter-word-picture { grid-template-columns:minmax(150px,.6fr) minmax(180px,.8fr) minmax(220px,1fr); }
+@media (max-width:760px) {
+  .kg-level3-letter-word-picture { grid-template-columns:90px minmax(110px,1fr); }
+  .kg-level3-letter-word-picture .kg-letter-word-picture__picture { grid-column:1 / -1; width:min(70vw,230px); justify-self:center; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .kg-level3-play .kg-level3-sky *,
   .kg-level3-play .kg-mic-pulse { animation: none !important; }
