@@ -161,7 +161,10 @@ export interface VoiceSessionData {
 
 interface TranscriptionResponse {
   transcript: string | null
+  languageCode?: 'en-IN' | 'hi-IN' | 'mr-IN'
 }
+
+export type VoiceTranscription = { transcript: string; languageCode?: 'en-IN' | 'hi-IN' | 'mr-IN' }
 
 /* =========================================================
    SYNTHESIS RESULT
@@ -288,6 +291,7 @@ async submitTranscript(
   sessionId: string,
   transcript: string,
   inputMode: 'MIC' | 'TEXT' | 'OPTION',
+  detectedLanguage?: VoiceTranscription['languageCode'],
 ): Promise<VoiceSessionData> {
   return apiClient<VoiceSessionData>(
     `/voice/sessions/${sessionId}/transcript`,
@@ -298,6 +302,7 @@ async submitTranscript(
         JSON.stringify({
           transcript,
           inputMode,
+          ...(detectedLanguage ? { detectedLanguage } : {}),
         }),
     },
   )
@@ -328,6 +333,18 @@ async submitTranscript(
     _source?: string,
     mode: 'fast' | 'accurate' = 'fast',
   ): Promise<string> {
+    const result = await this.transcribeAudioDetailed(audio, durationMs, _source, mode)
+    return result.transcript
+  },
+
+  /** Same single Sarvam STT request; preserve explicit detected language only
+   * for the Class 1 tutor. Older transcript-only callers stay unchanged. */
+  async transcribeAudioDetailed(
+    audio: Blob,
+    durationMs?: number,
+    _source?: string,
+    mode: 'fast' | 'accurate' = 'fast',
+  ): Promise<VoiceTranscription> {
     if (!audio.size) throw new Error('The recording is empty. Please try again.')
     markLabSpeechActivity()
 
@@ -373,7 +390,13 @@ async submitTranscript(
     }
     const transcript = (payload.data?.transcript ?? payload.transcript)?.trim()
     if (!transcript) throw new Error('No speech was detected. Please try again.')
-    return transcript
+    const language = payload.data?.languageCode
+    return {
+      transcript,
+      languageCode: language === 'en-IN' || language === 'hi-IN' || language === 'mr-IN'
+        ? language
+        : undefined,
+    }
   },
 
   /* =======================================================
