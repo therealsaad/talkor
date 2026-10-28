@@ -20,6 +20,7 @@ import { firstUnfinishedActivity, isOpenLessonConversation, personalizeLessonTex
 import { KGLessonIntro } from '@/components/student/lesson/kg-lesson-intro'
 import { Class1LessonIntro } from '@/features/lessons/grades/class-01/level-01/Class1LessonIntro'
 import { Class1SpokenHomework } from '@/features/lessons/grades/class-01/level-01/Class1SpokenHomework'
+import { class1SpokenSpelling } from '@/features/lessons/grades/class-01/level-01/first-day-voice-guide'
 
 /**
  * Local matching for spoken answers to published lesson choices.
@@ -603,10 +604,14 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
             }
             // Spelling is checked as a full word, not against a single letter tile.
             const choice = isSpelling
-              ? normalizedText.replace(/[^a-z]/gi, '').toUpperCase()
+              ? (experienceId === 'g01-l01'
+                  ? class1SpokenSpelling(normalizedText, activity.target || undefined)?.toUpperCase() || null
+                  : normalizedText.replace(/[^a-z]/gi, '').toUpperCase())
               : matchSpokenChoice(normalizedText, activity.choices || [])
             if (!choice) {
-              setFeedback('Say one answer clearly, or touch its picture.')
+              setFeedback(experienceId === 'g01-l01'
+                ? 'Please say one word aloud. Miss Julie is listening.'
+                : 'Say one answer clearly, or touch its picture.')
               setExperience('waiting_for_student')
               return
             }
