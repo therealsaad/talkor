@@ -51,10 +51,17 @@ export class SarvamSpeechProvider implements SpeechRecognitionProvider {
       const payload = await response.json() as { transcript?: unknown; language_code?: unknown }
       if (payload.transcript !== undefined && typeof payload.transcript !== 'string') throw ApiError.provider('Speech provider returned an invalid transcript')
       const transcript = typeof payload.transcript === 'string' ? payload.transcript.trim() || null : null
+      // Preserve Sarvam's explicit language code when recognized. Hindi and
+      // Marathi use the same script, so do not guess from Devanagari text.
+      // This metadata is a coaching-language hint, never assessment evidence.
+      const languageCode = payload.language_code === 'en-IN' ||
+        payload.language_code === 'hi-IN' || payload.language_code === 'mr-IN'
+        ? payload.language_code
+        : undefined
       const latencyMs = Date.now() - startedAt
       logger.info('Sarvam STT completed', { provider: this.name, model: env.sarvamSttModel, latencyMs, durationMs: input.durationMs, transcriptLength: transcript?.length || 0 })
       // available describes the provider, not whether the child spoke.
-      return { transcript, available: true, latencyMs, provider: this.name, model: env.sarvamSttModel }
+      return { transcript, available: true, latencyMs, provider: this.name, model: env.sarvamSttModel, languageCode }
     } catch (error) {
       if (error instanceof ApiError) throw error
       if (error instanceof Error && error.name === 'AbortError') throw ApiError.gatewayTimeout('Speech recognition timed out. Please try again.')
