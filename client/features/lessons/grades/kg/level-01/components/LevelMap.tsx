@@ -13,7 +13,7 @@ const STONES = [
   [62.5, 57.2], [15.7, 66.8], [39, 75.3], [64.8, 78.3], [89, 76.5],
 ] as const
 
-/** KG Level 1 map. Other levels stay locked until their actual lessons are available. */
+/** Student map unlocks only Level 1; staff previews can target one draft level. */
 export function KGAlphabetMap({
   preview = false,
   onPreviewPlay,
@@ -63,7 +63,7 @@ export function KGAlphabetMap({
           const level = index + 1
           const style = { left: `${x}%`, top: `${y}%` }
 
-          if (level === 1) {
+          if (level === (preview ? previewLevel : 1)) {
             if (preview) {
               return (
                 <button
@@ -74,13 +74,12 @@ export function KGAlphabetMap({
                   onClick={() => onPreviewPlay?.(0)}
                   aria-label={`Preview ${previewLabel}`}
                 >
-                  1
+                  {level}
                 </button>
               )
             }
 
-            if (!preview) {
-              return (
+            return (
               <Link
                 key={level}
                 style={style}
@@ -92,8 +91,7 @@ export function KGAlphabetMap({
               >
                 {state?.completed ? <Check aria-hidden="true" size={23} /> : '1'}
               </Link>
-              )
-            }
+            )
           }
 
           return (

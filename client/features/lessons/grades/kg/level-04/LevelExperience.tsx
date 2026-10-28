@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
-import { LoaderCircle, Mic, Play, RotateCw, Sparkles, Volume2 } from 'lucide-react'
+import { LoaderCircle, Mic, Play, RotateCw, Sparkles } from 'lucide-react'
 import { requestKGMicrophone } from '@/lib/kg-microphone'
 import { watchVoiceActivity } from '@/lib/voice-activity'
 import { AnimatedMissJulie } from '../level-01/components/AnimatedMissJulie'
@@ -28,12 +28,12 @@ const WORDS: Record<Level4Letter, string> = {
 const PICTURES: Record<Level4Letter, string> = {
   Q: '👑', R: '🐇', S: '☀️', T: '🐯', U: '☂️', V: '🚐',
 }
-type VideoState = 'loading' | 'playing' | 'paused' | 'blocked' | 'error' | 'complete'
+type VideoState = 'ready' | 'loading' | 'playing' | 'paused' | 'blocked' | 'error' | 'complete'
 type Phase = 'narrating' | 'requesting' | 'listening' | 'checking' | 'feedback' | 'error' | 'finished'
 
 export default function LevelExperience({ preview = false }: LevelExperienceProps) {
   const reducedMotion = useReducedMotion()
-  const [videoState, setVideoState] = useState<VideoState>('loading')
+  const [videoState, setVideoState] = useState<VideoState>('ready')
   const [videoError, setVideoError] = useState('')
   const [videoAttempt, setVideoAttempt] = useState(0)
   const [letter, setLetter] = useState<Level4Letter>('Q')
@@ -42,7 +42,6 @@ export default function LevelExperience({ preview = false }: LevelExperienceProp
   const [outcome, setOutcome] = useState<'correct' | 'incorrect' | 'unclear' | ''>('')
   const [attemptCycle, setAttemptCycle] = useState(0)
   const [fullscreenFallback, setFullscreenFallback] = useState(false)
-  const [soundBlocked, setSoundBlocked] = useState(false)
   const frameRef = useRef<HTMLElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
   const maximumTimeRef = useRef(0)
@@ -60,32 +59,22 @@ export default function LevelExperience({ preview = false }: LevelExperienceProp
     setVideoError('')
     setVideoState('loading')
     if (frame?.requestFullscreen && document.fullscreenElement !== frame) {
-      try { await frame.requestFullscreen({ navigationUI: 'hide' }) } catch { setFullscreenFallback(true) }
+      try {
+        void frame.requestFullscreen({ navigationUI: 'hide' }).catch(() => setFullscreenFallback(true))
+      } catch { setFullscreenFallback(true) }
     } else if (!frame?.requestFullscreen) setFullscreenFallback(true)
     try {
       video.playbackRate = 1
       video.muted = false
       await video.play()
-      setSoundBlocked(false)
       if (attempt === playbackAttemptRef.current && !completionRef.current) setVideoState('playing')
     } catch {
-      try {
-        video.muted = true
-        await video.play()
-        if (attempt === playbackAttemptRef.current && !completionRef.current) {
-          setSoundBlocked(true)
-          setVideoState('playing')
-        }
-      } catch {
-        if (attempt === playbackAttemptRef.current && !completionRef.current) {
-          setVideoError('Your browser needs a tap before it can play the introduction.')
-          setVideoState('blocked')
-        }
+      if (attempt === playbackAttemptRef.current && !completionRef.current) {
+        setVideoError('Tap Play introduction to start the video with sound.')
+        setVideoState('blocked')
       }
     }
   }, [])
-
-  useEffect(() => { void startVideo() }, [startVideo, videoAttempt])
 
   useEffect(() => {
     if (videoState === 'complete') return
@@ -114,6 +103,7 @@ export default function LevelExperience({ preview = false }: LevelExperienceProp
     let watcher: (() => void) | null = null
     let hardStop: number | undefined
     let speechDetected = false
+    let vadAvailable = true
     let startedAt = 0
     const claimSubmission = createSubmissionGate()
 
@@ -130,6 +120,8 @@ export default function LevelExperience({ preview = false }: LevelExperienceProp
         ? 'Miss Julie could not play the prompt. Tap Try again.'
         : error instanceof Error && error.message.includes('feedback')
           ? 'Miss Julie could not play the feedback. Tap Try again.'
+          : error instanceof Error && error.message.includes('recording failed')
+            ? 'The recording stopped unexpectedly. Check the microphone and tap Try again.'
           : error instanceof Error && ['NotAllowedError', 'SecurityError', 'NotFoundError', 'NotReadableError', 'AbortError', 'NotSupportedError'].includes(error.name)
             ? microphoneFailureMessage(error)
             : 'The connection was interrupted. Check it, then tap Try again.'
@@ -155,7 +147,15 @@ export default function LevelExperience({ preview = false }: LevelExperienceProp
       speechDetected = false
       startedAt = performance.now()
       recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data) }
-      recorder.onerror = () => fail(new Error('Microphone recording failed'))
+      recorder.onerror = () => {
+        if (recorder) {
+          recorder.onstop = null
+          if (recorder.state === 'recording') recorder.stop()
+        }
+        release()
+        recorderRef.current = null
+        fail(new Error('Microphone recording failed'))
+      }
       recorder.onstop = () => {
         if (!claimSubmission()) return
         const durationMs = Math.min(11900, Math.max(250, Math.round(performance.now() - startedAt)))
@@ -164,11 +164,12 @@ export default function LevelExperience({ preview = false }: LevelExperienceProp
         recorderRef.current = null
         if (!active) return
         setPhase('checking')
+        const noSpeech = (!speechDetected && vadAvailable) || blob.size < 800
         void kgLevel4PreviewService.submitAttempt({
           letter,
-          audio: speechDetected && blob.size >= 800 ? blob : undefined,
+          audio: noSpeech ? undefined : blob,
           durationMs,
-          noSpeech: !speechDetected || blob.size < 800,
+          noSpeech,
           signal: controller.signal,
         }).then(async (result) => {
           if (!active) return
@@ -198,6 +199,7 @@ export default function LevelExperience({ preview = false }: LevelExperienceProp
         silenceMs: 1100, minimumSpeechMs: 350, noSpeechTimeoutMs: 6500,
         speechThreshold: .017, resumeContext: true, sampleIntervalMs: 50,
         onSpeech: () => { speechDetected = true },
+        onUnavailable: () => { vadAvailable = false },
       })
       hardStop = window.setTimeout(() => { if (recorder?.state === 'recording') recorder.stop() }, 12_000)
     } catch (error) {
@@ -263,11 +265,10 @@ export default function LevelExperience({ preview = false }: LevelExperienceProp
         />
       </div>
       {videoState !== 'playing' || videoError ? <div className="kg-level3-intro__recovery" aria-live="polite">
-        {videoError ? <p role="alert">{videoError}</p> : videoState === 'paused' ? <p>The introduction is paused. Resume it to continue.</p> : videoState === 'loading' ? <p role="status">Loading the introduction…</p> : null}
+        {videoError ? <p role="alert">{videoError}</p> : videoState === 'ready' ? <p>Watch the complete introduction with Miss Julie before practising Q–V.</p> : videoState === 'paused' ? <p>The introduction is paused. Resume it to continue.</p> : videoState === 'loading' ? <p role="status">Loading the introduction…</p> : null}
         {fullscreenFallback ? <p role="status">Fullscreen is unavailable; continuing in the full-screen page view.</p> : null}
-        {soundBlocked && videoState === 'playing' ? <button type="button" onClick={() => { const video = videoRef.current; if (video) { video.muted = false; setSoundBlocked(false) } }}><Volume2 size={18} /> Enable Miss Julie&apos;s sound</button> : null}
-        {videoState === 'blocked' || videoState === 'paused' ? <button type="button" onClick={() => void startVideo()}><Play size={18} /> Play introduction</button> : null}
-        {videoState === 'error' ? <button type="button" onClick={() => { completionRef.current = false; maximumTimeRef.current = 0; lastValidTimeRef.current = 0; setVideoAttempt((value) => value + 1) }}><RotateCw size={18} /> Try video again</button> : null}
+        {videoState === 'ready' || videoState === 'blocked' || videoState === 'paused' ? <button type="button" onClick={() => void startVideo()}><Play size={18} /> Play introduction</button> : null}
+        {videoState === 'error' ? <button type="button" onClick={() => { completionRef.current = false; maximumTimeRef.current = 0; lastValidTimeRef.current = 0; setVideoState('ready'); setVideoAttempt((value) => value + 1) }}><RotateCw size={18} /> Try video again</button> : null}
       </div> : null}
     </main>
   }
