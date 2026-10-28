@@ -82,6 +82,17 @@ async function main() {
   }
   console.log('PASS: 5-digit PIN authenticated; Class 1 next lesson resolved')
 
+  // Validate progress-write eligibility BEFORE spending the Azure STT credit.
+  if (commit) {
+    const lesson = await api<{ activities: Array<{ id: string; type: string; aiEnabled?: boolean }> }>(
+      '/students/me/lessons/' + next.lessonId, token,
+    )
+    const current = lesson.activities.find((item) => item.id === next.activityId)
+    if (!current?.aiEnabled || current.type !== 'CONVERSATION') {
+      throw new Error('Next activity must be an AI CONVERSATION; finish earlier activities first.')
+    }
+  }
+
   // Exactly one audio upload, no silent automatic retries that drain credits.
   const upload = new FormData()
   upload.append('audio', new Blob([await readFile(file)], { type: mimeType }), path.basename(file))
@@ -97,13 +108,6 @@ async function main() {
 
   let teacherLine = 'Let us learn English together.'
   if (commit) {
-    const lesson = await api<{ activities: Array<{ id: string; type: string; aiEnabled?: boolean }> }>(
-      '/students/me/lessons/' + next.lessonId, token,
-    )
-    const current = lesson.activities.find((item) => item.id === next.activityId)
-    if (!current?.aiEnabled || current.type !== 'CONVERSATION') {
-      throw new Error('Next activity must be an AI CONVERSATION; finish earlier activities first.')
-    }
     const session = await api<{ _id: string }>('/voice/sessions', token, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ lessonId: next.lessonId, activityId: next.activityId }),
