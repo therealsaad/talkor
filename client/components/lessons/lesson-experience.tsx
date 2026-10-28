@@ -559,13 +559,14 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
 
           setExperience('transcribing')
 
-          const result = await voiceService.transcribeAudio(
-            blob,
-            durationMs,
-            'en-IN',
-          )
+          // Only Class 1 uses Sarvam's existing detected-language metadata.
+          // Other grades keep their original transcript-only contract. This
+          // does NOT make a second STT request or classify language by script.
+          const voiceResult = experienceId === 'g01-l01'
+            ? await voiceService.transcribeAudioDetailed(blob, durationMs, 'en-IN')
+            : { transcript: await voiceService.transcribeAudio(blob, durationMs, 'en-IN'), languageCode: undefined }
 
-          const normalizedText = result.trim()
+          const normalizedText = voiceResult.transcript.trim()
 
           if (!normalizedText) {
             throw new Error('I could not hear that clearly. Try once more.')
@@ -643,7 +644,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
             setPose('encouraging')
             return
           }
-          await submit(normalizedText, currentSessionId, 'MIC')
+          await submit(normalizedText, currentSessionId, 'MIC', voiceResult.languageCode)
 
           activeRecordingSessionId.current = null
           sessionId.current = null
@@ -736,11 +737,16 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     return () => window.clearTimeout(timer)
   }, [experience, experienceId, homeworkSaved, julie.isSpeaking, julie.state, router])
 
-  async function submit(text: string, id: string, inputMode: 'MIC' | 'TEXT' | 'OPTION' = 'MIC') {
+  async function submit(
+    text: string,
+    id: string,
+    inputMode: 'MIC' | 'TEXT' | 'OPTION' = 'MIC',
+    detectedLanguage?: 'en-IN' | 'hi-IN' | 'mr-IN',
+  ) {
     setExperience('julie_thinking')
     setPose('thinking')
     try {
-      const result = await voiceService.submitTranscript(id, text, inputMode)
+      const result = await voiceService.submitTranscript(id, text, inputMode, detectedLanguage)
       const ai = result.aiResponse
       const fallbackText = result.evaluation?.feedback || 'Thank you for sharing that.'
       const retryRequired = Boolean(ai?.shouldRetry || ai?.conversation?.retryState?.waiting)
