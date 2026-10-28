@@ -705,15 +705,14 @@ async submitTranscript(
     const requestedAt =
       performance.now()
 
-    // Fixed lesson prompts repeat across students. Cache by exact text only for
-    // non-personalised lesson audio, never for live conversation/feedback.
+    // Do not reuse audio from a different sentence in the same activity.
+    // Open conversations/feedback can include child-specific information and
+    // must never enter this shared browser memory cache.
     const cacheKey = priority === 'LESSON'
-      ? activityId
-        ? `activity:${activityId}`
-        : `lesson:${detectVoiceLanguage(text)}:${text.trim().toLowerCase()}`
-      : turnId
+      ? `lesson:${activityId || 'generic'}:${detectVoiceLanguage(text)}:${text.trim().replace(/\s+/g, ' ')}`
+      : null
     try {
-      let audioBlob = this.audioCache.get(cacheKey)
+      let audioBlob = cacheKey ? this.audioCache.get(cacheKey) : undefined
       if (!audioBlob) {
         if (process.env.NODE_ENV !== 'production') console.info(`[JulieVoice] turn=${turnId} synthesis requested`)
         const token = getStoredToken()
@@ -765,7 +764,7 @@ async submitTranscript(
         audioBlob = await response.blob()
 
         if (!audioBlob.size) throw new Error('Miss Julie returned an empty audio response.')
-        this.audioCache.set(cacheKey, audioBlob)
+        if (cacheKey) this.audioCache.set(cacheKey, audioBlob)
         if (this.audioCache.size > 40) {
           const oldest = this.audioCache.keys().next().value
           if (oldest) this.audioCache.delete(oldest)

@@ -46,5 +46,5 @@ jobs:
       - run: pnpm build
         working-directory: backend
       - name: Test Class 1 Node-Python bridge security
-        run: pnpm exec jest --runInBand tests/unit/pythonAIProviderBridge.test.ts
+        run: pnpm exec jest --runInBand tests/unit/pythonAIProviderBridge.test.ts tests/unit/class1StaticAudio.test.ts
         working-directory: backend

@@ -33,6 +33,8 @@ export const aiLimiter = rateLimit({
 export const voiceSessionLimiter = rateLimit({
   windowMs: 60 * 1000,
   limit: 60,
+  // School computer labs share public IPs: bucket by verified student identity.
+  keyGenerator: (req) => `${req.auth?.schoolId || 'unknown'}:${req.auth?.id || 'unknown'}`,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, error: { code: 'RATE_LIMITED', message: 'Too many voice session requests. Try again in a moment.' } },
@@ -40,7 +42,9 @@ export const voiceSessionLimiter = rateLimit({
 
 export const voiceMediaLimiter = rateLimit({
   windowMs: 60 * 1000,
-  limit: 120,
+  // Azure STT/TTS costs money: cap rapid accidental taps by student, not school IP.
+  limit: 18,
+  keyGenerator: (req) => `${req.auth?.schoolId || 'unknown'}:${req.auth?.id || 'unknown'}`,
   standardHeaders: true,
   legacyHeaders: false,
   message: { success: false, error: { code: 'RATE_LIMITED', message: 'Too many voice media requests. Try again in a moment.' } },
