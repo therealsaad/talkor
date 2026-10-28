@@ -17,9 +17,13 @@ const STONES = [
 export function KGAlphabetMap({
   preview = false,
   onPreviewPlay,
+  previewLevel = 1,
+  previewLabel = 'Level 1',
 }: {
   preview?: boolean
   onPreviewPlay?: (index: number) => void
+  previewLevel?: number
+  previewLabel?: string
 } = {}) {
   const [state, setState] = useState<KGAlphabetState | null>(null)
   const [error, setError] = useState('')
@@ -68,14 +72,15 @@ export function KGAlphabetMap({
                   style={style}
                   className="kg-garden__node kg-garden__node--ready"
                   onClick={() => onPreviewPlay?.(0)}
-                  aria-label="Preview Level 1"
+                  aria-label={`Preview ${previewLabel}`}
                 >
                   1
                 </button>
               )
             }
 
-            return (
+            if (!preview) {
+              return (
               <Link
                 key={level}
                 style={style}
@@ -87,7 +92,8 @@ export function KGAlphabetMap({
               >
                 {state?.completed ? <Check aria-hidden="true" size={23} /> : '1'}
               </Link>
-            )
+              )
+            }
           }
 
           return (
@@ -115,9 +121,11 @@ export function KGAlphabetMap({
         ) : !state ? (
           'Loading your garden...'
         ) : state.completed ? (
-          'Level 1 complete! Tap the checkmark to practise again.'
+          `${previewLabel} complete! Tap the checkmark to practise again.`
+        ) : previewLevel !== 1 ? (
+          `${previewLabel} · Q–V — Ready to explore`
         ) : (
-          `Level 1 · ABCD — ${Math.min(state.currentIndex, state.totalActivities)} of ${state.totalActivities} activities completed`
+          `${previewLabel} · ABCD — ${Math.min(state.currentIndex, state.totalActivities)} of ${state.totalActivities} activities completed`
         )}
       </div>
     </main>
