@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Play, RotateCcw, Sparkles } from 'lucide-react'
+import { requestClass1Fullscreen } from './class1-fullscreen'
 
 /** This reviewed 90-second video is delivered separately from the application. */
 export const CLASS1_FIRST_DAY_VIDEO = process.env.NEXT_PUBLIC_TALKORA_CLASS1_INTRO_URL?.trim() ||
@@ -33,7 +34,8 @@ export function Class1LessonIntro({ onAvailable, onDone }: {
     }
 
     function pauseWhenFullscreenEnds() {
-      const isFullscreen = document.fullscreenElement === frame.current
+      const fullscreenTarget = frame.current?.closest<HTMLElement>('[data-class1-immersion]') || frame.current
+      const isFullscreen = document.fullscreenElement === fullscreenTarget
       if (isFullscreen) {
         fullscreenActive.current = true
       } else if (fullscreenActive.current) {
@@ -73,14 +75,9 @@ export function Class1LessonIntro({ onAvailable, onDone }: {
     if (!canPlay || !video.current || !frame.current) return
     try {
       // Fullscreen is an enhancement; school browser policies can reject it.
-      if (typeof frame.current.requestFullscreen === 'function' && document.fullscreenElement !== frame.current) {
-        try {
-          await frame.current.requestFullscreen()
-          fullscreenActive.current = document.fullscreenElement === frame.current
-        } catch {
-          fullscreenActive.current = false
-        }
-      }
+      // Request it for the WHOLE lesson, so fullscreen survives the intro video.
+      const fullscreenTarget = frame.current.closest<HTMLElement>('[data-class1-immersion]') || frame.current
+      fullscreenActive.current = await requestClass1Fullscreen(fullscreenTarget)
       video.current.muted = false
       await video.current.play()
       setNeedsTap(false)
