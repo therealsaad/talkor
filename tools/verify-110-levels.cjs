@@ -17,12 +17,13 @@ assert.match(schoolLayout,/isEducator/);assert.match(studio,/gradeLevelMapServic
 assert.match(roadmap,/GRADE_ROADMAP\.length !== 110/);
 const configRegex=/export const config = (\{[\s\S]*\}) as const satisfies LevelDesignConfig\s*$/;
 const uniqueThemes=new Set(); const uniquePalettes=new Set(); let count=0;
-// Reviewed student pilots and two unpublished KG staff previews have different
+// Reviewed student pilots and KG staff previews have different
 // editorial boundaries. Every other workspace stays an empty draft.
 const liveKG='g00-l01';
 const class1Pilot='g01-l01';
 const level2Preview='g00-l02';
 const level3Preview='g00-l03';
+const level4Preview='g00-l04';
 for(let grade=0;grade<=10;grade++){
  const slug=grade===0?'kg':`class-${String(grade).padStart(2,'0')}`;
  for(let level=1;level<=10;level++){
@@ -41,10 +42,10 @@ for(let grade=0;grade<=10;grade++){
    assert.equal(config.staffOnlyPreview,true,`${id} must remain staff-only`);
    assert.equal(config.studentPlayable,false,`${id} cannot be published by a workspace edit`);
   }
-  if(id===class1Pilot||id===level2Preview||id===level3Preview){
+  if(id===class1Pilot||id===level2Preview||id===level3Preview||id===level4Preview){
    // These previews may require an intro, but it cannot be skippable.
    assert.equal(config.learningPolicy.introRequired,config.learningPolicy.introMustComplete);
-   if(id===level2Preview||id===level3Preview) assert.equal(config.learningPolicy.introRequired,true);
+   if(id===level2Preview||id===level3Preview||id===level4Preview) assert.equal(config.learningPolicy.introRequired,true);
   }else{
    assert.equal(config.learningPolicy.introRequired,id===liveKG);
   }

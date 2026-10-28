@@ -7786,12 +7786,7 @@ export default function AdventureMapPage() {
     }
 
     focusCamera(world, 1.48)
-
-    window.setTimeout(() => {
-      router.push(
-        `/student/lesson/${targetLesson.id}`,
-      )
-    }, 850)
+    router.push(`/student/lesson/${encodeURIComponent(targetLesson.id)}`)
   }
 
   function chooseWorld(
