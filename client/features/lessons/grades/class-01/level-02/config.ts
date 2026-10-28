@@ -1,7 +1,4 @@
 import type { LevelDesignConfig } from '../../../types'
-import { CLASS1_BALBHARATI_DRAFTS, CLASS1_BALBHARATI_SOURCE } from '../balbharati-curriculum'
-
-const chapterPlan = CLASS1_BALBHARATI_DRAFTS[1]
 
 /** Distinct, editable theme and pedagogy for g01-l02. Authoring is NOT publishing. */
 export const config = {
@@ -9,13 +6,13 @@ export const config = {
   "grade": 1,
   "level": 2,
   "gradeLabel": "Class 1",
-  "title": chapterPlan.title,
+  "title": "My School",
   "editorialStatus": "draft",
   "studentPlayable": false,
-  "description": `Original voice-first speaking activities for ${chapterPlan.title}, aligned to English Balbharati chapters ${chapterPlan.exercises.map((exercise) => exercise.chapter).join(', ')}. Educator sign-off pending.`,
+  "description": "Original voice-first Balbharati activities for chapters 1.2–1.6, with English practice and optional Hindi/Marathi support. Educator sign-off pending.",
   "syllabus": {
     "objectives": [
-      chapterPlan.goal,
+      "Listen, act and connect letters with familiar words.",
       "Explain one step in Hindi or Marathi when requested; always return to short English speaking.",
       "Use modeled feedback for repeated difficulty and extend only when the student is ready."
     ],
@@ -25,8 +22,8 @@ export const config = {
       "reading"
     ],
     "boardReviewRequired": true,
-    "sourceBook": CLASS1_BALBHARATI_SOURCE,
-    "sourcePages": chapterPlan.exercises.map((exercise) => exercise.page),
+    "sourceBook": "English Balbharati Standard One (2025; 2026 reprint)",
+    "sourcePages": [2, 3, 5, 7, 8],
     "syllabusVerified": false
   },
   "experience": {
