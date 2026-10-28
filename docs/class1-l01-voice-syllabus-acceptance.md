@@ -18,9 +18,14 @@ are official Balbharati material.
 | 9 | `find-school` | Hear/identify `school` from pictures by **speaking** the word | Original activity related to Balbharati 1.1 |
 | 10 | `school-talk` | One-word answer becomes a modeled sentence, then a very short related sentence; Hindi/Marathi explanations when needed | Original adaptive conversation related to Balbharati 1.1 |
 
-The board now changes teaching cues with each live activity; Miss Julie is
-larger on landscape displays, and the cartoon student remains absent on the
-Class 1 scene. `g01-l01` uses the existing automatic microphone trigger,
+The illustrated **two-page word book** now changes on each live activity:
+magnetic `A + M` / `A + N` letter tiles, an original ball-on-box scene for `ON`,
+an animated `UP` arrow, school and movement illustrations, then short school
+dialogues. It shows live listen/think/retry/completed status from the existing
+lesson state. This book is **a visual scaffold, not a PDF copy**, does not
+issue new paid speech calls, and cannot judge a student's pronunciation.
+Miss Julie remains larger beside the book on landscape displays, and the
+cartoon student remains absent on the Class 1 scene. `g01-l01` uses the existing automatic microphone trigger,
 automatic silence detection, protected server attempts, progress and
 post-feedback advancement. The school-story Python bridge also recognizes
 original short practice sentences for *run, skip, jump, play, bell, grin*.
@@ -43,8 +48,10 @@ original short practice sentences for *run, skip, jump, play, bell, grin*.
 1. Open the existing student lesson via the 5-digit **test** PIN, tap only the
    initial browser audio/fullscreen permission when required by the browser.
    Run with a landscape monitor or managed kiosk device.
-2. In the foundations, say `am`, `a and n`, `at` etc. The backend must verify
-   choices/attempts. Check that correct responses advance automatically.
+2. In the foundations, verify the magnetic letters and original mini-scenes on
+   the book. Say `am`, `a and n`, `at`, `on`, `up`. The backend must verify
+   choices/attempts; visual success happens **only** after a validated result.
+   Check that correct responses advance automatically and that the page updates.
 3. At `say-walk`, speak `walk`. At `find-school`, say `school`. At `school-talk`,
    say `jump`, then `I can jump`. Miss Julie should first model `I can jump`,
    then invite one next action (`I can play`) if no support is needed.
