@@ -15,6 +15,8 @@ export interface MissJulieContext {
   learningEvidence?: string[]
   promptContext: string
   studentMessage: string
+  /** Optional explicit support language; never used to grade the learner. */
+  preferredExplanationLanguage?: 'English' | 'Hindi' | 'Marathi' | 'en' | 'hi' | 'mr'
   unitNumber?: number
   stage?: string
   allowedVocabulary?: string[]

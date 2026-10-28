@@ -64,6 +64,16 @@ for(let grade=0;grade<=10;grade++){
    assert.match(activities,/\['E', 'F', 'G', 'H', 'I', 'J'\]/);
    assert.match(activities,/approved:\s*false/);
    assert.doesNotMatch(activities,/approved:\s*true/);
+  }else if(grade===1 && level>=2){
+   // Unapproved, original authoring drafts are allowed for Class 1 only.
+   assert.ok(activities.includes(`class1DraftActivities(${level})`),`${id}: missing chapter drafts`);
+   assert.doesNotMatch(activities,/approved:\s*true/,`${id}: unreviewed activity may not self-approve`);
+   const chapterDraft=read('client/features/lessons/grades/class-01/balbharati-curriculum.ts');
+   assert.match(chapterDraft,/approved: false/);
+   assert.doesNotMatch(chapterDraft,/approved: true/);
+   assert.equal(config.editorialStatus,'draft');
+   assert.equal(config.syllabus.boardReviewRequired,true);
+   assert.equal(config.syllabus.syllabusVerified,false);
   }else{
    assert.match(activities,/export const activities: LevelActivity\[\] = \[\]/,`${id}: unreviewed draft activities`);
   }
