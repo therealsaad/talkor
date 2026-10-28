@@ -8,7 +8,10 @@ import { watchVoiceActivity } from '@/lib/voice-activity'
 import { AnimatedMissJulie } from '../level-01/components/AnimatedMissJulie'
 import '../level-01/styles/kg-alphabet.css'
 import '../level-01/styles/kg-level1-polish.css'
+import '../components/kindergarten-world.css'
 import './level-02.css'
+import { KindergartenWorld } from '../components/KindergartenWorld'
+import { LetterWordPicture } from '../components/LetterWordPicture'
 import type { LevelExperienceProps } from '../../../registry'
 import {
   createSubmissionGate,
@@ -26,6 +29,15 @@ const LETTER_WORDS: Record<Level2Letter, string> = {
   I: 'igloo',
   J: 'jam',
 }
+const LETTER_PICTURES: Record<Level2Letter, string> = {
+  E: '/kg/pictures/level-2/elephant.svg',
+  F: '/kg/pictures/level-2/fish.svg',
+  G: '/kg/pictures/level-2/goat.svg',
+  H: '/kg/pictures/level-2/hat.svg',
+  I: '/kg/pictures/level-2/igloo.svg',
+  J: '/kg/pictures/level-2/jam.svg',
+}
+
 const LETTER_TRANSITION_PAUSE_MS = 900
 
 type Phase = 'narrating' | 'requesting' | 'listening' | 'checking' | 'feedback' | 'error' | 'finished'
@@ -260,7 +272,8 @@ export default function LevelExperience({ preview = false, onPreviewBack }: Leve
         : ''
 
   return (
-    <main className="kg-level2-play" aria-label="Staff preview of Level 2 letters E to J">
+    <main className="kg-level2-play" data-phase={phase} aria-label="Staff preview of Level 2 letters E to J">
+      <KindergartenWorld />
       <header className="kg-level2-play__top">
         {onPreviewBack
           ? <button type="button" className="kg-level2-play__back" onClick={onPreviewBack}><ArrowLeft size={18} /> Back to introduction</button>
@@ -300,9 +313,13 @@ export default function LevelExperience({ preview = false, onPreviewBack }: Leve
             </div>
           ) : (
             <>
-              <div className="kg-level2-play__letter" aria-label={`Letter ${selected}`}>{selected}</div>
-              <h1>Meet letter <strong>{selected}</strong></h1>
-              <p>{selected} for {LETTER_WORDS[selected]}.</p>
+              <LetterWordPicture
+                letter={selected}
+                word={LETTER_WORDS[selected]}
+                pictureSrc={LETTER_PICTURES[selected]}
+                reducedMotion={Boolean(reduceMotion)}
+                className="kg-level2-letter-word-picture"
+              />
               <span aria-label={`Letter ${selectedIndex + 1} of ${LEVEL2_LETTERS.length}`}>
                 {selectedIndex + 1} of {LEVEL2_LETTERS.length}
               </span>

@@ -9,6 +9,9 @@ import { AnimatedMissJulie } from '../level-01/components/AnimatedMissJulie'
 import '../level-01/styles/kg-alphabet.css'
 import '../level-01/styles/kg-level1-polish.css'
 import './level-03.css'
+import '../components/kindergarten-world.css'
+import { KindergartenWorld } from '../components/KindergartenWorld'
+import { LetterWordPicture } from '../components/LetterWordPicture'
 import type { LevelExperienceProps } from '../../../registry'
 
 const LETTERS = LEVEL3_LETTERS
@@ -265,14 +268,7 @@ export default function LevelExperience({ preview = false, previewStartLetter = 
       data-outcome={feedbackOutcome}
       aria-label="Staff preview of Level 3 letters K to P"
     >
-      <div className="kg-level3-sky" aria-hidden="true">
-        <span className="kg-level3-sky__cloud kg-level3-sky__cloud--one" />
-        <span className="kg-level3-sky__cloud kg-level3-sky__cloud--two" />
-        <span className="kg-level3-sky__star kg-level3-sky__star--one" />
-        <span className="kg-level3-sky__star kg-level3-sky__star--two" />
-        <span className="kg-level3-sky__bubble kg-level3-sky__bubble--one" />
-        <span className="kg-level3-sky__bubble kg-level3-sky__bubble--two" />
-      </div>
+      <KindergartenWorld />
       <header className="kg-alpha-play-top">
         {onPreviewBack ? <button type="button" className="kg-alpha-map-link" onClick={onPreviewBack}><ArrowLeft size={18} /> Choose a letter</button> : <span />}
         <div className="kg-alpha-progress-wrap" aria-label={`Letter ${selectedIndex + 1} of ${LETTERS.length}`}>
@@ -307,14 +303,13 @@ export default function LevelExperience({ preview = false, previewStartLetter = 
               transition={{ duration: 0.46, ease: [0.22, 1, 0.36, 1] }}
             >
               <span className="kg-alpha-activity-label"><Sparkles size={17} /> EXPLORE THE LETTERS</span>
-              <div className="kg-level3-letter-display">
-                <div className="kg-alpha-letter-orb kg-level3-letter-orb" aria-label={`Letter ${selected}`}>
-                  <span>{selected}</span><small>LETTER {selected}</small>
-                </div>
-                <img className="kg-level3-letter-picture" src={picture.src} alt={`${picture.word} for letter ${selected}`} />
-              </div>
-              <h1>Meet letter <strong>{selected}</strong></h1>
-              <p>{selected} for {picture.word[0].toUpperCase()}{picture.word.slice(1)}.</p>
+              <LetterWordPicture
+                letter={selected}
+                word={picture.word}
+                pictureSrc={picture.src}
+                reducedMotion={Boolean(reduceMotion)}
+                className="kg-level3-letter-word-picture"
+              />
               <span className="kg-level3-letter-count" aria-label={`Letter ${selectedIndex + 1} of ${LETTERS.length}`}>{selectedIndex + 1} of {LETTERS.length}</span>
               <p className="kg-level3-preview-note">Design preview only. No student progress or scoring is recorded.</p>
               {phase === 'narrating' || phase === 'requesting' || phase === 'checking'
