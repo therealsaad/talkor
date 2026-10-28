@@ -1,4 +1,7 @@
 import type { LevelDesignConfig } from '../../../types'
+import { CLASS1_BALBHARATI_DRAFTS, CLASS1_BALBHARATI_SOURCE } from '../balbharati-curriculum'
+
+const chapterPlan = CLASS1_BALBHARATI_DRAFTS[4]
 
 /** Distinct, editable theme and pedagogy for g01-l05. Authoring is NOT publishing. */
 export const config = {
@@ -6,13 +9,15 @@ export const config = {
   "grade": 1,
   "level": 5,
   "gradeLabel": "Class 1",
-  "title": "Things I Like",
+  "title": chapterPlan.title,
   "editorialStatus": "draft",
   "studentPlayable": false,
-  "description": "Things I Like — a distinct storybook castle adventure for Class 1 learners.",
+  "description": `Original voice-first speaking activities for ${chapterPlan.title}, aligned to English Balbharati chapters ${chapterPlan.exercises.map((exercise) => exercise.chapter).join(', ')}. Educator sign-off pending.`,
   "syllabus": {
     "objectives": [
-      "Recognize, hear, and speak language connected to things i like."
+      chapterPlan.goal,
+      "Explain one step in Hindi or Marathi when requested; always return to short English speaking.",
+      "Use modeled feedback for repeated difficulty and extend only when the student is ready."
     ],
     "skills": [
       "listening",
@@ -20,8 +25,8 @@ export const config = {
       "reading"
     ],
     "boardReviewRequired": true,
-    "sourceBook": null,
-    "sourcePages": [],
+    "sourceBook": CLASS1_BALBHARATI_SOURCE,
+    "sourcePages": chapterPlan.exercises.map((exercise) => exercise.page),
     "syllabusVerified": false
   },
   "experience": {
