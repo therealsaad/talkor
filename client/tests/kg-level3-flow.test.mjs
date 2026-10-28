@@ -131,6 +131,14 @@ test('Level 3 uses authenticated recording/STT only after Miss Julie finishes sp
   assert.doesNotMatch(lesson, /speakKGOnDevice|speechSynthesis/)
 })
 
+test('Level 3 coordinates each confirmed word with its picture', () => {
+  assert.match(lesson, /<LetterWordPicture/)
+  assert.doesNotMatch(lesson, /letter\.toLowerCase|is for/)
+  for (const [letter, word] of Object.entries({ K: 'kite', L: 'lion', M: 'monkey', N: 'nest', O: 'orange', P: 'parrot' })) {
+    assert.match(lesson, new RegExp(`${letter}: \{ src: '/kg/pictures/level-3/${word}\\.svg', word: '${word}' \}`))
+  }
+})
+
 test('Level 3 visual polish follows real lesson states and respects reduced motion', () => {
   assert.match(lesson, /data-phase=\{phase\}/)
   assert.match(lesson, /data-outcome=\{feedbackOutcome\}/)
@@ -138,8 +146,9 @@ test('Level 3 visual polish follows real lesson states and respects reduced moti
   assert.match(lesson, /phase === 'checking'[\s\S]*?'thinking'/)
   assert.match(lesson, /feedbackOutcome === 'correct' \? 'celebrating' : 'encouraging'/)
   assert.match(lesson, /<AnimatedMissJulie state=\{characterState\}/)
-  assert.match(lesson, /kg-level3-sky/)
+  assert.match(lesson, /<KindergartenWorld \/>/)
   assert.match(level3Styles, /@media \(prefers-reduced-motion: reduce\)/)
   assert.match(level3Styles, /kg-level3-mic-breathe/)
   assert.match(level3Styles, /pointer-events: none/)
+  assert.match(level3Styles, /\/lessons\/kg\/jungle-background\.png/)
 })
