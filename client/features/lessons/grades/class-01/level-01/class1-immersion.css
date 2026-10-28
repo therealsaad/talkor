@@ -1,0 +1,185 @@
+.tk-class1-immersion {
+  position: relative;
+  width: 100%;
+  height: 100dvh;
+  min-height: 100svh;
+  overflow: hidden;
+  background: #102c34;
+}
+
+.tk-class1-immersion:fullscreen {
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.tk-class1-fullscreen-action {
+  position: absolute;
+  z-index: 80;
+  right: clamp(10px, 2vw, 24px);
+  bottom: max(14px, env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 1px solid rgba(255, 255, 255, .68);
+  border-radius: 999px;
+  color: #173f38;
+  background: #e3f7e5;
+  box-shadow: 0 5px 20px rgba(0, 28, 16, .20);
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tk-class1-fullscreen-action:focus-visible,
+.tk-class1-rotate-card button:focus-visible {
+  outline: 3px solid #ffcb43;
+  outline-offset: 3px;
+}
+
+.tk-class1-rotate-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 500;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  color: #173f38;
+  background: linear-gradient(145deg, #dff8e1, #c7eaf6 70%, #fff2cc);
+}
+
+.tk-class1-rotate-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  width: min(440px, 100%);
+  padding: 32px 24px;
+  border: 2px solid #fff;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, .93);
+  box-shadow: 0 20px 80px rgba(25, 71, 61, .18);
+  text-align: center;
+}
+
+.tk-class1-rotate-card > svg { color: #259678; }
+.tk-class1-rotate-card strong { font-size: clamp(22px, 6vw, 32px); line-height: 1.15; }
+.tk-class1-rotate-card p { max-width: 330px; margin: 0; font-size: 16px; line-height: 1.5; }
+.tk-class1-rotate-card button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 18px;
+  background: #1c936a;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 800;
+  cursor: pointer;
+}
+.tk-class1-rotate-card small { color: #735d29; font-size: 13px; line-height: 1.5; }
+
+.tk-class1-immersion .tk-class1-teaching-mode {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  margin-top: 10px;
+  color: #235a49;
+  font-size: clamp(11px, 1.2vw, 14px);
+  font-weight: 800;
+}
+.tk-class1-immersion .tk-class1-teaching-mode > span:first-child {
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #d9f5e4;
+}
+.tk-class1-immersion .tk-class1-teaching-mode.is-ai > span:first-child {
+  background: #dcf1ff;
+  color: #225d83;
+}
+
+/* The old coaching cue was pale yellow on cream, barely visible on video. */
+.tk-class1-immersion .tk-coach-cue {
+  border-color: #c5e1c7;
+  background: #ebf6e6;
+  color: #205944;
+}
+.tk-class1-immersion .tk-coach-cue strong { color: #24583d; }
+.tk-class1-immersion .tk-coach-cue small { color: #3b6651; }
+
+/* A rotated phone has little vertical room. Keep the actual task board in view,
+   and scroll its content rather than making the entire lesson portrait-shaped. */
+@media (orientation: landscape) and (max-height: 720px) {
+  .tk-class1-immersion .talkora-lesson {
+    --talkora-lesson-hud-height: 50px;
+  }
+  .tk-class1-immersion .talkora-lesson-header {
+    height: 50px;
+    min-height: 50px;
+  }
+  .tk-class1-immersion .tk-scene {
+    padding: 8px 12px 10px;
+    overflow: hidden;
+  }
+  .tk-class1-immersion .tk-stage-grid {
+    display: grid;
+    grid-template-columns: clamp(115px, 19vw, 210px) minmax(0, 1fr);
+    align-items: start;
+    height: 100%;
+    min-height: 0;
+    gap: clamp(10px, 2vw, 20px);
+  }
+  .tk-class1-immersion .tk-julie {
+    grid-column: 1;
+    width: 100%;
+    height: min(76dvh, 390px);
+    margin-top: 10px;
+    position: sticky;
+    top: 0;
+  }
+  .tk-class1-immersion .tk-learning-stack {
+    grid-column: 2;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    max-width: none;
+    margin: 0;
+    gap: 8px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+    padding: 4px 6px 20px 0;
+  }
+  .tk-class1-immersion .tk-julie-bubble,
+  .tk-class1-immersion .tk-task-float {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 12px 15px;
+    border-radius: 17px;
+  }
+  .tk-class1-immersion .tk-julie-bubble > p {
+    font-size: clamp(16px, 2.6vw, 24px);
+    line-height: 1.2;
+  }
+  .tk-class1-immersion .tk-bubble-head small { display: inline; }
+  .tk-class1-immersion .tk-student { display: none; }
+  .tk-class1-immersion .tk-task-meta { margin-bottom: 8px; }
+  .tk-class1-immersion .tk-coach-cue { margin-bottom: 8px; }
+  .tk-class1-immersion .tk-choice-tile { min-height: 56px; }
+  .tk-class1-immersion .tk-character-name { display: inline-flex; }
+  .tk-class1-immersion .tk-class1-fullscreen-action { bottom: 10px; right: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tk-class1-immersion *, .tk-class1-immersion *::before, .tk-class1-immersion *::after {
+    scroll-behavior: auto !important;
+  }
+}
