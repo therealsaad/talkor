@@ -6,18 +6,18 @@ export const activities: LevelActivity[] = []
 /** Editorial ideas only; not exposed to students or grading. */
 export const suggestedActivities: SuggestedActivity[] = [
   {
-    "label": "Listen and explore: My Body and Actions",
+    "label": "Explore letters K to P",
     "mode": "tap-picture",
-    "educatorNote": "Teacher defines visual scene and sound cues here."
+    "educatorNote": "Editorial preview only; add no student activity until letter visuals and prompts are reviewed."
   },
   {
-    "label": "Speak about My Body and Actions",
+    "label": "Listen and say the letter names K to P",
     "mode": "repeat-after-julie",
-    "educatorNote": "Teacher supplies sample answer, corrective hints and language support."
+    "educatorNote": "Teacher reviews pronunciation models and beginner support before authoring an activity."
   },
   {
-    "label": "Show what you know about My Body and Actions",
+    "label": "Find a named letter from K to P",
     "mode": "listen-and-find",
-    "educatorNote": "Teacher sets scoring rubric, touch choices and mastery threshold."
+    "educatorNote": "Keep as an editorial idea until approved letter choices and scoring are authored."
   }
 ]

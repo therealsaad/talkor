@@ -85,6 +85,7 @@ export const StudentLessonFastService = {
       Activity.find({
         lessonId: lesson._id,
         ...(isClass1Demo ? CLASS1_DEMO_ACTIVITY_FILTER : { status: contentStatus }),
+        ...(isClass1Demo ? { core: { $ne: false }, required: { $ne: false } } : {}),
       })
         .select('-answer -answerConfig')
         .sort('order').lean(),

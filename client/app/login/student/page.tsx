@@ -2,7 +2,6 @@
 
 import { useRef, useState, type FormEvent } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { ArrowLeft, ArrowRight, BookOpenCheck, Delete, GraduationCap, LockKeyhole, School, Sparkles } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { TalkoraLogo } from '@/components/brand/talkora-logo'
@@ -10,7 +9,6 @@ import './student-login.css'
 
 /** School lab-friendly: no student roster, school code, or persistent student session. */
 export default function StudentLoginPage() {
-  const router = useRouter()
   const { loginStudentByPin } = useAuth()
   const [pin, setPin] = useState('')
   const [busy, setBusy] = useState(false)
@@ -38,9 +36,10 @@ export default function StudentLoginPage() {
     setBusy(true)
     setError('')
     try {
-      const signedIn = await loginStudentByPin(pin)
+      await loginStudentByPin(pin)
       setPin('')
-      router.replace(signedIn.student?.grade === 0 ? '/student/kg/map' : '/student/continue')
+      // AuthProvider updates the session; LoginLayout performs the single
+      // redirect to /student/continue so the PIN flow cannot race with /home.
     } catch {
       setError('That PIN did not work. Please ask your teacher for help.')
       setPin('')

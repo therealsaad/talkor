@@ -14,8 +14,11 @@ import {
   Mic,
   PencilLine,
   Send,
+  Bell,
+  School,
   Sparkles,
   Square,
+  TreePine,
   Trophy,
   Volume2,
 } from 'lucide-react'
@@ -34,6 +37,7 @@ import {
 
 export interface ImmersiveLessonStageProps {
   activity: ActivityItem
+  experienceId?: string
   canonicalPrompt?: string
   index: number
   totalActivities: number
@@ -87,6 +91,7 @@ type DialogueTurn = {
 
 export function ImmersiveLessonStage({
   activity,
+  experienceId,
   canonicalPrompt = '',
   index,
   totalActivities,
@@ -135,6 +140,7 @@ export function ImmersiveLessonStage({
   const [warmupJulieText, setWarmupJulieText] = useState('')
   const [dialogueIndex, setDialogueIndex] = useState(0)
   const [pictureLoadFailed, setPictureLoadFailed] = useState(false)
+  const [julieAnimationReady, setJulieAnimationReady] = useState(false)
   const handledVoiceAnswer = useRef<number | null>(null)
   const automaticActivityRef = useRef<string | null>(null)
   const liveActivityRef = useRef(activity.id)
@@ -233,6 +239,25 @@ export function ImmersiveLessonStage({
   const julieImage =
     juliePortraitByPose[pose] ||
     talkoraAssets.julie.welcome
+
+  const julieAnimationName = pose === 'celebrating'
+    ? 'celebrating'
+    : pose === 'try_again'
+      ? 'encouraging'
+      : pose === 'listening'
+        ? 'listening'
+        : pose === 'thinking'
+          ? 'thinking'
+          : pose === 'speaking'
+            ? 'speaking'
+            : 'idle'
+  const julieAnimation = !reduceMotion
+    ? `/miss-julie-animations/transparent/${julieAnimationName}.webm`
+    : null
+
+  useEffect(() => {
+    setJulieAnimationReady(false)
+  }, [julieAnimation])
 
   const studentImage = learnerAvatar(avatarType)
 
@@ -378,7 +403,7 @@ export function ImmersiveLessonStage({
           <AnimatePresence initial={false} mode="sync">
             <motion.div
               key={julieImage}
-              className="tk-julie-pose"
+              className={`tk-julie-pose${julieAnimation && julieAnimationReady ? ' has-transparent-animation' : ''}`}
               initial={reduceMotion ? { opacity: 1 } : { opacity: 0, x: 12, scale: 0.985 }}
               animate={{ opacity: 1, x: 0, scale: 1 }}
               exit={reduceMotion ? { opacity: 0 } : { opacity: 0, x: -9, scale: 0.99 }}
@@ -392,6 +417,19 @@ export function ImmersiveLessonStage({
                 sizes="(max-width: 640px) 120px, (max-width: 1024px) 240px, 330px"
                 priority={pose === 'teaching' || pose === 'welcome'}
               />
+              {julieAnimation ? <video
+                key={julieAnimation}
+                className="tk-julie-animation"
+                src={julieAnimation}
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="auto"
+                aria-hidden="true"
+                onCanPlay={() => setJulieAnimationReady(true)}
+                onError={() => setJulieAnimationReady(false)}
+              /> : null}
             </motion.div>
           </AnimatePresence>
           <div className="tk-character-name tk-character-name--julie">
@@ -503,15 +541,19 @@ export function ImmersiveLessonStage({
 
             {isQuiz && !pilotUnavailableMessage ? (
               <motion.div className="tk-simple-scene" initial={{ opacity: 0, y: 18, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={{ type: 'spring', stiffness: 210, damping: 18 }}>
-                <span>{isSpelling ? '🔤 SAY OR BUILD THE WORD' : activity.content?.pictureMode === true ? '🎙️ SAY IT OR TOUCH' : '🎙️ SAY YOUR ANSWER'}</span>
+                <span>{experienceId === 'g01-l01'
+                  ? activity.content?.pictureMode === true ? 'LOOK AND CHOOSE' : 'LISTEN AND CHOOSE'
+                  : isSpelling ? 'SAY OR BUILD THE WORD' : activity.content?.pictureMode === true ? 'SAY IT OR TOUCH' : 'SAY YOUR ANSWER'}</span>
                 <h2>{activeTaskPrompt}</h2>
-                <p className="tk-voice-help" aria-live="polite">{isRecording ? isSpelling ? '🎙️ Listening — spell the full word' : '🎙️ Listening — say the word or option number' : isProcessing ? 'Checking your answer…' : isSpelling ? 'Say the full word. Or tap letters to build it.' : 'Say your answer aloud. You can also tap a choice.'}</p>
+                <p className="tk-voice-help" aria-live="polite">{experienceId === 'g01-l01'
+                  ? isRecording ? 'Listening. Say the word, or touch an answer.' : isProcessing ? 'Miss Julie is checking...' : 'Say the word or touch an answer.'
+                  : isRecording ? isSpelling ? 'Listening - spell the full word' : 'Listening - say the word or option number' : isProcessing ? 'Checking your answer...' : isSpelling ? 'Say the full word. Or tap letters to build it.' : 'Say your answer aloud. You can also tap a choice.'}</p>
                 {activity.content?.pictureMode === true && typeof activity.content?.languageHint === 'string' ? (
                   <p className="tk-picture-hint" lang="hi">{activity.content.languageHint}</p>
                 ) : null}
                 {pictureLoadFailed ? <p className="tk-picture-hint" role="alert">A lesson picture did not load. This answer is paused so a missing picture cannot count as a successful picture activity.</p> : null}
                 <div className={activity.content?.pictureMode === true ? 'tk-picture-grid' : 'tk-choice-grid'}>
-                  {(activity.choices || []).map((option, optionIndex) => (
+                  {(activity.choices || []).map((option) => (
                     <motion.button key={`${activity.id}:${option}`} type="button" whileHover={{ scale: 1.04, y: -3 }} whileTap={{ scale: .96 }}
                       disabled={isCompleted || isProcessing || isJulieSpeaking || pictureLoadFailed} onClick={() => isSpelling ? setSpelledWord((current) => `${current}${option}`) : onSelectChoice(option)}
                       className={activity.content?.pictureMode === true ? 'tk-picture-tile' : 'tk-choice-tile'}
@@ -521,9 +563,9 @@ export function ImmersiveLessonStage({
                           const pictureOption = pictureOptions.find((item) => item.word === option && item.status === 'READY' && typeof item.assetKey === 'string')
                           return typeof pictureOption?.assetKey === 'string' ? (
                             <span className="tk-picture-image-wrap"><Image className="tk-picture-image" src={`/lessons/kg/pictures/${encodeURIComponent(pictureOption.assetKey)}.webp`} alt={option} width={240} height={160} sizes="(max-width: 700px) 42vw, 220px" onError={() => setPictureLoadFailed(true)} /></span>
-                          ) : <span className="tk-picture-emoji" role="img" aria-label={option}>{pictureEmoji(option)}</span>
+                          ) : experienceId === 'g01-l01' ? <Class1ChoicePictogram word={option} /> : <span className="tk-picture-emoji" role="img" aria-label={option}>{pictureEmoji(option)}</span>
                         })()
-                      ) : <span aria-hidden="true" style={{ marginRight: 9 }}>{['🌟','🎈','✨','🎯'][optionIndex % 4]}</span>}
+                      ) : experienceId === 'g01-l01' ? null : <span aria-hidden="true" style={{ marginRight: 9 }}>{pictureEmoji(option)}</span>}
                       <span>{option}</span>
                     </motion.button>
                   ))}
@@ -1273,6 +1315,22 @@ function Styles() {
         justify-content: center;
         pointer-events: none;
       }
+
+      .tk-julie-animation {
+        position: absolute;
+        inset: 0;
+        z-index: 3;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        object-position: center bottom;
+        opacity: 0;
+        filter: drop-shadow(0 22px 22px rgba(0, 0, 0, .28));
+        transition: opacity .16s ease-out;
+      }
+
+      .tk-julie-pose.has-transparent-animation img { opacity: 0; }
+      .tk-julie-pose.has-transparent-animation .tk-julie-animation { opacity: 1; }
 
       .tk-julie-aura,
       .tk-student-glow {
@@ -2403,6 +2461,85 @@ function Styles() {
         .tk-picture-grid, .tk-choice-grid { gap: 8px; }
       }
 
+      /* Class 1 keeps the shared activity and scoring flow, with a softer meadow palette. */
+      .tk-lesson-world[data-experience-id="g01-l01"] .tk-focus-vignette {
+        background: linear-gradient(90deg, rgba(35, 91, 39, .10), transparent 20%, transparent 80%, rgba(35, 91, 39, .10));
+      }
+      .tk-lesson-world[data-experience-id="g01-l01"] .tk-julie-bubble {
+        border-color: rgba(255,255,255,.96);
+        background: linear-gradient(145deg, rgba(255,255,255,.98), rgba(237,249,255,.96));
+        box-shadow: 0 7px 0 rgba(79, 116, 71, .14), 0 22px 54px rgba(32, 72, 42, .22);
+      }
+      .tk-lesson-world[data-experience-id="g01-l01"] .tk-julie-bubble::before { background: rgba(248,253,255,.98); }
+      .tk-lesson-world[data-experience-id="g01-l01"] .tk-bubble-head strong { color: #327a58; }
+      .tk-lesson-world[data-experience-id="g01-l01"] .tk-speaker-dot { background: #54a875; box-shadow: 0 0 0 5px rgba(84,168,117,.14); }
+      .tk-lesson-world[data-experience-id="g01-l01"] .tk-task-float {
+        border-color: rgba(255,255,255,.96);
+        background: linear-gradient(150deg, rgba(255,255,248,.98), rgba(240,250,233,.97));
+        box-shadow: 0 8px 0 rgba(83, 115, 61, .15), 0 24px 58px rgba(32, 72, 42, .22);
+      }
+      .tk-lesson-world[data-experience-id="g01-l01"] .tk-task-step {
+        background: linear-gradient(145deg, #ffe889, #ffd466);
+        box-shadow: 0 4px 0 #b78b2e;
+      }
+      .tk-lesson-world[data-experience-id="g01-l01"] .tk-simple-scene h2 { color: #183e30; }
+      .tk-lesson-world[data-experience-id="g01-l01"] .tk-choice-grid { width: min(620px, 100%); gap: 14px; }
+      .tk-lesson-world[data-experience-id="g01-l01"] .tk-choice-tile {
+        min-height: 82px;
+        padding: 14px 18px;
+        border: 2px solid #b8d99e;
+        border-radius: 20px;
+        background: linear-gradient(160deg, #fff, #f1fae9);
+        color: #244d36;
+        box-shadow: 0 5px 0 #b1cd98, 0 10px 20px rgba(52, 93, 47, .10);
+        font-size: clamp(20px, 2vw, 28px);
+        font-weight: 900;
+        cursor: pointer;
+        transition: transform .16s ease, box-shadow .16s ease;
+      }
+      .tk-lesson-world[data-experience-id="g01-l01"] .tk-choice-tile:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 7px 0 #a5c78c, 0 13px 24px rgba(52, 93, 47, .14);
+      }
+      .tk-lesson-world[data-experience-id="g01-l01"] .tk-picture-tile {
+        min-height: 132px;
+        padding: 12px;
+        border: 2px solid #b8d99e;
+        border-radius: 20px;
+        background: linear-gradient(160deg, #fff, #f1fae9);
+        color: #244d36;
+        box-shadow: 0 5px 0 #b1cd98, 0 10px 20px rgba(52, 93, 47, .10);
+        font-size: 18px;
+        font-weight: 900;
+        cursor: pointer;
+      }
+      .tk-lesson-world[data-experience-id="g01-l01"] .tk-picture-pictogram {
+        width: 76px;
+        height: 68px;
+        display: grid;
+        place-items: center;
+        color: #44875d;
+        border: 1px solid #cfe5bc;
+        border-radius: 17px;
+        background: linear-gradient(145deg, #fff, #e9f6df);
+      }
+      .tk-lesson-world[data-experience-id="g01-l01"] .tk-picture-pictogram-label { font-size: 20px; font-weight: 900; }
+      .tk-lesson-world[data-experience-id="g01-l01"] .tk-choice-tile:focus-visible,
+      .tk-lesson-world[data-experience-id="g01-l01"] .tk-voice-retry:focus-visible { outline: 4px solid #f0bd47; outline-offset: 3px; }
+      .tk-lesson-world[data-experience-id="g01-l01"] .tk-voice-help { color: #385f4a; }
+      .tk-lesson-world[data-experience-id="g01-l01"] .tk-voice-retry {
+        border-color: #43865d;
+        background: linear-gradient(145deg, #e8f8df, #d2efc6);
+        color: #234a32;
+        box-shadow: 0 4px 0 #8eb67c;
+      }
+      @media (max-width: 700px) {
+        .tk-lesson-world[data-experience-id="g01-l01"] .tk-choice-grid { gap: 10px; }
+        .tk-lesson-world[data-experience-id="g01-l01"] .tk-choice-tile { min-height: 72px; padding: 10px 8px; }
+        .tk-lesson-world[data-experience-id="g01-l01"] .tk-picture-tile { min-height: 108px; }
+        .tk-lesson-world[data-experience-id="g01-l01"] .tk-picture-pictogram { width: 60px; height: 54px; }
+      }
+
       @media (prefers-reduced-motion: reduce) {
         *, *::before, *::after {
           animation-duration: .01ms !important;
@@ -2412,6 +2549,15 @@ function Styles() {
       }
     `}</style>
   )
+}
+
+
+function Class1ChoicePictogram({ word }: { word: string }) {
+  const normalized = word.trim().toLowerCase()
+  const Icon = normalized === 'school' ? School : normalized === 'bell' ? Bell : normalized === 'playground' ? TreePine : null
+  return Icon
+    ? <span className="tk-picture-pictogram" aria-hidden="true"><Icon size={58} strokeWidth={1.8} /></span>
+    : <span className="tk-picture-pictogram-label">{word}</span>
 }
 
 
