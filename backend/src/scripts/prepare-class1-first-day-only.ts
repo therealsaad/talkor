@@ -96,8 +96,9 @@ async function main() {
     if (!APPLY || ready) return
     if (!safe) throw new Error('STUDENT_HISTORY_EXISTS: no migration attempted; create an isolated fresh staging fixture instead')
     if (v2.length !== 10 || v3.length) throw new Error('PARTIAL_MIGRATION: manual review required')
-    if (process.env.TALKORA_FIRST_DAY_AUDIO_REVIEWED !== 'YES') {
-      throw new Error('AUDIO_NOT_REVIEWED: approve and upload the full English voice pack before replacing the lesson')
+    if (process.env.TALKORA_FIRST_DAY_AUDIO_REVIEWED !== 'YES' ||
+        process.env.TALKORA_CLASS1_STATIC_AUDIO_APPROVED !== 'true') {
+      throw new Error('AUDIO_NOT_REVIEWED: approve all ten English clips and enable TALKORA_CLASS1_STATIC_AUDIO_APPROVED=true before applying')
     }
     // Ensure all immutable English clips exist before any MongoDB write.
     const reviewed = FIRST_DAY_SCENES.map(scene => {
