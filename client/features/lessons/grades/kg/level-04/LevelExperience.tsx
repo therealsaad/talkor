@@ -77,6 +77,10 @@ export default function LevelExperience({ preview = false }: LevelExperienceProp
   }, [])
 
   useEffect(() => {
+    void startVideo()
+  }, [startVideo, videoAttempt])
+
+  useEffect(() => {
     if (videoState === 'complete') return
     const handleFullscreenChange = () => {
       const video = videoRef.current

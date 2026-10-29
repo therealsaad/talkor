@@ -246,6 +246,17 @@
     padding: 26px clamp(20px, 3vw, 42px) 50px
 }
 
+.educator-workspace.educator-workspace--kg-map {
+    flex: 1;
+    max-width: none;
+    padding: 0;
+    width: 100%;
+}
+
+.educator-workspace--kg-map .educator-page-head {
+    display: none;
+}
+
 .educator-page-head {
     align-items: flex-start;
     display: flex;

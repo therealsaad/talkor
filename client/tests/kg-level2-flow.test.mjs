@@ -19,6 +19,7 @@ const service = await read('features/lessons/grades/kg/level-02/services/kg-leve
 const introRoute = await read('app/school/kg-preview/level-2/page.tsx')
 const activityRoute = await read('app/school/kg-preview/level-2/[letter]/page.tsx')
 const landing = await read('app/school/kg-preview/page.tsx')
+const dashboardMap = await read('features/lessons/grades/kg/level-01/components/LevelMap.tsx')
 const config = await read('features/lessons/grades/kg/level-02/config.ts')
 const assets = JSON.parse(await read('features/lessons/grades/kg/level-02/assets.json'))
 const registry = await read('features/lessons/registry.ts')
@@ -38,7 +39,8 @@ test('Level 2 uses the verified E–J video and remains a student-locked draft',
   assert.match(studentRoute, /level=\{1\}/)
 })
 
-test('intro playback requires a user action, resists seeking, and only completes after genuine viewing', () => {
+test('intro playback starts automatically when permitted, resists seeking, and only completes after genuine viewing', () => {
+  assert.match(intro, /useEffect\(\(\) => \{\s*void startVideo\(\)\s*\}, \[startVideo, videoAttempt\]\)/)
   assert.match(intro, /onClick=\{\(\) => void startVideo\(\)\}/)
   assert.match(intro, /requestFullscreen/)
   assert.match(intro, /onSeeking=/)
@@ -60,7 +62,7 @@ test('the Level 2 route uses its one-use marker and starts the lesson at E', () 
   assert.match(activityRoute, /letter === 'E'/)
   assert.match(activityRoute, /router\.replace\('\/school\/kg-preview\/level-2'\)/)
   assert.match(activity, /useState<Level2Letter>\('E'\)/)
-  assert.match(landing, /level\.level === 2[\s\S]*?\/school\/kg-preview\/level-2/)
+  assert.match(dashboardMap, /dashboardHref[\s\S]*?2: '\/school\/kg-preview\/level-2'/)
   assert.notEqual(LEVEL2_INTRO_COMPLETED_KEY, 'talkora:kg-level3-intro-completed')
   assert.doesNotMatch(activity, /LEVEL3_LETTERS|kg-level3-preview|K–P/)
 })
@@ -125,8 +127,8 @@ test('Level 1 and Level 3 routes, video marker, and student boundary remain sepa
   assert.match(level1, /INTRO_VIDEO = '\/lessons\/kg\/videos\/fullkg\.mp4'/)
   assert.match(level3Route, /LEVEL3_INTRO_COMPLETED_KEY/)
   assert.match(level3Flow, /talkora:kg-level3-intro-completed/)
-  assert.match(landing, /\/school\/kg-preview\/level-1/)
-  assert.match(landing, /\/school\/kg-preview\/level-3/)
+  assert.match(dashboardMap, /1: '\/school\/kg-preview\/level-1'/)
+  assert.match(dashboardMap, /3: '\/school\/kg-preview\/level-3'/)
   assert.match(config, /"studentPlayable": false/)
 })
 
