@@ -16,18 +16,18 @@ import { finalizeConversationTeacherResponse } from './conversationTurns'
  * evidence of English mastery even when it mentions the target word. */
 function firstDaySceneSkills(sceneKey: string, message: string): string[] {
   const text = message.toLowerCase().trim()
-  if (/\\b(?:what is|what does|meaning|don't know|dont know|i need help|please help|explain)\\b|क्या|काय|समजत|म्हणजे|नहीं|नाही|मदद/.test(text)) return []
+  if (/\b(?:what is|what does|meaning|don't know|dont know|i need help|please help|explain)\b|क्या|काय|समजत|म्हणजे|नहीं|नाही|मदद/.test(text)) return []
   const evidence: Record<string, RegExp> = {
-    'hello-school': /\\b(school|happy|hello)\\b/,
-    'skip-bunny': /\\b(skip|skipping)\\b/,
-    'run-race': /\\b(run|running)\\b/,
-    'walk-school': /\\b(walk|walking)\\b/,
-    'big-grin': /\\b(smile|grin|smiling)\\b/,
-    'school-bell': /\\b(bell|rings)\\b/,
-    'jump-frog': /\\b(jump|jumping)\\b/,
-    'play-friends': /\\b(play|playing)\\b/,
-    'enter-class': /\\b(classroom|go in|go into)\\b/,
-    'grade-one': /\\b(grade one|grade 1|school|play|skip|run|walk|jump)\\b/,
+    'hello-school': /\b(school|happy|hello)\b/,
+    'skip-bunny': /\b(skip|skipping)\b/,
+    'run-race': /\b(run|running)\b/,
+    'walk-school': /\b(walk|walking)\b/,
+    'big-grin': /\b(smile|grin|smiling)\b/,
+    'school-bell': /\b(bell|rings)\b/,
+    'jump-frog': /\b(jump|jumping)\b/,
+    'play-friends': /\b(play|playing)\b/,
+    'enter-class': /\b(classroom|go in|go into)\b/,
+    'grade-one': /\b(grade one|grade 1|school|play|skip|run|walk|jump)\b/,
   }
   return evidence[sceneKey]?.test(text) ? ['first_day_english_attempt'] : []
 }
