@@ -27,8 +27,7 @@ async function pythonVoice(line: Line): Promise<Buffer> {
   const url = (process.env.AI_SERVICE_URL || 'http://127.0.0.1:8001').replace(/\/$/, '')
   if (!/^https:\/\//.test(url) && !/^http:\/\/(?:127\.0\.0\.1|localhost):8001$/.test(url))
     throw new Error('8001 narration endpoint must be local or approved HTTPS')
-  // Query the running 8001 process, not a voice version copied from docs.
-  // An OpenAPI HTTP 200 alone says nothing about installed weights/GPU.
+  // Resolve the voice from the process that's actually running on port 8001.
   const probe = await fetch(url + '/health', { signal: AbortSignal.timeout(7000) })
   if (!probe.ok) throw new Error('Python 8001 /health returned HTTP ' + probe.status)
   const health = parsePriyaHealth(await probe.json())
@@ -43,7 +42,24 @@ async function pythonVoice(line: Line): Promise<Buffer> {
       voice: health.voiceId, language: 'en-IN' }),
     signal: AbortSignal.timeout(180000),
   })
-  if (!response.ok) throw new Error('Python 8001 /v1/tts returned HTTP ' + response.status)
+  if (!response.ok) {
+    // Untrusted provider error bodies can include model paths or request text.
+    // Only display a bounded machine-readable error code, never raw HTML.
+    const responseBody: unknown = await response.json().catch(() => null)
+    const error = responseBody && typeof responseBody === 'object' && 'error' in responseBody
+      ? (responseBody as { error?: unknown }).error : undefined
+    const code = error && typeof error === 'object' && 'code' in error
+      ? (error as { code?: unknown }).code : undefined
+    const safeCode = typeof code === 'string' && /^[A-Z0-9_]{3,50}$/.test(code) ? ' [' + code + ']' : ''
+    const hint = response.status === 500
+      ? ' Unhandled Python generation error: inspect the terminal running port 8001 for the traceback.'
+      : response.status === 503
+        ? ' Priya may be missing model weights, blocked by Windows application policy, or out of GPU memory; inspect 8001 logs.'
+        : response.status === 422
+          ? ' Invalid request payload or voice ID; inspect /health and the running service version.'
+          : ''
+    throw new Error('Python 8001 /v1/tts HTTP ' + response.status + safeCode + '.' + hint)
+  }
   return Buffer.from(await response.arrayBuffer())
 }
 async function azureVoice(line: Line): Promise<Buffer> {
