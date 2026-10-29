@@ -50,7 +50,8 @@ export default function StudentLessonPage() {
     </main>
   }
   const firstDayV3 = lesson.experienceId === 'g01-l01' &&
-    lesson.activities.some(activity => activity.activityKey?.startsWith('class1-l01-v3-'))
+    lesson.activities.length === 10 &&
+    lesson.activities.every(activity => activity.activityKey?.startsWith('class1-l01-v3-'))
   // The old two-letter-word draft is NOT Balbharati 1.1. Do not put a child
   // through the outdated intro or award credit for the wrong chapter.
   if (lesson.experienceId === 'g01-l01' && !firstDayV3) {

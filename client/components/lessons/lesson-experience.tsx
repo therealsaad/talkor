@@ -691,8 +691,9 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
           if (isReplayCommand(normalizedText)) {
             await cancelActiveVoiceSession()
             setExperience('julie_audio_pending')
+            // replayCurrentTeacherTurn restores the authoritative state,
+            // including an unacknowledged final reply or a playback failure.
             await replayCurrentTeacherTurn()
-            setExperience('waiting_for_student')
             return
           }
 

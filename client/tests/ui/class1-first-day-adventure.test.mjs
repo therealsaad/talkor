@@ -78,6 +78,19 @@ test('Marathi/Hindi STT locale reaches Azure voice choice without another STT re
   assert.match(azure, /options\?\.language/)
 })
 
+test('replay command never overrides a failed or unacknowledged teacher response', async () => {
+  const engine = await load('../../components/lessons/lesson-experience.tsx')
+  const command = engine.split('if (isReplayCommand(normalizedText)) {')[1].split('setTranscript(normalizedText)')[0]
+  assert.doesNotMatch(command, /setExperience\('waiting_for_student'\)/)
+  assert.match(engine, /await acknowledgeFirstDayTeacherAudio\(\)/)
+})
+
+test('Class 1 never mixes old AM activities into the ten new Balbharati scenes', async () => {
+  const page = await load('../../app/student/lesson/[id]/page.tsx')
+  assert.match(page, /lesson\.activities\.length === 10/)
+  assert.match(page, /lesson\.activities\.every\(activity => activity\.activityKey\?\.startsWith\('class1-l01-v3-'\)\)/)
+})
+
 test('manual microphone retry works after no-speech errors; replay restores teaching state', async () => {
   const engine = await load('../../components/lessons/lesson-experience.tsx')
   assert.match(engine, /lastTurn\.activityComplete \|\| lastTurn\.conversationComplete/)

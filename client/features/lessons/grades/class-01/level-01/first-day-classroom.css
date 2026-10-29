@@ -37,6 +37,8 @@
 .firstday-book__title{display:block;font-size:clamp(10px,1.05vw,13px);font-weight:950;letter-spacing:.11em;color:#598268}
 .firstday-book__text strong{display:block;color:#17654e;line-height:1.03;font-size:clamp(36px,5.9vw,78px);font-weight:1000}
 .firstday-book__text p{margin:6px auto 0;font-size:clamp(17px,2.1vw,29px);font-weight:850}
+.firstday-word-bank{display:flex;align-items:center;justify-content:center;gap:7px;flex-wrap:wrap;margin-top:8px}
+.firstday-word-bank span{padding:4px 10px;background:#e6f5e7;border:1px solid #c2e2c7;border-radius:999px;color:#276f54;font-size:clamp(11px,1vw,15px);font-weight:850;text-transform:uppercase}
 .firstday-meaning{display:inline-flex;align-items:center;justify-content:center;gap:7px;margin-top:7px;color:#93622b;font-size:clamp(11px,1.2vw,16px);font-weight:850}
 .firstday-help{display:flex;justify-content:center;gap:8px 15px;flex-wrap:wrap;padding:9px 12px;background:#fff0ce;font-size:clamp(11px,1vw,14px);font-weight:750}
 .firstday-help span:first-child{font-weight:950;color:#89612e}
