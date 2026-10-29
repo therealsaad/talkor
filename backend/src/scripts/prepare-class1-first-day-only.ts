@@ -58,6 +58,10 @@ async function main() {
   if (APPLY && (process.env.NODE_ENV !== 'development' || process.env.TALKORA_FIRST_DAY_ONLY_APPLY !== 'YES')) {
     throw new Error('WRITE_BLOCKED: development and TALKORA_FIRST_DAY_ONLY_APPLY=YES required')
   }
+  if (APPLY && (process.env.TALKORA_FIRST_DAY_INTRO_REVIEWED !== 'YES' ||
+      !/^https:\/\//.test(process.env.TALKORA_FIRST_DAY_INTRO_URL || ''))) {
+    throw new Error('INTRO_NOT_READY: a reviewed First Day-only 90-second video URL and explicit approval are required before replacing the old foundation lesson')
+  }
   await connectDatabase()
   try {
     const klass = await CurriculumClass.findOne({ grade: 1, status: 'draft' }).lean()
