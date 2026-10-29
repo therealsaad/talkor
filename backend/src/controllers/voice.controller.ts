@@ -81,6 +81,7 @@ import { ApiError } from '../utils/ApiError'
 import { VoiceWarmupService } from '../services/voice-warmup.service'
 import type { VoiceUploadRequest } from '../middleware/voice-upload'
 import { isSupportedVoiceAudioMimeType } from '../schemas/voice.schema'
+import { writeVoiceResponseStream } from '../services/voice-response-stream'
 
 export const VoiceController = {
   start: catchAsync(async (req: Request, res: Response) => {
@@ -112,15 +113,9 @@ export const VoiceController = {
       res.setHeader('Cache-Control', 'no-store')
       res.setHeader('X-Voice-Provider', stream.provider)
       for (const [header, value] of Object.entries(stream.metadata || {})) res.setHeader(header, value)
-      const reader = stream.body.getReader()
-      req.on('close', () => { void reader.cancel() })
-      while (true) {
-        const next = await reader.read()
-        if (next.done) break
-        res.write(Buffer.from(next.value))
-      }
-      reader.releaseLock()
-      res.end()
+      // Do not cancel on req.close: Node emits that when a POST request body
+      // finishes, even though the response has not yet reached the browser.
+      await writeVoiceResponseStream(res, stream)
       return
     }
     ok(res, await VoiceService.synthesize(text, { purpose }))
