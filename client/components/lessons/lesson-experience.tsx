@@ -331,10 +331,14 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       setExperience('julie_audio_pending')
       const playback = await julie.speak(turn.text, `${turn.id}:${++teacherSequence.current}`, turn.voicePriority || 'LESSON', turn.staticAudioActivityId)
       if (generation !== playbackGeneration.current) return
-      if (playback === 'autoplay-blocked') {
-        // Do not start recording over a prompt the child never heard.
-        setAudioBlocked(true)
-        setFeedback('Tap Enable sound once so Miss Julie can speak automatically.')
+      if (playback !== 'spoken') {
+        // An animation is not evidence that audio reached the child. Never
+        // auto-record, grade or advance a silent Class 1 teaching prompt.
+        spokenTurnIds.current.delete(turn.id)
+        setAudioBlocked(playback === 'autoplay-blocked')
+        setFeedback(playback === 'autoplay-blocked'
+          ? 'Sound permission is needed. Ask your teacher to enable sound once.'
+          : 'Miss Julie could not play her voice. Ask your teacher to check Azure Speech and the backend.')
         setExperience('recoverable_error')
         return
       }
@@ -356,8 +360,8 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     }
     setFeedback('')
     const playback = await julie.replay()
-    if (playback === 'autoplay-blocked') {
-      setAudioBlocked(true)
+    if (playback !== 'spoken') {
+      setAudioBlocked(playback === 'autoplay-blocked')
       setFeedback('Sound is still blocked. Check your browser sound permissions.')
       return
     }
