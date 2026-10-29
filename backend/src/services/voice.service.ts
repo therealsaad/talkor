@@ -108,7 +108,7 @@ function streamFromBuffer(audio: Buffer): ReadableStream<Uint8Array> {
 async function tryStream(
   provider: { name: string; synthesizeStream?: (text: string, options?: { conversation?: boolean }) => Promise<VoiceStreamResult> },
   text: string,
-  options?: { conversation?: boolean },
+  options?: { conversation?: boolean; class1Lesson?: boolean },
 ): Promise<VoiceStreamResult | null> {
   if (!provider.synthesizeStream) return null
   try {
@@ -324,7 +324,9 @@ export const VoiceService = {
     // Azure Neerja is Talkora's primary Miss Julie voice everywhere.
     // Groq is the fast vendor fallback and the existing Python/Priya pipeline
     // remains the final safety net for cached/legacy lesson audio.
-    const azure = azureAlreadyTried ? null : await tryStream(new AzureVoiceProvider(), text)
+    const isClass1Lesson = Boolean(options.studentId && options.activityId &&
+      (await CurriculumAccessService.assertActivity(options.studentId, options.activityId)).activity.activityKey?.startsWith('class1-l01-'))
+    const azure = azureAlreadyTried ? null : await tryStream(new AzureVoiceProvider(), text, { class1Lesson: isClass1Lesson })
     if (azure) return azure
 
     const groq = await tryStream(new GroqVoiceProvider(), text, {
