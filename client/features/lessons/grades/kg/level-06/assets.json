@@ -1,16 +1,19 @@
 {
   "levelId": "g00-l06",
-  "status": "authored-assets-pending",
+  "status": "staff-preview-video-and-card-stills",
   "assetsRoot": "/lessons/kg/level-06/",
-  "introVideo": null,
-  "images": [],
+  "introVideo": "/lessons/kg/level-06/vowels.MOV",
+  "images": [
+    { "id": "vowel-garden-scene", "path": "/lessons/kg/level-06/vowel-garden-scene.png", "alt": "A colorful garden with butterflies, flowers, and a wooden signboard" },
+    { "id": "a-apple", "path": "/lessons/kg/level-06/cards/a-apple.png", "alt": "Letter A beside an apple" },
+    { "id": "e-elephant", "path": "/lessons/kg/level-06/cards/e-elephant.png", "alt": "Letter E beside an elephant" },
+    { "id": "i-igloo", "path": "/lessons/kg/level-06/cards/i-igloo.png", "alt": "Letter I beside an igloo" },
+    { "id": "o-orange", "path": "/lessons/kg/level-06/cards/o-orange.png", "alt": "Letter O beside an orange" },
+    { "id": "u-umbrella", "path": "/lessons/kg/level-06/cards/u-umbrella.png", "alt": "Letter U beside an umbrella" }
+  ],
   "animations": [],
   "audio": [],
   "music": null,
-  "recommended": {
-    "julieAnimations": "/miss-julie-animations",
-    "dynamicFeedback": "azure-uncached",
-    "preauthoredTTS": "S3 CDN"
-  },
-  "note": "Do not add placeholders pointing at missing assets. Upload approved optimized media here."
+  "recommended": { "julieAnimations": "/miss-julie-animations", "dynamicFeedback": "level1-priya-v6-fixed-scripts", "preauthoredTTS": "none" },
+  "note": "The five visual cards are stills from the user-approved Level 6 introduction video. Staff preview only; no distractors."
 }

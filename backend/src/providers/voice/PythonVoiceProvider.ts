@@ -13,7 +13,11 @@ export class PythonVoiceProvider implements VoiceProvider {
   name = 'python-priya'
 
   async synthesize(text: string): Promise<VoiceSynthesisResult> {
-    const stream = await this.synthesizeStream(text)
+    return this.synthesizeWithVoice(text, env.ttsVoiceId, PRIYA_LANGUAGE)
+  }
+
+  async synthesizeWithVoice(text: string, voice: string, language = PRIYA_LANGUAGE): Promise<VoiceSynthesisResult> {
+    const stream = await this.synthesizeStreamWithVoice(text, voice, language)
     const reader = stream.body.getReader()
     const chunks: Uint8Array[] = []
     let total = 0
@@ -43,6 +47,10 @@ export class PythonVoiceProvider implements VoiceProvider {
   }
 
   async synthesizeStream(text: string): Promise<VoiceStreamResult> {
+    return this.synthesizeStreamWithVoice(text, env.ttsVoiceId, PRIYA_LANGUAGE)
+  }
+
+  async synthesizeStreamWithVoice(text: string, voice: string, language = PRIYA_LANGUAGE): Promise<VoiceStreamResult> {
     const startedAt = Date.now()
     if (process.env.NODE_ENV !== 'production') {
       console.info('VOICE_REQUEST', { characters: text.length })
@@ -61,8 +69,8 @@ export class PythonVoiceProvider implements VoiceProvider {
           },
           body: JSON.stringify({
             text,
-            voice: env.ttsVoiceId,
-            language: PRIYA_LANGUAGE,
+            voice,
+            language,
           }),
           signal: AbortSignal.timeout(env.ttsTimeoutMs),
         },

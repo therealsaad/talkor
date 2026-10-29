@@ -9,7 +9,7 @@ import { TalkoraLogo } from '@/components/brand/talkora-logo'
 import { educatorAIService, type EducatorAIResponse } from '@/services/educator-ai-service'
 
 const nav = [
-  ['/school/dashboard', 'Overview', LayoutDashboard], ['/school/students', 'Students', Users], ['/school/kg-preview', 'KG Level 1', Shapes], ['/school/classes', 'Classes', GraduationCap], ['/school/curriculum-map', '110-Level Map', Layers3], ['/school/teachers', 'Teachers', BookOpen], ['/school/reports', 'Reports', BarChart3], ['/school/settings', 'Settings', Settings],
+  ['/school/dashboard', 'Overview', LayoutDashboard], ['/school/students', 'Students', Users], ['/school/kg-preview', 'KG Preview', Shapes], ['/school/classes', 'Classes', GraduationCap], ['/school/curriculum-map', '110-Level Map', Layers3], ['/school/teachers', 'Teachers', BookOpen], ['/school/reports', 'Reports', BarChart3], ['/school/settings', 'Settings', Settings],
 ] as const
 
 export function SchoolShell({ children, title, subtitle }: { children: ReactNode; title: string; subtitle?: string }) {

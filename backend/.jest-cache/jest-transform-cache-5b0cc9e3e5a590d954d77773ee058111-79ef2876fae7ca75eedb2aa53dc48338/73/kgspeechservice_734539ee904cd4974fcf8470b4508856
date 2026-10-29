@@ -1,0 +1,32 @@
+c87348715651bc4177afbc1068d349f8
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.KGSpeechService = void 0;
+const env_1 = require("../config/env");
+const GroqSpeechProvider_1 = require("../providers/speech/GroqSpeechProvider");
+const PythonSpeechProvider_1 = require("../providers/speech/PythonSpeechProvider");
+const SarvamSpeechProvider_1 = require("../providers/speech/SarvamSpeechProvider");
+const AzureSpeechProvider_1 = require("../providers/speech/AzureSpeechProvider");
+const ApiError_1 = require("../utils/ApiError");
+/** KG only: provider selection stays on the server; no recording is persisted. */
+exports.KGSpeechService = {
+    async transcribe(input) {
+        // Legacy KG override is optional. All grades share SPEECH_PROVIDER by default.
+        const provider = process.env.KG_ALPHABET_STT_PROVIDER || env_1.env.speechProvider;
+        if (provider === 'sarvam')
+            return new SarvamSpeechProvider_1.SarvamSpeechProvider().transcribe(input);
+        if (provider === 'azure')
+            return new AzureSpeechProvider_1.AzureSpeechProvider().transcribe(input);
+        if (provider === 'groq') {
+            return new GroqSpeechProvider_1.GroqSpeechProvider().transcribe({ ...input, mode: 'accurate', qualityMetadata: true, languageOverride: '' });
+        }
+        if (provider !== 'python' && provider !== 'faster-whisper')
+            throw ApiError_1.ApiError.provider('Invalid KG speech provider configuration');
+        const hostname = new URL(env_1.env.aiServiceUrl).hostname.toLowerCase();
+        if (env_1.env.isProd && /^(localhost|.*\.localhost|127\..*|\[?::1\]?|0\.0\.0\.0)$/.test(hostname)) {
+            throw ApiError_1.ApiError.provider('KG speech needs a deployed STT service. A localhost Python service cannot serve production students.');
+        }
+        return new PythonSpeechProvider_1.PythonSpeechProvider().transcribe(input);
+    },
+};
+//# sourceMappingURL=data:application/json;charset=utf-8;base64,eyJmaWxlIjoiQzpcXFVzZXJzXFxtb2hhbVxcRGVza3RvcFxcTmV3IEp1bGllZSBwcm9qZWN0XFx0YWxrb3JcXGJhY2tlbmRcXHNyY1xcc2VydmljZXNcXGtnLXNwZWVjaC5zZXJ2aWNlLnRzIiwibWFwcGluZ3MiOiI7OztBQUFBLHVDQUFtQztBQUNuQywrRUFBMkU7QUFDM0UsbUZBQStFO0FBQy9FLG1GQUErRTtBQUMvRSxpRkFBNkU7QUFDN0UsZ0RBQTRDO0FBRTVDLGtGQUFrRjtBQUNyRSxRQUFBLGVBQWUsR0FBRztJQUM3QixLQUFLLENBQUMsVUFBVSxDQUFDLEtBQW9FO1FBQ25GLCtFQUErRTtRQUMvRSxNQUFNLFFBQVEsR0FBRyxPQUFPLENBQUMsR0FBRyxDQUFDLHdCQUF3QixJQUFJLFNBQUcsQ0FBQyxjQUFjLENBQUE7UUFDM0UsSUFBSSxRQUFRLEtBQUssUUFBUTtZQUFFLE9BQU8sSUFBSSwyQ0FBb0IsRUFBRSxDQUFDLFVBQVUsQ0FBQyxLQUFLLENBQUMsQ0FBQTtRQUM5RSxJQUFJLFFBQVEsS0FBSyxPQUFPO1lBQUUsT0FBTyxJQUFJLHlDQUFtQixFQUFFLENBQUMsVUFBVSxDQUFDLEtBQUssQ0FBQyxDQUFBO1FBQzVFLElBQUksUUFBUSxLQUFLLE1BQU0sRUFBRSxDQUFDO1lBQ3hCLE9BQU8sSUFBSSx1Q0FBa0IsRUFBRSxDQUFDLFVBQVUsQ0FBQyxFQUFFLEdBQUcsS0FBSyxFQUFFLElBQUksRUFBRSxVQUFVLEVBQUUsZUFBZSxFQUFFLElBQUksRUFBRSxnQkFBZ0IsRUFBRSxFQUFFLEVBQUUsQ0FBQyxDQUFBO1FBQ3pILENBQUM7UUFDRCxJQUFJLFFBQVEsS0FBSyxRQUFRLElBQUksUUFBUSxLQUFLLGdCQUFnQjtZQUFFLE1BQU0sbUJBQVEsQ0FBQyxRQUFRLENBQUMsMENBQTBDLENBQUMsQ0FBQTtRQUMvSCxNQUFNLFFBQVEsR0FBRyxJQUFJLEdBQUcsQ0FBQyxTQUFHLENBQUMsWUFBWSxDQUFDLENBQUMsUUFBUSxDQUFDLFdBQVcsRUFBRSxDQUFBO1FBQ2pFLElBQUksU0FBRyxDQUFDLE1BQU0sSUFBSSwwREFBMEQsQ0FBQyxJQUFJLENBQUMsUUFBUSxDQUFDLEVBQUUsQ0FBQztZQUM1RixNQUFNLG1CQUFRLENBQUMsUUFBUSxDQUFDLHNHQUFzRyxDQUFDLENBQUE7UUFDakksQ0FBQztRQUNELE9BQU8sSUFBSSwyQ0FBb0IsRUFBRSxDQUFDLFVBQVUsQ0FBQyxLQUFLLENBQUMsQ0FBQTtJQUNyRCxDQUFDO0NBQ0YsQ0FBQSIsIm5hbWVzIjpbXSwic291cmNlcyI6WyJDOlxcVXNlcnNcXG1vaGFtXFxEZXNrdG9wXFxOZXcgSnVsaWVlIHByb2plY3RcXHRhbGtvclxcYmFja2VuZFxcc3JjXFxzZXJ2aWNlc1xca2ctc3BlZWNoLnNlcnZpY2UudHMiXSwic291cmNlc0NvbnRlbnQiOlsiaW1wb3J0IHsgZW52IH0gZnJvbSAnLi4vY29uZmlnL2VudidcclxuaW1wb3J0IHsgR3JvcVNwZWVjaFByb3ZpZGVyIH0gZnJvbSAnLi4vcHJvdmlkZXJzL3NwZWVjaC9Hcm9xU3BlZWNoUHJvdmlkZXInXHJcbmltcG9ydCB7IFB5dGhvblNwZWVjaFByb3ZpZGVyIH0gZnJvbSAnLi4vcHJvdmlkZXJzL3NwZWVjaC9QeXRob25TcGVlY2hQcm92aWRlcidcclxuaW1wb3J0IHsgU2FydmFtU3BlZWNoUHJvdmlkZXIgfSBmcm9tICcuLi9wcm92aWRlcnMvc3BlZWNoL1NhcnZhbVNwZWVjaFByb3ZpZGVyJ1xyXG5pbXBvcnQgeyBBenVyZVNwZWVjaFByb3ZpZGVyIH0gZnJvbSAnLi4vcHJvdmlkZXJzL3NwZWVjaC9BenVyZVNwZWVjaFByb3ZpZGVyJ1xyXG5pbXBvcnQgeyBBcGlFcnJvciB9IGZyb20gJy4uL3V0aWxzL0FwaUVycm9yJ1xyXG5cclxuLyoqIEtHIG9ubHk6IHByb3ZpZGVyIHNlbGVjdGlvbiBzdGF5cyBvbiB0aGUgc2VydmVyOyBubyByZWNvcmRpbmcgaXMgcGVyc2lzdGVkLiAqL1xyXG5leHBvcnQgY29uc3QgS0dTcGVlY2hTZXJ2aWNlID0ge1xyXG4gIGFzeW5jIHRyYW5zY3JpYmUoaW5wdXQ6IHsgYXVkaW9CYXNlNjQ6IHN0cmluZzsgbWltZVR5cGU6IHN0cmluZzsgZHVyYXRpb25NczogbnVtYmVyIH0pIHtcclxuICAgIC8vIExlZ2FjeSBLRyBvdmVycmlkZSBpcyBvcHRpb25hbC4gQWxsIGdyYWRlcyBzaGFyZSBTUEVFQ0hfUFJPVklERVIgYnkgZGVmYXVsdC5cclxuICAgIGNvbnN0IHByb3ZpZGVyID0gcHJvY2Vzcy5lbnYuS0dfQUxQSEFCRVRfU1RUX1BST1ZJREVSIHx8IGVudi5zcGVlY2hQcm92aWRlclxyXG4gICAgaWYgKHByb3ZpZGVyID09PSAnc2FydmFtJykgcmV0dXJuIG5ldyBTYXJ2YW1TcGVlY2hQcm92aWRlcigpLnRyYW5zY3JpYmUoaW5wdXQpXHJcbiAgICBpZiAocHJvdmlkZXIgPT09ICdhenVyZScpIHJldHVybiBuZXcgQXp1cmVTcGVlY2hQcm92aWRlcigpLnRyYW5zY3JpYmUoaW5wdXQpXHJcbiAgICBpZiAocHJvdmlkZXIgPT09ICdncm9xJykge1xyXG4gICAgICByZXR1cm4gbmV3IEdyb3FTcGVlY2hQcm92aWRlcigpLnRyYW5zY3JpYmUoeyAuLi5pbnB1dCwgbW9kZTogJ2FjY3VyYXRlJywgcXVhbGl0eU1ldGFkYXRhOiB0cnVlLCBsYW5ndWFnZU92ZXJyaWRlOiAnJyB9KVxyXG4gICAgfVxyXG4gICAgaWYgKHByb3ZpZGVyICE9PSAncHl0aG9uJyAmJiBwcm92aWRlciAhPT0gJ2Zhc3Rlci13aGlzcGVyJykgdGhyb3cgQXBpRXJyb3IucHJvdmlkZXIoJ0ludmFsaWQgS0cgc3BlZWNoIHByb3ZpZGVyIGNvbmZpZ3VyYXRpb24nKVxyXG4gICAgY29uc3QgaG9zdG5hbWUgPSBuZXcgVVJMKGVudi5haVNlcnZpY2VVcmwpLmhvc3RuYW1lLnRvTG93ZXJDYXNlKClcclxuICAgIGlmIChlbnYuaXNQcm9kICYmIC9eKGxvY2FsaG9zdHwuKlxcLmxvY2FsaG9zdHwxMjdcXC4uKnxcXFs/OjoxXFxdP3wwXFwuMFxcLjBcXC4wKSQvLnRlc3QoaG9zdG5hbWUpKSB7XHJcbiAgICAgIHRocm93IEFwaUVycm9yLnByb3ZpZGVyKCdLRyBzcGVlY2ggbmVlZHMgYSBkZXBsb3llZCBTVFQgc2VydmljZS4gQSBsb2NhbGhvc3QgUHl0aG9uIHNlcnZpY2UgY2Fubm90IHNlcnZlIHByb2R1Y3Rpb24gc3R1ZGVudHMuJylcclxuICAgIH1cclxuICAgIHJldHVybiBuZXcgUHl0aG9uU3BlZWNoUHJvdmlkZXIoKS50cmFuc2NyaWJlKGlucHV0KVxyXG4gIH0sXHJcbn1cclxuIl0sInZlcnNpb24iOjN9

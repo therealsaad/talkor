@@ -14,6 +14,7 @@ import analyticsRoutes from './analytics.routes'
 import dailyChallengeRoutes from './dailyChallenge.routes'
 import educatorAIRoutes from './educator-ai.routes'
 import kgAlphabetRoutes from './kg-alphabet.routes'
+import kgVowelPreviewRoutes from './kg-vowel-preview.routes'
 import levelMapRoutes from './level-map.routes'
 
 const router = Router()
@@ -32,6 +33,7 @@ router.use('/memory', memoryRoutes)
 router.use('/ai', aiRoutes)
 router.use('/voice', voiceRoutes)
 router.use('/kg-alphabet', kgAlphabetRoutes)
+router.use('/kg-vowel-preview', kgVowelPreviewRoutes)
 router.use('/curriculum-map', levelMapRoutes)
 router.use('/analytics', analyticsRoutes)
 router.use('/daily-challenges', dailyChallengeRoutes)

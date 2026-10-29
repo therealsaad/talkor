@@ -1,4 +1,4 @@
-{
+  {
   "name": "talkora-backend",
   "version": "1.0.0",
   "packageManager": "pnpm@10.18.0",
@@ -63,5 +63,8 @@
     "ts-jest": "^29.2.4",
     "tsx": "^4.16.5",
     "typescript": "^5.5.4"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
   }
 }
