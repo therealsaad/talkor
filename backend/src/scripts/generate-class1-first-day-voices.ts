@@ -9,6 +9,7 @@ import path from 'node:path'
 import { AzureVoiceProvider } from '../providers/voice/AzureVoiceProvider'
 import manifest from './class1-first-day-voice-v3.json'
 import { hasExpectedAudioHeader } from '../services/voice-audio-format'
+import { parsePriyaHealth, checkPriyaHealth, formatPriyaHealth } from '../services/priya-tts-health'
 
 type Line = (typeof manifest.lines)[number]
 const arg = (name: string, defaultValue: string) => {
@@ -26,13 +27,21 @@ async function pythonVoice(line: Line): Promise<Buffer> {
   const url = (process.env.AI_SERVICE_URL || 'http://127.0.0.1:8001').replace(/\/$/, '')
   if (!/^https:\/\//.test(url) && !/^http:\/\/(?:127\.0\.0\.1|localhost):8001$/.test(url))
     throw new Error('8001 narration endpoint must be local or approved HTTPS')
+  // Query the running 8001 process, not a voice version copied from docs.
+  // An OpenAPI HTTP 200 alone says nothing about installed weights/GPU.
+  const probe = await fetch(url + '/health', { signal: AbortSignal.timeout(7000) })
+  if (!probe.ok) throw new Error('Python 8001 /health returned HTTP ' + probe.status)
+  const health = parsePriyaHealth(await probe.json())
+  console.log(formatPriyaHealth(health))
+  const blockers = checkPriyaHealth(health)
+  if (blockers.length) throw new Error('Python 8001 TTS is not ready: ' + blockers.join('; '))
   const response = await fetch(url + '/v1/tts', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json',
       ...(process.env.AI_SERVICE_API_KEY ? { 'X-Service-API-Key': process.env.AI_SERVICE_API_KEY } : {}) },
     body: JSON.stringify({ text: line.text,
-      voice: process.env.TTS_VOICE_ID || 'miss-julie-priya-v6', language: 'en-IN' }),
-    signal: AbortSignal.timeout(45000),
+      voice: health.voiceId, language: 'en-IN' }),
+    signal: AbortSignal.timeout(180000),
   })
   if (!response.ok) throw new Error('Python 8001 /v1/tts returned HTTP ' + response.status)
   return Buffer.from(await response.arrayBuffer())
