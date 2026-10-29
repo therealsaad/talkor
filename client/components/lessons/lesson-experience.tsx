@@ -323,11 +323,20 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     if (!turn.text.trim()) return
     const generation = playbackGeneration.current
     if (spokenTurnIds.current.has(turn.id)) {
+      // The same turn is already playing or has been played. Re-entry must
+      // never advance a First Day scene ahead of its current audio.
+      if (experienceId === 'g01-l01') return
       setExperience(afterState || (turn.retryRequired ? 'retry_required' : turn.activityComplete || turn.conversationComplete ? 'activity_complete' : 'waiting_for_student'))
       return
     }
     spokenTurnIds.current.add(turn.id)
     lastSpokenTurnIdRef.current = turn.id
+    if (!audioEnabled && experienceId === 'g01-l01') {
+      spokenTurnIds.current.delete(turn.id)
+      setFeedback('Teacher audio is required for this voice-first lesson. Ask a teacher to enable sound.')
+      setExperience('recoverable_error')
+      return
+    }
     if (audioEnabled) {
       setExperience('julie_audio_pending')
       const playback = await julie.speak(turn.text, `${turn.id}:${++teacherSequence.current}`, turn.voicePriority || 'LESSON', turn.staticAudioActivityId)
