@@ -77,5 +77,5 @@ export function isClass1DemoActivity(activity: {
 }): boolean {
   return activity.status === 'draft' &&
     activity.curriculumVersion === CLASS1_DEMO_VERSION &&
-    activity.activityKey?.startsWith(`${CLASS1_DEMO_ACTIVITY_PREFIX}v2-`) === true
+    Boolean(activity.activityKey && /^class1-l01-v(?:2|3)-/.test(activity.activityKey))
 }
