@@ -35,6 +35,7 @@ export interface KGAttemptResponse {
   transcript?: string
   feedbackText?: string
   feedbackAudioBase64?: string | null
+  submissionId?: string
   feedbackVoice?: 'dynamic_tts' | 'curriculum_static' | 'azure' | 'unavailable'
 }
 export type KGPreparedAttempt = { body: string }
@@ -182,6 +183,13 @@ export const kgAlphabetService = {
         noSpeech: input.noSpeech, assistedPicture: input.assistedPicture,
         submissionId: crypto.randomUUID().replace(/-/g, ''),
       }) }
+  },
+  async playAttemptFeedback(submissionId: string, audio: HTMLAudioElement, signal?: AbortSignal) {
+    const url = await loadAudioUrl(`/kg-alphabet/attempt/${encodeURIComponent(submissionId)}/feedback-audio`, signal, 'dynamic_tts')
+    await playAudioUrl(url, audio, signal)
+  },
+  acknowledgeFeedback(submissionId: string, signal?: AbortSignal) {
+    return apiClient<{ state: KGAlphabetState }>(`/kg-alphabet/attempt/${encodeURIComponent(submissionId)}/feedback-played`, { method: 'POST', signal })
   },
   submitPrepared(prepared: KGPreparedAttempt, signal?: AbortSignal): Promise<KGAttemptResponse> {
     return kgRequest((requestSignal) => apiClient<KGAttemptResponse>('/kg-alphabet/attempt', {
