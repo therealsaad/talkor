@@ -38,6 +38,9 @@ jobs:
       - name: Verify TTS generator uses real 8001 voice ID and safe errors
         run: node --test tests/ui/class1-priya-generation-contract.test.mjs
         working-directory: client
+      - name: Verify Class 1 8002, Azure and post-playback progress contract
+        run: node --test tests/ui/class1-voice-routing-contract.test.mjs
+        working-directory: client
   backend:
     runs-on: ubuntu-latest
     steps:
@@ -59,6 +62,9 @@ jobs:
         working-directory: backend
       - name: Verify audio stream, Azure payload and audio-format regression tests
         run: pnpm exec jest --runInBand tests/voice-response-stream.test.ts tests/class1-azure-audio.test.ts tests/voice-audio-format.test.ts
+        working-directory: backend
+      - name: Verify First Day strict providers and teacher audio acknowledgment
+        run: pnpm exec jest --runInBand tests/unit/class1StaticAudio.test.ts tests/class1VoiceAcknowledgment.test.ts
         working-directory: backend
       - name: Verify First Day teacher voice pack manifest and review gates
         run: pnpm exec jest --runInBand tests/class1-first-day-voice-manifest.test.ts
