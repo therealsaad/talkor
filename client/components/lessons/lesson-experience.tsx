@@ -328,11 +328,10 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       setExperience(afterState || (turn.retryRequired ? 'retry_required' : turn.activityComplete || turn.conversationComplete ? 'activity_complete' : 'waiting_for_student'))
       return true
     }
-    spokenTurnIds.current.add(turn.id)
     lastSpokenTurnIdRef.current = turn.id
     if (audioEnabled) {
       setExperience('julie_audio_pending')
-      const playback = await julie.speak(turn.text, `${turn.id}:${++teacherSequence.current}`, turn.voicePriority || 'LESSON', turn.staticAudioActivityId, turn.voiceLanguage)
+      const playback = await julie.speak(turn.text, turn.id, turn.voicePriority || 'LESSON', turn.staticAudioActivityId, turn.voiceLanguage)
       if (generation !== playbackGeneration.current) return false
       if (playback !== 'spoken') {
         // An animation is not evidence that audio reached the child. Never
@@ -347,6 +346,9 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       }
     }
     if (generation !== playbackGeneration.current) return false
+    // The turn is reusable only when the media-ended event was observed.
+    // In-flight repeats use the same turn ID and await the existing request.
+    spokenTurnIds.current.add(turn.id)
     setExperience(afterState || (turn.retryRequired ? 'retry_required' : turn.activityComplete || turn.conversationComplete ? 'activity_complete' : turn.requiresStudentResponse ? 'waiting_for_student' : 'transitioning'))
     return true
   }
