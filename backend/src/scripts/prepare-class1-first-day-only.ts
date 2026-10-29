@@ -58,6 +58,10 @@ async function main() {
   if (APPLY && (process.env.NODE_ENV !== 'development' || process.env.TALKORA_FIRST_DAY_ONLY_APPLY !== 'YES')) {
     throw new Error('WRITE_BLOCKED: development and TALKORA_FIRST_DAY_ONLY_APPLY=YES required')
   }
+  if (APPLY && (process.env.TALKORA_FIRST_DAY_INTRO_REVIEWED !== 'YES' ||
+      !/^https:\/\//.test(process.env.TALKORA_FIRST_DAY_INTRO_URL || ''))) {
+    throw new Error('INTRO_NOT_READY: a reviewed First Day-only 90-second video URL and explicit approval are required before replacing the old foundation lesson')
+  }
   await connectDatabase()
   try {
     const klass = await CurriculumClass.findOne({ grade: 1, status: 'draft' }).lean()
@@ -107,9 +111,9 @@ async function main() {
         choices: [], difficulty: 'easy', xp: 0, estimatedSeconds: 90, voiceEnabled: true,
         aiEnabled: true, allowMic: true, allowOptions: false, repeatRequired: false,
         maxConversationTurns: 4,
-        conversationGoal: { requiredConcepts: [], minTurns: 2, maxTurns: 4 },
+        conversationGoal: { requiredConcepts: ['first_day_english_attempt'], minTurns: 2, maxTurns: 4 },
         metadata: { conversationMode: 'OPEN', digitalType: 'FIRST_DAY_VOICE_SCENE',
-          sceneKey: scene.key, allowedVocabulary: [...scene.vocabulary],
+          sceneKey: scene.key, masteryEvidence: ['first_day_english_attempt'], allowedVocabulary: [...scene.vocabulary],
           teacherReviewRequired: true, languageSupport: ['English', 'Hindi', 'Marathi'] },
         source: { sourceType: 'SYLLABUS', pdf: 'https://ebooks.ebalbharati.in/pdfs/103050001.pdf',
           pageStart: 1, pageEnd: 1, label: 'Original interactive companion to English Balbharati Grade One, Unit 1.1 My First Day' },
