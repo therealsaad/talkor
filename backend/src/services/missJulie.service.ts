@@ -307,7 +307,10 @@ export const MissJulieService = {
         : required.every((item) => goalState.includes(item))
     const finalLessonTurn = Boolean(
       lessonConversation &&
-      ((nextTurn >= minTurns && demonstratedRequiredSkills) || nextTurn >= maxTurns),
+      ((nextTurn >= minTurns && demonstratedRequiredSkills) ||
+        // A First Day scene never passes just because a child has spent four
+        // turns silent, asking for help or answering only in a home language.
+        (nextTurn >= maxTurns && (!isFirstDayScene || demonstratedRequiredSkills))),
     )
 
     const freeTalkConversation = !input.lessonId && !input.activityId && (!existingConversation || existingConversation.mode === 'FREE_TALK')

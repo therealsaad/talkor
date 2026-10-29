@@ -13,10 +13,20 @@ test('Class 1 First Day uses the illustrated board with live teacher text', asyn
   assert.match(stage, /teacherText=\{julieMessage\}/)
 })
 
-test('no typed choices or student action buttons are rendered in the First Day storyboard', async () => {
+test('First Day uses motion-first Miss Julie and voice recovery controls, not fake answer buttons', async () => {
   const scene = await load('../../features/lessons/grades/class-01/level-01/FirstDayClassroom.tsx')
-  assert.doesNotMatch(scene, /<button|<input|<textarea|contentEditable|onClick=/i)
+  const stage = await load('../../components/student/lesson/immersive-lesson-stage.tsx')
   const css = await load('../../features/lessons/grades/class-01/level-01/first-day-classroom.css')
+  assert.match(scene, /firstday-teacher__animation/)
+  assert.match(scene, /videoReady/)
+  assert.match(scene, /onError=\{\(\) => \{ setVideoFailed\(true\)/)
+  assert.match(scene, /onStartMic/)
+  assert.match(scene, /onStopMic/)
+  assert.match(scene, /onReplayJulie/)
+  assert.match(scene, /onEnableAudio/)
+  assert.doesNotMatch(scene, /onSelectChoice|onLocalComplete|completeLocalActivity|new MediaRecorder/)
+  assert.match(stage, /onStartMic=\{onStartMic\}/)
+  assert.match(stage, /onStopMic=\{onStopMic\}/)
   assert.match(css, /overflow:hidden/)
   assert.match(css, /orientation:portrait/)
 })
@@ -34,4 +44,20 @@ test('First Day route uses school-action homework and hides v3 fullscreen button
   assert.match(page, /I can walk, I can play/)
   assert.match(page, /voiceOnly=\{firstDayV3\}/)
   assert.match(wrapper, /!voiceOnly && !isPortrait && !isFullscreen/)
+})
+
+
+test('Class 1 requires end-of-audio before new microphone or next frame', async () => {
+  const engine = await load('../../components/lessons/lesson-experience.tsx')
+  assert.match(engine, /speakingTurnIds\.current\.has\(turn\.id\)/)
+  assert.match(engine, /if \(playback !== 'spoken'\)/)
+  assert.match(engine, /spokenTurnIds\.current\.add\(turn\.id\)/)
+  assert.match(engine, /if \(!activity \|\| julie\.isSpeaking \|\| julie\.state === 'loading' \|\| audioBlocked\)/)
+  assert.match(engine, /if \(pending\?\.activityComplete \|\| pending\?\.conversationComplete\)/)
+})
+
+test('Balbharati First Day cannot falsely complete after four unlearned turns', async () => {
+  const svc = await load('../../../backend/src/services/missJulie.service.ts')
+  assert.match(svc, /!isFirstDayScene \|\| demonstratedRequiredSkills/)
+  assert.match(svc, /firstDaySceneSkills/)
 })

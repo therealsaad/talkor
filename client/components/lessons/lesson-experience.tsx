@@ -174,6 +174,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
   const activeRecordingSessionId = useRef<string | null>(null)
   const teacherSequence = useRef(0)
   const spokenTurnIds = useRef(new Set<string>())
+  const speakingTurnIds = useRef(new Set<string>())
   const playbackGeneration = useRef(0)
   const lastSpokenTurnIdRef = useRef<string | null>(null)
   const currentTeacherTurnRef = useRef<TeacherTurn | null>(null)
@@ -236,6 +237,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     setSpokenWarmupAnswer(null)
     setAudioBlocked(false)
     spokenTurnIds.current.clear()
+    speakingTurnIds.current.clear()
     setPose(index === 0 ? 'greeting' : 'teaching')
     setExperience('julie_preparing')
     const timer = window.setTimeout(() => {
@@ -322,43 +324,58 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
   async function speakTeacherTurn(turn: TeacherTurn, afterState?: ExperienceState) {
     if (!turn.text.trim()) return
     const generation = playbackGeneration.current
-    if (spokenTurnIds.current.has(turn.id)) {
-      // The same turn is already playing or has been played. Re-entry must
-      // never advance a First Day scene ahead of its current audio.
-      if (experienceId === 'g01-l01') return
+    const class1 = experienceId === 'g01-l01'
+    if (spokenTurnIds.current.has(turn.id) || speakingTurnIds.current.has(turn.id)) {
+      // In-flight or already spoken teacher audio cannot be treated as a
+      // second completion event. This guards duplicate React effects.
+      if (class1) return
       setExperience(afterState || (turn.retryRequired ? 'retry_required' : turn.activityComplete || turn.conversationComplete ? 'activity_complete' : 'waiting_for_student'))
       return
     }
-    spokenTurnIds.current.add(turn.id)
+    speakingTurnIds.current.add(turn.id)
     lastSpokenTurnIdRef.current = turn.id
-    if (!audioEnabled && experienceId === 'g01-l01') {
-      spokenTurnIds.current.delete(turn.id)
-      setFeedback('Teacher audio is required for this voice-first lesson. Ask a teacher to enable sound.')
-      setExperience('recoverable_error')
-      return
-    }
-    if (audioEnabled) {
-      setExperience('julie_audio_pending')
-      const playback = await julie.speak(turn.text, `${turn.id}:${++teacherSequence.current}`, turn.voicePriority || 'LESSON', turn.staticAudioActivityId)
-      if (generation !== playbackGeneration.current) return
-      if (playback !== 'spoken') {
-        // An animation is not evidence that audio reached the child. Never
-        // auto-record, grade or advance a silent Class 1 teaching prompt.
-        spokenTurnIds.current.delete(turn.id)
-        setAudioBlocked(playback === 'autoplay-blocked')
-        setFeedback(playback === 'autoplay-blocked'
-          ? 'Sound permission is needed. Ask your teacher to enable sound once.'
-          : 'Miss Julie could not play her voice. Ask your teacher to check Azure Speech and the backend.')
+    try {
+      if (!audioEnabled && class1) {
+        setAudioBlocked(true)
+        setFeedback('Teacher audio is required for this voice-first lesson. Ask a teacher to enable sound.')
         setExperience('recoverable_error')
         return
       }
+      if (audioEnabled) {
+        setExperience('julie_audio_pending')
+        // One unique playback ID per teacher turn. The promise resolves
+        // "spoken" only from HTMLAudioElement.onended in voice-service.
+        const playback = await julie.speak(turn.text, turn.id, turn.voicePriority || 'LESSON', turn.staticAudioActivityId)
+        if (generation !== playbackGeneration.current) return
+        if (playback !== 'spoken') {
+          setAudioBlocked(true)
+          setFeedback(playback === 'autoplay-blocked'
+            ? 'Sound permission is needed. Ask your teacher to enable sound once.'
+            : 'Miss Julie could not play her voice. Ask your teacher to check Azure Speech and the backend.')
+          setExperience('recoverable_error')
+          return
+        }
+      }
+      if (generation !== playbackGeneration.current) return
+      spokenTurnIds.current.add(turn.id)
+      setAudioBlocked(false)
+      setExperience(afterState || (turn.retryRequired ? 'retry_required' : turn.activityComplete || turn.conversationComplete ? 'activity_complete' : turn.requiresStudentResponse ? 'waiting_for_student' : 'transitioning'))
+    } finally {
+      speakingTurnIds.current.delete(turn.id)
     }
-    if (generation !== playbackGeneration.current) return
-    setExperience(afterState || (turn.retryRequired ? 'retry_required' : turn.activityComplete || turn.conversationComplete ? 'activity_complete' : turn.requiresStudentResponse ? 'waiting_for_student' : 'transitioning'))
   }
 
   async function replayCurrentTeacherTurn() {
-    if (audioEnabled) await julie.replay()
+    if (!audioEnabled) return
+    if (julie.isSpeaking || julie.state === 'loading') return
+    const lastTurn = currentTeacherTurnRef.current
+    if (!lastTurn) return
+    const result = await julie.replay()
+    if (result !== 'spoken') {
+      setAudioBlocked(true)
+      setFeedback('Miss Julie could not play her voice. Ask your teacher to check audio.')
+      setExperience('recoverable_error')
+    }
   }
 
   async function enableAudioAndContinue() {
@@ -376,7 +393,14 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       return
     }
     setAudioBlocked(false)
-    setExperience('waiting_for_student')
+    const pending = currentTeacherTurnRef.current
+    if (pending?.activityComplete || pending?.conversationComplete) {
+      setExperience('activity_complete')
+    } else if (pending?.retryRequired) {
+      setExperience('retry_required')
+    } else {
+      setExperience('waiting_for_student')
+    }
   }
 
   function resetRecorder() {
@@ -430,12 +454,14 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
   }
 
   async function startMic() {
-    if (!activity || julie.isSpeaking || julie.state === 'loading') return
+    if (!activity || julie.isSpeaking || julie.state === 'loading' || audioBlocked) return
+    if (experience === 'julie_audio_pending' || experience === 'julie_speaking' || experience === 'julie_thinking' || experience === 'activity_complete' || experience === 'recoverable_error') return
     if (startingMic.current || recorder.current?.state === 'recording') return
     startingMic.current = true
     ignoreRecordingResult.current = false
 
-    julie.stop()
+    // Only microphone opening after the previous turn ended is allowed.
+    // Do not cancel a teacher mid-sentence to begin recording.
     setExperience('student_recording')
     setPose('listening')
     setTranscript('')

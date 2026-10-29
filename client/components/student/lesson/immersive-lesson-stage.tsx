@@ -399,11 +399,29 @@ export function ImmersiveLessonStage({
       isListening={isRecording}
       isProcessing={isProcessing}
       isCompleted={isCompleted}
+      isRetry={isRetry}
       transcript={studentTurnText || transcript}
       feedback={feedback}
+      modelSentence={modelSentence}
+      needsAudioGesture={needsAudioGesture}
+      isAudioEnabled={audioEnabled}
+      onEnableAudio={onEnableAudio}
+      onReplayJulie={onReplayJulie}
+      onStartMic={onStartMic}
+      onStopMic={onStopMic}
+      step={index + 1}
+      total={totalActivities}
     />
   }
   if (isClass1Classroom) {
+    // Old "AM/AN" database rows must never masquerade as the approved
+    // First Day chapter. Keep students safe until the reviewed v3 migration.
+    return <div className="firstday-legacy-blocked" role="alert" style={{ display: 'grid', placeItems: 'center', height: '100%', padding: 32, background: '#e6f5e6', color: '#20523f', textAlign: 'center' }}>
+      <div><h2 style={{ fontSize: 28, fontWeight: 900 }}>The First Day lesson needs a teacher update</h2>
+      <p>This classroom has an older lesson version. We cannot mark textbook learning as complete. Ask your teacher to activate the reviewed Balbharati 1.1 lesson.</p></div>
+    </div>
+  }
+  if (false && isClass1Classroom) {
     const focus = class1Cue?.storybook.focus || 'MY FIRST DAY'
     const sceneVisuals: Record<string, string> = {
       'hello-school': '🏫', 'skip-bunny': '🐰', 'run-race': '🏃',
