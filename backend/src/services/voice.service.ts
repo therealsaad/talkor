@@ -261,6 +261,43 @@ export const VoiceService = {
     return session
   },
 
+  async acknowledgeTeacherAudio(studentId: string, sessionId: string) {
+    const session = await VoiceSession.findOne({ _id: sessionId, studentId })
+    if (!session || !session.activityId || !session.lessonId || session.status !== 'completed') {
+      throw ApiError.conflict('No completed First Day voice turn to acknowledge')
+    }
+    const access = await CurriculumAccessService.assertActivity(studentId, session.activityId.toString())
+    if (!access.activity.activityKey?.startsWith('class1-l01-v3-')) {
+      throw ApiError.forbidden()
+    }
+    const ai = session.aiResponse as {
+      activityComplete?: boolean
+      conversation?: { id?: string; complete?: boolean; masteryStatus?: string }
+    } | undefined
+    if (!ai?.activityComplete || !ai.conversation?.complete ||
+        !ai.conversation?.id || !session.transcript) {
+      throw ApiError.conflict('This First Day activity still needs an English attempt')
+    }
+    // A genuine browser media-ended event is not cryptographically provable.
+    // This authenticated acknowledgment is a delivery checkpoint, not an
+    // acoustic pronunciation grade. Repeated requests are idempotent.
+    const score = ai.conversation.masteryStatus === 'MASTERED' ? 90 : 75
+    await ProgressService.submitAttempt({
+      studentId,
+      activityId: session.activityId.toString(),
+      answer: session.transcript,
+      startedAt: session.startedAt,
+      hintsUsed: 0,
+      idempotencyKey: `conversation:${ai.conversation.id}`,
+      evaluation: { score, feedback: 'First Day speaking activity completed after teacher audio playback.' },
+    })
+    await VoiceSession.updateOne(
+      { _id: session._id, studentId },
+      { $set: { 'metadata.teacherAudioAcknowledgedAt': new Date() } },
+    )
+    return { complete: true, acknowledged: true }
+  },
+
   async cancelSession(studentId: string, sessionId: string) {
     const session = await VoiceSession.findOne({ _id: sessionId, studentId })
     if (!session) throw ApiError.notFound('Voice session not found')
