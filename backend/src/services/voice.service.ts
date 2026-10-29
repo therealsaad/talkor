@@ -332,6 +332,17 @@ export const VoiceService = {
     // remains the final safety net for cached/legacy lesson audio.
     const isClass1Lesson = Boolean(options.studentId && options.activityId &&
       (await CurriculumAccessService.assertActivity(options.studentId, options.activityId)).activity.activityKey?.startsWith('class1-l01-'))
+    // Adaptive Class 1 speech has one explicit voice contract: Azure.
+    // An unexpected Groq/Python fallback can silently change language/voice
+    // or return cached words instead of the new Qwen answer.
+    // Teacher narration is still served from approved Priya/S3 above.
+    const dynamicFirstDay = isClass1Lesson && (purpose === 'CONVERSATION' || purpose === 'FEEDBACK')
+    if (dynamicFirstDay) {
+      const azure = await tryStream(new AzureVoiceProvider(), text, { conversation: true, class1Lesson: true })
+      if (!azure) throw ApiError.provider('CLASS1_AZURE_DYNAMIC_VOICE_UNAVAILABLE')
+      return azure
+    }
+
     const azure = azureAlreadyTried ? null : await tryStream(new AzureVoiceProvider(), text, { class1Lesson: isClass1Lesson })
     if (azure) return azure
 
