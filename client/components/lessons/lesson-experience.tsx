@@ -302,6 +302,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       xpAwarded: result?.conversation?.complete ? 0 : baseTurn?.xpAwarded,
       evidence: result?.conversation?.skillEvidence ?? baseTurn?.evidence,
       memoryUpdates: result?.conversation ? [] : baseTurn?.memoryUpdates,
+      staticAudioActivityId: experienceId === 'g01-l01' ? activity?.id : undefined,
       voicePriority:
         result && (isConversation || Boolean(result.conversation))
           ? 'CONVERSATION'
