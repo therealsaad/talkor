@@ -7,6 +7,7 @@ export const config = {
   "level": 5,
   "gradeLabel": "Kindergarten",
   "title": "Letters W to Z",
+  "roadmapTitle": "Food and Fruits",
   "editorialStatus": "draft",
   "studentPlayable": false,
   "description": "A premium alphabet adventure for learning letters W, X, Y, and Z with pictures, video, and spoken practice.",
