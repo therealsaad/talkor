@@ -3,8 +3,8 @@
  * school staff listen to and approve the two localized female voices.
  * Selection changes a SINGLE TTS request, never generates an extra request.
  */
-export function chooseTalkoraBilingualVoice(text: string, defaultVoice: string): { voice: string; locale: string } {
-  if (process.env.TALKORA_CLASS1_BILINGUAL_TTS !== 'true' || !/[\u0900-\u097f]/.test(text)) {
+export function chooseTalkoraBilingualVoice(text: string, defaultVoice: string, class1Lesson = false): { voice: string; locale: string } {
+  if ((!class1Lesson && process.env.TALKORA_CLASS1_BILINGUAL_TTS !== 'true') || !/[\u0900-\u097f]/.test(text)) {
     return { voice: defaultVoice, locale: 'en-IN' }
   }
 
