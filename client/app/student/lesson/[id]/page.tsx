@@ -49,6 +49,8 @@ export default function StudentLessonPage() {
       <button type="button" onClick={() => router.replace('/student/home')}>Back to classroom</button>
     </main>
   }
+  const firstDayV3 = lesson.experienceId === 'g01-l01' &&
+    lesson.activities.some(activity => activity.activityKey?.startsWith('class1-l01-v3-'))
   const experience = <ActivityEngine
     key={`${lesson.level.id}:${lesson.lesson.id}`}
     activities={lesson.activities}
@@ -59,14 +61,18 @@ export default function StudentLessonPage() {
     studentName={student?.fullName?.trim() || 'Explorer'}
     completedActivityIds={lesson.completedActivityIds}
     experienceId={lesson.experienceId}
-    backgroundSrc={lesson.experienceId === 'g01-l01'
+    backgroundSrc={lesson.experienceId === 'g01-l01' && !firstDayV3
       ? '/lessons/class-01/level-01/two-letter-word-meadow.webp'
       : undefined}
     completionMessage={lesson.experienceId === 'g01-l01'
-      ? `You did it, ${student?.fullName?.trim() || 'Explorer'}! You practised am, an, at, in, is, it, on, and up, then began learning about your first day at school. Your progress is saved.`
+      ? firstDayV3
+        ? 'Wonderful! You learnt about skipping, running, walking, smiling, the school bell, jumping and playing on your first day at school.'
+        : `You did it, ${student?.fullName?.trim() || 'Explorer'}! You practised am, an, at, in, is, it, on, and up, then began learning about your first day at school. Your progress is saved.`
       : undefined}
     homeworkMessage={lesson.experienceId === 'g01-l01'
-      ? 'Homework: say “It is up” and “I walk to school” with someone at home.'
+      ? firstDayV3
+        ? 'Homework: tell someone at home: I can walk, I can play, and I am in Grade One.'
+        : 'Homework: say “It is up” and “I walk to school” with someone at home.'
       : undefined}
     introVideoKey={lesson.experienceId === 'g01-l01' && lesson.completedActivityIds.length === 0
       ? 'class1-g01-l01'
@@ -75,6 +81,6 @@ export default function StudentLessonPage() {
         : undefined}
   />
   return lesson.experienceId === 'g01-l01'
-    ? <Class1Immersion>{experience}</Class1Immersion>
+    ? <Class1Immersion voiceOnly={firstDayV3}>{experience}</Class1Immersion>
     : experience
 }
