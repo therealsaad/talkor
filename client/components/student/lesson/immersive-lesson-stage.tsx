@@ -28,6 +28,7 @@ import type { JulieVisualState } from '@/components/student/lesson/miss-julie-ch
 import { personalizeLessonText } from '@/services/lesson-progress'
 import { class1TeachingCue } from '@/features/lessons/grades/class-01/level-01/first-day-voice-guide'
 import { Class1StorybookBoard } from '@/features/lessons/grades/class-01/level-01/first-day-storybook-board'
+import { FirstDayClassroom } from '@/features/lessons/grades/class-01/level-01/FirstDayClassroom'
 import {
   getWarmupPrompts,
   isWarmupActivity,
@@ -385,8 +386,33 @@ export function ImmersiveLessonStage({
   // Class 1 is a hands-free lesson, not a scrollable answer-sheet. Reuse the
   // parent engine's authenticated mic, speech and progress state; never add a
   // second recorder or mark activities complete from presentation code.
+  const firstDayV3Id = activity.activityKey?.match(/^class1-l01-v3-(.+)$/)?.[1]
+  if (isClass1Classroom && firstDayV3Id) {
+    return <FirstDayClassroom
+      sceneId={firstDayV3Id}
+      focus={class1Cue?.storybook.focus || 'MY FIRST DAY'}
+      sentence={class1Cue?.storybook.example || 'I walk to school.'}
+      teacherText={julieMessage}
+      teacherImage={julieImage}
+      animationUrl={julieAnimation}
+      isSpeaking={isJulieSpeaking}
+      isListening={isRecording}
+      isProcessing={isProcessing}
+      isCompleted={isCompleted}
+      transcript={studentTurnText || transcript}
+      feedback={feedback}
+    />
+  }
   if (isClass1Classroom) {
     const focus = class1Cue?.storybook.focus || 'MY FIRST DAY'
+    const sceneVisuals: Record<string, string> = {
+      'hello-school': '🏫', 'skip-bunny': '🐰', 'run-race': '🏃',
+      'walk-school': '👣', 'big-grin': '😁', 'school-bell': '🔔',
+      'jump-frog': '🐸', 'play-friends': '⚽', 'enter-class': '🚪',
+      'grade-one': '🎉',
+    }
+    const sceneId = activity.activityKey?.match(/^class1-l01-v3-(.+)$/)?.[1]
+    const firstDayVisual = sceneId ? sceneVisuals[sceneId] : null
     const sentence = class1Cue?.storybook.example || 'I walk to school.'
     const phaseText = isRecording ? 'I am listening. Speak now!'
       : isProcessing ? 'I am thinking about your answer...'
@@ -403,14 +429,27 @@ export function ImmersiveLessonStage({
         color: '#174b3c',
       }}>
         <div style={{ height: '100%', minHeight: 0, display: 'flex', alignItems: 'end', justifyContent: 'center', position: 'relative' }}>
-          <Image src={julieImage} alt="Miss Julie, your English teacher" width={420} height={620}
-            sizes="34vw" style={{ maxWidth: '100%', maxHeight: '98%', width: 'auto', height: 'auto', objectFit: 'contain' }} />
+          <motion.div
+            animate={reduceMotion ? undefined : isJulieSpeaking
+              ? { rotate: [-2, 2, -2], y: [0, -7, 0] }
+              : isCompleted ? { y: [0, -11, 0] } : { y: 0 }}
+            transition={{ duration: isJulieSpeaking ? 1.5 : 1.8, repeat: (isJulieSpeaking || isCompleted) && !reduceMotion ? Infinity : 0 }}
+            style={{ maxHeight: '100%', display: 'flex', alignItems: 'end', justifyContent: 'center' }}>
+            <Image src={julieImage} alt="Miss Julie, your English teacher" width={420} height={620}
+              sizes="34vw" style={{ maxWidth: '100%', maxHeight: '98%', width: 'auto', height: 'auto', objectFit: 'contain' }} />
+          </motion.div>
         </div>
         <div style={{ minHeight: 0, maxHeight: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column',
           justifyContent: 'center', alignItems: 'center', gap: 'clamp(8px,1.5vh,20px)', textAlign: 'center' }}>
           <div style={{ fontWeight: 900, fontSize: 'clamp(13px,1.3vw,20px)', letterSpacing: '.06em' }}>
             BALBHARATI 1.1 · MY FIRST DAY
           </div>
+          {firstDayVisual ? <motion.div aria-hidden="true"
+            animate={reduceMotion ? undefined : { rotate: [-7, 7, -7], y: [0, -10, 0] }}
+            transition={{ duration: 2, ease: 'easeInOut', repeat: Infinity }}
+            style={{ fontSize: 'clamp(38px, 6vw, 92px)', lineHeight: 1, willChange: 'transform' }}>
+            {firstDayVisual}
+          </motion.div> : null}
           <div style={{ fontWeight: 950, lineHeight: 1.05, fontSize: 'clamp(32px,6.5vw,100px)' }} aria-label={focus}>
             {focus}
           </div>

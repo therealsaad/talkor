@@ -4,6 +4,9 @@
 >
 > Repository: **https://github.com/therealsaad/talkor**
 
+
+> **Class 1 First Day v3 note (October 29, 2026):** The older Class 1 section below documents the v2 tiny-word pilot. A **draft-only** v3 replacement now maps ten original spoken scenes to Balbharati 1.1. It requires a new teacher-reviewed 90-second intro, a guarded development-only migration and supervised real audio acceptance. See [Class 1 live voice acceptance](docs/class1-first-day-voice-acceptance.md). Do **not** infer production readiness from passing CI, a generated Azure WAV/MP3 or a Python health check.
+
 ## Table of contents
 
 1. [Quick start: run the app](#1-quick-start-run-the-app)

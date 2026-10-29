@@ -19,6 +19,25 @@
   box-shadow: 0 8px 30px rgba(50, 92, 38, .19);
 }
 
+.kg-garden--dashboard {
+  min-height: 0;
+  width: 100%;
+  height: auto;
+  min-width: 0;
+  padding: 0;
+  justify-content: center;
+  overflow: auto;
+  background: transparent;
+}
+
+.kg-garden--dashboard .kg-garden__canvas {
+  width: 100%;
+  max-width: none;
+  flex: 0 0 auto;
+  border-radius: 0;
+  box-shadow: none;
+}
+
 .kg-garden__background {
   object-fit: contain;
 }
@@ -125,6 +144,17 @@
 
   .kg-garden__canvas {
     border-radius: 10px;
+  }
+
+  .kg-garden--dashboard {
+    min-height: calc(100dvh - 58px);
+    justify-content: flex-start;
+    background: transparent;
+  }
+
+  .kg-garden--dashboard .kg-garden__canvas {
+    width: 100%;
+    border-radius: 0;
   }
 
   .kg-garden__node {

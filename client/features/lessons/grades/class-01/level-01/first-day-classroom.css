@@ -1,0 +1,29 @@
+.firstday-stage{width:100%;height:100%;min-height:0;overflow:hidden;display:grid;grid-template-columns:minmax(260px,38%) minmax(0,62%);background:radial-gradient(circle at 10% 10%,#e3f8e8,#f8f3d9 75%);gap:0;color:#1b5844;font-family:inherit}
+.firstday-teacher{position:relative;min-width:0;min-height:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding:clamp(10px,1.5vh,22px) 4px 0}
+.firstday-teacher__name{position:absolute;top:clamp(8px,1.4vh,16px);left:5%;font-weight:900;letter-spacing:.13em;font-size:clamp(11px,1.2vw,20px);z-index:4;color:#287866}
+.firstday-teacher__name span{color:#eda858}
+.firstday-teacher__portrait{position:relative;flex:1;min-height:0;width:100%;display:flex;align-items:end;justify-content:center}
+.firstday-teacher__still,.firstday-teacher__animation{max-height:100%;max-width:100%;height:100%;width:auto;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 14px 13px #134d3422)}
+.firstday-teacher__animation{position:absolute;inset:auto 0 0;opacity:0;width:100%;transition:opacity .35s ease}
+.firstday-teacher__animation.is-ready{opacity:1}.firstday-teacher__still.is-hidden{opacity:0}
+.firstday-teacher__line{position:absolute;right:-6%;top:12%;z-index:3;background:#fffef8;border:3px solid #fff;border-radius:24px 24px 24px 5px;box-shadow:0 12px 30px #2f54412b;padding:clamp(12px,1.4vw,24px);max-width:58%;max-height:30%;overflow:hidden;font-weight:800;line-height:1.27;font-size:clamp(14px,1.5vw,23px)}
+.firstday-teacher__quote{font-size:1.6em;color:#f4aa54;line-height:0;margin-right:3px}
+.firstday-book{margin:clamp(6px,1.3vh,19px) clamp(12px,2vw,32px) clamp(8px,1.5vh,20px) 0;min-width:0;min-height:0;overflow:hidden;display:flex;flex-direction:column;border:clamp(6px,.75vw,11px) solid #fff;background:#fff9e6;border-radius:28px;box-shadow:0 18px 48px #215c4227}
+.firstday-book__top{display:flex;justify-content:space-between;align-items:center;padding:clamp(8px,1.1vh,13px) clamp(13px,2vw,25px);gap:8px;font-weight:900;font-size:clamp(10px,1.1vw,15px);letter-spacing:.04em}
+.firstday-book__sticker{color:#a94748;background:#ffe0c9;border-radius:999px;padding:6px 13px;white-space:nowrap}
+.firstday-book__art{position:relative;flex:1 1 40%;min-height:0;margin:0 12px;border-radius:20px;overflow:hidden}
+.firstday-school{display:block;width:100%;height:100%;max-height:100%}
+.firstday-book__character{position:absolute;bottom:0;left:40%;font-size:clamp(48px,6vw,100px);filter:drop-shadow(0 8px 5px #24593735)}
+.firstday-book__action{position:absolute;left:10px;top:8px;background:#fffef7e8;color:#985347;border-radius:18px;padding:4px 13px;font-size:clamp(11px,1vw,17px);font-weight:900}
+.firstday-book__text{flex:0 0 auto;min-height:0;padding:clamp(6px,.85vh,12px) 15px;text-align:center}
+.firstday-book__title{font-size:clamp(12px,1.3vw,18px);font-weight:850;color:#557665}
+.firstday-book__text strong{display:block;color:#125e48;font-size:clamp(28px,3.9vw,62px);line-height:1.05;letter-spacing:.02em}
+.firstday-book__text p{font-size:clamp(15px,1.7vw,26px);font-weight:800;line-height:1.15;margin:3px auto 0;max-width:90%}
+.firstday-book__footer{flex:0 0 auto;display:flex;align-items:center;justify-content:center;gap:13px;margin:4px clamp(11px,1.5vw,20px) clamp(5px,1vh,15px);background:#e1f5e5;border-radius:18px;padding:clamp(7px,1vh,13px);font-weight:900;text-align:center;font-size:clamp(12px,1.35vw,20px)}
+.firstday-book__mic{font-size:1.45em}.firstday-book__mic.is-live{animation:firstdayPulse 1s ease-in-out infinite}
+.firstday-book__transcript,.firstday-book__feedback{flex:0 0 auto;max-height:8%;overflow:hidden;text-align:center;padding:2px 14px;font-size:clamp(11px,1vw,15px);font-weight:750}
+.firstday-book__feedback{color:#a23d2d}.firstday-rotate{display:none}
+@keyframes firstdayPulse{50%{transform:scale(1.25)}}
+@media(max-height:690px){.firstday-teacher__line{max-height:24%;font-size:clamp(12px,1.25vw,17px)}.firstday-book__art{flex-basis:32%}.firstday-book__text strong{font-size:clamp(26px,3.3vw,45px)}}
+@media(orientation:portrait) and (max-width:850px){.firstday-stage{display:flex;align-items:center;justify-content:center}.firstday-stage>.firstday-teacher,.firstday-stage>.firstday-book{display:none}.firstday-rotate{display:block;max-width:82%;padding:24px;border-radius:22px;background:#fff;text-align:center;font-size:20px;font-weight:850}}
+@media(prefers-reduced-motion:reduce){.firstday-book__mic.is-live{animation:none}.firstday-teacher__animation{display:none}.firstday-teacher__still.is-hidden{opacity:1}}
