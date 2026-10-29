@@ -112,7 +112,7 @@ function streamFromBuffer(audio: Buffer): ReadableStream<Uint8Array> {
 }
 
 async function tryStream(
-  provider: { name: string; synthesizeStream?: (text: string, options?: { conversation?: boolean }) => Promise<VoiceStreamResult> },
+  provider: { name: string; synthesizeStream?: (text: string, options?: { conversation?: boolean; class1Lesson?: boolean; language?: string }) => Promise<VoiceStreamResult> },
   text: string,
   options?: { conversation?: boolean; class1Lesson?: boolean },
 ): Promise<VoiceStreamResult | null> {
@@ -283,15 +283,21 @@ export const VoiceService = {
     options: { studentId?: string; purpose?: VoicePurpose; language?: string; activityId?: string } = {},
   ) {
     const purpose = options.purpose ?? 'LESSON'
+    // The authorized Mongo activity owns the voice policy. A browser-supplied
+    // purpose/locale is never enough to claim the Class 1 private voice path.
+    const currentActivity = options.studentId && options.activityId
+      ? (await CurriculumAccessService.assertActivity(options.studentId, options.activityId)).activity
+      : null
+    const isClass1Lesson = Boolean(currentActivity?.activityKey?.startsWith('class1-l01-'))
+    const isFirstDayV3 = Boolean(currentActivity?.activityKey?.startsWith('class1-l01-v3-'))
 
     // Only serve a Class 1 static clip if its approved script is exactly the
     // requested line. This prevents a child's dynamic teacher feedback being
     // replaced with an unrelated activity clip.
     let azureAlreadyTried = false
     if (purpose === 'LESSON' && options.studentId && options.activityId) {
-      const access = await CurriculumAccessService.assertActivity(options.studentId, options.activityId)
-      const key = typeof access.activity.content?.audioKey === 'string'
-        ? access.activity.content.audioKey.trim()
+      const key = typeof currentActivity?.content?.audioKey === 'string'
+        ? currentActivity.content.audioKey.trim()
         : ''
       if (APPROVED_LESSON_AUDIO_KEY.test(key)) {
         const class1Text = CLASS1_STATIC_LINES.get(key)
@@ -327,12 +333,27 @@ export const VoiceService = {
       }
     }
 
+    // First Day v3 has a strict, predictable source policy:
+    // approved school script -> private S3 / Priya recording; all personalized,
+    // Hindi/Marathi or Qwen answers -> ONE Azure TTS. No silent Groq/8001
+    // downgrade and no progression when the expected voice isn't available.
+    if (isFirstDayV3) {
+      if (purpose === 'LESSON') {
+        throw ApiError.provider('CLASS1_FIRST_DAY_APPROVED_AUDIO_MISSING')
+      }
+      const azure = await tryStream(new AzureVoiceProvider(), text, {
+        class1Lesson: true,
+        language: options.language,
+        conversation: true,
+      })
+      if (azure) return azure
+      throw ApiError.provider('CLASS1_DYNAMIC_AZURE_TTS_UNAVAILABLE')
+    }
+
     // Azure Neerja is Talkora's primary Miss Julie voice everywhere.
     // Groq is the fast vendor fallback and the existing Python/Priya pipeline
     // remains the final safety net for cached/legacy lesson audio.
-    const isClass1Lesson = Boolean(options.studentId && options.activityId &&
-      (await CurriculumAccessService.assertActivity(options.studentId, options.activityId)).activity.activityKey?.startsWith('class1-l01-'))
-    const azure = azureAlreadyTried ? null : await tryStream(new AzureVoiceProvider(), text, { class1Lesson: isClass1Lesson })
+    const azure = azureAlreadyTried ? null : await tryStream(new AzureVoiceProvider(), text, { class1Lesson: isClass1Lesson, language: options.language })
     if (azure) return azure
 
     const groq = await tryStream(new GroqVoiceProvider(), text, {
