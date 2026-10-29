@@ -17,6 +17,7 @@ import { PythonVoiceProvider } from '../providers/voice/PythonVoiceProvider'
 import { S3Service } from './S3Service'
 import { class1SupportFromSarvam } from '../providers/ai/class1-stt-language'
 import class1VoiceManifest from '../scripts/class1-level1-ai4bharat-lines.json'
+import firstDayVoices from '../scripts/class1-first-day-voice-v3.json'
 
 
 
@@ -29,7 +30,7 @@ const APPROVED_LESSON_AUDIO_KEY = /^class-(?:0[1-9]|10)\/level-(?:0[1-9]|10)\/v[
 // Only these immutable, human-reviewed Class 1 narration keys can be shared
 // across students. A browser-provided activityId or purpose is never sufficient.
 const CLASS1_STATIC_LINES = new Map(
-  class1VoiceManifest.lines.map((line) => [line.s3Key, line.text] as const),
+  [...class1VoiceManifest.lines, ...firstDayVoices.lines].map((line) => [line.s3Key, line.text] as const),
 )
 const STATIC_AUDIO_MAX_ITEMS = 16
 const STATIC_AUDIO_MAX_ITEM_BYTES = 2 * 1024 * 1024
@@ -66,6 +67,11 @@ function getStaticAudio(key: string, text: string): Promise<StaticAudio | null> 
     }
     if (saved?.length) {
       return { audio: saved, provider: 'ai4bharat-s3', contentType: key.endsWith('.mp3') ? 'audio/mpeg' : 'audio/wav' }
+    }
+    if (key.startsWith('class-01/level-01/v3/')) {
+      // Never spend a surprise Azure credit when a promised reviewed S3
+      // First Day clip is missing or not approved. Fail explicitly instead.
+      throw ApiError.provider('CLASS1_FIRST_DAY_APPROVED_AUDIO_MISSING')
     }
     // Fixed, manifest-verified line only. Never cache student transcripts, names,
     // personalised feedback, or free-form LLM replies.
