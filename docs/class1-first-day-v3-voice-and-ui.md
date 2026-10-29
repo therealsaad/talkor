@@ -60,3 +60,28 @@ The uploader can write only in development with `TALKORA_FIRST_DAY_AUDIO_REVIEWE
 5. Test one student speech turn in English, Hindi and Marathi. Check that the browser actually plays speech and Qwen responds to relevant questions, not just that API health succeeds.
 
 **Status:** UI/source/test implementation only. No audio file has been generated on the developer's Windows 8001 service and no private MongoDB or S3 mutation was performed by the GitHub changes. Never describe this as verified audible production speech before a supervised device test.
+
+## Local 8001 returned HTTP 500 (October 29)
+
+The old generator hardcoded `miss-julie-priya-v6`, which may not be a valid ID in the live Python environment. The fixed generator first asks **the running 8001** for `ttsVoiceId` and calls `/health` to verify the installed Indic Parler imports and local snapshots. A mismatch normally produces HTTP 422, whereas HTTP 500 points to an unhandled Python exception. Never assume an HTTP 200 from `/openapi.json` proves the model can synthesize audio.
+
+In a fresh PowerShell terminal, with the 8001 service already running:
+
+```powershell
+$health = Invoke-RestMethod http://127.0.0.1:8001/health
+$health | Select-Object ttsVoiceId,parlerImport,ttsModelAvailable,ttsModelLoaded,ttsDevice,ttsStatus,cuda,gpu
+```
+
+This is **read-only and free**. If imports/models/CUDA are unavailable, inspect the Python virtual environment, installed weights, and Windows Code Integrity logs. Windows application-control policy can block unsigned PyTorch DLLs; **do not disable enterprise security policy** to work around this. Use an authorized setup, administrator-approved runtime, or a supported Linux/Colab environment.
+
+After applying the reviewed generator fix, retry **one** local sample, not all ten:
+
+```powershell
+$env:TALKORA_FIRST_DAY_GENERATE = 'YES'
+pnpm exec tsx -r dotenv/config src/scripts/generate-class1-first-day-voices.ts --generate --language en-IN --sample
+Remove-Item Env:TALKORA_FIRST_DAY_GENERATE -ErrorAction SilentlyContinue
+```
+
+If it still returns 500/503, read the **terminal running Python 8001**. The traceback—not Azure or Qwen—identifies the actual problem. Do not repeat generation in a loop or download model weights indiscriminately. Do not upload audio to S3 until you have listened to the whole WAV and obtained review.
+
+**Separate service check:** `OFFLINE node-5000` means the Express backend was not running during the doctor command. It did not cause the failed direct 8001 TTS POST, but Node must be started for the full student session. The reviewed First Day intro URL is still missing.

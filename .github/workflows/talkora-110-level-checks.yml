@@ -35,6 +35,9 @@ jobs:
       - name: Verify illustrated v3 First Day speaking classroom
         run: node --test tests/ui/class1-first-day-adventure.test.mjs
         working-directory: client
+      - name: Verify TTS generator uses real 8001 voice ID and safe errors
+        run: node --test tests/ui/class1-priya-generation-contract.test.mjs
+        working-directory: client
   backend:
     runs-on: ubuntu-latest
     steps:
@@ -59,4 +62,7 @@ jobs:
         working-directory: backend
       - name: Verify First Day teacher voice pack manifest and review gates
         run: pnpm exec jest --runInBand tests/class1-first-day-voice-manifest.test.ts
+        working-directory: backend
+      - name: Verify local Priya voice preflight and model/hardware readiness
+        run: pnpm exec jest --runInBand tests/priya-tts-health.test.ts
         working-directory: backend

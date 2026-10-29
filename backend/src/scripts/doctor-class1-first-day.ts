@@ -1,9 +1,11 @@
 /** Read-only Class 1 service doctor; no paid speech, Mongo writes or secret logs.
  * pnpm exec tsx -r dotenv/config src/scripts/doctor-class1-first-day.ts
  */
+import { parsePriyaHealth, checkPriyaHealth, formatPriyaHealth } from '../services/priya-tts-health'
+
 const BASE = [
   { name: 'node-5000', url: 'http://127.0.0.1:5000/health' },
-  { name: 'python-voice-8001', url: (process.env.AI_SERVICE_URL || 'http://127.0.0.1:8001').replace(/\/$/, '') + '/openapi.json' },
+  { name: 'python-voice-8001', url: (process.env.AI_SERVICE_URL || 'http://127.0.0.1:8001').replace(/\/$/, '') + '/health' },
   { name: 'python-qwen-8002', url: (process.env.TALKORA_CLASS1_AI_URL || 'http://127.0.0.1:8002').replace(/\/$/, '') + '/health' },
   { name: 'ollama-11434', url: 'http://127.0.0.1:11434/api/tags' },
 ]
@@ -22,7 +24,14 @@ async function main() {
   for (const item of BASE) {
     try {
       const response = await fetch(item.url, { signal: AbortSignal.timeout(3000) })
-      console.log((response.ok ? 'PASS ' : 'FAIL ') + item.name + ' (HTTP ' + response.status + ')')
+      if (item.name === 'python-voice-8001' && response.ok) {
+        const health = parsePriyaHealth(await response.json())
+        const blockers = checkPriyaHealth(health)
+        console.log((blockers.length ? 'FAIL ' : 'PASS ') + item.name + ' (HTTP ' + response.status + ')')
+        console.log(formatPriyaHealth(health))
+      } else {
+        console.log((response.ok ? 'PASS ' : 'FAIL ') + item.name + ' (HTTP ' + response.status + ')')
+      }
     } catch { console.log('OFFLINE ' + item.name) }
   }
   console.log('NOTE: HTTP health does not verify speaker output, account billing, model quality or microphone permission.')
