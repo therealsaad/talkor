@@ -38,3 +38,11 @@ test('First Day scene does not advance before audio playback is completed', asyn
   assert.match(lesson, /if \(!firstDayV3\) setActivityComplete\(complete\)/)
   assert.match(lesson, /playback !== 'spoken'/)
 })
+
+test('duplicate teacher turns do not count as spoken before audio media-ended', async () => {
+  const lesson = await read('../../components/lessons/lesson-experience.tsx')
+  const playback = lesson.indexOf('const playback = await julie.speak(turn.text, turn.id')
+  const recorded = lesson.indexOf('spokenTurnIds.current.add(turn.id)', playback)
+  assert.ok(playback >= 0 && recorded > playback, 'a turn is recorded as spoken only after awaiting playback')
+  assert.match(lesson, /if \(playback !== 'spoken'\)/)
+})
