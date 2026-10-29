@@ -140,7 +140,7 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false }:
         src={videoSource || undefined}
         playsInline preload="metadata" controls={false}
         disablePictureInPicture controlsList="nodownload noplaybackrate noremoteplayback"
-        aria-label="90-second Class 1 foundation and My First Day introduction"
+        aria-label="Reviewed 90-second Balbharati My First Day introduction"
         onLoadedMetadata={validateVideo}
         onTimeUpdate={(event) => {
           const player = event.currentTarget
@@ -164,7 +164,7 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false }:
       {loading ? <p className="class1-intro-status" role="status">Getting Miss Julie's story ready...</p> : null}
       {error ? <div className="class1-intro-error" role="alert"><p>{error}</p><button type="button" onClick={retryVideo} disabled={!sourceReady}><RotateCcw size={16} /> Try loading again</button></div> : null}
       {needsTap && canPlay ? <div className="class1-intro-play-prompt">
-        <p>Watch the whole story with sound. Then we will practise our little words together.</p>
+        <p>Watch the whole story with sound. Then we will practise school actions and English with Miss Julie.</p>
         <button type="button" onClick={() => void begin()}><Play size={18} fill="currentColor" /> Play story</button>
       </div> : null}
     </div>
