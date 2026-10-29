@@ -1,9 +1,11 @@
 // TALKORA_CLASS1_STUDENT_DEMO_ROUTE_V1
 import { VoiceSession } from '../models/VoiceSession'
+import { Conversation } from '../models/Conversation'
 import { getSpeechProvider } from '../providers/speech'
 import { getVoiceProvider } from '../providers/voice'
 import { getPronunciationProvider } from '../providers/pronunciation'
 import { ApiError } from '../utils/ApiError'
+import { Types } from 'mongoose'
 import { Activity } from '../models/Activity'
 import { ProgressService } from './progress.service'
 import { ActivityAttempt } from '../models/ActivityAttempt'
@@ -112,9 +114,9 @@ function streamFromBuffer(audio: Buffer): ReadableStream<Uint8Array> {
 }
 
 async function tryStream(
-  provider: { name: string; synthesizeStream?: (text: string, options?: { conversation?: boolean }) => Promise<VoiceStreamResult> },
+  provider: { name: string; synthesizeStream?: (text: string, options?: { conversation?: boolean; class1Lesson?: boolean; language?: string }) => Promise<VoiceStreamResult> },
   text: string,
-  options?: { conversation?: boolean; class1Lesson?: boolean },
+  options?: { conversation?: boolean; class1Lesson?: boolean; language?: string },
 ): Promise<VoiceStreamResult | null> {
   if (!provider.synthesizeStream) return null
   try {
@@ -253,12 +255,74 @@ export const VoiceService = {
       : undefined
 
     session.aiResponse = aiResponse
+    if (activity?.activityKey?.startsWith('class1-l01-v3-')) {
+      session.metadata = { ...(session.metadata || {}), detectedLanguage: input.detectedLanguage || 'en-IN' }
+      session.markModified('metadata')
+    }
     session.xpAwarded = progressResult?.xpAwarded ?? 0
     session.conversationMode = conversationMode ? 'OPEN' : 'CONTROLLED'
     session.status = 'completed'
     await session.save()
 
     return session
+  },
+
+  async pendingTeacherAudio(studentId: string, activityId: string) {
+    if (!Types.ObjectId.isValid(activityId)) throw ApiError.badRequest('Invalid activity ID')
+    const access = await CurriculumAccessService.assertActivity(studentId, activityId)
+    if (!access.activity.activityKey?.startsWith('class1-l01-v3-')) throw ApiError.forbidden()
+    const session = await VoiceSession.findOne({
+      studentId, activityId, status: 'completed',
+      'aiResponse.activityComplete': true,
+      'metadata.teacherAudioAcknowledgedAt': { $exists: false },
+    }).sort({ createdAt: -1 })
+    if (!session) return { pending: false }
+    const ai = session.aiResponse as { message?: string; followUpQuestion?: string; activityComplete?: boolean } | undefined
+    if (!ai?.activityComplete || !ai.message?.trim()) return { pending: false }
+    return {
+      pending: true, sessionId: session._id.toString(),
+      text: [ai.message, ai.followUpQuestion].filter(Boolean).join(' ').slice(0, 1800),
+      language: session.metadata?.detectedLanguage || 'en-IN',
+    }
+  },
+
+  async acknowledgeTeacherAudio(studentId: string, sessionId: string) {
+    if (!Types.ObjectId.isValid(sessionId)) throw ApiError.badRequest('Invalid session ID')
+    const session = await VoiceSession.findOne({ _id: sessionId, studentId })
+    if (!session || !session.activityId || !session.lessonId || session.status !== 'completed') {
+      throw ApiError.conflict('No completed First Day teacher turn to acknowledge')
+    }
+    const access = await CurriculumAccessService.assertActivity(studentId, session.activityId.toString())
+    if (!access.activity.activityKey?.startsWith('class1-l01-v3-')) throw ApiError.forbidden()
+    const ai = session.aiResponse as {
+      activityComplete?: boolean
+      conversation?: { id?: string; masteryStatus?: string }
+    } | undefined
+    if (!ai?.activityComplete || !ai.conversation?.id || !session.transcript) {
+      throw ApiError.conflict('This scene still needs an English speaking attempt')
+    }
+    if (session.metadata?.teacherAudioAcknowledgedAt) return { complete: true, acknowledged: true }
+    const score = ai.conversation.masteryStatus === 'MASTERED' ? 90 : 75
+    await ProgressService.submitAttempt({
+      studentId,
+      activityId: session.activityId.toString(),
+      answer: session.transcript,
+      startedAt: session.startedAt,
+      hintsUsed: 0,
+      idempotencyKey: `conversation:${ai.conversation.id}`,
+      evaluation: { score, feedback: 'First Day learning attempt recorded after teacher audio ended.' },
+    })
+    await Conversation.updateOne(
+      { _id: ai.conversation.id, studentId, activityId: session.activityId, status: 'ACTIVE' },
+      { $set: { status: 'COMPLETED', completedAt: new Date() } },
+    )
+    await VoiceSession.updateOne(
+      { _id: session._id, studentId },
+      { $set: { 'metadata.teacherAudioAcknowledgedAt': new Date() } },
+    )
+    // This authenticated media-ended acknowledgement cannot prove that a
+    // child heard/understood sound. It's a delivery checkpoint, not a grade.
+    return { complete: true, acknowledged: true }
   },
 
   async cancelSession(studentId: string, sessionId: string) {
@@ -327,6 +391,15 @@ export const VoiceService = {
       }
     }
 
+    // Class 1 v3 fixed narration may never silently switch from an approved
+    // exact Priya/S3 script to unreviewed dynamic TTS.
+    if (purpose === 'LESSON' && options.studentId && options.activityId) {
+      const current = await CurriculumAccessService.assertActivity(options.studentId, options.activityId)
+      if (current.activity.activityKey?.startsWith('class1-l01-v3-')) {
+        throw ApiError.provider('CLASS1_FIRST_DAY_APPROVED_AUDIO_MISSING_OR_MISMATCHED')
+      }
+    }
+
     // Azure Neerja is Talkora's primary Miss Julie voice everywhere.
     // Groq is the fast vendor fallback and the existing Python/Priya pipeline
     // remains the final safety net for cached/legacy lesson audio.
@@ -338,7 +411,7 @@ export const VoiceService = {
     // Teacher narration is still served from approved Priya/S3 above.
     const dynamicFirstDay = isClass1Lesson && (purpose === 'CONVERSATION' || purpose === 'FEEDBACK')
     if (dynamicFirstDay) {
-      const azure = await tryStream(new AzureVoiceProvider(), text, { conversation: true, class1Lesson: true })
+      const azure = await tryStream(new AzureVoiceProvider(), text, { conversation: true, class1Lesson: true, language: options.language })
       if (!azure) throw ApiError.provider('CLASS1_AZURE_DYNAMIC_VOICE_UNAVAILABLE')
       return azure
     }

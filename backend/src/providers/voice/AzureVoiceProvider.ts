@@ -37,10 +37,10 @@ export class AzureVoiceProvider implements VoiceProvider {
     }
   }
 
-  private async generate(text: string, kindergarten = false, class1Lesson = false): Promise<Buffer> {
+  private async generate(text: string, kindergarten = false, class1Lesson = false, language?: string): Promise<Buffer> {
     const s = this.settings()
     if (!s.key) throw ApiError.provider('Azure Speech is not configured')
-    const selected = chooseTalkoraBilingualVoice(text, s.voice, class1Lesson)
+    const selected = chooseTalkoraBilingualVoice(text, s.voice, class1Lesson, language)
 
     const url = `https://${s.region}.tts.speech.microsoft.com/cognitiveservices/v1`
     const rate = kindergarten ? (process.env.KG_AZURE_SPEECH_RATE?.trim() || "+5%") : s.rate
@@ -109,12 +109,12 @@ export class AzureVoiceProvider implements VoiceProvider {
     }
   }
 
-  async synthesizeStream(text: string, options?: { conversation?: boolean; class1Lesson?: boolean }): Promise<VoiceStreamResult> {
+  async synthesizeStream(text: string, options?: { conversation?: boolean; class1Lesson?: boolean; language?: string }): Promise<VoiceStreamResult> {
     const normalized = text.trim()
     if (!normalized) throw ApiError.badRequest('text is required')
     if (!this.settings().key) throw ApiError.provider('Azure Speech is not configured')
 
-    const audio = await this.generate(normalized, false, options?.class1Lesson === true)
+    const audio = await this.generate(normalized, false, options?.class1Lesson === true, options?.language)
 
     return {
       body: streamFromBuffer(audio),
@@ -122,7 +122,7 @@ export class AzureVoiceProvider implements VoiceProvider {
       provider: this.name,
       metadata: {
         'x-talkora-cache': 'BYPASS',
-        'x-talkora-voice-id': chooseTalkoraBilingualVoice(text, this.settings().voice, options?.class1Lesson === true).voice,
+        'x-talkora-voice-id': chooseTalkoraBilingualVoice(text, this.settings().voice, options?.class1Lesson === true, options?.language).voice,
       },
     }
   }

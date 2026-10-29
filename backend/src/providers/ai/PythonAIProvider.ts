@@ -16,7 +16,7 @@ export class PythonAIProvider implements AIProvider {
     const timeout = setTimeout(() => controller.abort(), env.aiServiceTimeoutMs)
     const unitGuidance = unitTeachingGuidance(context)
     const isClass1Pilot = context.grade === 1 && context.levelId === 'g01-l01'
-    const pilotEnabled = process.env.TALKORA_CLASS1_QWEN_PILOT === 'true'
+    const pilotEnabled = isClass1Pilot
     const serviceKey = env.talkoraServiceKey.trim()
     if (pilotEnabled && isClass1Pilot && env.isProd && serviceKey.length < 32) {
       // Never call a production bridge without server-to-server authentication.

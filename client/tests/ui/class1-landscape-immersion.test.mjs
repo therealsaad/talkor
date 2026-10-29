@@ -12,7 +12,8 @@ const stage = await read('../../components/student/lesson/immersive-lesson-stage
 
 test('the existing shared activity engine remains canonical; immersion is Class 1-only', () => {
   assert.match(route, /const experience = <ActivityEngine/)
-  assert.match(route, /lesson\.experienceId === 'g01-l01'\s*\? <Class1Immersion>\{experience\}<\/Class1Immersion>/)
+  assert.match(route, /lesson\.experienceId === 'g01-l01'/)
+  assert.match(route, /<Class1Immersion voiceOnly=\{firstDayV3\}>\{experience\}<\/Class1Immersion>/)
   assert.match(route, /: experience/)
 })
 

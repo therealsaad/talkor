@@ -307,7 +307,14 @@ export const MissJulieService = {
         : required.every((item) => goalState.includes(item))
     const finalLessonTurn = Boolean(
       lessonConversation &&
-      ((nextTurn >= minTurns && demonstratedRequiredSkills) || nextTurn >= maxTurns),
+      ((nextTurn >= minTurns && demonstratedRequiredSkills &&
+        // For the First Day pilot, an earlier English word plus a final
+        // request for help cannot be mistaken for a successful answer.
+        (!isFirstDayScene || turnSkills.includes('first_day_english_attempt'))) ||
+        // A First Day scene never passes just because a child has spent four
+        // turns silent, asking for help or answering only in a home language.
+        (nextTurn >= maxTurns && (!isFirstDayScene ||
+          (demonstratedRequiredSkills && turnSkills.includes('first_day_english_attempt'))))),
     )
 
     const freeTalkConversation = !input.lessonId && !input.activityId && (!existingConversation || existingConversation.mode === 'FREE_TALK')
@@ -417,8 +424,8 @@ export const MissJulieService = {
             originalUtterance: '',
           },
           masteryStatus,
-          status: completed ? 'COMPLETED' : 'ACTIVE',
-          ...(completed ? { completedAt: new Date() } : {}),
+          status: completed && !isFirstDayScene ? 'COMPLETED' : 'ACTIVE',
+          ...(completed && !isFirstDayScene ? { completedAt: new Date() } : {}),
           ...(freeTalkSummary ? { summary: freeTalkSummary } : {}),
         },
       },
@@ -426,7 +433,7 @@ export const MissJulieService = {
     )
 
     // Complete lesson activity attempt if applicable
-    if (completed && activity && input.activityId && input.lessonId) {
+    if (completed && !isFirstDayScene && activity && input.activityId && input.lessonId) {
       const score = masteryStatus === 'MASTERED' ? 90 : masteryStatus === 'COMPLETED_WITH_SUPPORT' ? 75 : 55
       await ProgressService.submitAttempt({
         studentId,
