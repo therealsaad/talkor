@@ -20,3 +20,11 @@ test('Class 1 live diagnostics check First Day scenes, not obsolete little words
   assert.match(audio, /educatorReviewVerified: false/)
   assert.match(intro, /school actions and English/)
 })
+
+test('Class 1 smoke test uses real word boundaries for skip, not escaped literal backslashes', async () => {
+  const bridge = await read('../../../backend/src/scripts/check-class1-ai-bridge.ts')
+  assert.ok(bridge.includes(String.raw`!/\bskip\b/i.test(response.message)`))
+  assert.ok(!bridge.includes(String.raw`!/\\bskip\\b/i.test(response.message)`))
+  assert.match('I can skip.', /\bskip\b/i)
+  assert.doesNotMatch('I can jump.', /\bskip\b/i)
+})

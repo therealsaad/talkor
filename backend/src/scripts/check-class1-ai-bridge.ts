@@ -58,7 +58,7 @@ async function main() {
   const started = Date.now()
   const response = await getAIProvider(context).generate(context)
   const durationMs = Date.now() - started
-  if (!response.message?.trim() || !/\\bskip\\b/i.test(response.message)) {
+  if (!response.message?.trim() || !/\bskip\b/i.test(response.message)) {
     throw new Error('Qwen did not teach the current skip word in its reply.')
   }
   if (response.activityComplete === true || response.shouldRetry !== true ||
