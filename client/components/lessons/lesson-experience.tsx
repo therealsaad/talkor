@@ -176,6 +176,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
   const teacherSequence = useRef(0)
   const spokenTurnIds = useRef(new Set<string>())
   const speakingTurnIds = useRef(new Set<string>())
+  const pendingTeacherAck = useRef<string | null>(null)
   const playbackGeneration = useRef(0)
   const lastSpokenTurnIdRef = useRef<string | null>(null)
   const currentTeacherTurnRef = useRef<TeacherTurn | null>(null)
@@ -239,26 +240,53 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     setAudioBlocked(false)
     spokenTurnIds.current.clear()
     speakingTurnIds.current.clear()
+    pendingTeacherAck.current = null
     setPose(index === 0 ? 'greeting' : 'teaching')
     setExperience('julie_preparing')
+    let stopped = false
     const timer = window.setTimeout(() => {
-      void commitTeacherTurn({
-        id: `teacher-${activity?.id || index}-intro`,
-        text: initialLine,
-        emotion: index === 0 ? 'greeting' : 'teaching',
-        intent: 'ask',
-        requiresStudentResponse: wantsMic,
-        retryRequired: false,
-        hintLevel: 0,
-        activityComplete: false,
-        staticAudioActivityId: activity.id,
-        // Deterministic syllabus copy goes through the lesson/cache path.
-        // Dynamic replies use the conversation path; the backend chooses the
-        // configured TTS provider (Azure first in the current deployment).
-        voicePriority: 'LESSON',
-      }, wantsMic ? 'waiting_for_student' : 'transitioning')
+      void (async () => {
+        try {
+          if (activity.activityKey?.startsWith('class1-l01-v3-')) {
+            // A previous Qwen final reply may be pending after a browser reload
+            // or failed Azure playback. Restore that exact turn before asking
+            // a new question so students don't get trapped by completed state.
+            const pending = await voiceService.pendingTeacherAudio(activity.id)
+            if (stopped) return
+            if (pending.pending && pending.sessionId && pending.text) {
+              pendingTeacherAck.current = pending.sessionId
+              const recovered: TeacherTurn = {
+                id: `teacher-${activity.id}-recover-${pending.sessionId}`,
+                text: pending.text, requiresStudentResponse: false,
+                activityComplete: true, emotion: 'encouraging',
+                voicePriority: 'CONVERSATION', voiceLanguage: pending.language,
+              }
+              const spoken = await commitTeacherTurn(recovered, 'julie_text_ready')
+              if (spoken && !stopped) await acknowledgeFirstDayTeacherAudio()
+              return
+            }
+          }
+          if (stopped) return
+          await commitTeacherTurn({
+            id: `teacher-${activity?.id || index}-intro`,
+            text: initialLine,
+            emotion: index === 0 ? 'greeting' : 'teaching',
+            intent: 'ask',
+            requiresStudentResponse: wantsMic,
+            retryRequired: false,
+            hintLevel: 0,
+            activityComplete: false,
+            staticAudioActivityId: activity.id,
+            voicePriority: 'LESSON',
+          }, wantsMic ? 'waiting_for_student' : 'transitioning')
+        } catch (error) {
+          if (stopped) return
+          setFeedback(error instanceof Error ? error.message : 'Miss Julie could not restore that turn.')
+          setExperience('recoverable_error')
+        }
+      })()
     }, 350)
-    return () => window.clearTimeout(timer)
+    return () => { stopped = true; window.clearTimeout(timer) }
     // Activity identity is the reset boundary.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activity?.id, index, experience === 'entering', introState])
@@ -314,25 +342,25 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     }
   }
 
-  async function commitTeacherTurn(input: TeacherTurn, afterState?: ExperienceState) {
+  async function commitTeacherTurn(input: TeacherTurn, afterState?: ExperienceState): Promise<boolean> {
     const turn = { ...input, text: personalizeLessonText(input.text, studentName), id: input.id || `teacher-${activity?.id || index}-${++teacherSequence.current}` }
     setTeacherTurn(turn)
     setTeacherText(turn.text)
     currentTeacherTurnRef.current = turn
     setHistory((current) => [...current, { id: turn.id, role: 'teacher', text: turn.text } satisfies HistoryTurn].slice(-8))
-    await speakTeacherTurn(turn, afterState)
+    return speakTeacherTurn(turn, afterState)
   }
 
-  async function speakTeacherTurn(turn: TeacherTurn, afterState?: ExperienceState) {
-    if (!turn.text.trim()) return
+  async function speakTeacherTurn(turn: TeacherTurn, afterState?: ExperienceState): Promise<boolean> {
+    if (!turn.text.trim()) return false
     const generation = playbackGeneration.current
     const class1 = experienceId === 'g01-l01'
     if (spokenTurnIds.current.has(turn.id) || speakingTurnIds.current.has(turn.id)) {
       // In-flight or already spoken teacher audio cannot be treated as a
       // second completion event. This guards duplicate React effects.
-      if (experienceId === 'g01-l01') return
+      if (experienceId === 'g01-l01') return false
       setExperience(afterState || (turn.retryRequired ? 'retry_required' : turn.activityComplete || turn.conversationComplete ? 'activity_complete' : 'waiting_for_student'))
-      return
+      return true
     }
     speakingTurnIds.current.add(turn.id)
     lastSpokenTurnIdRef.current = turn.id
@@ -341,29 +369,46 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         setAudioBlocked(true)
         setFeedback('Teacher audio is required for this voice-first lesson. Ask a teacher to enable sound.')
         setExperience('recoverable_error')
-        return
+        return false
       }
       if (audioEnabled) {
         setExperience('julie_audio_pending')
         // One unique playback ID per teacher turn. The promise resolves
         // "spoken" only from HTMLAudioElement.onended in voice-service.
         const playback = await julie.speak(turn.text, `${turn.id}:${++teacherSequence.current}`, turn.voicePriority || 'LESSON', turn.staticAudioActivityId, turn.voiceLanguage)
-        if (generation !== playbackGeneration.current) return
+        if (generation !== playbackGeneration.current) return false
         if (playback !== 'spoken') {
           setAudioBlocked(true)
           setFeedback(playback === 'autoplay-blocked'
             ? 'Sound permission is needed. Ask your teacher to enable sound once.'
             : 'Miss Julie could not play her voice. Ask your teacher to check Azure Speech and the backend.')
           setExperience('recoverable_error')
-          return
+          return false
         }
       }
-      if (generation !== playbackGeneration.current) return
+      if (generation !== playbackGeneration.current) return false
       spokenTurnIds.current.add(turn.id)
       setAudioBlocked(false)
       setExperience(afterState || (turn.retryRequired ? 'retry_required' : turn.activityComplete || turn.conversationComplete ? 'activity_complete' : turn.requiresStudentResponse ? 'waiting_for_student' : 'transitioning'))
+      return true
     } finally {
       speakingTurnIds.current.delete(turn.id)
+    }
+  }
+
+  async function acknowledgeFirstDayTeacherAudio(): Promise<boolean> {
+    const pendingId = pendingTeacherAck.current
+    if (!pendingId) return true
+    try {
+      await voiceService.acknowledgeTeacherAudio(pendingId)
+      pendingTeacherAck.current = null
+      setActivityComplete(true)
+      setExperience('activity_complete')
+      return true
+    } catch (error) {
+      setFeedback(error instanceof Error ? error.message : 'Could not save the heard teacher response. Please replay.')
+      setExperience('recoverable_error')
+      return false
     }
   }
 
@@ -380,6 +425,10 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       setAudioBlocked(true)
       setFeedback('Miss Julie could not play her voice. Ask your teacher to check audio.')
       setExperience('recoverable_error')
+      return
+    }
+    if (pendingTeacherAck.current) {
+      await acknowledgeFirstDayTeacherAudio()
       return
     }
     // Replaying an explanation cannot itself earn a new answer or bypass retry.
@@ -402,6 +451,10 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       return
     }
     setAudioBlocked(false)
+    if (pendingTeacherAck.current) {
+      await acknowledgeFirstDayTeacherAudio()
+      return
+    }
     const pending = currentTeacherTurnRef.current
     if (pending?.activityComplete || pending?.conversationComplete) {
       setExperience('activity_complete')
@@ -463,6 +516,12 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
   }
 
   async function startMic() {
+    if (pendingTeacherAck.current) {
+      setAudioBlocked(true)
+      setFeedback('Listen to Miss Julie finish this scene before answering again.')
+      setExperience('recoverable_error')
+      return
+    }
     if (!activity || julie.isSpeaking || julie.state === 'loading' || audioBlocked) return
     if (experience === 'julie_audio_pending' || experience === 'julie_speaking' || experience === 'julie_thinking' || experience === 'activity_complete') return
     if (startingMic.current || recorder.current?.state === 'recording') return
@@ -812,7 +871,9 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       const retryRequired = Boolean(ai?.shouldRetry || ai?.conversation?.retryState?.waiting)
       const serverComplete = Boolean(ai?.activityComplete || ai?.conversation?.complete)
       const controlledComplete = !ai && Number(result.evaluation?.score || 0) >= 70
-      const complete = serverComplete || controlledComplete
+      const complete = activity?.activityKey?.startsWith('class1-l01-v3-')
+        ? serverComplete && Boolean(ai?.conversation?.id)
+        : serverComplete || controlledComplete
       const normalizedTurn = normalizeTeacherTurnFromAi(ai, fallbackText, {
         id: `teacher-${activity?.id || index}-${ai?.conversation?.id || id}-${ai?.conversation?.turnCount || conversationTurn + 1}`,
         emotion: poseFromAi(ai, retryRequired, complete),
@@ -830,14 +891,18 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       setModelSentence(retryRequired ? normalizedTurn.modelSentence || '' : '')
       setXp((value) => value + (result.xpAwarded || 0))
       setConversationTurn((value) => value + 1)
-      setActivityComplete(complete)
+      const firstDayV3 = activity?.activityKey?.startsWith('class1-l01-v3-') === true
+      if (!firstDayV3) setActivityComplete(complete)
       setPose(poseFromAi(ai, retryRequired, complete))
       setRetryAttempt(ai?.conversation?.retryState?.attempt || 0)
       setStudentTurn((current) => current ? { ...current, status: retryRequired ? 'retry' : 'accepted' } : current)
       setExperience('julie_text_ready')
       const additions = ai?.conversation?.skillEvidence || []
       if (additions.length) setEvidence((current) => uniqueEvidence([...current, ...additions]))
-      await commitTeacherTurn(normalizedTurn, complete ? 'activity_complete' : retryRequired ? 'retry_required' : 'waiting_for_student')
+      if (firstDayV3 && complete) pendingTeacherAck.current = id
+      const spoken = await commitTeacherTurn(normalizedTurn,
+        firstDayV3 && complete ? 'julie_text_ready' : complete ? 'activity_complete' : retryRequired ? 'retry_required' : 'waiting_for_student')
+      if (firstDayV3 && complete && spoken) await acknowledgeFirstDayTeacherAudio()
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : 'Miss Julie could not check that turn.')
       setExperience('recoverable_error')

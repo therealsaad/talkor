@@ -316,6 +316,19 @@ async submitTranscript(
   )
 },
 
+  pendingTeacherAudio(activityId: string): Promise<{ pending: boolean; sessionId?: string; text?: string; language?: 'en-IN' | 'hi-IN' | 'mr-IN' }> {
+    return apiClient<{ pending: boolean; sessionId?: string; text?: string; language?: 'en-IN' | 'hi-IN' | 'mr-IN' }>(
+      `/voice/activities/${encodeURIComponent(activityId)}/pending-teacher-audio`,
+    )
+  },
+
+  acknowledgeTeacherAudio(sessionId: string): Promise<{ complete: boolean; acknowledged: boolean }> {
+    return apiClient<{ complete: boolean; acknowledged: boolean }>(
+      `/voice/sessions/${encodeURIComponent(sessionId)}/teacher-audio-played`,
+      { method: 'POST' },
+    )
+  },
+
   /* =======================================================
      CANCEL SESSION
      ======================================================= */

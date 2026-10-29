@@ -85,3 +85,29 @@ test('manual microphone retry works after no-speech errors; replay restores teac
   const mic = engine.split('async function startMic() {')[1].split('if (startingMic.current')[0]
   assert.doesNotMatch(mic, /experience === 'recoverable_error'/)
 })
+
+test('First Day Qwen completion requires media-ended server acknowledgment and is resumable after reload', async () => {
+  const engine = await load('../../components/lessons/lesson-experience.tsx')
+  const client = await load('../../services/voice-service.ts')
+  const backend = await load('../../../backend/src/services/voice.service.ts')
+  const pedagogy = await load('../../../backend/src/services/missJulie.service.ts')
+  assert.match(engine, /const firstDayV3 = activity\?\.activityKey\?\.startsWith\('class1-l01-v3-'\) === true/)
+  assert.match(engine, /pendingTeacherAck\.current = id/)
+  assert.match(engine, /if \(firstDayV3 && complete && spoken\) await acknowledgeFirstDayTeacherAudio\(\)/)
+  assert.match(engine, /await voiceService\.pendingTeacherAudio\(activity\.id\)/)
+  assert.match(engine, /await voiceService\.acknowledgeTeacherAudio\(pendingId\)/)
+  assert.match(client, /\/teacher-audio-played/)
+  assert.match(backend, /'metadata\.teacherAudioAcknowledgedAt'/)
+  assert.match(pedagogy, /status: completed && !isFirstDayScene/)
+  assert.match(pedagogy, /if \(completed && !isFirstDayScene/)
+})
+
+test('Class 1 voice uses Qwen 8002 without fallback to Groq and exact approved S3 narration', async () => {
+  const qwen = await load('../../../backend/src/providers/ai/QwenProvider.ts')
+  const python = await load('../../../backend/src/providers/ai/PythonAIProvider.ts')
+  const backend = await load('../../../backend/src/services/voice.service.ts')
+  assert.match(qwen, /return await this\.pythonFallback\.generate\(context\)/)
+  assert.match(qwen, /CLASS1_AI_SERVICE_UNAVAILABLE/)
+  assert.match(python, /http:\/\/127\.0\.0\.1:8002/)
+  assert.match(backend, /CLASS1_FIRST_DAY_APPROVED_AUDIO_MISSING_OR_MISMATCHED/)
+})
