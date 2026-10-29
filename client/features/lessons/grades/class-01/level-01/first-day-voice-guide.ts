@@ -65,10 +65,42 @@ const cues: Record<string, Class1TeachingCue> = {
     words: ['walk', 'jump', 'play', 'school'], scene: 'conversation',
     storybook: { focus: 'MY FIRST DAY', tiles: ['WALK', 'PLAY', 'SCHOOL'], example: 'I walk to school.', illustration: 'talk' },
   },
+  // Full Balbharati 1.1 replaces the foundational word drill in the reviewed
+  // v3 pilot. These are original short sentences and playful teaching cues.
+  'hello-school': { phase: 'BALBHARATI', badge: 'My First Day', headline: 'Hello, Grade One!',
+    spokenGoal: 'Tell Miss Julie how you feel about school.', words: ['school', 'hello', 'happy'], scene: 'school',
+    storybook: { focus: 'SCHOOL', tiles: ['HELLO', 'SCHOOL'], example: 'I am happy at school.', illustration: 'school' } },
+  'skip-bunny': { phase: 'BALBHARATI', badge: 'My First Day', headline: 'Hop, little bunny!',
+    spokenGoal: 'Pretend to skip and say I can skip.', words: ['skip'], scene: 'movement',
+    storybook: { focus: 'SKIP', tiles: ['SKIP'], example: 'I can skip.', illustration: 'walk' } },
+  'run-race': { phase: 'BALBHARATI', badge: 'My First Day', headline: 'Faster than a turtle?',
+    spokenGoal: 'Make your fingers run and say I can run.', words: ['run'], scene: 'movement',
+    storybook: { focus: 'RUN', tiles: ['RUN'], example: 'I can run.', illustration: 'walk' } },
+  'walk-school': { phase: 'BALBHARATI', badge: 'My First Day', headline: 'Walk to our school!',
+    spokenGoal: 'Use your fingers to walk and say a little sentence.', words: ['walk', 'school'], scene: 'movement',
+    storybook: { focus: 'WALK', tiles: ['WALK', 'SCHOOL'], example: 'I walk to school.', illustration: 'walk' } },
+  'big-grin': { phase: 'BALBHARATI', badge: 'My First Day', headline: 'Show Miss Julie a giant grin!',
+    spokenGoal: 'Smile and say I can smile.', words: ['grin', 'smile'], scene: 'conversation',
+    storybook: { focus: 'SMILE', tiles: ['GRIN', 'SMILE'], example: 'I can smile.', illustration: 'talk' } },
+  'school-bell': { phase: 'BALBHARATI', badge: 'My First Day', headline: 'Ding dong! Hear that?',
+    spokenGoal: 'Tell me what rings at school.', words: ['bell', 'school'], scene: 'school',
+    storybook: { focus: 'BELL', tiles: ['BELL'], example: 'I hear a bell.', illustration: 'school' } },
+  'jump-frog': { phase: 'BALBHARATI', badge: 'My First Day', headline: 'Jump like a frog!',
+    spokenGoal: 'Show jumping fingers and say I can jump.', words: ['jump'], scene: 'movement',
+    storybook: { focus: 'JUMP', tiles: ['JUMP'], example: 'I can jump.', illustration: 'walk' } },
+  'play-friends': { phase: 'BALBHARATI', badge: 'My First Day', headline: 'What do we play?',
+    spokenGoal: 'Tell me your favourite school game.', words: ['play', 'ball', 'school'], scene: 'school',
+    storybook: { focus: 'PLAY', tiles: ['PLAY'], example: 'I can play.', illustration: 'school' } },
+  'enter-class': { phase: 'BALBHARATI', badge: 'My First Day', headline: 'The bell rang — go in!',
+    spokenGoal: 'Say where we go when the bell rings.', words: ['bell', 'classroom'], scene: 'school',
+    storybook: { focus: 'GO IN', tiles: ['GO', 'IN'], example: 'I go into my classroom.', illustration: 'school' } },
+  'grade-one': { phase: 'BALBHARATI', badge: 'My First Day', headline: 'You are a Grade One superstar!',
+    spokenGoal: 'Tell Miss Julie one fun thing you do at school.', words: ['grade', 'one', 'school'], scene: 'conversation',
+    storybook: { focus: 'GRADE ONE', tiles: ['GRADE', 'ONE'], example: 'I am in Grade One!', illustration: 'talk' } },
 }
 
 export function class1TeachingCue(activityKey?: string): Class1TeachingCue | null {
-  const match = /^class1-l01-(?:v2-)?([a-z-]+)$/.exec(activityKey || '')
+  const match = /^class1-l01-(?:v2-|v3-)?([a-z-]+)$/.exec(activityKey || '')
   return match ? cues[match[1]] ?? null : null
 }
 
