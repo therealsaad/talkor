@@ -424,8 +424,8 @@ export const MissJulieService = {
             originalUtterance: '',
           },
           masteryStatus,
-          status: completed ? 'COMPLETED' : 'ACTIVE',
-          ...(completed ? { completedAt: new Date() } : {}),
+          status: completed && !isFirstDayScene ? 'COMPLETED' : 'ACTIVE',
+          ...(completed && !isFirstDayScene ? { completedAt: new Date() } : {}),
           ...(freeTalkSummary ? { summary: freeTalkSummary } : {}),
         },
       },
@@ -433,7 +433,7 @@ export const MissJulieService = {
     )
 
     // Complete lesson activity attempt if applicable
-    if (completed && activity && input.activityId && input.lessonId) {
+    if (completed && !isFirstDayScene && activity && input.activityId && input.lessonId) {
       const score = masteryStatus === 'MASTERED' ? 90 : masteryStatus === 'COMPLETED_WITH_SUPPORT' ? 75 : 55
       await ProgressService.submitAttempt({
         studentId,

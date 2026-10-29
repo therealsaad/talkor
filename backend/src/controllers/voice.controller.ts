@@ -24,6 +24,16 @@ export const VoiceController = {
     ok(res, session)
   }),
 
+  pendingTeacherAudio: catchAsync(async (req: Request, res: Response) => {
+    if (!req.auth || req.auth.role !== 'STUDENT') throw ApiError.forbidden()
+    ok(res, await VoiceService.pendingTeacherAudio(req.auth.id, req.params.activityId))
+  }),
+
+  teacherAudioPlayed: catchAsync(async (req: Request, res: Response) => {
+    if (!req.auth || req.auth.role !== 'STUDENT') throw ApiError.forbidden()
+    ok(res, await VoiceService.acknowledgeTeacherAudio(req.auth.id, req.params.sessionId))
+  }),
+
   cancel: catchAsync(async (req: Request, res: Response) => {
     if (!req.auth || req.auth.role !== 'STUDENT') throw ApiError.forbidden()
     ok(res, await VoiceService.cancelSession(req.auth.id, req.params.sessionId))
