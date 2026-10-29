@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Play, RotateCcw, Sparkles } from 'lucide-react'
 import { requestClass1Fullscreen } from './class1-fullscreen'
-import { voiceService } from '@/services/voice-service'
 
 /** This reviewed 90-second video is delivered separately from the application. */
 export const CLASS1_FIRST_DAY_VIDEO = process.env.NEXT_PUBLIC_TALKORA_CLASS1_INTRO_URL?.trim() ||
@@ -13,10 +12,14 @@ const MIN_DURATION_SECONDS = 87
 const MAX_DURATION_SECONDS = 93
 const REQUIRED_WATCH_SECONDS = 85
 
-export function Class1LessonIntro({ onAvailable, onDone }: {
+export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false }: {
   onAvailable: () => void
   onDone: () => void
+  firstDayOnly?: boolean
 }) {
+  const reviewedSource = process.env.NEXT_PUBLIC_TALKORA_CLASS1_INTRO_URL?.trim()
+  const sourceReady = !firstDayOnly || Boolean(reviewedSource)
+  const videoSource = firstDayOnly ? reviewedSource : CLASS1_FIRST_DAY_VIDEO
   const frame = useRef<HTMLDivElement>(null)
   const video = useRef<HTMLVideoElement>(null)
   const watchedUntil = useRef(0)
@@ -25,6 +28,14 @@ export function Class1LessonIntro({ onAvailable, onDone }: {
   const [needsTap, setNeedsTap] = useState(true)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!sourceReady) {
+      setLoading(false)
+      setCanPlay(false)
+      setError('The Balbharati 1.1 lesson needs its reviewed First Day video. Ask your teacher to configure it.')
+    }
+  }, [sourceReady])
 
   useEffect(() => {
     function pauseWhenHidden() {
@@ -78,17 +89,9 @@ export function Class1LessonIntro({ onAvailable, onDone }: {
       // Fullscreen is an enhancement; school browser policies can reject it.
       // Request it for the WHOLE lesson, so fullscreen survives the intro video.
       const fullscreenTarget = frame.current.closest<HTMLElement>('[data-class1-immersion]') || frame.current
-      // Run ALL gesture-gated browser calls synchronously from the click.
-      // Awaiting fullscreen first can lose the activation required for audio.
-      const fullscreen = requestClass1Fullscreen(fullscreenTarget)
-      const unlockAudio = voiceService.unlockPlayback()
+      fullscreenActive.current = await requestClass1Fullscreen(fullscreenTarget)
       video.current.muted = false
-      const startedVideo = video.current.play()
-      fullscreenActive.current = await fullscreen
-      await startedVideo
-      // Sound-unlock failure must not cancel the mandatory video. The teacher
-      // will see a recoverable playback state if live narration is blocked.
-      await unlockAudio.catch(() => false)
+      await video.current.play()
       setNeedsTap(false)
       setError('')
     } catch {
@@ -127,7 +130,7 @@ export function Class1LessonIntro({ onAvailable, onDone }: {
       <video
         ref={video}
         className="class1-intro-video"
-        src={CLASS1_FIRST_DAY_VIDEO}
+        src={videoSource || undefined}
         playsInline preload="metadata" controls={false}
         disablePictureInPicture controlsList="nodownload noplaybackrate noremoteplayback"
         aria-label="90-second Class 1 foundation and My First Day introduction"
@@ -152,7 +155,7 @@ export function Class1LessonIntro({ onAvailable, onDone }: {
         }}
       />
       {loading ? <p className="class1-intro-status" role="status">Getting Miss Julie's story ready...</p> : null}
-      {error ? <div className="class1-intro-error" role="alert"><p>{error}</p><button type="button" onClick={retryVideo}><RotateCcw size={16} /> Try loading again</button></div> : null}
+      {error ? <div className="class1-intro-error" role="alert"><p>{error}</p><button type="button" onClick={retryVideo} disabled={!sourceReady}><RotateCcw size={16} /> Try loading again</button></div> : null}
       {needsTap && canPlay ? <div className="class1-intro-play-prompt">
         <p>Watch the whole story with sound. Then we will practise our little words together.</p>
         <button type="button" onClick={() => void begin()}><Play size={18} fill="currentColor" /> Play story</button>
