@@ -115,7 +115,7 @@ function streamFromBuffer(audio: Buffer): ReadableStream<Uint8Array> {
 async function tryStream(
   provider: { name: string; synthesizeStream?: (text: string, options?: { conversation?: boolean; class1Lesson?: boolean; language?: string }) => Promise<VoiceStreamResult> },
   text: string,
-  options?: { conversation?: boolean; class1Lesson?: boolean },
+  options?: { conversation?: boolean; class1Lesson?: boolean; language?: string },
 ): Promise<VoiceStreamResult | null> {
   if (!provider.synthesizeStream) return null
   try {
