@@ -14,6 +14,7 @@ const pythonUrl = (process.env.TALKORA_E2E_PYTHON_URL || 'http://127.0.0.1:8002'
 const args = new Set(process.argv.slice(2))
 const live = args.has('--live')
 const commit = args.has('--commit')
+const requireFirstDay = args.has('--require-first-day')
 const mimeByExtension: Record<string, string> = {
   '.webm': 'audio/webm', '.wav': 'audio/wav', '.ogg': 'audio/ogg',
   '.mp3': 'audio/mpeg', '.m4a': 'audio/x-m4a', '.mp4': 'audio/mp4',
@@ -39,6 +40,7 @@ async function api<T>(route: string, token: string, init: RequestInit = {}): Pro
 
 async function main() {
   if (commit && !live) throw new Error('--commit requires --live')
+  if (requireFirstDay && !commit) throw new Error('--require-first-day requires --live --commit')
   console.log('Class 1 E2E: connectivity check (zero Azure speech calls)')
   let backend: { status: string }
   try {
@@ -94,12 +96,15 @@ async function main() {
 
   // Validate progress-write eligibility BEFORE spending the Sarvam STT credit.
   if (commit) {
-    const lesson = await api<{ activities: Array<{ id: string; type: string; aiEnabled?: boolean }> }>(
+    const lesson = await api<{ activities: Array<{ id: string; activityKey?: string; type: string; aiEnabled?: boolean }> }>(
       '/students/me/lessons/' + next.lessonId, token,
     )
     const current = lesson.activities.find((item) => item.id === next.activityId)
     if (!current?.aiEnabled || current.type !== 'CONVERSATION') {
       throw new Error('Next activity must be an AI CONVERSATION; finish earlier activities first.')
+    }
+    if (requireFirstDay && !current.activityKey?.startsWith('class1-l01-v3-')) {
+      throw new Error('FIRST_DAY_NOT_ACTIVE: MongoDB still serves the old Class 1 draft. Do not spend Azure/Sarvam credits or overwrite student history.')
     }
   }
 
@@ -107,7 +112,7 @@ async function main() {
   const upload = new FormData()
   upload.append('audio', new Blob([await readFile(file)], { type: mimeType }), path.basename(file))
   upload.append('mode', 'fast')
-  const recognized = await api<{ transcript: string | null; provider?: string }>(
+  const recognized = await api<{ transcript: string | null; provider?: string; languageCode?: string }>(
     '/voice/transcribe', token, { method: 'POST', body: upload },
   )
   if (!recognized.transcript?.trim()) throw new Error('STT returned no speech; stop rather than retry')
@@ -124,7 +129,7 @@ async function main() {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ lessonId: next.lessonId, activityId: next.activityId }),
     })
-    const completed = await api<{ status: string; aiResponse?: { message?: string } }>(
+    const completed = await api<{ status: string; aiResponse?: { message?: string; followUpQuestion?: string; activityComplete?: boolean } }>(
       '/voice/sessions/' + session._id + '/transcript', token, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transcript: recognized.transcript, inputMode: 'MIC' }),
@@ -133,16 +138,19 @@ async function main() {
     if (completed.status !== 'completed' || !completed.aiResponse?.message) {
       throw new Error('Voice session did not return a Class 1 teacher reply')
     }
-    teacherLine = completed.aiResponse.message.slice(0, 180)
+    teacherLine = [completed.aiResponse.message, completed.aiResponse.followUpQuestion].filter(Boolean).join(' ').slice(0, 320)
     await api('/students/me/progress', token)
-    console.log('PASS: Node voice session -> Python/Qwen -> MongoDB progress readable')
-    console.log('NOTE: One turn may not complete the activity; progress requires pedagogy thresholds.')
+    console.log('PASS: Node voice session -> Python/Qwen teacher response generated')
+    console.log('NOTE: No audio-playback acknowledgment is sent by this CLI. First Day progress stays pending until real browser playback ends.')
   }
 
   const audioResponse = await fetch(apiUrl + '/api/voice/synthesize', {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text: teacherLine, purpose: 'CONVERSATION' }),
+    body: JSON.stringify({ text: teacherLine, purpose: 'CONVERSATION',
+      ...(commit ? { activityId: next.activityId } : {}),
+      ...(['en-IN', 'hi-IN', 'mr-IN'].includes(recognized.languageCode || '') ? { language: recognized.languageCode } : {}),
+    }),
     signal: AbortSignal.timeout(30_000),
   })
   if (!audioResponse.ok || !(audioResponse.headers.get('content-type') || '').startsWith('audio/')) {
