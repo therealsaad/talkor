@@ -399,78 +399,27 @@ export function ImmersiveLessonStage({
       isListening={isRecording}
       isProcessing={isProcessing}
       isCompleted={isCompleted}
+      isRetry={isRetry}
       transcript={studentTurnText || transcript}
       feedback={feedback}
+      modelSentence={modelSentence}
+      needsAudioGesture={needsAudioGesture}
+      isAudioEnabled={audioEnabled}
+      onEnableAudio={onEnableAudio}
+      onReplayJulie={onReplayJulie}
+      onStartMic={onStartMic}
+      onStopMic={onStopMic}
+      step={index + 1}
+      total={totalActivities}
     />
   }
   if (isClass1Classroom) {
-    const focus = class1Cue?.storybook.focus || 'MY FIRST DAY'
-    const sceneVisuals: Record<string, string> = {
-      'hello-school': '🏫', 'skip-bunny': '🐰', 'run-race': '🏃',
-      'walk-school': '👣', 'big-grin': '😁', 'school-bell': '🔔',
-      'jump-frog': '🐸', 'play-friends': '⚽', 'enter-class': '🚪',
-      'grade-one': '🎉',
-    }
-    const sceneId = activity.activityKey?.match(/^class1-l01-v3-(.+)$/)?.[1]
-    const firstDayVisual = sceneId ? sceneVisuals[sceneId] : null
-    const sentence = class1Cue?.storybook.example || 'I walk to school.'
-    const phaseText = isRecording ? 'I am listening. Speak now!'
-      : isProcessing ? 'I am thinking about your answer...'
-      : isJulieSpeaking ? 'Listen to Miss Julie.'
-      : isCompleted ? 'Wonderful! Next adventure...'
-      : isRetry ? 'We can try together. Say your answer again.'
-      : 'Say your answer or ask me about school.'
-    return (
-      <div data-testid="class1-voice-only" style={{
-        width: '100%', height: '100%', minHeight: 0, overflow: 'hidden',
-        display: 'grid', gridTemplateColumns: 'minmax(220px, 34%) minmax(0, 1fr)',
-        alignItems: 'center', gap: 'min(2vw, 24px)', padding: 'clamp(8px, 1.5vh, 18px)',
-        boxSizing: 'border-box', background: 'linear-gradient(120deg,#d4eddb,#f5f8e8)',
-        color: '#174b3c',
-      }}>
-        <div style={{ height: '100%', minHeight: 0, display: 'flex', alignItems: 'end', justifyContent: 'center', position: 'relative' }}>
-          <motion.div
-            animate={reduceMotion ? undefined : isJulieSpeaking
-              ? { rotate: [-2, 2, -2], y: [0, -7, 0] }
-              : isCompleted ? { y: [0, -11, 0] } : { y: 0 }}
-            transition={{ duration: isJulieSpeaking ? 1.5 : 1.8, repeat: (isJulieSpeaking || isCompleted) && !reduceMotion ? Infinity : 0 }}
-            style={{ maxHeight: '100%', display: 'flex', alignItems: 'end', justifyContent: 'center' }}>
-            <Image src={julieImage} alt="Miss Julie, your English teacher" width={420} height={620}
-              sizes="34vw" style={{ maxWidth: '100%', maxHeight: '98%', width: 'auto', height: 'auto', objectFit: 'contain' }} />
-          </motion.div>
-        </div>
-        <div style={{ minHeight: 0, maxHeight: '100%', overflow: 'hidden', display: 'flex', flexDirection: 'column',
-          justifyContent: 'center', alignItems: 'center', gap: 'clamp(8px,1.5vh,20px)', textAlign: 'center' }}>
-          <div style={{ fontWeight: 900, fontSize: 'clamp(13px,1.3vw,20px)', letterSpacing: '.06em' }}>
-            BALBHARATI 1.1 · MY FIRST DAY
-          </div>
-          {firstDayVisual ? <motion.div aria-hidden="true"
-            animate={reduceMotion ? undefined : { rotate: [-7, 7, -7], y: [0, -10, 0] }}
-            transition={{ duration: 2, ease: 'easeInOut', repeat: Infinity }}
-            style={{ fontSize: 'clamp(38px, 6vw, 92px)', lineHeight: 1, willChange: 'transform' }}>
-            {firstDayVisual}
-          </motion.div> : null}
-          <div style={{ fontWeight: 950, lineHeight: 1.05, fontSize: 'clamp(32px,6.5vw,100px)' }} aria-label={focus}>
-            {focus}
-          </div>
-          <p style={{ fontSize: 'clamp(17px,2.5vw,36px)', fontWeight: 750, lineHeight: 1.2, margin: 0, maxWidth: '95%' }}>
-            {sentence}
-          </p>
-          <p role="status" aria-live="polite" style={{ fontSize: 'clamp(16px,2vw,28px)', fontWeight: 850,
-            padding: 'clamp(9px,1.5vh,17px) clamp(13px,2vw,30px)', borderRadius: 22,
-            background: isRecording ? '#cef6e2' : '#fff', boxShadow: '0 5px 18px #245c3720', maxWidth: '95%', margin: 0 }}>
-            {isRecording ? '🎙️ ' : isProcessing ? '⏳ ' : isJulieSpeaking ? '🔊 ' : '✨ '}{phaseText}
-          </p>
-          {studentTurnText || transcript ? (
-            <p style={{ margin: 0, fontSize: 'clamp(13px,1.5vw,20px)', maxWidth: '94%' }}>
-              You said: {studentTurnText || transcript}
-            </p>
-          ) : null}
-          {feedback ? <p role="alert" style={{ color: '#9a321c', fontSize: 'clamp(13px,1.3vw,19px)', margin: 0, maxWidth: '95%' }}>{feedback}</p> : null}
-          {needsAudioGesture ? <p role="alert" style={{ fontWeight: 750, margin: 0 }}>Sound is blocked. A teacher must enable audio in the browser once.</p> : null}
-        </div>
-      </div>
-    )
+    // Old "AM/AN" database rows must never masquerade as the approved
+    // First Day chapter. Keep students safe until the reviewed v3 migration.
+    return <div className="firstday-legacy-blocked" role="alert" style={{ display: 'grid', placeItems: 'center', height: '100%', padding: 32, background: '#e6f5e6', color: '#20523f', textAlign: 'center' }}>
+      <div><h2 style={{ fontSize: 28, fontWeight: 900 }}>The First Day lesson needs a teacher update</h2>
+      <p>This classroom has an older lesson version. We cannot mark textbook learning as complete. Ask your teacher to activate the reviewed Balbharati 1.1 lesson.</p></div>
+    </div>
   }
 
   return (

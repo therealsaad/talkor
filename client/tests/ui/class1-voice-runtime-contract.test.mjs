@@ -3,13 +3,15 @@ import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 const read = (p) => readFile(new URL(p, import.meta.url), 'utf8')
 
-test('Class 1 v3 is a landscape voice-only stage without student answer controls', async () => {
+test('Class 1 v3 is a motion-first classroom with mic and sound recovery but no fake answer buttons', async () => {
   const view = await read('../../components/student/lesson/immersive-lesson-stage.tsx')
-  assert.match(view, /data-testid="class1-voice-only"/)
-  assert.match(view, /overflow: 'hidden'/)
-  assert.match(view, /if \(isClass1Classroom\)/)
-  const section = view.split('if (isClass1Classroom) {')[1].split('\n  return (')[0]
-  assert.doesNotMatch(section, /<button|<input|<textarea|onClick=/)
+  const scene = await read('../../features/lessons/grades/class-01/level-01/FirstDayClassroom.tsx')
+  assert.match(view, /if \(isClass1Classroom && firstDayV3Id\)/)
+  assert.match(view, /onReplayJulie=\{onReplayJulie\}/)
+  assert.match(view, /onStartMic=\{onStartMic\}/)
+  assert.match(scene, /firstday-teacher__animation/)
+  assert.match(scene, /onEnableAudio/)
+  assert.doesNotMatch(scene, /onSelectChoice|onLocalComplete|completeLocalActivity/)
 })
 
 test('request close no longer cancels Azure audio during response streaming', async () => {

@@ -13,75 +13,79 @@ import { env } from '../config/env'
 
 async function main() {
   if (process.env.TALKORA_CLASS1_QWEN_PILOT !== 'true') {
-    throw new Error('Enable TALKORA_CLASS1_QWEN_PILOT=true in the backend .env first.')
+    throw new Error('Enable TALKORA_CLASS1_QWEN_PILOT=true on the running Python 8002 service and backend before this check.')
   }
   const baseUrl = process.env.TALKORA_CLASS1_AI_URL?.trim()
   if (!baseUrl || !/^https?:\/\//.test(baseUrl)) {
     throw new Error('Set TALKORA_CLASS1_AI_URL=http://127.0.0.1:8002 in the backend .env.')
   }
 
-  // Disable Groq fallback in this isolated diagnostic process. Otherwise a
-  // configured cloud key could disguise a broken local Qwen connection.
+  // Disable Groq fallback in this isolated diagnostic process. Class 1
+  // production also fails closed instead of silently changing AI models.
   // We do NOT modify the user's .env file or any running server.
   env.groqApiKey = ''
 
   // The provider owns the endpoint and structured-response schema. We call
   // the same provider selected by the live Node conversation service.
   const context: MissJulieContext = {
-    studentName: 'Demo',
+    studentName: 'Synthetic Learner',
     grade: 1,
     levelId: 'g01-l01',
     avatarType: 'GIRL',
-    levelTitle: 'First Day Word Meadow',
-    lessonTitle: 'Little Words & My First Day',
-    activityTitle: 'Guided little-word talk',
-    activityTarget: 'Use one of the little words in a short phrase.',
+    levelTitle: 'My First Day — School Adventure',
+    lessonTitle: 'My First Day',
+    activityTitle: 'Skip like a bunny',
+    activityTarget: 'Say in English what you can do. I can skip.',
     recentMistakes: [],
     memoryFacts: [],
     learningEvidence: [],
     promptContext: 'speaking',
-    studentMessage: 'I am at school.',
+    studentMessage: 'jump',
     unitNumber: 1,
-    stage: 'guided_practice',
-    allowedVocabulary: ['am', 'an', 'at', 'in', 'is', 'it', 'on', 'up'],
-    learningObjectives: ['Recognize and use am, an, at, in, is, it, on, and up.'],
+    stage: 'INTERACT',
+    digitalType: 'FIRST_DAY_VOICE_SCENE',
+    allowedVocabulary: ['skip', 'bunny', 'school'],
+    learningObjectives: ['Understand and say skip and I can skip in English.'],
     conversationHistory: [],
-    requiredConcepts: [],
+    requiredConcepts: ['first_day_english_attempt'],
     achievedConcepts: [],
-    remainingConcepts: [],
+    remainingConcepts: ['first_day_english_attempt'],
     hintLevel: 0,
     waitingForRetry: false,
   }
 
-  console.log('Testing existing AI provider route for Class 1 / g01-l01...')
+  console.log('Testing the Balbharati 1.1 First Day correction loop through Node → local Qwen 8002...')
   const started = Date.now()
   const response = await getAIProvider(context).generate(context)
   const durationMs = Date.now() - started
-
-  if (!response.message || typeof response.message !== 'string') {
-    throw new Error('AI response is missing a spoken message.')
+  if (!response.message?.trim() || !/\\bskip\\b/i.test(response.message)) {
+    throw new Error('Qwen did not teach the current skip word in its reply.')
   }
-  if (typeof response.emotion !== 'string' || !response.emotion) {
-    throw new Error('AI response is missing a Miss Julie emotion.')
+  if (response.activityComplete === true || response.shouldRetry !== true ||
+      response.responseQuality === 'STRONG' || response.responseQuality === 'ADEQUATE') {
+    throw new Error('Unsafe lesson assessment: a child saying jump must retry the word skip.')
   }
-  if (response.activityComplete === true) {
-    throw new Error('Unsafe: a transcript-only probe must not complete this activity.')
+  if (response.modelSentence !== 'I can skip.') {
+    throw new Error('First Day model sentence is not anchored to the approved scene.')
   }
-  if (response.shouldRetry === true && response.responseQuality === 'STRONG') {
-    throw new Error('Inconsistent response: STRONG quality but retry required.')
+  // A script-only 8002 instance can pass /health. Refuse to call its repeated
+  // default line adaptive coaching.
+  if (response.message.trim() === 'Let us do a funny school action together: I can skip.') {
+    throw new Error('Outdated 8002 scripted First Day response detected. Deploy the companion AI PR before pilot QA.')
   }
 
   console.log(JSON.stringify({
     bridgeStatus: 'PASS',
-    route: 'Node QwenProvider → PythonAIProvider → /v1/brain/respond',
+    route: 'Node QwenProvider → Python 8002 → local Ollama Qwen',
     levelId: context.levelId,
+    scene: 'skip-bunny',
     latencyMs: durationMs,
-    message: response.message,
-    emotion: response.emotion,
     responseQuality: response.responseQuality,
     teachingAction: response.teachingAction ?? null,
     activityComplete: response.activityComplete ?? false,
     shouldRetry: response.shouldRetry ?? false,
+    // Avoid printing synthetic utterance or AI free text to match the live
+    // privacy rule and ensure this script stays log-safe.
   }, null, 2))
   console.log('NOTE: This tests provider connectivity only; student auth, speech and MongoDB are not tested.')
 }

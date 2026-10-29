@@ -38,6 +38,9 @@ jobs:
       - name: Enforce Azure-only dynamic voice and audible turn-before-next frame
         run: node --test tests/ui/class1-azure-next-frame.test.mjs
         working-directory: client
+      - name: Verify Class 1 v3 staging smoke checks target First Day only
+        run: node --test tests/ui/class1-v3-staging-contract.test.mjs
+        working-directory: client
       - name: Verify TTS generator uses real 8001 voice ID and safe errors
         run: node --test tests/ui/class1-priya-generation-contract.test.mjs
         working-directory: client
@@ -59,6 +62,9 @@ jobs:
         working-directory: backend
       - name: Test Class 1 Node-Python bridge security
         run: pnpm exec jest --runInBand tests/unit/pythonAIProviderBridge.test.ts tests/unit/class1StaticAudio.test.ts
+        working-directory: backend
+      - name: Verify server-side First Day voice acknowledgment and no premature progress
+        run: pnpm exec jest --runInBand tests/unit/class1AudioAck.test.ts
         working-directory: backend
       - name: Verify audio stream, Azure payload and audio-format regression tests
         run: pnpm exec jest --runInBand tests/voice-response-stream.test.ts tests/class1-azure-audio.test.ts tests/voice-audio-format.test.ts
