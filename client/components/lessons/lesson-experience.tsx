@@ -18,7 +18,9 @@ import { getWarmupPrompts, isWarmupActivity, resolveActivityTeacherLine, warmupQ
 import { progressService } from '@/services/progress-service'
 import { firstUnfinishedActivity, isOpenLessonConversation, personalizeLessonText, shouldUseLessonVoice } from '@/services/lesson-progress'
 import { KGLessonIntro } from '@/components/student/lesson/kg-lesson-intro'
-import { Class1LessonIntro } from '@/components/student/lesson/class1-lesson-intro'
+import { Class1LessonIntro } from '@/features/lessons/grades/class-01/level-01/Class1LessonIntro'
+import { Class1SpokenHomework } from '@/features/lessons/grades/class-01/level-01/Class1SpokenHomework'
+import { class1SpokenSpelling } from '@/features/lessons/grades/class-01/level-01/first-day-voice-guide'
 
 /**
  * Local matching for spoken answers to published lesson choices.
@@ -92,6 +94,7 @@ export interface LessonExperienceProps {
   avatarType?: 'BOY' | 'GIRL'
   studentName?: string
   introVideoKey?: string
+  experienceId?: string
   backgroundSrc?: string
   completionMessage?: string
   homeworkMessage?: string
@@ -125,7 +128,7 @@ type HistoryTurn = { id: string; role: 'teacher' | 'student'; text: string }
 
 import { ImmersiveLessonStage } from '@/components/student/lesson/immersive-lesson-stage'
 
-export function LessonExperience({ activities, levelTitle = 'Favourite Fair', syllabusName = 'My Favourite Things', levelNumber = 1, avatarType = 'BOY', studentName = 'Explorer', onLessonComplete, completedActivityIds = [], introVideoKey, backgroundSrc, completionMessage, homeworkMessage }: LessonExperienceProps) {
+export function LessonExperience({ activities, levelTitle = 'Favourite Fair', syllabusName = 'My Favourite Things', levelNumber = 1, avatarType = 'BOY', studentName = 'Explorer', onLessonComplete, completedActivityIds = [], introVideoKey, experienceId, backgroundSrc, completionMessage, homeworkMessage }: LessonExperienceProps) {
   const router = useRouter()
   const skippedPictureActivityCount = activities.filter((item) => typeof item.content?.pilotUnavailableMessage === 'string').length
   const playableActivities = activities.filter((item) => typeof item.content?.pilotUnavailableMessage !== 'string')
@@ -155,6 +158,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
   const [introState, setIntroState] = useState<'checking' | 'playing' | 'done'>(introVideoKey ? 'checking' : 'done')
   const [introAvailable, setIntroAvailable] = useState(false)
   const [introReplayRequest, setIntroReplayRequest] = useState(0)
+  const [homeworkSaved, setHomeworkSaved] = useState(false)
 
   const activity = playableActivities[index]
   const julie = useMissJulieVoice()
@@ -298,6 +302,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       xpAwarded: result?.conversation?.complete ? 0 : baseTurn?.xpAwarded,
       evidence: result?.conversation?.skillEvidence ?? baseTurn?.evidence,
       memoryUpdates: result?.conversation ? [] : baseTurn?.memoryUpdates,
+      staticAudioActivityId: experienceId === 'g01-l01' ? activity?.id : undefined,
       voicePriority:
         result && (isConversation || Boolean(result.conversation))
           ? 'CONVERSATION'
@@ -327,10 +332,14 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       setExperience('julie_audio_pending')
       const playback = await julie.speak(turn.text, `${turn.id}:${++teacherSequence.current}`, turn.voicePriority || 'LESSON', turn.staticAudioActivityId)
       if (generation !== playbackGeneration.current) return
-      if (playback === 'autoplay-blocked') {
-        // Do not start recording over a prompt the child never heard.
-        setAudioBlocked(true)
-        setFeedback('Tap Enable sound once so Miss Julie can speak automatically.')
+      if (playback !== 'spoken') {
+        // An animation is not evidence that audio reached the child. Never
+        // auto-record, grade or advance a silent Class 1 teaching prompt.
+        spokenTurnIds.current.delete(turn.id)
+        setAudioBlocked(playback === 'autoplay-blocked')
+        setFeedback(playback === 'autoplay-blocked'
+          ? 'Sound permission is needed. Ask your teacher to enable sound once.'
+          : 'Miss Julie could not play her voice. Ask your teacher to check Azure Speech and the backend.')
         setExperience('recoverable_error')
         return
       }
@@ -352,8 +361,8 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     }
     setFeedback('')
     const playback = await julie.replay()
-    if (playback === 'autoplay-blocked') {
-      setAudioBlocked(true)
+    if (playback !== 'spoken') {
+      setAudioBlocked(playback === 'autoplay-blocked')
       setFeedback('Sound is still blocked. Check your browser sound permissions.')
       return
     }
@@ -556,13 +565,14 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
 
           setExperience('transcribing')
 
-          const result = await voiceService.transcribeAudio(
-            blob,
-            durationMs,
-            'en-IN',
-          )
+          // Only Class 1 uses Sarvam's existing detected-language metadata.
+          // Other grades keep their original transcript-only contract. This
+          // does NOT make a second STT request or classify language by script.
+          const voiceResult = experienceId === 'g01-l01'
+            ? await voiceService.transcribeAudioDetailed(blob, durationMs, 'en-IN')
+            : { transcript: await voiceService.transcribeAudio(blob, durationMs, 'en-IN'), languageCode: undefined }
 
-          const normalizedText = result.trim()
+          const normalizedText = voiceResult.transcript.trim()
 
           if (!normalizedText) {
             throw new Error('I could not hear that clearly. Try once more.')
@@ -599,10 +609,14 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
             }
             // Spelling is checked as a full word, not against a single letter tile.
             const choice = isSpelling
-              ? normalizedText.replace(/[^a-z]/gi, '').toUpperCase()
+              ? (experienceId === 'g01-l01'
+                  ? class1SpokenSpelling(normalizedText, activity.target || undefined)?.toUpperCase() || null
+                  : normalizedText.replace(/[^a-z]/gi, '').toUpperCase())
               : matchSpokenChoice(normalizedText, activity.choices || [])
             if (!choice) {
-              setFeedback('Say one answer clearly, or touch its picture.')
+              setFeedback(experienceId === 'g01-l01'
+                ? 'Please say one word aloud. Miss Julie is listening.'
+                : 'Say one answer clearly, or touch its picture.')
               setExperience('waiting_for_student')
               return
             }
@@ -640,7 +654,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
             setPose('encouraging')
             return
           }
-          await submit(normalizedText, currentSessionId, 'MIC')
+          await submit(normalizedText, currentSessionId, 'MIC', voiceResult.languageCode)
 
           activeRecordingSessionId.current = null
           sessionId.current = null
@@ -665,7 +679,13 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       startingMic.current = false
       stopVoiceWatcher.current = watchVoiceActivity(mediaStream, () => {
         if (activeRecorder.state === 'recording') activeRecorder.stop()
-      }, { silenceMs: 850, minimumSpeechMs: 380, noSpeechTimeoutMs: 5500 })
+      }, {
+        silenceMs: 1350, minimumSpeechMs: 420, noSpeechTimeoutMs: 8000,
+        speechThreshold: 0.012, resumeContext: true,
+        onUnavailable: () => {
+          if (process.env.NODE_ENV !== 'production') console.warn('[MIC] WebAudio voice activity unavailable; hard recorder timeout active')
+        },
+      })
 
       interval.current = window.setInterval(() => {
         const startedAt = recordingStartedAt.current
@@ -728,16 +748,21 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
   // Reward screen lasts briefly, then the server selects the next unlocked
   // lesson; if the grade has no more published activities, it opens home.
   useEffect(() => {
-    if (experience !== 'lesson_complete' || julie.isSpeaking || julie.state === 'loading') return
+    if (experience !== 'lesson_complete' || (experienceId === 'g01-l01' && !homeworkSaved) || julie.isSpeaking || julie.state === 'loading') return
     const timer = window.setTimeout(() => router.replace('/student/continue'), 6500)
     return () => window.clearTimeout(timer)
-  }, [experience, julie.isSpeaking, julie.state, router])
+  }, [experience, experienceId, homeworkSaved, julie.isSpeaking, julie.state, router])
 
-  async function submit(text: string, id: string, inputMode: 'MIC' | 'TEXT' | 'OPTION' = 'MIC') {
+  async function submit(
+    text: string,
+    id: string,
+    inputMode: 'MIC' | 'TEXT' | 'OPTION' = 'MIC',
+    detectedLanguage?: 'en-IN' | 'hi-IN' | 'mr-IN',
+  ) {
     setExperience('julie_thinking')
     setPose('thinking')
     try {
-      const result = await voiceService.submitTranscript(id, text, inputMode)
+      const result = await voiceService.submitTranscript(id, text, inputMode, detectedLanguage)
       const ai = result.aiResponse
       const fallbackText = result.evaluation?.feedback || 'Thank you for sharing that.'
       const retryRequired = Boolean(ai?.shouldRetry || ai?.conversation?.retryState?.waiting)
@@ -831,11 +856,14 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       setExperience('lesson_complete')
       setPose('celebrating')
       onLessonComplete?.(xp)
+      const celebration = completionMessage || (syllabusName.toLowerCase().includes('favourite')
+        ? `You did it, ${studentName}! You shared your favourites, asked questions, gave reasons, and spoke politely.`
+        : `You did it, ${studentName}! You finished ${syllabusName} and used clear English in real speaking turns.`)
       void commitTeacherTurn({
         id: `teacher-${activity?.id || index}-complete`,
-        text: completionMessage || (syllabusName.toLowerCase().includes('favourite')
-          ? `You did it, ${studentName}! You shared your favourites, asked questions, gave reasons, and spoke politely.`
-          : `You did it, ${studentName}! You finished ${syllabusName} and used clear English in real speaking turns.`),
+        text: experienceId === 'g01-l01' && homeworkMessage
+          ? `${celebration} For your speaking homework, ${homeworkMessage.replace(/^Homework:\s*/i, '')}`
+          : celebration,
         emotion: 'celebrating',
         intent: 'celebrate',
         requiresStudentResponse: false,
@@ -859,10 +887,18 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
   if (!activity) return <main className="lesson-empty-state"><h2>No activities found.</h2><Link href="/student/continue">My next lesson</Link></main>
 
   return (
-    <LessonWorld activity={activity} levelNumber={levelNumber} worldName={levelTitle} syllabusName={syllabusName} backgroundSrc={backgroundSrc}>
+    <LessonWorld activity={activity} levelNumber={levelNumber} worldName={levelTitle} syllabusName={syllabusName} backgroundSrc={backgroundSrc} experienceId={experienceId}>
       <AnimatePresence>{experience === 'entering' ? <TalkoraWorldLoader key="arrival" destination={levelTitle} subtitle={`Opening ${levelTitle}...`} /> : null}</AnimatePresence>
-      <div className={`talkora-lesson ${experience === 'lesson_complete' ? 'is-celebrating' : ''}`} data-experience={experience}>
-        <LessonHud
+      <div className={`talkora-lesson ${experience === 'lesson_complete' ? 'is-celebrating' : ''}`} data-experience={experience}
+        style={experienceId === 'g01-l01' ? { height: '100dvh', maxHeight: '100dvh', overflow: 'hidden', display: 'flex', flexDirection: 'column' } : undefined}>
+        {activity?.activityKey?.startsWith('class1-l01-v3-') ? (
+          <div className="firstday-progress" role="progressbar" aria-label="First Day lesson progress"
+            aria-valuenow={index + 1} aria-valuemin={1} aria-valuemax={playableActivities.length}
+            style={{ height: 42, flexShrink: 0, display: 'flex', justifyContent: 'center', alignItems: 'center',
+              background: '#145546', color: '#fff', fontWeight: 900, letterSpacing: '.06em' }}>
+            MY FIRST DAY · STORY {index + 1} OF {playableActivities.length}
+          </div>
+        ) : <LessonHud
           title={syllabusName}
           levelLabel={stageLabel}
           xp={xp}
@@ -876,12 +912,14 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
               <RotateCcw size={15} aria-hidden="true" /><span>Story</span>
             </button>
           ) : undefined}
-        />
+        />}
 
         {experience !== 'lesson_complete' ? (
-          <main className="talkora-lesson__immersive-stage">
+          <main className="talkora-lesson__immersive-stage"
+            style={experienceId === 'g01-l01' ? { flex: '1 1 0', minHeight: 0, height: 'auto', overflow: 'hidden', padding: 0 } : undefined}>
             <ImmersiveLessonStage
               activity={activity}
+              experienceId={experienceId}
               canonicalPrompt={initialLine}
               index={index}
               totalActivities={playableActivities.length}
@@ -941,7 +979,13 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
             />
           </main>
         ) : (
-          <RewardScene studentName={studentName} syllabusName={syllabusName} xp={xp} evidence={reflection} homeworkMessage={homeworkMessage} onReplayHomework={homeworkMessage ? () => {
+          <RewardScene studentName={studentName} syllabusName={syllabusName} xp={xp} evidence={reflection} homeworkMessage={homeworkMessage} homeworkSaved={homeworkSaved} class1Homework={experienceId === 'g01-l01' ? {
+            lessonId: activity.lessonId,
+            activityId: activity.id,
+            prompt: homeworkMessage?.replace(/^Homework:\s*/i, '') || 'Say one little word and tell someone about your school.',
+            onSaved: () => setHomeworkSaved(true),
+            onSpeak: (text: string) => { void julie.speak(text, `class1-homework:${activity.id}:${++teacherSequence.current}`, 'LESSON') },
+          } : undefined} onReplayHomework={homeworkMessage ? () => {
             void julie.speak(homeworkMessage, `homework:${activity.id}:${++teacherSequence.current}`, 'LESSON')
           } : undefined} onReplay={() => {
             playbackGeneration.current += 1
@@ -950,6 +994,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
             setXp(0)
             setEvidence([])
             setHistory([])
+            setHomeworkSaved(false)
             setExperience('waiting_for_student')
           }} />
         )}
@@ -958,6 +1003,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         introVideoKey === 'class1-g01-l01' ? (
           <Class1LessonIntro
             key={`${introVideoKey}:${introReplayRequest}`}
+            firstDayOnly={activity?.activityKey?.startsWith('class1-l01-v3-') === true}
             onAvailable={markIntroAvailable}
             onDone={finishIntro}
           />
@@ -989,7 +1035,7 @@ function uniqueEvidence(items: Evidence[]) {
 }
 
 
-function RewardScene({ studentName, syllabusName, xp, evidence, homeworkMessage, onReplayHomework, onReplay }: { studentName: string; syllabusName: string; xp: number; evidence: Evidence[]; homeworkMessage?: string; onReplayHomework?: () => void; onReplay: () => void }) {
+function RewardScene({ studentName, syllabusName, xp, evidence, homeworkMessage, homeworkSaved, class1Homework, onReplayHomework, onReplay }: { studentName: string; syllabusName: string; xp: number; evidence: Evidence[]; homeworkMessage?: string; homeworkSaved?: boolean; class1Homework?: { lessonId: string; activityId: string; prompt: string; onSaved: () => void; onSpeak: (text: string) => void }; onReplayHomework?: () => void; onReplay: () => void }) {
   return <main className="talkora-reward">
     <div className="talkora-reward__sky" aria-hidden="true">{Array.from({ length: 6 }, (_, index) => <motion.i key={index} animate={{ y: [0, -22, 0], rotate: [0, 35, 0], opacity: [0.25, 1, 0.25] }} transition={{ duration: 1.6 + index * 0.08, repeat: Infinity, delay: index * 0.06 }} />)}</div>
     <motion.div className="talkora-reward__badge" initial={{ scale: 0, rotate: -18 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: 'spring', stiffness: 160, damping: 12 }}><Award /><span>{syllabusName.toLowerCase().includes('favourite') ? 'Favourite Finder' : 'Lesson Star'}</span></motion.div>
@@ -999,12 +1045,15 @@ function RewardScene({ studentName, syllabusName, xp, evidence, homeworkMessage,
     <div className="talkora-reward__evidence">{evidence.length ? evidence.map((item) => <span key={item.skill}><BookOpen /> {friendlySkill(item.skill)}</span>) : <><span><BookOpen /> Lesson practice completed</span><span><BookOpen /> Keep learning with Miss Julie</span></>}</div>
     <motion.div className="talkora-reward__xp" initial={{ y: 18, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.45 }}><Sparkles /><strong>+{xp} XP</strong></motion.div>
     <p className="talkora-reward__home">{homeworkMessage || 'Your speaking homework was part of this lesson. Miss Julie has saved your learning progress.'}</p>
+    {class1Homework ? <Class1SpokenHomework {...class1Homework} /> : null}
     <div className="talkora-reward__actions">
       {onReplayHomework ? <button type="button" className="talkora-reward__continue talkora-reward__continue--secondary" onClick={onReplayHomework}>Hear homework</button> : null}
       <button type="button" className="talkora-reward__continue talkora-reward__continue--secondary" onClick={onReplay}>Replay lesson</button>
-      <Link href="/student/practice/talk" className="talkora-reward__continue talkora-reward__continue--secondary">Practice with Miss Julie</Link>
-      <Link href="/student/practice/home" className="talkora-reward__continue talkora-reward__continue--secondary">Record home conversation</Link>
-      <Link href="/student/continue" className="talkora-reward__continue">Next Lesson</Link>
+      {!class1Homework ? <Link href="/student/practice/talk" className="talkora-reward__continue talkora-reward__continue--secondary">Practice with Miss Julie</Link> : null}
+      {!class1Homework ? <Link href="/student/practice/home" className="talkora-reward__continue talkora-reward__continue--secondary">Record home conversation</Link> : null}
+      {class1Homework && !homeworkSaved
+        ? <button type="button" className="talkora-reward__continue" disabled aria-disabled="true">Save voice homework to continue</button>
+        : <Link href="/student/continue" className="talkora-reward__continue">Next Lesson</Link>}
     </div>
   </main>
 }

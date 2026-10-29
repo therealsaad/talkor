@@ -58,6 +58,12 @@ export const submitVoiceTranscriptSchema =
           ])
           .optional()
           .default('MIC'),
+
+        // Advisory Sarvam detection; never used as evidence of correctness.
+        // Old clients may omit it. Other language values are rejected.
+        detectedLanguage:
+          z.enum(['en-IN', 'hi-IN', 'mr-IN'])
+            .optional(),
       })
       .strict(),
 

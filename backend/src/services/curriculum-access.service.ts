@@ -92,8 +92,9 @@ export const CurriculumAccessService = {
         : ApiError.notFound(this.unpublishedCurriculumMessage(student.grade))
     }
 
-    // Draft access is limited to the explicitly allowlisted pilot students.
-    // Ordinary students retain published-only access.
+    // Draft access is available only in development to the configured student,
+    // or to all active Class 1 students when the explicit all-students flag is on.
+    // Production students retain published-only access.
     const isKGPilot = pilotAllowlisted && curriculumClass.status === 'draft'
     const isClass1Demo = class1DemoAllowlisted
     if (isClass1Demo) {

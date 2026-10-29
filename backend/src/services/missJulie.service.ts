@@ -11,6 +11,27 @@ import { MistakeService } from './mistake.service'
 import { StudentContextService } from './student-context.service'
 import { finalizeConversationTeacherResponse } from './conversationTurns'
 
+/** Text-only evidence for the ten original First Day speaking scenes.
+ * Not a pronunciation or cognitive ability score. A request for help is NOT
+ * evidence of English mastery even when it mentions the target word. */
+function firstDaySceneSkills(sceneKey: string, message: string): string[] {
+  const text = message.toLowerCase().trim()
+  if (/\b(?:what is|what does|meaning|don't know|dont know|i need help|please help|explain)\b|क्या|काय|समजत|म्हणजे|नहीं|नाही|मदद/.test(text)) return []
+  const evidence: Record<string, RegExp> = {
+    'hello-school': /\b(school|happy|hello)\b/,
+    'skip-bunny': /\b(skip|skipping)\b/,
+    'run-race': /\b(run|running)\b/,
+    'walk-school': /\b(walk|walking)\b/,
+    'big-grin': /\b(smile|grin|smiling)\b/,
+    'school-bell': /\b(bell|rings)\b/,
+    'jump-frog': /\b(jump|jumping)\b/,
+    'play-friends': /\b(play|playing)\b/,
+    'enter-class': /\b(classroom|go in|go into)\b/,
+    'grade-one': /\b(grade one|grade 1|school|play|skip|run|walk|jump)\b/,
+  }
+  return evidence[sceneKey]?.test(text) ? ['first_day_english_attempt'] : []
+}
+
 function detectedConcepts(message: string): string[] {
   const text = message.toLowerCase()
   const concepts: string[] = []
@@ -186,6 +207,7 @@ export const MissJulieService = {
       context?: string
       inputMode?: 'OPTION' | 'MIC' | 'TEXT'
       currentTarget?: string
+      preferredExplanationLanguage?: 'English' | 'Hindi' | 'Marathi'
     },
   ) {
     const studentContext = await StudentContextService.buildContext(studentId, {
@@ -194,6 +216,7 @@ export const MissJulieService = {
       activityId: input.activityId,
       promptContext: input.context || 'conversation',
       currentTarget: input.currentTarget,
+      preferredExplanationLanguage: input.preferredExplanationLanguage,
     })
 
     const activity = input.activityId ? await Activity.findById(input.activityId).lean() : null
@@ -241,10 +264,13 @@ export const MissJulieService = {
     }
 
     const priorGoals = existingConversation?.goalState || []
+    const isFirstDayScene = activity?.metadata?.digitalType === 'FIRST_DAY_VOICE_SCENE'
     const isGoldEpisode = Array.isArray(activity?.metadata?.masteryEvidence)
-    const turnSkills = isGoldEpisode
-      ? detectStudentSkills(input.message)
-      : detectedConcepts(input.message)
+    const turnSkills = isFirstDayScene
+      ? firstDaySceneSkills(String(activity?.metadata?.sceneKey || ''), input.message)
+      : isGoldEpisode
+        ? detectStudentSkills(input.message)
+        : detectedConcepts(input.message)
     const goalState = [...new Set([...priorGoals, ...turnSkills])]
     const nextTurn = (existingConversation?.turnCount || 0) + 1
 

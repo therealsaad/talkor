@@ -1,4 +1,4 @@
-import type { KGAlphabetState } from './kg-alphabet-service'
+import type { KGAlphabetState, KGAudioKind } from './kg-alphabet-service'
 
 /** Static staff preview state; audio, speech recognition and evaluation run through authenticated backend APIs. */
 export const KG_PREVIEW_AUDIO: Record<string, string> = {
@@ -26,6 +26,15 @@ export const KG_PREVIEW_AUDIO: Record<string, string> = {
   'try-again': 'Nice try! Listen once more and try again!',
   repeat: 'I did not hear clearly. Can you say it again?',
   silence: 'I am still listening. Take your time, then say it for me!',
+  'picture-support': 'Lovely work, beta ji! You found the picture! We will practice the English word together again soon!',
+  'bridge-a': 'Achha, seb! Bilkul sahi, beta ji! English mein seb ko apple kehte hain. Mere saath bolo, apple!',
+  'bridge-b': 'Achha, gend! Bilkul sahi, beta ji! English mein gend ko ball kehte hain. Mere saath bolo, ball!',
+  'bridge-c': 'Achha, billi! Bilkul sahi, beta ji! English mein billi ko cat kehte hain. Mere saath bolo, cat!',
+  'bridge-d': 'Achha, kutta! Bilkul sahi, beta ji! English mein kutte ko dog kehte hain. Mere saath bolo, dog!',
+  'model-a': 'Nice try, beta ji! Listen: apple. A for apple. Now you say apple!',
+  'model-b': 'Nice try, beta ji! Listen: ball. B for ball. Now you say ball!',
+  'model-c': 'Nice try, beta ji! Listen: cat. C for cat. Now you say cat!',
+  'model-d': 'Nice try, beta ji! Listen: dog. D for dog. Now you say dog!',
   'level-complete': 'You finished Level 1! You learned A, B, C, and D. Hooray!',
   'homework-abcd': 'Your tiny homework: at home, point to an apple, a ball, a cat or a dog picture. Say its English name and tell someone its first letter. Do your best! See you soon!',
   'navigation-map': 'Let us go back to your letter garden!',
@@ -33,6 +42,12 @@ export const KG_PREVIEW_AUDIO: Record<string, string> = {
   'replay-level': 'Welcome back, superstar! Let’s play the ABCD adventure again!',
   celebrate: 'Hooray! You know A, B, C, and D! You are a superstar!',
 }
+const DYNAMIC_TTS_IDS = new Set([
+  'welcome', 'great', 'try-again', 'repeat', 'silence', 'picture-support',
+  'bridge-a', 'bridge-b', 'bridge-c', 'bridge-d',
+  'model-a', 'model-b', 'model-c', 'model-d',
+  'celebrate', 'level-complete', 'navigation-map', 'replay-intro', 'replay-level',
+])
 export function makeKGPreviewState(currentIndex = 0): KGAlphabetState {
   return {
     version: 'kg-alphabet-v1-preview', level: 1, title: 'ABCD Picture Garden', audioVersion: 'v1',
@@ -59,7 +74,9 @@ level2Unlocked: currentIndex === 8, level2Available: false,
       { letter: 'D', word: 'dog', emoji: '🐶', color: '#67cbb5' },
     ],
     activity: null,
-    audio: Object.fromEntries(Object.entries(KG_PREVIEW_AUDIO).map(([id, text]) => [id, { text, url: '' }])),
+    audio: Object.fromEntries(Object.entries(KG_PREVIEW_AUDIO).map(([id, text]) => [id, {
+      text, url: '', kind: (DYNAMIC_TTS_IDS.has(id) ? 'dynamic_tts' : 'curriculum_static') as KGAudioKind,
+    }])),
   }
 }
 

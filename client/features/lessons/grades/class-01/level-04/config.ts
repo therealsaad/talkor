@@ -9,10 +9,12 @@ export const config = {
   "title": "Colours and Counting",
   "editorialStatus": "draft",
   "studentPlayable": false,
-  "description": "Colours and Counting — a distinct star observatory adventure for Class 1 learners.",
+  "description": "Original voice-first Balbharati activities for chapters 2.1–2.4, with English practice and optional Hindi/Marathi support. Educator sign-off pending.",
   "syllabus": {
     "objectives": [
-      "Recognize, hear, and speak language connected to colours and counting."
+      "Use place words and polite action sentences in familiar spaces.",
+      "Explain one step in Hindi or Marathi when requested; always return to short English speaking.",
+      "Use modeled feedback for repeated difficulty and extend only when the student is ready."
     ],
     "skills": [
       "listening",
@@ -20,8 +22,8 @@ export const config = {
       "reading"
     ],
     "boardReviewRequired": true,
-    "sourceBook": null,
-    "sourcePages": [],
+    "sourceBook": "English Balbharati Standard One (2025; 2026 reprint)",
+    "sourcePages": [18, 19, 21, 23],
     "syllabusVerified": false
   },
   "experience": {

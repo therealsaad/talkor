@@ -28,6 +28,7 @@ export interface StudentDetail extends StudentListItem {
   createdAt: string
   updatedAt: string
 homePractice?: {
+  unitKey?: string
   reflection: string
   submittedAt: string
   hasAudio?: boolean
@@ -119,9 +120,9 @@ export const schoolService = {
     return apiClient<StudentDetail>(`/students/${id}`)
     
   },
-  async getHomePracticeAudio(id: string): Promise<Blob> {
+  async getHomePracticeAudio(id: string, unit: 'favourites' | 'class1-first-day' = 'favourites'): Promise<Blob> {
   return apiClientBlob(
-    `/students/${encodeURIComponent(id)}/home-practice/audio`
+    `/students/${encodeURIComponent(id)}/home-practice/${unit}/audio`
   )
 },
 

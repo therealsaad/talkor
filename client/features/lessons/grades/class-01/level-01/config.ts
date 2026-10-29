@@ -12,7 +12,7 @@ export const config = {
   "description": "Watch Miss Julie's 90-second welcome story, practise tiny English words, then begin Balbharati 1.1 My First Day.",
   "syllabus": {
     "objectives": [
-      "Build and speak very short English words such as at and in with generous visual support.",
+      "Recognize and use the short words am, an, at, in, is, it, on, and up with generous visual support.",
       "Listen to and say simple school and movement words from the My First Day theme.",
       "Answer one very short question about going to school with positive Hindi or Marathi scaffolding."
     ],

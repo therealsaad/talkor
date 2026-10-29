@@ -1,0 +1,391 @@
+.kg-kindergarten-world {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.kg-kindergarten-world__sun {
+  position: absolute;
+  top: clamp(62px, 9vw, 112px);
+  right: clamp(8px, 8vw, 110px);
+  width: clamp(54px, 6vw, 78px);
+  aspect-ratio: 1;
+  border: 7px solid rgba(255, 242, 160, .72);
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #fff8bd, #ffd468 68%, #f5b94f);
+  box-shadow: 0 0 0 10px rgba(255, 224, 128, .12), 0 8px 24px rgba(221, 174, 77, .18);
+}
+.kg-kindergarten-world__sun span {
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 18%; height: 18%;
+  border-radius: 50%;
+  background: rgba(255,255,255,.7);
+  transform: translate(-50%, -50%) translate(-7px,-5px);
+}
+.kg-kindergarten-world__cloud {
+  position: absolute;
+  width: clamp(92px, 12vw, 170px);
+  height: clamp(34px, 4vw, 54px);
+  border-radius: 999px;
+  background: rgba(255,255,255,.82);
+  box-shadow: 0 10px 24px rgba(90, 121, 151, .08);
+  animation: kg-kindergarten-cloud 12s ease-in-out infinite alternate;
+}
+.kg-kindergarten-world__cloud::before,
+.kg-kindergarten-world__cloud::after { position: absolute; bottom: 10px; border-radius: 999px 999px 0 0; background: inherit; content: ''; }
+.kg-kindergarten-world__cloud::before { left: 18%; width: 38%; height: 88%; }
+.kg-kindergarten-world__cloud::after { right: 16%; width: 31%; height: 66%; }
+.kg-kindergarten-world__cloud--one { top: 18%; left: 3%; }
+.kg-kindergarten-world__cloud--two { top: 28%; right: 1%; scale: .72; animation-delay: -5s; }
+
+.kg-kindergarten-world__rainbow { position: absolute; top: 19%; right: 12%; width: 190px; height: 96px; overflow: hidden; opacity: .58; }
+.kg-kindergarten-world__rainbow i { position: absolute; left: 50%; bottom: -58px; border-style: solid; border-radius: 50% 50% 0 0; transform: translateX(-50%); }
+.kg-kindergarten-world__rainbow i:nth-child(1) { width: 190px; height: 190px; border-width: 12px 12px 0; border-color: #ef9b9b; }
+.kg-kindergarten-world__rainbow i:nth-child(2) { width: 166px; height: 166px; bottom: -46px; border-width: 12px 12px 0; border-color: #f5cb72; }
+.kg-kindergarten-world__rainbow i:nth-child(3) { width: 142px; height: 142px; bottom: -34px; border-width: 12px 12px 0; border-color: #91cf98; }
+.kg-kindergarten-world__rainbow i:nth-child(4) { width: 118px; height: 118px; bottom: -22px; border-width: 12px 12px 0; border-color: #91bde8; }
+
+.kg-kindergarten-world__hills { position: absolute; right: -8%; bottom: -58px; left: -8%; height: 31%; border-radius: 50% 50% 0 0; }
+.kg-kindergarten-world__hills--back { bottom: -34px; left: -16%; height: 25%; background: #9acb88; opacity: .9; transform: rotate(2deg); }
+.kg-kindergarten-world__hills--front { background: linear-gradient(180deg,#82bf7d,#69a868); box-shadow: 0 -16px 38px rgba(65,129,91,.08); }
+
+.kg-kindergarten-world__note { position: absolute; color: rgba(255,255,255,.82); font-family: Georgia, serif; font-size: clamp(24px,3vw,42px); text-shadow: 0 4px 12px rgba(91,100,145,.12); animation: kg-kindergarten-note 5.4s ease-in-out infinite; }
+.kg-kindergarten-world__note--one { top: 39%; left: 13%; color: #f0a3b0; }
+.kg-kindergarten-world__note--two { top: 55%; right: 8%; animation-delay: -2s; color: #8cbbe1; }
+.kg-kindergarten-world__note--three { top: 14%; left: 56%; animation-delay: -3.7s; color: #eac264; font-size: clamp(18px,2vw,30px); }
+
+.kg-kindergarten-world__blocks { position: absolute; right: clamp(18px,4vw,70px); bottom: 8px; display: flex; gap: 5px; align-items: end; opacity: .82; }
+.kg-kindergarten-world__blocks i { display: grid; width: clamp(34px,4vw,52px); aspect-ratio: 1; place-items: center; border: 3px solid rgba(255,255,255,.72); border-radius: 9px; background: #ef9c9d; color: white; font-style: normal; font-size: clamp(18px,2vw,28px); font-weight: 900; box-shadow: 0 5px 0 rgba(92,116,83,.18); }
+.kg-kindergarten-world__blocks i:nth-child(2) { height: clamp(42px,5vw,62px); width: clamp(42px,5vw,62px); background: #efca73; }
+.kg-kindergarten-world__blocks i:nth-child(3) { background: #7fc1d8; }
+
+.kg-level2-play, .kg-level3-play { position: relative; isolation: isolate; }
+.kg-level2-play > :not(.kg-kindergarten-world), .kg-level3-play > :not(.kg-kindergarten-world) { position: relative; z-index: 1; }
+
+.kg-kindergarten-world__bubble { position:absolute; aspect-ratio:1; border:2px solid rgba(255,255,255,.75); border-radius:50%; background:radial-gradient(circle at 32% 28%,rgba(255,255,255,.92),rgba(180,216,235,.18) 48%,transparent 68%); animation:kg-kindergarten-bubble 7s ease-in-out infinite; }
+.kg-kindergarten-world__bubble--one { left:7%; top:52%; width:24px; }
+.kg-kindergarten-world__bubble--two { right:18%; top:45%; width:17px; animation-delay:-3s; }
+.kg-kindergarten-world__star { position:absolute; color:#fff2a0; font-size:22px; text-shadow:0 4px 12px rgba(100,120,160,.12); animation:kg-kindergarten-star 4s ease-in-out infinite; }
+.kg-kindergarten-world__star--one { left:27%; top:19%; }
+.kg-kindergarten-world__star--two { right:30%; bottom:18%; animation-delay:-2s; }
+.kg-letter-word-picture { display:grid; grid-template-columns:minmax(82px,.45fr) minmax(120px,.8fr) minmax(150px,1fr); align-items:center; gap:clamp(12px,2vw,28px); width:100%; }
+.kg-letter-word-picture__letters { display:grid; grid-template-columns:auto auto; align-items:baseline; justify-content:center; color:#675488; line-height:.82; }
+.kg-letter-word-picture__letters strong { font-size:clamp(92px,10vw,150px); font-weight:950; }
+.kg-letter-word-picture__letters span { margin-left:5px; font-size:clamp(48px,5vw,78px); font-weight:950; color:#d2697f; }
+.kg-letter-word-picture__copy { display:grid; gap:4px; color:#55466f; text-align:left; }
+.kg-letter-word-picture__copy strong { color:#d2697f; font-size:clamp(28px,4vw,48px); line-height:1; }
+.kg-letter-word-picture__prompt,.kg-letter-word-picture__spelling { font-size:clamp(13px,1.4vw,18px); font-weight:850; }
+.kg-letter-word-picture__spelling { color:#8470ad; }
+.kg-letter-word-picture__image { width:100%; max-height:clamp(170px,28vh,260px); aspect-ratio:4/3; border:5px solid rgba(255,255,255,.94); border-radius:28px; background:#fff8ee; object-fit:contain; box-shadow:0 8px 0 rgba(210,165,137,.52),0 16px 28px rgba(96,77,130,.14); animation:kg-kindergarten-picture 5s ease-in-out infinite; }
+.kg-level2-letter-word-picture { align-items:center; }
+.kg-level3-letter-word-picture { align-items:center; }
+[data-outcome='correct'] .kg-letter-word-picture__picture { animation:kg-kindergarten-celebrate .7s ease-in-out 1; }
+@keyframes kg-kindergarten-bubble { 0%,100%{transform:translate3d(0,0,0)} 50%{transform:translate3d(0,-9px,0)} }
+@keyframes kg-kindergarten-star { 0%,100%{opacity:.55;transform:scale(.8) rotate(45deg)} 50%{opacity:1;transform:scale(1) rotate(45deg)} }
+@keyframes kg-kindergarten-picture { 0%,100%{translate:0 0} 50%{translate:0 -5px} }
+@keyframes kg-kindergarten-celebrate { 0%,100%{transform:scale(1)} 45%{transform:scale(1.07) rotate(-2deg)} }
+@media(max-width:760px){.kg-letter-word-picture{grid-template-columns:minmax(74px,.65fr) minmax(100px,.85fr) minmax(120px,1fr);gap:10px}.kg-letter-word-picture__letters strong{font-size:min(23vw,106px)}.kg-letter-word-picture__letters span{font-size:min(12vw,58px)}.kg-letter-word-picture__copy strong{font-size:min(8vw,34px)}.kg-letter-word-picture__image{max-height:min(23vh,180px);border-width:4px;border-radius:20px}.kg-letter-word-picture__spelling{display:none}}
+@media(prefers-reduced-motion:reduce){.kg-kindergarten-world__bubble,.kg-kindergarten-world__star,.kg-letter-word-picture__picture{animation:none!important}}
+
+
+.kg-letter-word-picture__picture { display:grid; width:min(100%, 280px); aspect-ratio:4/3; margin:0; place-items:center; overflow:visible; padding:12px; border:5px solid rgba(255,255,255,.94); border-radius:28px; background:#fff8ee; box-shadow:0 8px 0 rgba(210,165,137,.52),0 16px 28px rgba(96,77,130,.14); }
+.kg-letter-word-picture__image { display:block; width:100%; height:100%; object-fit:contain; object-position:center; }
+
+@keyframes kg-kindergarten-cloud { from { transform: translate3d(0,0,0); } to { transform: translate3d(8px,3px,0); } }
+@keyframes kg-kindergarten-note { 0%,100% { transform: translate3d(0,0,0) rotate(-4deg); } 50% { transform: translate3d(0,-8px,0) rotate(4deg); } }
+@media (max-width:760px) { .kg-kindergarten-world__rainbow { right: -10px; scale: .7; transform-origin: right top; } .kg-kindergarten-world__blocks { bottom: 3px; } .kg-kindergarten-world__note--one { left: 5%; } }
+@media (prefers-reduced-motion:reduce) { .kg-kindergarten-world__cloud,.kg-kindergarten-world__note { animation:none !important; } }
+
+/* Canonical lesson shell.  Level-specific styles are visual-only and must not
+   redefine the page geometry used by either preview. */
+.kg-level2-play,
+.kg-level3-play.kg-alpha-play {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  width: 100%;
+  height: auto;
+  min-height: 100dvh;
+  max-height: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+  isolation: isolate;
+  padding: clamp(12px, 2vw, 24px);
+  background:
+    radial-gradient(circle at 12% 14%, rgba(255,255,255,.9), transparent 23%),
+    linear-gradient(145deg, #cfe9ff 0%, #dedcff 36%, #ffe5d8 68%, #d5edc7 100%) !important;
+}
+
+.kg-level2-play::before,
+.kg-level3-play.kg-alpha-play::before { display: none !important; }
+.kg-level2-play > .kg-kindergarten-world,
+.kg-level3-play > .kg-kindergarten-world { position: absolute; }
+
+.kg-level2-play__top,
+.kg-level3-play .kg-alpha-play-top {
+  position: relative;
+  z-index: 20;
+}
+
+.kg-level2-play__scene,
+.kg-level3-play .kg-alpha-scene {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: minmax(190px, .72fr) minmax(0, 1.28fr);
+  align-items: center;
+  align-self: stretch;
+  gap: clamp(18px, 3vw, 44px);
+  width: min(1180px, 100%);
+  min-width: 0;
+  margin: 0 auto;
+  overflow: visible;
+}
+
+.kg-level2-play__teacher,
+.kg-level3-play .kg-alpha-teacher {
+  position: relative;
+  z-index: 12;
+  width: 100%;
+  min-width: 0;
+  overflow: visible;
+}
+
+.kg-level2-play__teacher .kg-alpha-teacher-image,
+.kg-level3-play .kg-alpha-teacher .kg-alpha-teacher-image {
+  width: min(100%, 330px);
+  height: clamp(280px, 47dvh, 430px);
+  max-height: none;
+}
+
+.kg-level2-play__board,
+.kg-level3-play .kg-alpha-quest {
+  position: relative;
+  z-index: 12;
+  width: 100%;
+  min-width: 0;
+  min-height: min(68dvh, 610px);
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+
+.kg-level2-letter-word-picture,
+.kg-level3-letter-word-picture {
+  grid-template-columns: minmax(120px, .55fr) minmax(170px, .85fr) minmax(220px, 1fr);
+}
+
+.kg-letter-word-picture__letter {
+  box-sizing: border-box;
+  display: grid;
+  width: clamp(120px, 13vw, 190px);
+  aspect-ratio: 1;
+  place-items: center;
+  overflow: hidden;
+  padding: clamp(10px, 1vw, 18px);
+  border: 7px solid rgba(255,255,255,.96);
+  border-radius: 38% 44% 40% 45%;
+  background: linear-gradient(145deg, #fff0ad, #ffd0bf 58%, #d9caff);
+  box-shadow: 0 8px 0 rgba(210,165,137,.68), 0 16px 28px rgba(96,77,130,.14);
+  container-type: size;
+}
+
+.kg-letter-word-picture__letter strong {
+  color: #675488;
+  max-width: 72%;
+  max-height: 72%;
+  font-size: min(58cqw, 58cqh);
+  font-weight: 950;
+  line-height: .82;
+  letter-spacing: -.04em;
+  text-align: center;
+  text-shadow: 0 3px 0 rgba(255,255,255,.72);
+}
+
+.kg-letter-word-picture__copy {
+  min-width: 0;
+  text-align: center;
+}
+
+.kg-letter-word-picture__copy strong { overflow-wrap: anywhere; }
+
+.kg-letter-word-picture__picture {
+  width: min(100%, 280px);
+  aspect-ratio: 4 / 3;
+  max-height: none;
+  justify-self: end;
+  overflow: visible;
+}
+
+.kg-letter-word-picture__image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+@media (max-width: 760px) {
+  .kg-level2-play,
+  .kg-level3-play.kg-alpha-play {
+    display: grid;
+    min-height: 100dvh;
+    overflow-y: auto;
+    padding: 10px 12px max(14px, env(safe-area-inset-bottom));
+  }
+
+  .kg-level2-play__scene,
+  .kg-level3-play .kg-alpha-scene {
+    grid-template-columns: 1fr;
+    align-content: start;
+    gap: 12px;
+    width: 100%;
+  }
+
+  .kg-level2-play__teacher,
+  .kg-level3-play .kg-alpha-teacher {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  .kg-level2-play__teacher .kg-alpha-teacher-image,
+  .kg-level3-play .kg-alpha-teacher .kg-alpha-teacher-image {
+    width: 110px;
+    height: 140px;
+    flex: 0 0 110px;
+  }
+
+  .kg-level2-play__board,
+  .kg-level3-play .kg-alpha-quest {
+    min-height: 0;
+  }
+
+  .kg-level2-letter-word-picture,
+  .kg-level3-letter-word-picture {
+    grid-template-columns: minmax(92px, .7fr) minmax(0, 1.3fr);
+    gap: 10px;
+  }
+
+  .kg-letter-word-picture__letter { width: min(34vw, 150px); }
+  .kg-letter-word-picture__copy { grid-column: 2; grid-row: 1; }
+  .kg-letter-word-picture__picture {
+    grid-column: 1 / -1;
+    width: min(68vw, 250px);
+    max-width: 100%;
+    justify-self: center;
+  }
+}
+
+@media (max-height: 650px) and (orientation: landscape) {
+  .kg-level2-play__board,
+  .kg-level3-play .kg-alpha-quest { min-height: 0; }
+  .kg-level2-play__teacher .kg-alpha-teacher-image,
+  .kg-level3-play .kg-alpha-teacher .kg-alpha-teacher-image { height: min(43dvh, 280px); }
+  .kg-letter-word-picture__picture { width: min(100%, 220px); }
+}
+
+/* Exact supplied jungle artwork for KG Levels 2 and 3 lesson canvases. */
+.kg-level2-play,
+.kg-level3-play.kg-alpha-play {
+  background-color: #c9e8a9;
+  background-image: url('/lessons/kg/jungle-background.png') !important;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+.kg-level2-play > .kg-kindergarten-world,
+.kg-level3-play > .kg-kindergarten-world {
+  background-image: url('/lessons/kg/jungle-background.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: cover;
+}
+.kg-level2-play > .kg-kindergarten-world > *,
+.kg-level3-play > .kg-kindergarten-world > * {
+  display: none;
+}
+.kg-level2-play__board,
+.kg-level3-play .kg-alpha-quest {
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.kg-level2-play .kg-letter-word-picture,
+.kg-level3-play .kg-letter-word-picture {
+  grid-template-columns: minmax(104px, .46fr) minmax(190px, .9fr) minmax(200px, 1fr);
+  align-items: center;
+  width: 100%;
+  max-width: 760px;
+  min-width: 0;
+  margin-inline: auto;
+  column-gap: clamp(12px, 2vw, 28px);
+}
+.kg-level2-play .kg-letter-word-picture__letter,
+.kg-level3-play .kg-letter-word-picture__letter {
+  justify-self: center;
+  width: clamp(104px, 10vw, 158px);
+  max-width: 100%;
+}
+.kg-level2-play .kg-letter-word-picture__copy,
+.kg-level3-play .kg-letter-word-picture__copy {
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  overflow: visible;
+  text-align: center;
+}
+.kg-level2-play .kg-letter-word-picture__copy strong,
+.kg-level3-play .kg-letter-word-picture__copy strong {
+  width: auto;
+  max-width: 100%;
+  overflow: visible;
+  overflow-wrap: normal;
+  white-space: nowrap;
+  line-height: 1.05;
+  font-size: clamp(26px, 3vw, 44px);
+}
+.kg-level2-play .kg-letter-word-picture__picture,
+.kg-level3-play .kg-letter-word-picture__picture {
+  position: static;
+  width: 100%;
+  max-width: 280px;
+  aspect-ratio: 4 / 3;
+  height: auto;
+  max-height: 210px;
+  margin: 0;
+  padding: 14px;
+  justify-self: center;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+.kg-level2-play .kg-letter-word-picture__image,
+.kg-level3-play .kg-letter-word-picture__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+
+@media (max-width: 760px) {
+  .kg-level2-play .kg-letter-word-picture,
+  .kg-level3-play .kg-letter-word-picture {
+    grid-template-columns: minmax(84px, .7fr) minmax(0, 1.3fr);
+    max-width: 100%;
+    column-gap: 8px;
+    row-gap: 12px;
+  }
+  .kg-level2-play .kg-letter-word-picture__letter,
+  .kg-level3-play .kg-letter-word-picture__letter { width: min(31vw, 128px); }
+  .kg-level2-play .kg-letter-word-picture__copy strong,
+  .kg-level3-play .kg-letter-word-picture__copy strong { font-size: clamp(23px, 7.5vw, 32px); }
+  .kg-level2-play .kg-letter-word-picture__picture,
+  .kg-level3-play .kg-letter-word-picture__picture {
+    grid-column: 1 / -1;
+    width: min(66vw, 230px);
+    max-height: 178px;
+  }
+}

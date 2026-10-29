@@ -221,6 +221,7 @@ export default function LevelExperience() {
 
   const startListening = useCallback(async (token: number) => {
     if (generationRef.current !== token || micStartingRef.current) return
+    const target = TARGETS[index]
     micStartingRef.current = true
     try {
       const controller = abortRef.current || new AbortController()
@@ -287,7 +288,7 @@ export default function LevelExperience() {
     } finally {
       micStartingRef.current = false
     }
-  }, [finishAttempt, releaseMic])
+  }, [finishAttempt, index, releaseMic])
 
   // Miss Julie speaks each prompt, listens automatically, gives feedback, then advances without lesson buttons.
   useEffect(() => {
@@ -398,7 +399,7 @@ export default function LevelExperience() {
             )}
           </section>
           <p role="status" aria-live="polite" style={{ position: 'absolute', width: 1, height: 1, padding: 0, margin: -1, overflow: 'hidden', clip: 'rect(0, 0, 0, 0)', whiteSpace: 'nowrap', border: 0 }}>
-            {phase === 'listening' ? `Your turn! Say ${target.letter} for ${target.word} to Miss Julie.` : phase === 'checking' ? 'Miss Julie is listening carefully…' : caption}
+            {phase === 'listening' ? `Your turn! Say ${current.letter} for ${current.word} to Miss Julie.` : phase === 'checking' ? 'Miss Julie is listening carefully…' : caption}
           </p>
           {phase === 'error' && <p role="alert" style={{ textAlign: 'center', color: '#8b351d' }}>{error}</p>}
           {phase === 'listening' && <span aria-label="Miss Julie is listening" style={{ justifySelf: 'center', width: 14, height: 14, borderRadius: 999, background: '#e45a54', boxShadow: '0 0 0 8px #e45a5426' }} />}

@@ -29,6 +29,15 @@ jobs:
         working-directory: client
       - run: pnpm build
         working-directory: client
+      - name: Verify Class 1 hands-free audio and landscape contracts
+        run: node --test tests/ui/class1-voice-runtime-contract.test.mjs
+        working-directory: client
+      - name: Verify illustrated v3 First Day speaking classroom
+        run: node --test tests/ui/class1-first-day-adventure.test.mjs
+        working-directory: client
+      - name: Verify TTS generator uses real 8001 voice ID and safe errors
+        run: node --test tests/ui/class1-priya-generation-contract.test.mjs
+        working-directory: client
   backend:
     runs-on: ubuntu-latest
     steps:
@@ -44,4 +53,16 @@ jobs:
       - run: pnpm install --frozen-lockfile
         working-directory: backend
       - run: pnpm build
+        working-directory: backend
+      - name: Test Class 1 Node-Python bridge security
+        run: pnpm exec jest --runInBand tests/unit/pythonAIProviderBridge.test.ts tests/unit/class1StaticAudio.test.ts
+        working-directory: backend
+      - name: Verify audio stream, Azure payload and audio-format regression tests
+        run: pnpm exec jest --runInBand tests/voice-response-stream.test.ts tests/class1-azure-audio.test.ts tests/voice-audio-format.test.ts
+        working-directory: backend
+      - name: Verify First Day teacher voice pack manifest and review gates
+        run: pnpm exec jest --runInBand tests/class1-first-day-voice-manifest.test.ts
+        working-directory: backend
+      - name: Verify local Priya voice preflight and model/hardware readiness
+        run: pnpm exec jest --runInBand tests/priya-tts-health.test.ts
         working-directory: backend

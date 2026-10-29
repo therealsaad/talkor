@@ -3,6 +3,7 @@
 import Image from 'next/image'
 import { useEffect, useMemo, useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { useReducedMotion } from 'framer-motion'
 import { Volume2 } from 'lucide-react'
 
 import { useAuth } from '@/components/auth/auth-provider'
@@ -89,8 +90,10 @@ export function MissJulieGuide({
 }: Props) {
   const pathname = usePathname()
   const { student } = useAuth()
+  const reduceMotion = useReducedMotion()
   const name = student?.fullName?.trim().split(/\s+/)[0] || 'Explorer'
   const [queued, setQueued] = useState(false)
+  const [animationReady, setAnimationReady] = useState(false)
   const voice = useMissJulieVoice()
 
   const pageGreeting = useMemo(
@@ -99,6 +102,18 @@ export function MissJulieGuide({
   )
 
   const text = message || pageGreeting.message
+  const guidePose = voice.isSpeaking
+    ? 'speaking'
+    : voice.state === 'loading'
+      ? 'thinking'
+      : pageGreeting.mood === 'proud'
+        ? 'celebrating'
+        : pageGreeting.mood === 'guide'
+          ? 'pointing'
+          : pageGreeting.mood === 'practice'
+            ? 'encouraging'
+            : 'idle'
+  const animationSrc = reduceMotion ? null : `/miss-julie-animations/transparent/${guidePose}.webm`
   const turnId = useMemo(
     () => `page:${pathname}:${text.trim().toLowerCase().replace(/\s+/g, '-')}`,
     [pathname, text],
@@ -116,6 +131,10 @@ export function MissJulieGuide({
       voice.stop()
     }
   }, [pathname, text])
+
+  useEffect(() => {
+    setAnimationReady(false)
+  }, [animationSrc])
 
   useEffect(() => {
     if (!queued) return
@@ -153,7 +172,7 @@ export function MissJulieGuide({
       data-mood={pageGreeting.mood}
       aria-live="polite"
     >
-      <div className="julie-page-guide__portrait-wrap">
+      <div className={`julie-page-guide__portrait-wrap${animationReady ? ' has-transparent-animation' : ''}`}>
         <Image
           src="/miss-julie-portrait.png"
           alt="Miss Julie, your Talkora English teacher"
@@ -162,6 +181,20 @@ export function MissJulieGuide({
           className="julie-page-guide__portrait"
           priority={pathname === '/student/home'}
         />
+        {animationSrc ? <video
+          key={animationSrc}
+          className="julie-page-guide__animation"
+          src={animationSrc}
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          aria-hidden="true"
+          onCanPlay={() => setAnimationReady(true)}
+          onPlaying={() => setAnimationReady(true)}
+          onError={() => setAnimationReady(false)}
+        /> : null}
         <span className={`julie-page-guide__status ${voice.isSpeaking ? 'is-speaking' : ''}`} />
       </div>
 

@@ -2,7 +2,7 @@
   "levelId": "g00-l04",
   "status": "authored-assets-pending",
   "assetsRoot": "/lessons/kg/level-04/",
-  "introVideo": null,
+  "introVideo": "/lessons/kg/level-04/animal-sounds-intro.mp4",
   "images": [],
   "animations": [],
   "audio": [],

@@ -17,11 +17,13 @@ const originalNodeEnv = process.env.NODE_ENV
 
 beforeAll(async () => connectTestDatabase())
 afterAll(async () => disconnectTestDatabase())
+beforeEach(() => { process.env.TALKORA_CLASS1_DEMO_ALL_STUDENTS = 'false' })
 afterEach(async () => {
   if (originalNodeEnv === undefined) delete process.env.NODE_ENV
   else process.env.NODE_ENV = originalNodeEnv
   delete process.env.TALKORA_CLASS1_STUDENT_DEMO
   delete process.env.TALKORA_CLASS1_DEMO_STUDENT_ID
+  delete process.env.TALKORA_CLASS1_DEMO_ALL_STUDENTS
   await clearTestDatabase()
 })
 
@@ -70,36 +72,36 @@ async function createClass1Draft(classStatus: 'active' | 'draft' = 'draft') {
     status: 'draft',
   })
   const keys = [
-    'listen-at', 'build-at', 'listen-in', 'build-in', 'look-at-me', 'i-am-sam', 'repeat-at',
+    'listen-am', 'build-an', 'listen-at', 'listen-in', 'use-on', 'it-is-up', 'review-little-words',
     'say-walk', 'find-school', 'school-talk',
   ]
   const activities = await Activity.create(keys.map((key, index) => ({
     lessonId: lesson._id,
     curriculumVersion: CLASS1_DEMO_VERSION,
-    activityKey: `class1-l01-${key}`,
+    activityKey: `class1-l01-v2-${key}`,
     grade: 1,
     term: 1,
     unitNumber: 1,
     order: index + 1,
-    type: ['repeat-at', 'school-talk'].includes(key) ? 'CONVERSATION'
+    type: ['review-little-words', 'school-talk'].includes(key) ? 'CONVERSATION'
       : key === 'say-walk' ? 'LISTEN_AND_REPEAT' : 'WORD_RECOGNITION',
-    stage: ['repeat-at', 'school-talk'].includes(key) ? 'INTERACT'
+    stage: ['review-little-words', 'school-talk'].includes(key) ? 'INTERACT'
       : key === 'say-walk' ? 'SPEAK' : 'LISTEN_REPEAT',
     title: key,
-    prompt: ['repeat-at', 'school-talk'].includes(key) ? 'Talk with Miss Julie.' : key === 'say-walk' ? 'Say walk.' : 'Choose a word.',
+    prompt: ['review-little-words', 'school-talk'].includes(key) ? 'Talk with Miss Julie.' : key === 'say-walk' ? 'Say walk.' : 'Choose a word.',
     target: key === 'say-walk' ? 'walk' : key === 'school-talk' || key === 'find-school' ? 'school' : 'at',
-    choices: ['repeat-at', 'school-talk', 'say-walk'].includes(key) ? []
+    choices: ['review-little-words', 'school-talk', 'say-walk'].includes(key) ? []
       : key === 'find-school' ? ['bell', 'school', 'playground'] : ['an', 'at', 'in'],
-    answer: ['repeat-at', 'school-talk', 'say-walk'].includes(key) ? undefined : key === 'find-school' ? 'school' : 'at',
+    answer: ['review-little-words', 'school-talk', 'say-walk'].includes(key) ? undefined : key === 'find-school' ? 'school' : 'am',
     difficulty: 'easy',
     xp: 0,
     estimatedSeconds: 20,
     voiceEnabled: true,
-    aiEnabled: ['repeat-at', 'school-talk'].includes(key),
-    allowMic: ['repeat-at', 'school-talk', 'say-walk'].includes(key),
-    allowOptions: !['repeat-at', 'school-talk', 'say-walk'].includes(key),
+    aiEnabled: ['review-little-words', 'school-talk'].includes(key),
+    allowMic: ['review-little-words', 'school-talk', 'say-walk'].includes(key),
+    allowOptions: !['review-little-words', 'school-talk', 'say-walk'].includes(key),
     maxConversationTurns: 2,
-    ...(['repeat-at', 'school-talk'].includes(key) ? {
+    ...(['review-little-words', 'school-talk'].includes(key) ? {
       conversationGoal: { requiredConcepts: [], minTurns: 2, maxTurns: 2 },
       metadata: { conversationMode: 'OPEN' },
     } : {}),
@@ -112,6 +114,7 @@ async function createClass1Draft(classStatus: 'active' | 'draft' = 'draft') {
 
 describe('development-only Class 1 student demo access', () => {
   it('opens the exact ten-activity foundations and My First Day draft for only the configured Class 1 student', async () => {
+    process.env.NODE_ENV = 'development'
     const { student, token } = await createStudent(1, 'Allowed Learner')
     const { level, lesson, activities } = await createClass1Draft('active')
     process.env.TALKORA_CLASS1_STUDENT_DEMO = 'true'
@@ -134,7 +137,7 @@ describe('development-only Class 1 student demo access', () => {
     })
     await Activity.create({
       lessonId: lesson._id, curriculumVersion: 'unapproved-draft-v1', activityKey: 'unapproved-activity',
-      grade: 1, term: 1, unitNumber: 1, order: 8, type: 'WORD_RECOGNITION', stage: 'LISTEN_REPEAT',
+      grade: 1, term: 1, unitNumber: 1, order: 11, type: 'WORD_RECOGNITION', stage: 'LISTEN_REPEAT',
       title: 'unapproved', prompt: 'Do not show this.', target: 'no', choices: ['no'], answer: 'no', difficulty: 'easy',
       xp: 0, estimatedSeconds: 10, voiceEnabled: false, aiEnabled: false, allowMic: false, allowOptions: true,
       core: true, required: true, status: 'draft',
@@ -188,6 +191,31 @@ describe('development-only Class 1 student demo access', () => {
     expect(controlled.status).toBe(201)
     const storedSession = await VoiceSession.findById(controlled.body.data._id)
     expect(storedSession?.metadata?.expectedPhrase).toBe('walk')
+  })
+
+  it('opens the exact draft to all active Class 1 students only in development when explicitly enabled', async () => {
+    process.env.NODE_ENV = 'development'
+    process.env.TALKORA_CLASS1_STUDENT_DEMO = 'true'
+    process.env.TALKORA_CLASS1_DEMO_ALL_STUDENTS = 'true'
+    const first = await createStudent(1, 'First Class 1 Learner')
+    const second = await createStudent(1, 'Second Class 1 Learner')
+    const { lesson } = await createClass1Draft('active')
+
+    for (const learner of [first, second]) {
+      const progress = await request(app).get('/api/students/me/progress').set('Authorization', `Bearer ${learner.token}`)
+      expect(progress.status).toBe(200)
+      expect(progress.body.data.curriculumVersion).toBe(CLASS1_DEMO_VERSION)
+      const curriculum = await request(app).get('/api/students/me/curriculum').set('Authorization', `Bearer ${learner.token}`)
+      expect(curriculum.status).toBe(200)
+      const loaded = await request(app).get(`/api/students/me/lessons/${lesson._id}`).set('Authorization', `Bearer ${learner.token}`)
+      expect(loaded.status).toBe(200)
+      expect(loaded.body.data.experienceId).toBe('g01-l01')
+      expect(loaded.body.data.activities).toHaveLength(10)
+    }
+
+    process.env.NODE_ENV = 'production'
+    const production = await request(app).get('/api/students/me/progress').set('Authorization', `Bearer ${first.token}`)
+    expect(production.status).not.toBe(200)
   })
 
   it('fails closed for another Class 1 student and for a mismatched KG student', async () => {

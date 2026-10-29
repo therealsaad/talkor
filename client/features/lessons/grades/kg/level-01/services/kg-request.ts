@@ -13,7 +13,7 @@ export async function kgRequest<T>(operation: (signal: AbortSignal) => Promise<T
       signal?.throwIfAborted()
       const failure = error as { status?: number; details?: { retryable?: boolean }; name?: string }
       const retryable = failure instanceof TypeError || failure.name === 'TimeoutError' || controller.signal.aborted ||
-        [429, 500, 502, 503, 504].includes(failure.status || 0) || (failure.status === 409 && failure.details?.retryable)
+        (failure.details?.retryable === true) || (failure.details?.retryable !== false && [408, 429, 502, 503, 504].includes(failure.status || 0))
       if (!retryable || attempt >= retries) throw error
     } finally {
       clearTimeout(clock)
@@ -21,7 +21,7 @@ export async function kgRequest<T>(operation: (signal: AbortSignal) => Promise<T
     }
     await new Promise<void>((resolve, reject) => {
       const cancel = () => { clearTimeout(timer); reject(signal?.reason || new DOMException('Cancelled', 'AbortError')) }
-      const timer = setTimeout(() => { signal?.removeEventListener('abort', cancel); resolve() }, (options.delayMs ?? 600) * (attempt + 1))
+      const timer = setTimeout(() => { signal?.removeEventListener('abort', cancel); resolve() }, Math.min(5000, (options.delayMs ?? 300) * (2 ** attempt)))
       signal?.addEventListener('abort', cancel, { once: true })
       if (signal?.aborted) { signal.removeEventListener('abort', cancel); cancel() }
     })

@@ -262,8 +262,8 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     const releaseDucking = beginVoice()
     try {
       if (!audioRef.current) audioRef.current = new Audio()
-      if (preview) await kgAlphabetService.previewPlay(id, audioRef.current, requestRef.current?.signal)
-      else await kgAlphabetService.play(id, audioRef.current, stateRef.current?.audio[id]?.url, requestRef.current?.signal)
+      if (preview) await kgAlphabetService.previewPlay(id, audioRef.current, requestRef.current?.signal, stateRef.current?.audio[id]?.kind)
+      else await kgAlphabetService.play(id, audioRef.current, stateRef.current?.audio[id]?.url, requestRef.current?.signal, stateRef.current?.audio[id]?.kind)
     } finally { releaseDucking() }
   }, [preview, beginVoice])
 
@@ -297,7 +297,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     const openingAudio = stepIndex === 0 && replayAllRef.current ? ['replay-level'] : []
     setPhase('julie')
     try {
-      // One short Azure line per step; don't queue many prerecorded clips.
+      // Play the reviewed curriculum clips for this step before opening the microphone.
       if (generation.current !== token) return
       for (const id of [...openingAudio, ...audioForStep(stepIndex)]) {
         await playClip(id)
@@ -310,7 +310,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       else setPhase('touch')
     } catch {
       if (generation.current !== token) return
-      setFeedback('Miss Julie could not play audio. Check Azure Speech credentials on the backend and try again.')
+      setFeedback('Miss Julie’s voice is temporarily unavailable. Try again or return to your garden.')
       setPhase('error')
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -584,11 +584,14 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       if (retryNumber < 2) {
         try {
           await speakFeedback('silence', feedbackAudioBase64)
+        } catch {
           if (generation.current !== token) return
-          pendingResultRef.current = null
-          stepStartedAtRef.current = performance.now()
-          retryListeningRef.current(stepIndex, token)
-        } catch { if (generation.current === token) { silenceRetriesRef.current = Math.max(0, silenceRetriesRef.current - 1); setFeedback(friendlyAudioError()); setPhase('error') } }
+          setFeedback('Miss Julie’s voice is temporarily unavailable. You can still try saying the word.')
+        }
+        if (generation.current !== token) return
+        pendingResultRef.current = null
+        stepStartedAtRef.current = performance.now()
+        retryListeningRef.current(stepIndex, token)
       } else pendingResultRef.current = null
       return
     }
@@ -597,9 +600,9 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     try { await speakFeedback(feedbackId, feedbackAudioBase64) }
     catch {
       if (generation.current !== token) return
-      setFeedback(friendlyAudioError())
-      setPhase('error')
-      return
+      // The attempt and progress are already saved by the backend. Keep the
+      // learner moving if live Priya TTS is temporarily unavailable.
+      setFeedback('Your answer is saved. Miss Julie’s voice is taking a short break.')
     }
     if (generation.current !== token) return
     if (!success) {
@@ -614,12 +617,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     if (replayRef.current && !replayAllRef.current) { pendingResultRef.current = null; setPhase('finished'); return }
     if (nextIndex >= STEP_COUNT) {
       try { await playClip('level-complete'); await playClip('celebrate') }
-      catch {
-        if (generation.current !== token) return
-        setFeedback(friendlyAudioError())
-        setPhase('error')
-        return
-      }
+      catch { /* Saved completion remains available while Priya TTS recovers. */ }
       // The child has already mastered the activities. A missing homework
       // audio object must not erase progress or trap them in an error state.
       if (generation.current !== token) return

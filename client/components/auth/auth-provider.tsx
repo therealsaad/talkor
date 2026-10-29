@@ -42,7 +42,7 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function homeForRole(role: AuthSession['role']): string {
-  return role === 'STUDENT' ? '/student/home' : '/school/dashboard'
+  return role === 'STUDENT' ? '/student/continue' : '/school/dashboard'
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {

@@ -24,9 +24,9 @@
     "id": "g00-l02",
     "grade": 0,
     "level": 2,
-    "title": "Colours and Shapes",
-    "designTheme": "kg-02-colours-and-shapes",
-    "world": "Treasure Cove",
+    "title": "Letters E to J",
+    "designTheme": "kg-02-letters-e-to-j",
+    "world": "Letter Garden",
     "palette": {
       "background": "#fcc6c2",
       "backgroundDeep": "#e6aa91",
@@ -45,7 +45,8 @@
     "id": "g00-l03",
     "grade": 0,
     "level": 3,
-    "title": "My Body and Actions",
+    "title": "Letters K to P",
+    "roadmapTitle": "My Body and Actions",
     "designTheme": "kg-03-my-body-and-actions",
     "world": "Coral Lagoon",
     "palette": {
@@ -66,8 +67,8 @@
     "id": "g00-l04",
     "grade": 0,
     "level": 4,
-    "title": "Animal Sounds",
-    "designTheme": "kg-04-animal-sounds",
+    "title": "Picture Words: Q–V",
+    "designTheme": "kg-04-picture-words",
     "world": "Star Observatory",
     "palette": {
       "background": "#fcccc2",
@@ -213,7 +214,8 @@
     "id": "g01-l01",
     "grade": 1,
     "level": 1,
-    "title": "Letters and Sounds",
+    "title": "Little Words & My First Day",
+    "roadmapTitle": "Letters and Sounds",
     "designTheme": "class-01-01-letters-and-sounds",
     "world": "First Day Word Meadow",
     "palette": {

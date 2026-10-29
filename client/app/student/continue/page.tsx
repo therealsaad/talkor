@@ -14,6 +14,8 @@ export default function ResumeMyLesson() {
   const [error, setError] = useState('')
   useEffect(() => {
     if (status !== 'authenticated') return
+    // KG's approved alphabet experience owns its own saved progress/resume.
+    // Never send a newly signed-in child to the optional garden map.
     if (student?.grade === 0) { router.replace('/student/kg'); return }
     let cancelled = false
     curriculumService.getNextLesson()

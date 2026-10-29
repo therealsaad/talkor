@@ -42,8 +42,9 @@ export default function StudentDetailPage() {
       setPracticeAudioError('')
       return
     }
+    const unit = student.homePractice.unitKey === 'CLASS1_L01_FIRST_DAY' ? 'class1-first-day' : 'favourites'
     setPracticeAudioLoading(true)
-    schoolService.getHomePracticeAudio(id).then((audio) => {
+    schoolService.getHomePracticeAudio(id, unit).then((audio) => {
       audioUrl = URL.createObjectURL(audio)
       if (alive) setPracticeAudioUrl(audioUrl)
       else URL.revokeObjectURL(audioUrl)
@@ -56,7 +57,7 @@ export default function StudentDetailPage() {
       alive = false
       if (audioUrl) URL.revokeObjectURL(audioUrl)
     }
-  }, [id, student?.homePractice?.hasAudio])
+  }, [id, student?.homePractice?.hasAudio, student?.homePractice?.unitKey])
 
   if (loading) return <SchoolShell title="Student progress"><div className="educator-loading">Loading verified learning data...</div></SchoolShell>
   if (!student) return <SchoolShell title="Student not found"><div style={card}><p>This student is unavailable or outside your access.</p><Link href="/school/students">Back to students</Link></div></SchoolShell>
@@ -81,17 +82,17 @@ export default function StudentDetailPage() {
       </p>
     </section>
     <section style={{ ...card, marginBottom: 20 }}>
-      <h3 style={{ margin: '0 0 12px', color: '#0f172a' }}>Level 1 home practice</h3>
+      <h3 style={{ margin: '0 0 12px', color: '#0f172a' }}>{student.homePractice?.unitKey === 'CLASS1_L01_FIRST_DAY' ? 'Class 1 first day speaking practice' : 'Level 1 home practice'}</h3>
       {student.homePractice ? <>
         <p style={{ margin: '0 0 8px', color: '#334155' }}>{student.homePractice.reflection}</p>
         <small style={{ color: '#64748b' }}>Submitted {new Date(student.homePractice.submittedAt).toLocaleString()}</small>
         {student.homePractice.hasAudio ? <div style={{ marginTop: 14 }}>
-          <h4 style={{ margin: '0 0 8px', color: '#0f172a' }}>Family conversation recording</h4>
+          <h4 style={{ margin: '0 0 8px', color: '#0f172a' }}>{student.homePractice.unitKey === 'CLASS1_L01_FIRST_DAY' ? 'Student speaking recording' : 'Family conversation recording'}</h4>
           {practiceAudioLoading ? <p role="status" style={{ color: '#64748b' }}>Loading recording…</p> : null}
-          {practiceAudioUrl ? <audio controls src={practiceAudioUrl} style={{ width: '100%' }} aria-label={`${student.fullName}'s family conversation recording`} /> : null}
+          {practiceAudioUrl ? <audio controls src={practiceAudioUrl} style={{ width: '100%' }} aria-label={`${student.fullName}'s ${student.homePractice.unitKey === 'CLASS1_L01_FIRST_DAY' ? 'speaking homework' : 'family conversation'} recording`} /> : null}
           {practiceAudioError ? <p role="alert" style={{ color: '#b91c1c' }}>{practiceAudioError}</p> : null}
         </div> : <p style={{ margin: '12px 0 0', color: '#64748b' }}>No recording was saved with this reflection.</p>}
-      </> : <p style={{ margin: 0, color: '#64748b' }}>No family conversation reflection submitted yet.</p>}
+      </> : <p style={{ margin: 0, color: '#64748b' }}>{student.grade === 1 ? 'No first day speaking practice has been submitted yet.' : 'No family conversation reflection submitted yet.'}</p>}
     </section>
     <section style={card}>
       <h3 style={{ margin: '0 0 6px', color: '#0f172a' }}>Recent learning attempts</h3>

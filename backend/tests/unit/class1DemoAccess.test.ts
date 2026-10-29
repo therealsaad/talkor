@@ -6,31 +6,31 @@ import {
 
 const student = { id: '64b000000000000000000001', grade: 1, status: 'active' }
 
-describe('Class 1 demo allowlist', () => {
-  it('allows only the matching active Grade 1 student outside production', () => {
+describe('Class 1 demo access', () => {
+  it('allows the matching active Grade 1 student outside production', () => {
     expect(isAuthorizedClass1DemoStudent(student, {
-      nodeEnv: 'development', enabled: 'true', studentId: student.id,
+      nodeEnv: 'development', enabled: 'true', studentId: student.id, allStudents: 'false',
     })).toBe(true)
   })
 
   it('fails closed when disabled, mismatched, invalid, wrong-grade, or production', () => {
     expect(isAuthorizedClass1DemoStudent(student, {
-      nodeEnv: 'development', enabled: 'false', studentId: student.id,
+      nodeEnv: 'development', enabled: 'false', studentId: student.id, allStudents: 'false',
     })).toBe(false)
     expect(isAuthorizedClass1DemoStudent(student, {
-      nodeEnv: 'test', enabled: 'true', studentId: student.id,
+      nodeEnv: 'test', enabled: 'true', studentId: student.id, allStudents: 'false',
     })).toBe(false)
     expect(isAuthorizedClass1DemoStudent(student, {
-      nodeEnv: 'production', enabled: 'true', studentId: student.id,
+      nodeEnv: 'production', enabled: 'true', studentId: student.id, allStudents: 'false',
     })).toBe(false)
     expect(isAuthorizedClass1DemoStudent(student, {
-      nodeEnv: 'development', enabled: 'true', studentId: '64b000000000000000000002',
+      nodeEnv: 'development', enabled: 'true', studentId: '64b000000000000000000002', allStudents: 'false',
     })).toBe(false)
     expect(isAuthorizedClass1DemoStudent(student, {
-      nodeEnv: 'development', enabled: 'true', studentId: 'not-an-object-id',
+      nodeEnv: 'development', enabled: 'true', studentId: 'not-an-object-id', allStudents: 'false',
     })).toBe(false)
     expect(isAuthorizedClass1DemoStudent({ ...student, grade: 0 }, {
-      nodeEnv: 'development', enabled: 'true', studentId: student.id,
+      nodeEnv: 'development', enabled: 'true', studentId: student.id, allStudents: 'false',
     })).toBe(false)
   })
 

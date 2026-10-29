@@ -1,3 +1,4 @@
+import { createSilentUnlockWav } from './silent-audio-unlock'
 import {
   apiClient,
   getApiUrl,
@@ -161,7 +162,10 @@ export interface VoiceSessionData {
 
 interface TranscriptionResponse {
   transcript: string | null
+  languageCode?: 'en-IN' | 'hi-IN' | 'mr-IN'
 }
+
+export type VoiceTranscription = { transcript: string; languageCode?: 'en-IN' | 'hi-IN' | 'mr-IN' }
 
 /* =========================================================
    SYNTHESIS RESULT
@@ -222,10 +226,11 @@ export const voiceService = {
     const player =
       this.activeAudio
 
-    player.muted = true
-
-    player.src =
-      'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA='
+    // A muted, header-only WAV can play without granting unmuted autoplay.
+    // Request a real but silent clip inside the user gesture instead.
+    const unlockUrl = URL.createObjectURL(createSilentUnlockWav())
+    player.muted = false
+    player.src = unlockUrl
 
     try {
       await player.play()
@@ -256,6 +261,10 @@ export const voiceService = {
         false
 
       return false
+    } finally {
+      player.pause()
+      if (player.src === unlockUrl) player.removeAttribute('src')
+      URL.revokeObjectURL(unlockUrl)
     }
   },
 
@@ -288,6 +297,7 @@ async submitTranscript(
   sessionId: string,
   transcript: string,
   inputMode: 'MIC' | 'TEXT' | 'OPTION',
+  detectedLanguage?: VoiceTranscription['languageCode'],
 ): Promise<VoiceSessionData> {
   return apiClient<VoiceSessionData>(
     `/voice/sessions/${sessionId}/transcript`,
@@ -298,6 +308,7 @@ async submitTranscript(
         JSON.stringify({
           transcript,
           inputMode,
+          ...(detectedLanguage ? { detectedLanguage } : {}),
         }),
     },
   )
@@ -328,6 +339,18 @@ async submitTranscript(
     _source?: string,
     mode: 'fast' | 'accurate' = 'fast',
   ): Promise<string> {
+    const result = await this.transcribeAudioDetailed(audio, durationMs, _source, mode)
+    return result.transcript
+  },
+
+  /** Same single Sarvam STT request; preserve explicit detected language only
+   * for the Class 1 tutor. Older transcript-only callers stay unchanged. */
+  async transcribeAudioDetailed(
+    audio: Blob,
+    durationMs?: number,
+    _source?: string,
+    mode: 'fast' | 'accurate' = 'fast',
+  ): Promise<VoiceTranscription> {
     if (!audio.size) throw new Error('The recording is empty. Please try again.')
     markLabSpeechActivity()
 
@@ -373,7 +396,13 @@ async submitTranscript(
     }
     const transcript = (payload.data?.transcript ?? payload.transcript)?.trim()
     if (!transcript) throw new Error('No speech was detected. Please try again.')
-    return transcript
+    const language = payload.data?.languageCode
+    return {
+      transcript,
+      languageCode: language === 'en-IN' || language === 'hi-IN' || language === 'mr-IN'
+        ? language
+        : undefined,
+    }
   },
 
   /* =======================================================
@@ -705,15 +734,14 @@ async submitTranscript(
     const requestedAt =
       performance.now()
 
-    // Fixed lesson prompts repeat across students. Cache by exact text only for
-    // non-personalised lesson audio, never for live conversation/feedback.
+    // Do not reuse audio from a different sentence in the same activity.
+    // Open conversations/feedback can include child-specific information and
+    // must never enter this shared browser memory cache.
     const cacheKey = priority === 'LESSON'
-      ? activityId
-        ? `activity:${activityId}`
-        : `lesson:${detectVoiceLanguage(text)}:${text.trim().toLowerCase()}`
-      : turnId
+      ? `lesson:${activityId || 'generic'}:${detectVoiceLanguage(text)}:${text.trim().replace(/\s+/g, ' ')}`
+      : null
     try {
-      let audioBlob = this.audioCache.get(cacheKey)
+      let audioBlob = cacheKey ? this.audioCache.get(cacheKey) : undefined
       if (!audioBlob) {
         if (process.env.NODE_ENV !== 'production') console.info(`[JulieVoice] turn=${turnId} synthesis requested`)
         const token = getStoredToken()
@@ -765,7 +793,7 @@ async submitTranscript(
         audioBlob = await response.blob()
 
         if (!audioBlob.size) throw new Error('Miss Julie returned an empty audio response.')
-        this.audioCache.set(cacheKey, audioBlob)
+        if (cacheKey) this.audioCache.set(cacheKey, audioBlob)
         if (this.audioCache.size > 40) {
           const oldest = this.audioCache.keys().next().value
           if (oldest) this.audioCache.delete(oldest)

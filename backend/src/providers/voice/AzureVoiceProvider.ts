@@ -1,4 +1,5 @@
 import { ApiError } from '../../utils/ApiError'
+import { chooseTalkoraBilingualVoice } from './class1-voice-language'
 import { logger } from '../../utils/logger'
 import type { VoiceProvider, VoiceStreamResult, VoiceSynthesisResult } from './VoiceProvider'
 
@@ -36,16 +37,15 @@ export class AzureVoiceProvider implements VoiceProvider {
     }
   }
 
-  private async generate(text: string, kindergarten = false): Promise<Buffer> {
+  private async generate(text: string, kindergarten = false, class1Lesson = false): Promise<Buffer> {
     const s = this.settings()
     if (!s.key) throw ApiError.provider('Azure Speech is not configured')
+    const selected = chooseTalkoraBilingualVoice(text, s.voice, class1Lesson)
 
     const url = `https://${s.region}.tts.speech.microsoft.com/cognitiveservices/v1`
-    // Keep KG preview narration at the same measured pacing and pitch as the
-    // standard Level 1 voice unless a deployment explicitly overrides it.
     const rate = kindergarten ? (process.env.KG_AZURE_SPEECH_RATE?.trim() || s.rate) : s.rate
     const pitch = kindergarten ? (process.env.KG_AZURE_SPEECH_PITCH?.trim() || s.pitch) : s.pitch
-    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-IN"><voice name="${s.voice}"><prosody rate="${rate}" pitch="${pitch}">${escapeXml(text)}</prosody></voice></speak>`
+    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${selected.locale}"><voice name="${selected.voice}"><prosody rate="${rate}" pitch="${pitch}">${escapeXml(text)}</prosody></voice></speak>`
 
     let response: Response
     try {
@@ -71,7 +71,14 @@ export class AzureVoiceProvider implements VoiceProvider {
       throw ApiError.provider('TTS_GENERATION_FAILED')
     }
 
-    return Buffer.from(await response.arrayBuffer())
+    const audio = Buffer.from(await response.arrayBuffer())
+    // A 200 response is not enough: an empty payload produces a silent student
+    // screen even though the provider appears healthy in API/network logs.
+    if (audio.byteLength < 256) {
+      logger.warn('Azure TTS returned empty or truncated audio', { bytes: audio.byteLength })
+      throw ApiError.provider('TTS_EMPTY_AUDIO')
+    }
+    return audio
   }
 
   private contentType(): string {
@@ -102,12 +109,12 @@ export class AzureVoiceProvider implements VoiceProvider {
     }
   }
 
-  async synthesizeStream(text: string): Promise<VoiceStreamResult> {
+  async synthesizeStream(text: string, options?: { conversation?: boolean; class1Lesson?: boolean }): Promise<VoiceStreamResult> {
     const normalized = text.trim()
     if (!normalized) throw ApiError.badRequest('text is required')
     if (!this.settings().key) throw ApiError.provider('Azure Speech is not configured')
 
-    const audio = await this.generate(normalized)
+    const audio = await this.generate(normalized, false, options?.class1Lesson === true)
 
     return {
       body: streamFromBuffer(audio),
@@ -115,7 +122,7 @@ export class AzureVoiceProvider implements VoiceProvider {
       provider: this.name,
       metadata: {
         'x-talkora-cache': 'BYPASS',
-        'x-talkora-voice-id': this.settings().voice,
+        'x-talkora-voice-id': chooseTalkoraBilingualVoice(text, this.settings().voice, options?.class1Lesson === true).voice,
       },
     }
   }

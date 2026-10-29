@@ -1,0 +1,42 @@
+.shell{--class1-ink:#183d47;--class1-accent:#1c7f74;overflow:hidden;border-radius:26px;border:1px solid #d4e5df;background:#f9fdfb;color:var(--class1-ink);box-shadow:0 18px 50px #0f30321c}
+.ribbon{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;padding:13px 21px;background:#123d40;color:#fff;font-size:11px;font-weight:850;letter-spacing:.1em}
+.ribbon strong{color:#ffda96}
+.stage{position:relative;isolation:isolate;background:radial-gradient(circle at 20% 90%,#ffdba8 0,#ffdba800 32%),linear-gradient(124deg,#ddf6d9,#c4eafa 55%,#e6f6ed);padding:clamp(16px,2.8vw,32px);min-height:560px}
+.stage:fullscreen{height:100dvh;width:100vw;overflow-y:auto;border-radius:0}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.topbar small{text-transform:uppercase;letter-spacing:.11em;font-size:10px;font-weight:900;color:#35736f}
+.topbar h2{margin:4px 0 0;font-size:clamp(23px,2.6vw,34px);line-height:1.1}
+.topActions{display:flex;align-items:center;gap:12px;font-size:12px;font-weight:800}
+.topActions button,.pager button{border-radius:999px;padding:10px 16px;border:1px solid #278e80;background:#f6fffb;color:#125850;font:inherit;font-size:12px;font-weight:850;cursor:pointer;min-height:42px}
+.classroom{display:grid;grid-template-columns:minmax(190px,31%) minmax(0,69%);gap:clamp(12px,2vw,30px);align-items:stretch;max-width:1450px;margin:0 auto}
+.julieSide{min-height:430px;display:flex;flex-direction:column;align-items:center;justify-content:end;position:relative}
+.julieLabel{align-self:center;font-weight:950;background:#effff7;border:1px solid #7dcbb2;padding:9px 13px;border-radius:999px;font-size:12px}
+.julieLabel span{color:#eb8f45}
+.julie{height:clamp(180px,27vw,340px);max-height:48dvh;width:auto;max-width:100%;object-fit:contain;object-position:bottom;filter:drop-shadow(0 14px 12px #22484728)}
+.julieSpeech{align-self:stretch;min-height:103px;padding:14px 18px;border-radius:21px;background:#fffefa;border:2px solid #fff;box-shadow:0 8px 24px #0f51321c}
+.speechLabel,.example small,.chapter{display:block;font-size:10px;font-weight:950;letter-spacing:.11em;text-transform:uppercase;color:#2e8174}
+.julieSpeech p{font-size:clamp(14px,1.5vw,19px);font-weight:800;line-height:1.4;margin:8px 0 0}
+.board{display:flex;flex-direction:column;gap:14px;min-height:430px;border-radius:29px;border:7px solid #9d744c;padding:clamp(18px,2.3vw,34px);box-shadow:0 16px 0 #4e3a2433,0 20px 24px #1c52662b;background:linear-gradient(148deg,#fffefa,#f1fff5)}
+.chapter{color:#77683e}
+.board h3{font-size:clamp(22px,2.9vw,37px);line-height:1.2;margin:6px 0 5px;max-width:26ch;overflow-wrap:anywhere}
+.example{display:flex;flex-direction:column;align-items:flex-start;gap:5px;border-radius:14px;padding:14px 17px;background:#0e6052;color:#fff;box-shadow:inset 0 0 0 1px #87d5b0}
+.example small{color:#c5fce0}.example strong{font-size:clamp(19px,2.3vw,29px);line-height:1.2}
+.status{display:flex;align-items:center;gap:11px;border-radius:15px;padding:13px;background:#e0efff;border:1px solid #a9cbe7}
+.status span{display:grid;place-items:center;border-radius:100%;width:43px;height:43px;background:#bed9ef;font-size:21px;flex-shrink:0}
+.status div{display:flex;flex-direction:column;gap:3px}.status strong{font-size:13px}.status small{font-size:11px;line-height:1.4}
+.languages,.simulator{display:flex;gap:8px;flex-wrap:wrap}
+.languages button,.simulator button{border:1px solid #b8d4ce;border-radius:11px;padding:10px 12px;min-height:44px;background:#fff;color:#174d49;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.languages button[aria-pressed=true],.simulator button[aria-pressed=true]{background:#185f55;color:#fff;border-color:#185f55}
+.pager{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-top:24px}.pager span{font-size:11px;text-align:center;font-weight:800;color:#37635f}
+.reviewPanel{display:grid;grid-template-columns:1fr minmax(230px,.9fr);gap:20px;padding:24px;background:#fff;border-top:1px solid #d4e8df}
+.reviewPanel strong{font-size:16px}.reviewPanel p{font-size:13px;line-height:1.6}.reviewPanel small{color:#49626a;font-size:11px}
+.warning{font-weight:800;color:#92400e}.reviewFields{display:grid;gap:12px}
+.reviewFields label{display:grid;gap:5px;font-size:12px;font-weight:850}.reviewFields select,.reviewFields textarea{border-radius:10px;border:1px solid #b6d1c9;padding:9px 10px;color:#174744;background:#fff;font:inherit;font-weight:500}
+.reviewFields button{min-height:43px;background:#17685e;border:none;color:#fff;border-radius:12px;font:inherit;font-size:12px;font-weight:900;cursor:pointer}
+.disclaimer{padding:17px 23px 21px;margin:0;color:#486666;background:#f8fafa;font-size:12px;line-height:1.65}
+.rotateOverlay{position:absolute;inset:0;display:grid;place-content:center;justify-items:center;gap:14px;z-index:30;padding:24px;text-align:center;background:#e2fbf0;color:#135d57}
+.rotateOverlay strong{font-size:clamp(26px,6vw,38px)}.rotateOverlay p{max-width:32ch;line-height:1.6}.rotateOverlay button{border:0;border-radius:13px;padding:14px 19px;background:#175f55;color:#fff;font:inherit;font-weight:850;cursor:pointer}
+.shell button:focus-visible,.shell select:focus-visible,.shell textarea:focus-visible{outline:3px solid #ec9b3c;outline-offset:3px}
+@media(max-width:870px){.classroom{grid-template-columns:minmax(130px,28%) minmax(0,72%)}.board{padding:15px}.julieSide{min-height:340px}.board{min-height:350px}.julie{height:170px}}
+@media(max-width:640px){.classroom{grid-template-columns:1fr}.julieSide{min-height:unset}.julie{height:170px}.reviewPanel{grid-template-columns:1fr}.pager span{order:3;flex-basis:100%}}
+@media(prefers-reduced-motion:reduce){.shell *, .shell *:before, .shell *:after{animation:none!important;transition:none!important}}
