@@ -417,8 +417,11 @@ export const MissJulieService = {
             originalUtterance: '',
           },
           masteryStatus,
-          status: completed ? 'COMPLETED' : 'ACTIVE',
-          ...(completed ? { completedAt: new Date() } : {}),
+          // First Day v3 is pending until the teacher audio is heard.
+          // Browser reload or muted speakers must not strand the activity in
+          // a completed conversation without saved student progress.
+          status: completed && !isFirstDayScene ? 'COMPLETED' : 'ACTIVE',
+          ...(completed && !isFirstDayScene ? { completedAt: new Date() } : {}),
           ...(freeTalkSummary ? { summary: freeTalkSummary } : {}),
         },
       },
