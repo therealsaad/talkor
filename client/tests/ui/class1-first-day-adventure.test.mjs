@@ -61,3 +61,11 @@ test('Balbharati First Day cannot falsely complete after four unlearned turns', 
   assert.match(svc, /!isFirstDayScene \|\| demonstratedRequiredSkills/)
   assert.match(svc, /firstDaySceneSkills/)
 })
+
+test('manual microphone retry works after no-speech errors; replay restores teaching state', async () => {
+  const engine = await load('../../components/lessons/lesson-experience.tsx')
+  assert.match(engine, /lastTurn\.activityComplete \|\| lastTurn\.conversationComplete/)
+  assert.match(engine, /lastTurn\.retryRequired \? 'retry_required' : 'waiting_for_student'/)
+  const mic = engine.split('async function startMic() {')[1].split('if (startingMic.current')[0]
+  assert.doesNotMatch(mic, /experience === 'recoverable_error'/)
+})

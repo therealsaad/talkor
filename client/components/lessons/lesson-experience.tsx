@@ -370,12 +370,19 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     if (julie.isSpeaking || julie.state === 'loading') return
     const lastTurn = currentTeacherTurnRef.current
     if (!lastTurn) return
+    const generation = playbackGeneration.current
+    setExperience('julie_audio_pending')
     const result = await julie.replay()
+    if (generation !== playbackGeneration.current) return
     if (result !== 'spoken') {
       setAudioBlocked(true)
       setFeedback('Miss Julie could not play her voice. Ask your teacher to check audio.')
       setExperience('recoverable_error')
+      return
     }
+    // Replaying an explanation cannot itself earn a new answer or bypass retry.
+    setExperience(lastTurn.activityComplete || lastTurn.conversationComplete
+      ? 'activity_complete' : lastTurn.retryRequired ? 'retry_required' : 'waiting_for_student')
   }
 
   async function enableAudioAndContinue() {
@@ -455,7 +462,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
 
   async function startMic() {
     if (!activity || julie.isSpeaking || julie.state === 'loading' || audioBlocked) return
-    if (experience === 'julie_audio_pending' || experience === 'julie_speaking' || experience === 'julie_thinking' || experience === 'activity_complete' || experience === 'recoverable_error') return
+    if (experience === 'julie_audio_pending' || experience === 'julie_speaking' || experience === 'julie_thinking' || experience === 'activity_complete') return
     if (startingMic.current || recorder.current?.state === 'recording') return
     startingMic.current = true
     ignoreRecordingResult.current = false
