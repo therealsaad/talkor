@@ -990,6 +990,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         introVideoKey === 'class1-g01-l01' ? (
           <Class1LessonIntro
             key={`${introVideoKey}:${introReplayRequest}`}
+            firstDayOnly={activity?.activityKey?.startsWith('class1-l01-v3-') === true}
             onAvailable={markIntroAvailable}
             onDone={finishIntro}
           />

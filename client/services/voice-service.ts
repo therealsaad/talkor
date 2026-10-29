@@ -1,3 +1,4 @@
+import { createSilentUnlockWav } from './silent-audio-unlock'
 import {
   apiClient,
   getApiUrl,
@@ -225,10 +226,11 @@ export const voiceService = {
     const player =
       this.activeAudio
 
-    player.muted = true
-
-    player.src =
-      'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA='
+    // A muted, header-only WAV can play without granting unmuted autoplay.
+    // Request a real but silent clip inside the user gesture instead.
+    const unlockUrl = URL.createObjectURL(createSilentUnlockWav())
+    player.muted = false
+    player.src = unlockUrl
 
     try {
       await player.play()
@@ -259,6 +261,10 @@ export const voiceService = {
         false
 
       return false
+    } finally {
+      player.pause()
+      if (player.src === unlockUrl) player.removeAttribute('src')
+      URL.revokeObjectURL(unlockUrl)
     }
   },
 

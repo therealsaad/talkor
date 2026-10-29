@@ -197,6 +197,13 @@ export class QwenProvider implements AIProvider {
       }
     }
 
+    // For a syllabus-bound Class 1 turn, generic encouragement masquerading as
+    // an AI reply is worse than an explicit recoverable failure. No model
+    // means no teaching reply and no falsely-earned progress.
+    if (context.grade === 1 && context.levelId === 'g01-l01') {
+      throw ApiError.provider('CLASS1_AI_SERVICE_UNAVAILABLE')
+    }
+
     // Safe friendly teacher fallback so student experience is never destroyed
     logger.warn('All AI providers unavailable, generating safe teacher response.')
     const studentFirst = context.studentName || 'there'
