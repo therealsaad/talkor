@@ -92,7 +92,17 @@ export class QwenProvider implements AIProvider {
     // Opt-in Class 1 pilot takes precedence over direct/cloud Qwen.
     // Only an authorized lesson-resolved g01-l01 context may enter this route.
     if (process.env.TALKORA_CLASS1_QWEN_PILOT === 'true' && context.grade === 1 && context.levelId === 'g01-l01') {
-      return this.pythonFallback.generate(context)
+      // Prefer the local syllabus-trained bridge, but a stopped port 8002
+      // must not make Miss Julie's brain disappear for the whole lesson.
+      // Only the same bounded Class 1 context goes to the real provider.
+      try {
+        return await this.pythonFallback.generate(context)
+      } catch (error) {
+        logger.warn('Class 1 local Qwen unavailable; attempting configured cloud Qwen', {
+          error: error instanceof Error ? error.message : 'unavailable',
+        })
+        if (!env.qwenApiKey) throw ApiError.provider('CLASS1_AI_SERVICE_UNAVAILABLE')
+      }
     }
 
     // If Qwen API key is configured, call Qwen direct endpoint
