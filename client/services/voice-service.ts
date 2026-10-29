@@ -316,6 +316,13 @@ async submitTranscript(
   )
 },
 
+  async acknowledgeTeacherAudio(sessionId: string): Promise<{ complete: boolean; acknowledged: boolean }> {
+    return apiClient<{ complete: boolean; acknowledged: boolean }>(
+      `/voice/sessions/${sessionId}/teacher-audio-played`,
+      { method: 'POST' },
+    )
+  },
+
   /* =======================================================
      CANCEL SESSION
      ======================================================= */
