@@ -583,7 +583,11 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       }
       if (retryNumber < 2) {
         try {
-          await speakFeedback('silence', feedbackAudioBase64)
+          if (!preview && pendingResultRef.current?.result.submissionId) {
+            if (!audioRef.current) audioRef.current = new Audio()
+            await kgAlphabetService.playAttemptFeedback(pendingResultRef.current.result.submissionId, audioRef.current, requestRef.current?.signal)
+            await kgAlphabetService.acknowledgeFeedback(pendingResultRef.current.result.submissionId, requestRef.current?.signal)
+          } else await speakFeedback('silence', feedbackAudioBase64)
         } catch {
           if (generation.current !== token) return
           setFeedback('Miss Julie’s voice is temporarily unavailable. You can still try saying the word.')
@@ -597,14 +601,31 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     }
     setFeedback(feedbackText || (outcome === 'supported' ? `Great effort! In English we say ${stepAt(stepIndex).word}. Let's say it together!` : success ? 'Wonderful! You found it!' : teachingHint || (outcome === 'unclear' ? 'Let’s try that word together.' : 'Good try! Listen and have another go!')))
     setPhase('feedback')
-    try { await speakFeedback(feedbackId, feedbackAudioBase64) }
+    try {
+      if (!preview && pendingResultRef.current?.result.submissionId) {
+        if (!audioRef.current) audioRef.current = new Audio()
+        const release = beginVoice()
+        try { await kgAlphabetService.playAttemptFeedback(pendingResultRef.current.result.submissionId, audioRef.current, requestRef.current?.signal) }
+        finally { release() }
+      } else await speakFeedback(feedbackId, feedbackAudioBase64)
+    }
     catch {
       if (generation.current !== token) return
-      // The attempt and progress are already saved by the backend. Keep the
-      // learner moving if live Priya TTS is temporarily unavailable.
-      setFeedback('Your answer is saved. Miss Julie’s voice is taking a short break.')
+      setFeedback('Miss Julie could not finish her reply. Tap Try again to hear her before continuing.')
+      setPhase('error')
+      return
     }
     if (generation.current !== token) return
+    if (!preview && pendingResultRef.current?.result.submissionId) {
+      try {
+        const acknowledged = await kgAlphabetService.acknowledgeFeedback(pendingResultRef.current.result.submissionId, requestRef.current?.signal)
+        stateRef.current = acknowledged.state; setData(acknowledged.state)
+      } catch {
+        setFeedback('Could not save your completed listening turn. Tap Try again.')
+        setPhase('error')
+        return
+      }
+    }
     if (!success) {
       if ((!preview && stateRef.current?.fallbackAvailable) || (preview && previewErrorsRef.current >= 2)) {
         setFeedback('Good effort! Now touch the matching picture!')
