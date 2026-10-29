@@ -30,7 +30,7 @@ async function main() {
       if (scene.activityKey !== 'class1-l01-v3-' + expected[index] ||
           scene.type !== 'CONVERSATION' || scene.metadata?.conversationMode !== 'OPEN' ||
           !scene.aiEnabled || !scene.allowMic ||
-          !scene.content?.audioKey?.startsWith('class-01/level-01/v3/')) {
+          !(typeof scene.content?.audioKey === 'string' && scene.content.audioKey.startsWith('class-01/level-01/v3/'))) {
         throw new Error('First Day v3 activity manifest mismatch at scene ' + (index + 1))
       }
     }
