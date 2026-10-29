@@ -60,6 +60,7 @@ test('Balbharati First Day cannot falsely complete after four unlearned turns', 
   const svc = await load('../../../backend/src/services/missJulie.service.ts')
   assert.match(svc, /!isFirstDayScene \|\| demonstratedRequiredSkills/)
   assert.match(svc, /firstDaySceneSkills/)
+  assert.match(svc, /turnSkills\.includes\('first_day_english_attempt'\)/)
 })
 
 test('manual microphone retry works after no-speech errors; replay restores teaching state', async () => {
