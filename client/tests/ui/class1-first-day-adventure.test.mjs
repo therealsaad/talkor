@@ -63,6 +63,20 @@ test('Balbharati First Day cannot falsely complete after four unlearned turns', 
   assert.match(svc, /turnSkills\.includes\('first_day_english_attempt'\)/)
 })
 
+test('Marathi/Hindi STT locale reaches Azure voice choice without another STT request', async () => {
+  const hook = await load('../../hooks/use-miss-julie-voice.ts')
+  const client = await load('../../services/voice-service.ts')
+  const engine = await load('../../components/lessons/lesson-experience.tsx')
+  const server = await load('../../../backend/src/services/voice.service.ts')
+  const azure = await load('../../../backend/src/providers/voice/AzureVoiceProvider.ts')
+  assert.match(engine, /voiceLanguage: detectedLanguage/)
+  assert.match(engine, /turn\.voiceLanguage/)
+  assert.match(hook, /voiceService\.speak\(text, onState, turnId, priority, activityId, language\)/)
+  assert.match(client, /language: language \|\| detectVoiceLanguage\(text\)/)
+  assert.match(server, /class1Lesson: true, language: options\.language/)
+  assert.match(azure, /options\?\.language/)
+})
+
 test('manual microphone retry works after no-speech errors; replay restores teaching state', async () => {
   const engine = await load('../../components/lessons/lesson-experience.tsx')
   assert.match(engine, /lastTurn\.activityComplete \|\| lastTurn\.conversationComplete/)

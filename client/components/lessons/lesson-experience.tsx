@@ -122,6 +122,7 @@ type TeacherTurn = {
   memoryUpdates?: unknown[]
   voicePriority?: VoicePriority
   staticAudioActivityId?: string
+  voiceLanguage?: 'en-IN' | 'hi-IN' | 'mr-IN'
 }
 type StudentTurn = { id: string; text: string; source: 'microphone' | 'typed' | 'choice'; transcriptConfidence?: number; durationMs?: number; status: 'captured' | 'transcribing' | 'evaluating' | 'accepted' | 'retry' }
 type HistoryTurn = { id: string; role: 'teacher' | 'student'; text: string }
@@ -305,6 +306,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       evidence: result?.conversation?.skillEvidence ?? baseTurn?.evidence,
       memoryUpdates: result?.conversation ? [] : baseTurn?.memoryUpdates,
       staticAudioActivityId: experienceId === 'g01-l01' ? activity?.id : undefined,
+      voiceLanguage: baseTurn?.voiceLanguage,
       voicePriority:
         result && (isConversation || Boolean(result.conversation))
           ? 'CONVERSATION'
@@ -345,7 +347,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         setExperience('julie_audio_pending')
         // One unique playback ID per teacher turn. The promise resolves
         // "spoken" only from HTMLAudioElement.onended in voice-service.
-        const playback = await julie.speak(turn.text, `${turn.id}:${++teacherSequence.current}`, turn.voicePriority || 'LESSON', turn.staticAudioActivityId)
+        const playback = await julie.speak(turn.text, `${turn.id}:${++teacherSequence.current}`, turn.voicePriority || 'LESSON', turn.staticAudioActivityId, turn.voiceLanguage)
         if (generation !== playbackGeneration.current) return
         if (playback !== 'spoken') {
           setAudioBlocked(true)
@@ -819,6 +821,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         retryRequired,
         hintLevel: ai?.hintLevel || ai?.conversation?.retryState?.hintLevel || 0,
         modelSentence: ai?.modelSentence || ai?.correction?.corrected || undefined,
+        voiceLanguage: detectedLanguage,
         activityComplete: complete,
       })
 

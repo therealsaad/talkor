@@ -112,9 +112,9 @@ function streamFromBuffer(audio: Buffer): ReadableStream<Uint8Array> {
 }
 
 async function tryStream(
-  provider: { name: string; synthesizeStream?: (text: string, options?: { conversation?: boolean }) => Promise<VoiceStreamResult> },
+  provider: { name: string; synthesizeStream?: (text: string, options?: { conversation?: boolean; class1Lesson?: boolean; language?: string }) => Promise<VoiceStreamResult> },
   text: string,
-  options?: { conversation?: boolean; class1Lesson?: boolean },
+  options?: { conversation?: boolean; class1Lesson?: boolean; language?: string },
 ): Promise<VoiceStreamResult | null> {
   if (!provider.synthesizeStream) return null
   try {
@@ -338,7 +338,7 @@ export const VoiceService = {
     // Teacher narration is still served from approved Priya/S3 above.
     const dynamicFirstDay = isClass1Lesson && (purpose === 'CONVERSATION' || purpose === 'FEEDBACK')
     if (dynamicFirstDay) {
-      const azure = await tryStream(new AzureVoiceProvider(), text, { conversation: true, class1Lesson: true })
+      const azure = await tryStream(new AzureVoiceProvider(), text, { conversation: true, class1Lesson: true, language: options.language })
       if (!azure) throw ApiError.provider('CLASS1_AZURE_DYNAMIC_VOICE_UNAVAILABLE')
       return azure
     }
