@@ -31,7 +31,7 @@ async function pythonVoice(line: Line): Promise<Buffer> {
     headers: { 'Content-Type': 'application/json',
       ...(process.env.AI_SERVICE_API_KEY ? { 'X-Service-API-Key': process.env.AI_SERVICE_API_KEY } : {}) },
     body: JSON.stringify({ text: line.text,
-      voice: process.env.TTS_VOICE_ID || 'miss-julie-priya-v6', language: 'en' }),
+      voice: process.env.TTS_VOICE_ID || 'miss-julie-priya-v6', language: 'en-IN' }),
     signal: AbortSignal.timeout(45000),
   })
   if (!response.ok) throw new Error('Python 8001 /v1/tts returned HTTP ' + response.status)
