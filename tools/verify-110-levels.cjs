@@ -82,8 +82,15 @@ for(let grade=0;grade<=10;grade++){
   // in its shared garden folder rather than 10 empty placeholder folders.
   if(grade>0) assert.ok(fs.existsSync(path.join(root,`client/public/lessons/${slug}/level-${String(level).padStart(2,'0')}/.gitkeep`)));
   const matching=catalog.find(x=>x.id===id);assert.ok(matching);
+  // Staff-only prototypes may have a distinct preview title. The canonical
+  // 110-level roadmap must never be changed by unpublished lesson experiments.
+  if (config.roadmapTitle !== undefined) {
+   assert.equal(config.staffOnlyPreview,true,`${id}: only staff previews may override roadmap titles`);
+   assert.equal(config.studentPlayable,false,`${id}: roadmap alias may not publish a level`);
+   assert.equal(config.syllabus.syllabusVerified,false,`${id}: draft still requires syllabus review`);
+  }
   const expectedRoadmapTitle = config.roadmapTitle ?? config.title;
-assert.equal(matching.title, expectedRoadmapTitle);
+  assert.equal(matching.title, expectedRoadmapTitle, `${id}: roadmap title differs from the reviewed manifest`);
 assert.equal(matching.designTheme, config.experience.themeId);
   assert.equal(matching.readyForPublication,false);
   uniqueThemes.add(config.experience.themeId);uniquePalettes.add(config.experience.palette.background);

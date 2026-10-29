@@ -35,6 +35,9 @@ jobs:
       - name: Verify illustrated v3 First Day speaking classroom
         run: node --test tests/ui/class1-first-day-adventure.test.mjs
         working-directory: client
+      - name: Verify First Day audible-turn and recovery guards
+        run: node --test tests/ui/class1-azure-turn-guard.test.mjs
+        working-directory: client
       - name: Verify TTS generator uses real 8001 voice ID and safe errors
         run: node --test tests/ui/class1-priya-generation-contract.test.mjs
         working-directory: client

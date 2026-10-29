@@ -175,6 +175,10 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
   const activeRecordingSessionId = useRef<string | null>(null)
   const teacherSequence = useRef(0)
   const spokenTurnIds = useRef(new Set<string>())
+  const speakingTurnIds = useRef(new Set<string>())
+  // A v3 completion is pending until its Azure reply actually plays and the
+  // authenticated server records the corresponding audio-ended checkpoint.
+  const pendingTeacherAck = useRef<string | null>(null)
   const playbackGeneration = useRef(0)
   const lastSpokenTurnIdRef = useRef<string | null>(null)
   const currentTeacherTurnRef = useRef<TeacherTurn | null>(null)
@@ -237,6 +241,8 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     setSpokenWarmupAnswer(null)
     setAudioBlocked(false)
     spokenTurnIds.current.clear()
+    speakingTurnIds.current.clear()
+    pendingTeacherAck.current = null
     setPose(index === 0 ? 'greeting' : 'teaching')
     setExperience('julie_preparing')
     const timer = window.setTimeout(() => {
@@ -324,33 +330,49 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
   async function speakTeacherTurn(turn: TeacherTurn, afterState?: ExperienceState): Promise<boolean> {
     if (!turn.text.trim()) return false
     const generation = playbackGeneration.current
+    const firstDayV3 = activity?.activityKey?.startsWith('class1-l01-v3-') === true
     if (spokenTurnIds.current.has(turn.id)) {
+      // A replayed/reentrant First Day turn must not be mistaken for a new
+      // completed teacher response or independently unlock another frame.
+      if (firstDayV3) return false
       setExperience(afterState || (turn.retryRequired ? 'retry_required' : turn.activityComplete || turn.conversationComplete ? 'activity_complete' : 'waiting_for_student'))
       return true
     }
-    lastSpokenTurnIdRef.current = turn.id
-    if (audioEnabled) {
-      setExperience('julie_audio_pending')
-      const playback = await julie.speak(turn.text, turn.id, turn.voicePriority || 'LESSON', turn.staticAudioActivityId, turn.voiceLanguage)
-      if (generation !== playbackGeneration.current) return false
-      if (playback !== 'spoken') {
-        // An animation is not evidence that audio reached the child. Never
-        // auto-record, grade or advance a silent Class 1 teaching prompt.
-        spokenTurnIds.current.delete(turn.id)
-        setAudioBlocked(playback === 'autoplay-blocked')
-        setFeedback(playback === 'autoplay-blocked'
-          ? 'Sound permission is needed. Ask your teacher to enable sound once.'
-          : 'Miss Julie could not play her voice. Ask your teacher to check Azure Speech and the backend.')
+    // Concurrent calls can cancel each other's media request. Hold the ID
+    // until playback settles; only the original call may advance this scene.
+    if (speakingTurnIds.current.has(turn.id)) return false
+    speakingTurnIds.current.add(turn.id)
+    try {
+      lastSpokenTurnIdRef.current = turn.id
+      if (firstDayV3 && !audioEnabled) {
+        setAudioBlocked(true)
+        setFeedback('Teacher audio is required. Ask a teacher to enable sound.')
         setExperience('recoverable_error')
         return false
       }
+      if (audioEnabled) {
+        setExperience('julie_audio_pending')
+        const playback = await julie.speak(turn.text, turn.id, turn.voicePriority || 'LESSON', turn.staticAudioActivityId, turn.voiceLanguage)
+        if (generation !== playbackGeneration.current) return false
+        if (playback !== 'spoken') {
+          // A sound request, animation, or silent response is not media-ended.
+          // Keep the same scene and allow an educator-assisted replay.
+          spokenTurnIds.current.delete(turn.id)
+          setAudioBlocked(true)
+          setFeedback(playback === 'autoplay-blocked'
+            ? 'Sound permission is needed. Ask your teacher to enable sound once.'
+            : 'Miss Julie could not play her voice. Ask your teacher to check Azure Speech and the backend.')
+          setExperience('recoverable_error')
+          return false
+        }
+      }
+      if (generation !== playbackGeneration.current) return false
+      spokenTurnIds.current.add(turn.id)
+      setExperience(afterState || (turn.retryRequired ? 'retry_required' : turn.activityComplete || turn.conversationComplete ? 'activity_complete' : turn.requiresStudentResponse ? 'waiting_for_student' : 'transitioning'))
+      return true
+    } finally {
+      speakingTurnIds.current.delete(turn.id)
     }
-    if (generation !== playbackGeneration.current) return false
-    // The turn is reusable only when the media-ended event was observed.
-    // In-flight repeats use the same turn ID and await the existing request.
-    spokenTurnIds.current.add(turn.id)
-    setExperience(afterState || (turn.retryRequired ? 'retry_required' : turn.activityComplete || turn.conversationComplete ? 'activity_complete' : turn.requiresStudentResponse ? 'waiting_for_student' : 'transitioning'))
-    return true
   }
 
   async function replayCurrentTeacherTurn() {
@@ -372,7 +394,22 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       return
     }
     setAudioBlocked(false)
-    setExperience('waiting_for_student')
+    const pendingId = pendingTeacherAck.current
+    if (pendingId) {
+      try {
+        // This path also covers autoplay denial on the final Qwen reply:
+        // replay must end before restoring progress, never just show next.
+        await voiceService.acknowledgeTeacherAudio(pendingId)
+        pendingTeacherAck.current = null
+        setActivityComplete(true)
+        setExperience('activity_complete')
+      } catch (error) {
+        setFeedback(error instanceof Error ? error.message : 'Unable to save the spoken turn. Ask your teacher to retry.')
+        setExperience('recoverable_error')
+      }
+    } else {
+      setExperience('waiting_for_student')
+    }
   }
 
   function resetRecorder() {
@@ -426,6 +463,12 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
   }
 
   async function startMic() {
+    if (pendingTeacherAck.current) {
+      setFeedback('Listen to Miss Julie’s last answer before trying another question.')
+      setAudioBlocked(true)
+      setExperience('recoverable_error')
+      return
+    }
     if (!activity || julie.isSpeaking || julie.state === 'loading') return
     if (startingMic.current || recorder.current?.state === 'recording') return
     startingMic.current = true
@@ -802,6 +845,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       // The visible next frame must await the *ended* Azure sound, not merely
       // Qwen's JSON or a completed MongoDB conversation. If browser playback
       // fails, remain in recoverable_error and do not progress.
+      if (firstDayV3 && complete) pendingTeacherAck.current = id
       const spoken = await commitTeacherTurn(normalizedTurn,
         firstDayV3 && complete ? 'julie_text_ready' : complete ? 'activity_complete' : retryRequired ? 'retry_required' : 'waiting_for_student')
       if (firstDayV3 && complete && spoken) {
@@ -809,6 +853,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         // reached the media-ended event. A failed acknowledgment must never
         // unlock the next story, even if the model already said 'complete'.
         await voiceService.acknowledgeTeacherAudio(id)
+        pendingTeacherAck.current = null
         setActivityComplete(true)
         setExperience('activity_complete')
       }

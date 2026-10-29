@@ -1,12 +1,13 @@
 import type { LevelDesignConfig } from '../../../types'
 
-/** Distinct, editable theme and pedagogy for g00-l05. Authoring is NOT publishing. */
+/** The W-Z alphabet is a staff-only draft; published roadmap level 05 remains Food and Fruits until educator review. */
 export const config = {
   "id": "g00-l05",
   "grade": 0,
   "level": 5,
   "gradeLabel": "Kindergarten",
   "title": "Letters W to Z",
+  "roadmapTitle": "Food and Fruits",
   "editorialStatus": "draft",
   "studentPlayable": false,
   "description": "A premium alphabet adventure for learning letters W, X, Y, and Z with pictures, video, and spoken practice.",
