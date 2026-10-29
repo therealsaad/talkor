@@ -197,6 +197,8 @@ export const voiceService = {
 
   lastActivityId: undefined as string | undefined,
 
+  lastLanguage: undefined as 'en-IN' | 'hi-IN' | 'mr-IN' | undefined,
+
   activePriority: 'PAGE_GUIDANCE' as VoicePriority,
 
   playedTurns: new Set<string>(),
@@ -493,6 +495,7 @@ async submitTranscript(
     turnId?: string,
     priority: VoicePriority = 'LESSON',
     activityId?: string,
+    language?: 'en-IN' | 'hi-IN' | 'mr-IN',
   ): Promise<VoicePlaybackResult> {
     if (
       typeof window ===
@@ -517,7 +520,7 @@ async submitTranscript(
     const existing = this.turnPlayback.get(identity)
     if (existing) return existing
 
-    const playback = this.speakTurn(cleanedText, identity, listener, false, priority, activityId)
+    const playback = this.speakTurn(cleanedText, identity, listener, false, priority, activityId, language)
       .finally(() => this.turnPlayback.delete(identity))
     this.turnPlayback.set(identity, playback)
     return playback
@@ -530,6 +533,7 @@ async submitTranscript(
     replay = false,
     priority: VoicePriority = 'LESSON',
     activityId?: string,
+    language?: 'en-IN' | 'hi-IN' | 'mr-IN',
   ): Promise<VoicePlaybackResult> {
 
     const hasActivePlayback = Boolean(this.activeAbort || (this.activeAudio && !this.activeAudio.paused))
@@ -547,6 +551,7 @@ async submitTranscript(
       priority
 
     this.lastActivityId = activityId
+    this.lastLanguage = language
 
     this.stop()
     this.activePriority = priority
@@ -586,6 +591,7 @@ async submitTranscript(
           turnId,
           priority,
           activityId,
+          language,
         )
 
       if (result === 'spoken' && !replay) this.playedTurns.add(turnId)
@@ -642,7 +648,7 @@ async submitTranscript(
     if (existing) return existing
     if (!this.lastText || !this.lastTurnId) return 'unavailable'
     const turnId = this.lastTurnId
-    const playback = this.speakTurn(this.lastText, turnId, listener, true, this.lastPriority, this.lastActivityId)
+    const playback = this.speakTurn(this.lastText, turnId, listener, true, this.lastPriority, this.lastActivityId, this.lastLanguage)
       .finally(() => this.turnPlayback.delete(turnId))
     this.turnPlayback.set(turnId, playback)
     return playback
@@ -729,6 +735,7 @@ async submitTranscript(
     turnId = '',
     priority: VoicePriority = 'LESSON',
     activityId?: string,
+    language?: 'en-IN' | 'hi-IN' | 'mr-IN',
   ): Promise<VoicePlaybackResult> {
     markLabSpeechActivity()
     const requestedAt =
@@ -769,7 +776,7 @@ async submitTranscript(
               JSON.stringify({
                 text,
                 purpose: priority,
-                language: detectVoiceLanguage(text),
+                language: language || detectVoiceLanguage(text),
                 ...(activityId ? { activityId } : {}),
               }),
 
