@@ -345,7 +345,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         setExperience('julie_audio_pending')
         // One unique playback ID per teacher turn. The promise resolves
         // "spoken" only from HTMLAudioElement.onended in voice-service.
-        const playback = await julie.speak(turn.text, turn.id, turn.voicePriority || 'LESSON', turn.staticAudioActivityId)
+        const playback = await julie.speak(turn.text, `${turn.id}:${++teacherSequence.current}`, turn.voicePriority || 'LESSON', turn.staticAudioActivityId)
         if (generation !== playbackGeneration.current) return
         if (playback !== 'spoken') {
           setAudioBlocked(true)
