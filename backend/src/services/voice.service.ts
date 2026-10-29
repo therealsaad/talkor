@@ -1,5 +1,6 @@
 // TALKORA_CLASS1_STUDENT_DEMO_ROUTE_V1
 import { VoiceSession } from '../models/VoiceSession'
+import { Conversation } from '../models/Conversation'
 import { getSpeechProvider } from '../providers/speech'
 import { getVoiceProvider } from '../providers/voice'
 import { getPronunciationProvider } from '../providers/pronunciation'
@@ -274,8 +275,7 @@ export const VoiceService = {
       activityComplete?: boolean
       conversation?: { id?: string; complete?: boolean; masteryStatus?: string }
     } | undefined
-    if (!ai?.activityComplete || !ai.conversation?.complete ||
-        !ai.conversation?.id || !session.transcript) {
+    if (!ai?.activityComplete || !ai.conversation?.id || !session.transcript) {
       throw ApiError.conflict('This First Day activity still needs an English attempt')
     }
     // A genuine browser media-ended event is not cryptographically provable.
@@ -291,6 +291,15 @@ export const VoiceService = {
       idempotencyKey: `conversation:${ai.conversation.id}`,
       evaluation: { score, feedback: 'First Day speaking activity completed after teacher audio playback.' },
     })
+    await Conversation.updateOne(
+      {
+        _id: ai.conversation.id,
+        studentId,
+        activityId: session.activityId,
+        status: 'ACTIVE',
+      },
+      { $set: { status: 'COMPLETED', completedAt: new Date() } },
+    )
     await VoiceSession.updateOne(
       { _id: session._id, studentId },
       { $set: { 'metadata.teacherAudioAcknowledgedAt': new Date() } },
