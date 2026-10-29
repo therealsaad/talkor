@@ -803,6 +803,10 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       const spoken = await commitTeacherTurn(normalizedTurn,
         firstDayV3 && complete ? 'julie_text_ready' : complete ? 'activity_complete' : retryRequired ? 'retry_required' : 'waiting_for_student')
       if (firstDayV3 && complete && spoken) {
+        // The server deliberately withheld v3 progress until the Azure reply
+        // reached the media-ended event. A failed acknowledgment must never
+        // unlock the next story, even if the model already said 'complete'.
+        await voiceService.acknowledgeTeacherAudio(id)
         setActivityComplete(true)
         setExperience('activity_complete')
       }
