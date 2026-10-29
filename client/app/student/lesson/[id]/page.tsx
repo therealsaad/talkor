@@ -51,6 +51,15 @@ export default function StudentLessonPage() {
   }
   const firstDayV3 = lesson.experienceId === 'g01-l01' &&
     lesson.activities.some(activity => activity.activityKey?.startsWith('class1-l01-v3-'))
+  // The old two-letter-word draft is NOT Balbharati 1.1. Do not put a child
+  // through the outdated intro or award credit for the wrong chapter.
+  if (lesson.experienceId === 'g01-l01' && !firstDayV3) {
+    return <main className="talkora-error" role="alert" style={{ minHeight: '75vh', display: 'grid', placeContent: 'center', gap: 18, textAlign: 'center', padding: 32 }}>
+      <h1>Miss Julie's First Day lesson needs a teacher update</h1>
+      <p>The new Balbharati 1.1 classroom has not been activated for this school yet. We will keep your existing progress safe.</p>
+      <button type="button" onClick={() => router.replace('/student/continue')}>Back to my lessons</button>
+    </main>
+  }
   const experience = <ActivityEngine
     key={`${lesson.level.id}:${lesson.lesson.id}`}
     activities={lesson.activities}
