@@ -679,7 +679,15 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       startingMic.current = false
       stopVoiceWatcher.current = watchVoiceActivity(mediaStream, () => {
         if (activeRecorder.state === 'recording') activeRecorder.stop()
-      }, { silenceMs: 850, minimumSpeechMs: 380, noSpeechTimeoutMs: 5500 })
+      }, {
+        // Child voices are often quieter than adult voices; let the learner
+        // finish without a tight 5.5-second cutoff. No additional STT charge.
+        silenceMs: 1350, minimumSpeechMs: 420, noSpeechTimeoutMs: 8000,
+        speechThreshold: 0.012, resumeContext: true,
+        onUnavailable: () => {
+          if (process.env.NODE_ENV !== 'production') console.warn('[MIC] WebAudio voice activity unavailable; recorder hard timeout remains active')
+        },
+      })
 
       interval.current = window.setInterval(() => {
         const startedAt = recordingStartedAt.current
@@ -885,14 +893,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       <AnimatePresence>{experience === 'entering' ? <TalkoraWorldLoader key="arrival" destination={levelTitle} subtitle={`Opening ${levelTitle}...`} /> : null}</AnimatePresence>
       <div className={`talkora-lesson ${experience === 'lesson_complete' ? 'is-celebrating' : ''}`} data-experience={experience}
         style={experienceId === 'g01-l01' ? { height: '100dvh', maxHeight: '100dvh', overflow: 'hidden', display: 'flex', flexDirection: 'column' } : undefined}>
-        {activity?.activityKey?.startsWith('class1-l01-v3-') ? (
-          <div className="firstday-progress" role="progressbar" aria-label="First Day lesson progress"
-            aria-valuenow={index + 1} aria-valuemin={1} aria-valuemax={playableActivities.length}
-            style={{ height: 42, flexShrink: 0, display: 'flex', justifyContent: 'center', alignItems: 'center',
-              background: '#145546', color: '#fff', fontWeight: 900, letterSpacing: '.06em' }}>
-            MY FIRST DAY · STORY {index + 1} OF {playableActivities.length}
-          </div>
-        ) : <LessonHud
+        <LessonHud
           title={syllabusName}
           levelLabel={stageLabel}
           xp={xp}
@@ -906,7 +907,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
               <RotateCcw size={15} aria-hidden="true" /><span>Story</span>
             </button>
           ) : undefined}
-        />}
+        />
 
         {experience !== 'lesson_complete' ? (
           <main className="talkora-lesson__immersive-stage"
