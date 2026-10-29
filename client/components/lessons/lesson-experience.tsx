@@ -122,7 +122,6 @@ type TeacherTurn = {
   memoryUpdates?: unknown[]
   voicePriority?: VoicePriority
   staticAudioActivityId?: string
-  voiceLanguage?: 'en-IN' | 'hi-IN' | 'mr-IN'
 }
 type StudentTurn = { id: string; text: string; source: 'microphone' | 'typed' | 'choice'; transcriptConfidence?: number; durationMs?: number; status: 'captured' | 'transcribing' | 'evaluating' | 'accepted' | 'retry' }
 type HistoryTurn = { id: string; role: 'teacher' | 'student'; text: string }
@@ -304,7 +303,6 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       evidence: result?.conversation?.skillEvidence ?? baseTurn?.evidence,
       memoryUpdates: result?.conversation ? [] : baseTurn?.memoryUpdates,
       staticAudioActivityId: experienceId === 'g01-l01' ? activity?.id : undefined,
-      voiceLanguage: baseTurn?.voiceLanguage,
       voicePriority:
         result && (isConversation || Boolean(result.conversation))
           ? 'CONVERSATION'
@@ -312,28 +310,28 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     }
   }
 
-  async function commitTeacherTurn(input: TeacherTurn, afterState?: ExperienceState) {
+  async function commitTeacherTurn(input: TeacherTurn, afterState?: ExperienceState): Promise<boolean> {
     const turn = { ...input, text: personalizeLessonText(input.text, studentName), id: input.id || `teacher-${activity?.id || index}-${++teacherSequence.current}` }
     setTeacherTurn(turn)
     setTeacherText(turn.text)
     currentTeacherTurnRef.current = turn
     setHistory((current) => [...current, { id: turn.id, role: 'teacher', text: turn.text } satisfies HistoryTurn].slice(-8))
-    await speakTeacherTurn(turn, afterState)
+    return await speakTeacherTurn(turn, afterState)
   }
 
-  async function speakTeacherTurn(turn: TeacherTurn, afterState?: ExperienceState) {
-    if (!turn.text.trim()) return
+  async function speakTeacherTurn(turn: TeacherTurn, afterState?: ExperienceState): Promise<boolean> {
+    if (!turn.text.trim()) return false
     const generation = playbackGeneration.current
     if (spokenTurnIds.current.has(turn.id)) {
       setExperience(afterState || (turn.retryRequired ? 'retry_required' : turn.activityComplete || turn.conversationComplete ? 'activity_complete' : 'waiting_for_student'))
-      return
+      return true
     }
     spokenTurnIds.current.add(turn.id)
     lastSpokenTurnIdRef.current = turn.id
     if (audioEnabled) {
       setExperience('julie_audio_pending')
-      const playback = await julie.speak(turn.text, `${turn.id}:${++teacherSequence.current}`, turn.voicePriority || 'LESSON', turn.staticAudioActivityId, turn.voiceLanguage)
-      if (generation !== playbackGeneration.current) return
+      const playback = await julie.speak(turn.text, `${turn.id}:${++teacherSequence.current}`, turn.voicePriority || 'LESSON', turn.staticAudioActivityId)
+      if (generation !== playbackGeneration.current) return false
       if (playback !== 'spoken') {
         // An animation is not evidence that audio reached the child. Never
         // auto-record, grade or advance a silent Class 1 teaching prompt.
@@ -343,11 +341,12 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
           ? 'Sound permission is needed. Ask your teacher to enable sound once.'
           : 'Miss Julie could not play her voice. Ask your teacher to check Azure Speech and the backend.')
         setExperience('recoverable_error')
-        return
+        return false
       }
     }
     if (generation !== playbackGeneration.current) return
     setExperience(afterState || (turn.retryRequired ? 'retry_required' : turn.activityComplete || turn.conversationComplete ? 'activity_complete' : turn.requiresStudentResponse ? 'waiting_for_student' : 'transitioning'))
+    return true
   }
 
   async function replayCurrentTeacherTurn() {
@@ -780,7 +779,6 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         hintLevel: ai?.hintLevel || ai?.conversation?.retryState?.hintLevel || 0,
         modelSentence: ai?.modelSentence || ai?.correction?.corrected || undefined,
         activityComplete: complete,
-        voiceLanguage: activity?.activityKey?.startsWith('class1-l01-v3-') ? detectedLanguage : undefined,
       })
 
       setTeacherText(normalizedTurn.text)
@@ -788,14 +786,23 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       setModelSentence(retryRequired ? normalizedTurn.modelSentence || '' : '')
       setXp((value) => value + (result.xpAwarded || 0))
       setConversationTurn((value) => value + 1)
-      setActivityComplete(complete)
+      const firstDayV3 = activity?.activityKey?.startsWith('class1-l01-v3-') === true
+      if (!firstDayV3) setActivityComplete(complete)
       setPose(poseFromAi(ai, retryRequired, complete))
       setRetryAttempt(ai?.conversation?.retryState?.attempt || 0)
       setStudentTurn((current) => current ? { ...current, status: retryRequired ? 'retry' : 'accepted' } : current)
       setExperience('julie_text_ready')
       const additions = ai?.conversation?.skillEvidence || []
       if (additions.length) setEvidence((current) => uniqueEvidence([...current, ...additions]))
-      await commitTeacherTurn(normalizedTurn, complete ? 'activity_complete' : retryRequired ? 'retry_required' : 'waiting_for_student')
+      // The visible next frame must await the *ended* Azure sound, not merely
+      // Qwen's JSON or a completed MongoDB conversation. If browser playback
+      // fails, remain in recoverable_error and do not progress.
+      const spoken = await commitTeacherTurn(normalizedTurn,
+        firstDayV3 && complete ? 'julie_text_ready' : complete ? 'activity_complete' : retryRequired ? 'retry_required' : 'waiting_for_student')
+      if (firstDayV3 && complete && spoken) {
+        setActivityComplete(true)
+        setExperience('activity_complete')
+      }
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : 'Miss Julie could not check that turn.')
       setExperience('recoverable_error')
