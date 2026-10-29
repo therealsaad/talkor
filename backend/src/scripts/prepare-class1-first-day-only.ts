@@ -18,6 +18,8 @@ import { ActivityAttempt } from '../models/ActivityAttempt'
 import { Progress } from '../models/Progress'
 import { Conversation } from '../models/Conversation'
 import { CLASS1_DEMO_VERSION } from '../services/class1-demo-access'
+import { S3Service } from '../services/S3Service'
+import firstDayVoices from './class1-first-day-voice-v3.json'
 
 export const FIRST_DAY_SCENES = [
   { key: 'hello-school', title: 'School gate: Hello, Grade One!', focus: 'SCHOOL',
@@ -94,6 +96,21 @@ async function main() {
     if (!APPLY || ready) return
     if (!safe) throw new Error('STUDENT_HISTORY_EXISTS: no migration attempted; create an isolated fresh staging fixture instead')
     if (v2.length !== 10 || v3.length) throw new Error('PARTIAL_MIGRATION: manual review required')
+    if (process.env.TALKORA_FIRST_DAY_AUDIO_REVIEWED !== 'YES') {
+      throw new Error('AUDIO_NOT_REVIEWED: approve and upload the full English voice pack before replacing the lesson')
+    }
+    // Ensure all immutable English clips exist before any MongoDB write.
+    const reviewed = FIRST_DAY_SCENES.map(scene => {
+      const line = firstDayVoices.lines.find(x => x.scene === scene.key && x.language === 'en-IN')
+      if (!line) throw new Error('Missing approved narration: ' + scene.key)
+      return line
+    })
+    for (const line of reviewed) {
+      const verified = await S3Service.headAudio(line.s3Key)
+      if (!verified || !verified.contentLength || verified.contentLength < 256) {
+        throw new Error('Missing reviewed private S3 narration: ' + line.id)
+      }
+    }
     // Move old activities to a non-playable historical range without deleting
     // their Mongo IDs. 11..20 are already owned by the optional legacy set.
     for (const a of v2) {
@@ -102,10 +119,11 @@ async function main() {
     }
     // All new activities go through the existing authenticated speech/session path.
     for (const [index, scene] of FIRST_DAY_SCENES.entries()) {
+      const line = reviewed[index]
       await Activity.create({
         lessonId: lesson._id, curriculumVersion: CLASS1_DEMO_VERSION,
         activityKey: PREFIX + scene.key, grade: 1, term: 1, unitNumber: 1,
-        order: index + 1, title: scene.title, prompt: scene.prompt, teacherPrompt: scene.prompt,
+        order: index + 1, title: scene.title, prompt: line.text, teacherPrompt: line.text,
         target: scene.focus.toLowerCase(), modelSentence: scene.sentence, instruction: scene.prompt,
         type: 'CONVERSATION', stage: 'INTERACT', expectedPatterns: [], keywords: [...scene.vocabulary],
         choices: [], difficulty: 'easy', xp: 0, estimatedSeconds: 90, voiceEnabled: true,
@@ -117,7 +135,7 @@ async function main() {
           teacherReviewRequired: true, languageSupport: ['English', 'Hindi', 'Marathi'] },
         source: { sourceType: 'SYLLABUS', pdf: 'https://ebooks.ebalbharati.in/pdfs/103050001.pdf',
           pageStart: 1, pageEnd: 1, label: 'Original interactive companion to English Balbharati Grade One, Unit 1.1 My First Day' },
-        content: { teacherReviewRequired: true, noTextbookArtwork: true, noTouchChoices: true },
+        content: { audioKey: line.s3Key, teacherReviewRequired: true, noTextbookArtwork: true, noTouchChoices: true },
         core: true, required: true, status: 'draft',
       })
     }
@@ -126,7 +144,7 @@ async function main() {
         teacherIntroduction: 'Miss Julie teaches skipping, running, walking, grinning, the bell, jumping, playing and Grade One through speech.',
         'settings.lessonPlanRevision': 'class1-first-day-only-v3',
         'settings.homework': 'Tell someone at home: I can walk, I can play, and I am in Grade One.',
-        'settings.introVideoReviewStatus': 'REPLACEMENT_REQUIRED_NOT_APPROVED',
+        'settings.introVideoReviewStatus': 'APPROVED_EXTERNAL_FIRST_DAY_VIDEO',
         'settings.syllabusVerified': false,
       },
     })
