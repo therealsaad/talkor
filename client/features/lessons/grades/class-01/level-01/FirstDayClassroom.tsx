@@ -171,10 +171,10 @@ export function FirstDayClassroom({
             <div className="firstday-mic-indicator" data-live={isListening} aria-hidden="true"><Mic size={21}/></div>
             <strong>{status}</strong>
             <div className="firstday-controls">
-              {needsAudioGesture ? <button type="button" onClick={onEnableAudio} aria-label="Enable Miss Julie sound"><VolumeX size={19}/> Enable sound</button> : null}
-              {!isSpeaking && !isProcessing && !isListening && !needsAudioGesture && isAudioEnabled ? <button type="button" onClick={onReplayJulie} aria-label="Hear Miss Julie again"><Volume2 size={19}/> Hear again</button> : null}
-              {!isSpeaking && !isProcessing && !isListening && !isCompleted && !needsAudioGesture ? <button type="button" className="firstday-mic-button" onClick={onStartMic} aria-label="Speak to Miss Julie"><Mic size={19}/> Speak</button> : null}
-              {isListening ? <button type="button" className="firstday-mic-button" onClick={onStopMic} aria-label="Done speaking to Miss Julie"><RefreshCw size={18}/> Done speaking</button> : null}
+              {needsAudioGesture && onEnableAudio ? <button type="button" onClick={onEnableAudio} aria-label="Enable Miss Julie sound"><VolumeX size={19}/> Enable sound</button> : null}
+              {!isSpeaking && !isProcessing && !isListening && !needsAudioGesture && isAudioEnabled && onReplayJulie ? <button type="button" onClick={onReplayJulie} aria-label="Hear Miss Julie again"><Volume2 size={19}/> Hear again</button> : null}
+              {!isSpeaking && !isProcessing && !isListening && !isCompleted && !needsAudioGesture && onStartMic ? <button type="button" className="firstday-mic-button" onClick={onStartMic} aria-label="Speak to Miss Julie"><Mic size={19}/> Speak</button> : null}
+              {isListening && onStopMic ? <button type="button" className="firstday-mic-button" onClick={onStopMic} aria-label="Done speaking to Miss Julie"><RefreshCw size={18}/> Done speaking</button> : null}
             </div>
           </div>
         </div>
