@@ -80,6 +80,10 @@ export function Level2PreviewIntro({ onComplete }: { onComplete: () => void }) {
   }, [clearBufferTimeout, scheduleBufferTimeout, updatePlayback])
 
   useEffect(() => {
+    void startVideo()
+  }, [startVideo, videoAttempt])
+
+  useEffect(() => {
     const htmlOverflow = document.documentElement.style.overflow
     const bodyOverflow = document.body.style.overflow
     document.documentElement.style.overflow = 'hidden'

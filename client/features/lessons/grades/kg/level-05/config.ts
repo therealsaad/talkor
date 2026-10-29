@@ -6,13 +6,13 @@ export const config = {
   "grade": 0,
   "level": 5,
   "gradeLabel": "Kindergarten",
-  "title": "Food and Fruits",
+  "title": "Letters W to Z",
   "editorialStatus": "draft",
   "studentPlayable": false,
-  "description": "Food and Fruits — a distinct storybook castle adventure for KG learners.",
+  "description": "A premium alphabet adventure for learning letters W, X, Y, and Z with pictures, video, and spoken practice.",
   "syllabus": {
     "objectives": [
-      "Recognize, hear, and speak language connected to food and fruits."
+      "Recognize, hear, and speak the letters W, X, Y, and Z and their picture words."
     ],
     "skills": [
       "listening",
@@ -26,8 +26,8 @@ export const config = {
   },
   "experience": {
     "themeId": "kg-05-food-and-fruits",
-    "world": "Storybook Castle",
-    "sceneDescription": "soft towers, story scrolls and flags",
+    "world": "Wonders in the Storybook Garden",
+    "sceneDescription": "soft coastal shapes, storybook clouds and colourful learning tiles",
     "layout": "dialogue-stage",
     "palette": {
       "background": "#fccfc2",

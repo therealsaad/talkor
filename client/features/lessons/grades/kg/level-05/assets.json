@@ -1,16 +1,15 @@
 {
   "levelId": "g00-l05",
-  "status": "authored-assets-pending",
+  "status": "authored",
   "assetsRoot": "/lessons/kg/level-05/",
-  "introVideo": null,
-  "images": [],
-  "animations": [],
+  "introVideo": "/lessons/kg/level-05/W to Z Untitled_Scene_10-16_10_07_17_20261016160313.mp4",
+  "images": [
+    "/kg/pictures/level-5/wolf.jpg",
+    "/kg/pictures/level-5/xylophone.jpg",
+    "/kg/pictures/level-5/Yak.jpg",
+    "/kg/pictures/level-5/zebra.jpg"
+  ],
+  "animations": ["/miss-julie-animations"],
   "audio": [],
-  "music": null,
-  "recommended": {
-    "julieAnimations": "/miss-julie-animations",
-    "dynamicFeedback": "azure-uncached",
-    "preauthoredTTS": "S3 CDN"
-  },
-  "note": "Do not add placeholders pointing at missing assets. Upload approved optimized media here."
+  "music": null
 }
