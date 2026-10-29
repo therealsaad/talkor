@@ -1,0 +1,32 @@
+/** Read-only Class 1 service doctor; no paid speech, Mongo writes or secret logs.
+ * pnpm exec tsx -r dotenv/config src/scripts/doctor-class1-first-day.ts
+ */
+const BASE = [
+  { name: 'node-5000', url: 'http://127.0.0.1:5000/health' },
+  { name: 'python-voice-8001', url: (process.env.AI_SERVICE_URL || 'http://127.0.0.1:8001').replace(/\/$/, '') + '/openapi.json' },
+  { name: 'python-qwen-8002', url: (process.env.TALKORA_CLASS1_AI_URL || 'http://127.0.0.1:8002').replace(/\/$/, '') + '/health' },
+  { name: 'ollama-11434', url: 'http://127.0.0.1:11434/api/tags' },
+]
+async function main() {
+  const flags = {
+    'Class 1 Qwen override': process.env.TALKORA_CLASS1_QWEN_PILOT === 'true',
+    'Class 1 draft access': process.env.TALKORA_CLASS1_STUDENT_DEMO === 'true',
+    'Sarvam selected': String(process.env.SPEECH_PROVIDER || '').toLowerCase() === 'sarvam',
+    'Azure selected': String(process.env.CONVERSATION_VOICE_PROVIDER || '').toLowerCase() === 'azure',
+    'Sarvam bilingual auto detect': ['unknown', 'auto', ''].includes(String(process.env.SARVAM_STT_LANGUAGE || '').toLowerCase()),
+    'Azure credential exists': Boolean(process.env.AZURE_SPEECH_KEY),
+    'Sarvam credential exists': Boolean(process.env.SARVAM_API_KEY),
+    'Approved First Day intro URL exists': Boolean(process.env.NEXT_PUBLIC_TALKORA_CLASS1_INTRO_URL || process.env.TALKORA_FIRST_DAY_INTRO_URL),
+  }
+  for (const [key, value] of Object.entries(flags)) console.log(value ? 'OK  ' + key : 'CHECK ' + key)
+  for (const item of BASE) {
+    try {
+      const response = await fetch(item.url, { signal: AbortSignal.timeout(3000) })
+      console.log((response.ok ? 'PASS ' : 'FAIL ') + item.name + ' (HTTP ' + response.status + ')')
+    } catch { console.log('OFFLINE ' + item.name) }
+  }
+  console.log('NOTE: HTTP health does not verify speaker output, account billing, model quality or microphone permission.')
+  console.log('NOTE: 8001 is a local narration generator/last fallback, not the primary Azure dynamic TTS path.')
+  console.log('NOTE: Python 8002 main must include the separate First Day PR for bilingual school-scene coaching.')
+}
+main().catch(() => { console.error('Class 1 offline doctor failed'); process.exitCode = 1 })
