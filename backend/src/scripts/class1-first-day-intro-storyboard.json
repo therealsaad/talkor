@@ -1,0 +1,67 @@
+{
+  "levelId": "g01-l01",
+  "lesson": "English Balbharati 1.1 — My First Day",
+  "durationSeconds": 90,
+  "videoApproval": "PENDING_HUMAN_REVIEW",
+  "visualIdentity": "Approved neutral Miss Julie, blue blazer, white blouse, beige trousers",
+  "orientation": "16:9 landscape",
+  "actions": [
+    {
+      "startSecond": 0,
+      "endSecond": 9,
+      "description": "Hello, Grade One! Miss Julie waves at the school gate. Animated school doors open."
+    },
+    {
+      "startSecond": 9,
+      "endSecond": 18,
+      "description": "Bunny skipping game. Julie shows hopping fingers. Children say I can skip."
+    },
+    {
+      "startSecond": 18,
+      "endSecond": 27,
+      "description": "Playground race. Julie's fingers run and a tiny rocket races past. I can run."
+    },
+    {
+      "startSecond": 27,
+      "endSecond": 36,
+      "description": "Footsteps on a sunny path towards school. I walk to school."
+    },
+    {
+      "startSecond": 36,
+      "endSecond": 45,
+      "description": "Silly smiling elephant peeks from behind a tree. I can smile."
+    },
+    {
+      "startSecond": 45,
+      "endSecond": 54,
+      "description": "School bell rings while the school clock animates. I hear a bell."
+    },
+    {
+      "startSecond": 54,
+      "endSecond": 63,
+      "description": "A cheerful frog jumps over a small puddle. I can jump."
+    },
+    {
+      "startSecond": 63,
+      "endSecond": 72,
+      "description": "A ball bounces by the playground. I can play."
+    },
+    {
+      "startSecond": 72,
+      "endSecond": 81,
+      "description": "Friends walk into the classroom; an open classroom door appears."
+    },
+    {
+      "startSecond": 81,
+      "endSecond": 90,
+      "description": "Grade One celebration with balloons and Miss Julie. Short bilingual encouragement and next voice adventure."
+    }
+  ],
+  "notes": [
+    "Original learning scenes; do not copy textbook poem or original artwork",
+    "One user gesture to start full-screen with audible narration",
+    "No skip button; keep browser/Esc limitations transparent",
+    "Validate 87–93s in Class1LessonIntro before review",
+    "Replace old little-words MP4; never relabel old video as approved"
+  ]
+}

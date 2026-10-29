@@ -28,6 +28,7 @@ import type { JulieVisualState } from '@/components/student/lesson/miss-julie-ch
 import { personalizeLessonText } from '@/services/lesson-progress'
 import { class1TeachingCue } from '@/features/lessons/grades/class-01/level-01/first-day-voice-guide'
 import { Class1StorybookBoard } from '@/features/lessons/grades/class-01/level-01/first-day-storybook-board'
+import { FirstDayClassroom } from '@/features/lessons/grades/class-01/level-01/FirstDayClassroom'
 import {
   getWarmupPrompts,
   isWarmupActivity,
@@ -385,6 +386,23 @@ export function ImmersiveLessonStage({
   // Class 1 is a hands-free lesson, not a scrollable answer-sheet. Reuse the
   // parent engine's authenticated mic, speech and progress state; never add a
   // second recorder or mark activities complete from presentation code.
+  const firstDayV3Id = activity.activityKey?.match(/^class1-l01-v3-(.+)$/)?.[1]
+  if (isClass1Classroom && firstDayV3Id) {
+    return <FirstDayClassroom
+      sceneId={firstDayV3Id}
+      focus={class1Cue?.storybook.focus || 'MY FIRST DAY'}
+      sentence={class1Cue?.storybook.example || 'I walk to school.'}
+      teacherText={julieMessage}
+      teacherImage={julieImage}
+      animationUrl={julieAnimation}
+      isSpeaking={isJulieSpeaking}
+      isListening={isRecording}
+      isProcessing={isProcessing}
+      isCompleted={isCompleted}
+      transcript={studentTurnText || transcript}
+      feedback={feedback}
+    />
+  }
   if (isClass1Classroom) {
     const focus = class1Cue?.storybook.focus || 'MY FIRST DAY'
     const sceneVisuals: Record<string, string> = {

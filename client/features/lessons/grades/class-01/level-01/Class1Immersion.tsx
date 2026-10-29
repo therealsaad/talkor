@@ -7,7 +7,7 @@ import { requestClass1Fullscreen } from './class1-fullscreen'
 import './class1-immersion.css'
 
 /** Classroom wrapper: no changes to activity IDs, voice sessions or progress. */
-export function Class1Immersion({ children }: { children: ReactNode }) {
+export function Class1Immersion({ children, voiceOnly = false }: { children: ReactNode; voiceOnly?: boolean }) {
   const frame = useRef<HTMLDivElement>(null)
   const [isFullscreen, setIsFullscreen] = useState(false)
   const [isPortrait, setIsPortrait] = useState(false)
@@ -40,7 +40,7 @@ export function Class1Immersion({ children }: { children: ReactNode }) {
   return (
     <div ref={frame} className="tk-class1-immersion" data-class1-immersion="true">
       {children}
-      {!isPortrait && !isFullscreen && (
+      {!voiceOnly && !isPortrait && !isFullscreen && (
         <button
           type="button"
           className="tk-class1-fullscreen-action"
@@ -57,9 +57,9 @@ export function Class1Immersion({ children }: { children: ReactNode }) {
             <RotateCw size={43} strokeWidth={1.8} aria-hidden="true" />
             <strong>Let's turn our screen sideways!</strong>
             <p>Miss Julie teaches Class 1 in landscape. Rotate your phone or tablet, then continue your lesson.</p>
-            <button type="button" onClick={() => void enterLandscape()}>
+            {!voiceOnly ? <button type="button" onClick={() => void enterLandscape()}>
               <Expand size={18} aria-hidden="true" /> Try landscape full screen
-            </button>
+            </button> : null}
             {fullscreenUnavailable && <small>Screen rotation is controlled by your device. Turn on Auto-rotate or ask your teacher for help.</small>}
           </div>
         </div>
