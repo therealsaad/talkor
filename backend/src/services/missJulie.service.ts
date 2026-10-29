@@ -426,7 +426,10 @@ export const MissJulieService = {
     )
 
     // Complete lesson activity attempt if applicable
-    if (completed && activity && input.activityId && input.lessonId) {
+    // First Day v3 records the Qwen conversation decision now, but student
+    // progress is committed only after the browser has finished speaking the
+    // authorized teacher reply and acknowledges it via the voice session.
+    if (completed && !isFirstDayScene && activity && input.activityId && input.lessonId) {
       const score = masteryStatus === 'MASTERED' ? 90 : masteryStatus === 'COMPLETED_WITH_SUPPORT' ? 75 : 55
       await ProgressService.submitAttempt({
         studentId,
