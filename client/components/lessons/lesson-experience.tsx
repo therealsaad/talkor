@@ -328,14 +328,14 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     if (spokenTurnIds.current.has(turn.id) || speakingTurnIds.current.has(turn.id)) {
       // In-flight or already spoken teacher audio cannot be treated as a
       // second completion event. This guards duplicate React effects.
-      if (class1) return
+      if (experienceId === 'g01-l01') return
       setExperience(afterState || (turn.retryRequired ? 'retry_required' : turn.activityComplete || turn.conversationComplete ? 'activity_complete' : 'waiting_for_student'))
       return
     }
     speakingTurnIds.current.add(turn.id)
     lastSpokenTurnIdRef.current = turn.id
     try {
-      if (!audioEnabled && class1) {
+      if (!audioEnabled && experienceId === 'g01-l01') {
         setAudioBlocked(true)
         setFeedback('Teacher audio is required for this voice-first lesson. Ask a teacher to enable sound.')
         setExperience('recoverable_error')

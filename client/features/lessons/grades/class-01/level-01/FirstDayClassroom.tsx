@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type CSSProperties } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { BookOpen, Headphones, Mic, RefreshCw, Sparkles, Volume2, VolumeX, Waves } from 'lucide-react'
 import './first-day-classroom.css'
@@ -43,6 +43,21 @@ const SCENES: Record<string, Scene> = {
   'play-friends': { icon:'⚽', name:'Play with friends', action:'Pretend to kick a ball!', meaning:'Play = have fun together', hintHi:'Play = खेलना', hintMr:'Play = खेळणे', colour:'#ffd49b', visual:'play' },
   'enter-class': { icon:'🚪', name:'Come into class', action:'The bell rings. Go in!', meaning:'Go in = enter the room', hintHi:'Go in = अंदर जाना', hintMr:'Go in = आत जाणे', colour:'#b9d6fc', visual:'door' },
   'grade-one': { icon:'🌟', name:'I am in Grade One!', action:'Celebrate what you learned!', meaning:'Hurray = a happy cheer', hintHi:'Hurray = खुशी से बोलो!', hintMr:'Hurray = आनंदाने म्हणा!', colour:'#ffd48b', visual:'celebrate' },
+}
+
+/** The page-one word bank is shown through ten smaller, oral teaching scenes.
+ * It intentionally does not reproduce the textbook rhyme or illustrations. */
+const WORD_BANK: Record<string, readonly string[]> = {
+  'hello-school': ['see', 'school', 'everyone'],
+  'skip-bunny': ['see', 'skip'],
+  'run-race': ['see', 'run'],
+  'walk-school': ['walk', 'school'],
+  'big-grin': ['grin', 'see'],
+  'school-bell': ['bell', 'rings'],
+  'jump-frog': ['jump'],
+  'play-friends': ['play'],
+  'enter-class': ['bell', 'rings', 'school'],
+  'grade-one': ['Grade', 'One', 'hurray'],
 }
 
 /** Pure presentation: never creates a recording, grades a response, changes
@@ -108,7 +123,7 @@ export function FirstDayClassroom({
         <div className="firstday-book">
           <div className="firstday-book__top"><span>✦ LOOK · LISTEN · SAY</span><small>{scene.name}</small></div>
           <div className="firstday-book__art">
-            <div className="firstday-board-scene" data-action={scene.visual} style={{ '--scene-accent':scene.colour } as React.CSSProperties}>
+            <div className="firstday-board-scene" data-action={scene.visual} style={{ '--scene-accent':scene.colour } as CSSProperties}>
               <svg className="firstday-school" viewBox="0 0 600 205" role="img" aria-label="Original illustrated school with garden and a path" preserveAspectRatio="xMidYMid meet">
                 <defs><linearGradient id="talkoraSchoolSky" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#c7eeff"/><stop offset="1" stopColor="#f0fbd8"/></linearGradient></defs>
                 <rect width="600" height="205" rx="22" fill="url(#talkoraSchoolSky)" />
@@ -139,6 +154,9 @@ export function FirstDayClassroom({
             <strong>{focus}</strong>
             <p>{sentence}</p>
             <div className="firstday-meaning"><Sparkles size={16} aria-hidden="true" /><span>{scene.meaning}</span></div>
+            <div className="firstday-word-bank" aria-label="Words to look at and say">
+              {(WORD_BANK[sceneId] || WORD_BANK['hello-school']).map(word => <span key={word}>{word}</span>)}
+            </div>
           </div>
           {isRetry ? <div className="firstday-help" role="note"><span>Need a hint?</span><span lang="hi">{scene.hintHi}</span><span lang="mr">{scene.hintMr}</span></div> : null}
         </div>
