@@ -26,3 +26,12 @@ test('the Class 1 mic tolerates quiet voices with no extra STT requests', async 
   assert.match(engine, /speechThreshold: 0\.012/)
   assert.match(engine, /noSpeechTimeoutMs: 8000/)
 })
+
+test('First Day route uses school-action homework and hides v3 fullscreen button', async () => {
+  const page = await load('../../app/student/lesson/[id]/page.tsx')
+  const wrapper = await load('../../features/lessons/grades/class-01/level-01/Class1Immersion.tsx')
+  assert.match(page, /firstDayV3/)
+  assert.match(page, /I can walk, I can play/)
+  assert.match(page, /voiceOnly=\{firstDayV3\}/)
+  assert.match(wrapper, /!voiceOnly && !isPortrait && !isFullscreen/)
+})
