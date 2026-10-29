@@ -302,6 +302,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       xpAwarded: result?.conversation?.complete ? 0 : baseTurn?.xpAwarded,
       evidence: result?.conversation?.skillEvidence ?? baseTurn?.evidence,
       memoryUpdates: result?.conversation ? [] : baseTurn?.memoryUpdates,
+      staticAudioActivityId: experienceId === 'g01-l01' ? activity?.id : undefined,
       voicePriority:
         result && (isConversation || Boolean(result.conversation))
           ? 'CONVERSATION'
@@ -331,10 +332,14 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       setExperience('julie_audio_pending')
       const playback = await julie.speak(turn.text, `${turn.id}:${++teacherSequence.current}`, turn.voicePriority || 'LESSON', turn.staticAudioActivityId)
       if (generation !== playbackGeneration.current) return
-      if (playback === 'autoplay-blocked') {
-        // Do not start recording over a prompt the child never heard.
-        setAudioBlocked(true)
-        setFeedback('Tap Enable sound once so Miss Julie can speak automatically.')
+      if (playback !== 'spoken') {
+        // An animation is not evidence that audio reached the child. Never
+        // auto-record, grade or advance a silent Class 1 teaching prompt.
+        spokenTurnIds.current.delete(turn.id)
+        setAudioBlocked(playback === 'autoplay-blocked')
+        setFeedback(playback === 'autoplay-blocked'
+          ? 'Sound permission is needed. Ask your teacher to enable sound once.'
+          : 'Miss Julie could not play her voice. Ask your teacher to check Azure Speech and the backend.')
         setExperience('recoverable_error')
         return
       }
@@ -356,8 +361,8 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     }
     setFeedback('')
     const playback = await julie.replay()
-    if (playback === 'autoplay-blocked') {
-      setAudioBlocked(true)
+    if (playback !== 'spoken') {
+      setAudioBlocked(playback === 'autoplay-blocked')
       setFeedback('Sound is still blocked. Check your browser sound permissions.')
       return
     }
@@ -878,7 +883,8 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
   return (
     <LessonWorld activity={activity} levelNumber={levelNumber} worldName={levelTitle} syllabusName={syllabusName} backgroundSrc={backgroundSrc} experienceId={experienceId}>
       <AnimatePresence>{experience === 'entering' ? <TalkoraWorldLoader key="arrival" destination={levelTitle} subtitle={`Opening ${levelTitle}...`} /> : null}</AnimatePresence>
-      <div className={`talkora-lesson ${experience === 'lesson_complete' ? 'is-celebrating' : ''}`} data-experience={experience}>
+      <div className={`talkora-lesson ${experience === 'lesson_complete' ? 'is-celebrating' : ''}`} data-experience={experience}
+        style={experienceId === 'g01-l01' ? { height: '100dvh', maxHeight: '100dvh', overflow: 'hidden', display: 'flex', flexDirection: 'column' } : undefined}>
         <LessonHud
           title={syllabusName}
           levelLabel={stageLabel}
@@ -896,7 +902,8 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         />
 
         {experience !== 'lesson_complete' ? (
-          <main className="talkora-lesson__immersive-stage">
+          <main className="talkora-lesson__immersive-stage"
+            style={experienceId === 'g01-l01' ? { flex: '1 1 0', minHeight: 0, height: 'auto', overflow: 'hidden', padding: 0 } : undefined}>
             <ImmersiveLessonStage
               activity={activity}
               experienceId={experienceId}
