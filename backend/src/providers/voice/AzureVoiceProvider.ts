@@ -71,7 +71,14 @@ export class AzureVoiceProvider implements VoiceProvider {
       throw ApiError.provider('TTS_GENERATION_FAILED')
     }
 
-    return Buffer.from(await response.arrayBuffer())
+    const audio = Buffer.from(await response.arrayBuffer())
+    // A 200 response is not enough: an empty payload produces a silent student
+    // screen even though the provider appears healthy in API/network logs.
+    if (audio.byteLength < 256) {
+      logger.warn('Azure TTS returned empty or truncated audio', { bytes: audio.byteLength })
+      throw ApiError.provider('TTS_EMPTY_AUDIO')
+    }
+    return audio
   }
 
   private contentType(): string {
