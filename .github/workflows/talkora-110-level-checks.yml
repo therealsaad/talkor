@@ -60,6 +60,9 @@ jobs:
       - name: Test Class 1 Node-Python bridge security
         run: pnpm exec jest --runInBand tests/unit/pythonAIProviderBridge.test.ts tests/unit/class1StaticAudio.test.ts
         working-directory: backend
+      - name: Verify server-side First Day voice acknowledgment and no premature progress
+        run: pnpm exec jest --runInBand tests/unit/class1AudioAck.test.ts
+        working-directory: backend
       - name: Verify audio stream, Azure payload and audio-format regression tests
         run: pnpm exec jest --runInBand tests/voice-response-stream.test.ts tests/class1-azure-audio.test.ts tests/voice-audio-format.test.ts
         working-directory: backend
