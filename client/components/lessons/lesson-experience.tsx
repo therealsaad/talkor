@@ -882,7 +882,8 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
   return (
     <LessonWorld activity={activity} levelNumber={levelNumber} worldName={levelTitle} syllabusName={syllabusName} backgroundSrc={backgroundSrc} experienceId={experienceId}>
       <AnimatePresence>{experience === 'entering' ? <TalkoraWorldLoader key="arrival" destination={levelTitle} subtitle={`Opening ${levelTitle}...`} /> : null}</AnimatePresence>
-      <div className={`talkora-lesson ${experience === 'lesson_complete' ? 'is-celebrating' : ''}`} data-experience={experience}>
+      <div className={`talkora-lesson ${experience === 'lesson_complete' ? 'is-celebrating' : ''}`} data-experience={experience}
+        style={experienceId === 'g01-l01' ? { height: '100dvh', maxHeight: '100dvh', overflow: 'hidden', display: 'flex', flexDirection: 'column' } : undefined}>
         <LessonHud
           title={syllabusName}
           levelLabel={stageLabel}
@@ -900,7 +901,8 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         />
 
         {experience !== 'lesson_complete' ? (
-          <main className="talkora-lesson__immersive-stage">
+          <main className="talkora-lesson__immersive-stage"
+            style={experienceId === 'g01-l01' ? { flex: '1 1 0', minHeight: 0, height: 'auto', overflow: 'hidden', padding: 0 } : undefined}>
             <ImmersiveLessonStage
               activity={activity}
               experienceId={experienceId}
