@@ -24,6 +24,8 @@ test('Unheard final teacher response can only complete after a successful replay
   assert.match(retry, /setActivityComplete\(true\)/)
   const voice = await read('../../../backend/src/services/voice.service.ts')
   assert.match(voice, /const isFirstDayV3 = Boolean\(currentActivity\?\.activityKey\?\.startsWith\('class1-l01-v3-'\)\)/)
+  assert.match(voice, /const dynamicClass1 = isClass1Lesson && \\(purpose === 'CONVERSATION' \\|\\| purpose === 'FEEDBACK'\\)/)
+  assert.match(voice, /if \\(isFirstDayV3 \\|\\| dynamicClass1\\)/)
   assert.match(voice, /CLASS1_DYNAMIC_AZURE_TTS_UNAVAILABLE/)
   assert.match(voice, /CLASS1_FIRST_DAY_APPROVED_AUDIO_MISSING/)
 })

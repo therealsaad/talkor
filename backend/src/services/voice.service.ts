@@ -379,12 +379,12 @@ export const VoiceService = {
       }
     }
 
-    // First Day v3 has a strict, predictable source policy:
-    // approved school script -> private S3 / Priya recording; all personalized,
-    // Hindi/Marathi or Qwen answers -> ONE Azure TTS. No silent Groq/8001
-    // downgrade and no progression when the expected voice isn't available.
-    if (isFirstDayV3) {
-      if (purpose === 'LESSON') {
+    // All authorized Class 1 dynamic feedback uses Azure: even the legacy v2
+    // pilot must not silently substitute Groq/Priya for a Qwen response.
+    // First Day v3 additionally requires exact approved S3/Priya lesson lines.
+    const dynamicClass1 = isClass1Lesson && (purpose === 'CONVERSATION' || purpose === 'FEEDBACK')
+    if (isFirstDayV3 || dynamicClass1) {
+      if (isFirstDayV3 && purpose === 'LESSON') {
         throw ApiError.provider('CLASS1_FIRST_DAY_APPROVED_AUDIO_MISSING')
       }
       const azure = await tryStream(new AzureVoiceProvider(), text, {
