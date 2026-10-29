@@ -9,18 +9,20 @@ import { makeKGPreviewState } from '../services/kg-alphabet-preview'
 import './kg-garden-map.css'
 
 const STONES = [
-  [22.5, 34], [42.4, 31.5], [67.2, 34.5], [86.4, 46.4], [38.2, 53.7],
-  [62.5, 57.2], [15.7, 66.8], [39, 75.3], [64.8, 78.3], [89, 76.5],
+  [22.5, 34], [42.4, 31.5], [67.2, 34.5], [86.4, 46.4], [62.5, 57.2],
+  [38.2, 53.7], [15.7, 66.8], [39, 75.3], [64.8, 78.3], [89, 76.5],
 ] as const
 
 /** Student map unlocks only Level 1; staff previews can target one draft level. */
 export function KGAlphabetMap({
   preview = false,
+  previewDashboard = false,
   onPreviewPlay,
   previewLevel = 1,
   previewLabel = 'Level 1',
 }: {
   preview?: boolean
+  previewDashboard?: boolean
   onPreviewPlay?: (index: number) => void
   previewLevel?: number
   previewLabel?: string
@@ -49,7 +51,7 @@ export function KGAlphabetMap({
   const levelOneHref = state?.completed ? '/student/kg?replay=all' : '/student/kg'
 
   return (
-    <main className="kg-garden" aria-label="KG learning garden">
+    <main className={`kg-garden${previewDashboard ? ' kg-garden--dashboard' : ''}`} aria-label="KG learning garden">
       <div className="kg-garden__canvas">
         <Image
           src="/lessons/kg/images/kg-simple-garden.webp"
@@ -62,6 +64,26 @@ export function KGAlphabetMap({
         {STONES.map(([x, y], index) => {
           const level = index + 1
           const style = { left: `${x}%`, top: `${y}%` }
+          const dashboardHref = {
+            1: '/school/kg-preview/level-1',
+            2: '/school/kg-preview/level-2',
+            3: '/school/kg-preview/level-3',
+            4: '/school/kg-preview/level-4',
+          }[level as 1 | 2 | 3 | 4]
+
+          if (previewDashboard && dashboardHref) {
+            return (
+              <Link
+                key={level}
+                style={style}
+                href={dashboardHref}
+                aria-label={`Open Level ${level} preview`}
+                className="kg-garden__node kg-garden__node--ready"
+              >
+                {level}
+              </Link>
+            )
+          }
 
           if (level === (preview ? previewLevel : 1)) {
             if (preview) {
@@ -120,6 +142,8 @@ export function KGAlphabetMap({
           'Loading your garden...'
         ) : state.completed ? (
           `${previewLabel} complete! Tap the checkmark to practise again.`
+        ) : previewDashboard ? (
+          'Staff previews · Choose a numbered garden stone'
         ) : previewLevel !== 1 ? (
           `${previewLabel} · Q–V — Ready to explore`
         ) : (

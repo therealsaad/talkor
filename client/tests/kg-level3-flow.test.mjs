@@ -15,16 +15,9 @@ const level1Route = await readFile(new URL('../app/school/kg-preview/level-1/pag
 const schoolLayout = await readFile(new URL('../app/school/layout.tsx', import.meta.url), 'utf8')
 
 test('KG Preview opens the garden with distinct routes for the available levels', () => {
-  assert.match(route, /src="\/lessons\/kg\/images\/kg-simple-garden\.webp"/)
-  assert.match(route, /\/school\/kg-preview\/level-1/)
-  assert.match(route, /\/school\/kg-preview\/level-2/)
-  assert.match(route, /\/school\/kg-preview\/level-3/)
-  assert.match(route, /const levels = \[level01, level02, level03/)
-  assert.match(route, /Level \$\{level\.level\}/)
-  assert.match(route, /level\.title/)
-  assert.match(route, /Not available in this preview/)
-  assert.match(level1Route, /KGAlphabetMap preview/)
-  assert.match(level1Route, /KGLevel1Experience/)
+  assert.match(route, /<KGAlphabetMap preview previewDashboard \/>/)
+  assert.match(route, /workspaceClassName="educator-workspace--kg-map"/)
+  assert.match(level1Route, /<KGLevel1Experience preview \/>/)
 })
 
 test('Level 3 selection opens a clean video screen and completion routes directly to K', () => {
@@ -34,6 +27,7 @@ test('Level 3 selection opens a clean video screen and completion routes directl
   assert.match(previewIntro, /disablePictureInPicture/)
   assert.match(previewIntro, /disableRemotePlayback/)
   assert.match(previewIntro, /requestFullscreen/)
+  assert.match(previewIntro, /useEffect\(\(\) => \{\s*void startVideo\(\)\s*\}, \[startVideo, videoAttempt\]\)/)
   assert.match(previewIntro, /onEnded=\{\(\) =>/)
   assert.match(previewIntro, /canCompleteIntroVideo\(video, maximumTimeRef\.current\)/)
   assert.match(previewIntro, /completionHandledRef\.current = true[\s\S]*?onComplete\(\)/)
