@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Play, RotateCcw, Sparkles } from 'lucide-react'
 import { requestClass1Fullscreen } from './class1-fullscreen'
+import { voiceService } from '@/services/voice-service'
 
 /** This reviewed 90-second video is delivered separately from the application. */
 export const CLASS1_FIRST_DAY_VIDEO = process.env.NEXT_PUBLIC_TALKORA_CLASS1_INTRO_URL?.trim() ||
@@ -77,9 +78,17 @@ export function Class1LessonIntro({ onAvailable, onDone }: {
       // Fullscreen is an enhancement; school browser policies can reject it.
       // Request it for the WHOLE lesson, so fullscreen survives the intro video.
       const fullscreenTarget = frame.current.closest<HTMLElement>('[data-class1-immersion]') || frame.current
-      fullscreenActive.current = await requestClass1Fullscreen(fullscreenTarget)
+      // Run ALL gesture-gated browser calls synchronously from the click.
+      // Awaiting fullscreen first can lose the activation required for audio.
+      const fullscreen = requestClass1Fullscreen(fullscreenTarget)
+      const unlockAudio = voiceService.unlockPlayback()
       video.current.muted = false
-      await video.current.play()
+      const startedVideo = video.current.play()
+      fullscreenActive.current = await fullscreen
+      await startedVideo
+      // Sound-unlock failure must not cancel the mandatory video. The teacher
+      // will see a recoverable playback state if live narration is blocked.
+      await unlockAudio.catch(() => false)
       setNeedsTap(false)
       setError('')
     } catch {
