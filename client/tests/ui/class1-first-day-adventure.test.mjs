@@ -58,7 +58,8 @@ test('Class 1 requires end-of-audio before new microphone or next frame', async 
 
 test('Balbharati First Day cannot falsely complete after four unlearned turns', async () => {
   const svc = await load('../../../backend/src/services/missJulie.service.ts')
-  assert.match(svc, /!isFirstDayScene \|\| demonstratedRequiredSkills/)
+  assert.match(svc, /nextTurn >= maxTurns && \(!isFirstDayScene/)
+  assert.match(svc, /demonstratedRequiredSkills && turnSkills\.includes\('first_day_english_attempt'\)/)
   assert.match(svc, /firstDaySceneSkills/)
   assert.match(svc, /turnSkills\.includes\('first_day_english_attempt'\)/)
 })
