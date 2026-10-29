@@ -6,6 +6,7 @@
  */
 import { readFile, stat } from 'node:fs/promises'
 import path from 'node:path'
+import { hasExpectedAudioHeader } from '../services/voice-audio-format'
 
 type Envelope<T> = { success: boolean; data: T }
 const apiUrl = (process.env.TALKORA_E2E_API_URL || 'http://127.0.0.1:5000').replace(/\/$/, '')
@@ -147,8 +148,11 @@ async function main() {
   if (!audioResponse.ok || !(audioResponse.headers.get('content-type') || '').startsWith('audio/')) {
     throw new Error('Azure TTS failed (HTTP ' + audioResponse.status + ')')
   }
-  const bytes = (await audioResponse.arrayBuffer()).byteLength
-  if (bytes < 256) throw new Error('TTS returned too little audio')
+  const audioBytes = Buffer.from(await audioResponse.arrayBuffer())
+  const bytes = audioBytes.byteLength
+  if (!hasExpectedAudioHeader(audioBytes, audioResponse.headers.get('content-type') || '')) {
+    throw new Error('TTS returned an empty, truncated or incorrectly labelled audio file')
+  }
   if (!(audioResponse.headers.get('x-voice-provider') || '').includes('azure')) {
     throw new Error('Expected Azure TTS; check provider configuration/fallback')
   }
