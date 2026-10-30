@@ -248,7 +248,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     const timer = window.setTimeout(() => {
       void (async () => {
         try {
-          if (activity.activityKey?.startsWith('class1-l01-v3-')) {
+          if (/^class1-l01-v(?:3|4)-/.test(activity.activityKey || '')) {
             // A previous Qwen final reply may be pending after a browser reload
             // or failed Azure playback. Restore that exact turn before asking
             // a new question so students don't get trapped by completed state.
@@ -873,7 +873,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       const retryRequired = Boolean(ai?.shouldRetry || ai?.conversation?.retryState?.waiting)
       const serverComplete = Boolean(ai?.activityComplete || ai?.conversation?.complete)
       const controlledComplete = !ai && Number(result.evaluation?.score || 0) >= 70
-      const complete = activity?.activityKey?.startsWith('class1-l01-v3-')
+      const complete = /^class1-l01-v(?:3|4)-/.test(activity?.activityKey || '')
         ? serverComplete && Boolean(ai?.conversation?.id)
         : serverComplete || controlledComplete
       const normalizedTurn = normalizeTeacherTurnFromAi(ai, fallbackText, {
@@ -893,7 +893,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       setModelSentence(retryRequired ? normalizedTurn.modelSentence || '' : '')
       setXp((value) => value + (result.xpAwarded || 0))
       setConversationTurn((value) => value + 1)
-      const firstDayV3 = activity?.activityKey?.startsWith('class1-l01-v3-') === true
+      const firstDayV3 = /^class1-l01-v(?:3|4)-/.test(activity?.activityKey || '') === true
       if (!firstDayV3) setActivityComplete(complete)
       setPose(poseFromAi(ai, retryRequired, complete))
       setRetryAttempt(ai?.conversation?.retryState?.attempt || 0)
@@ -1003,7 +1003,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       <AnimatePresence>{experience === 'entering' ? <TalkoraWorldLoader key="arrival" destination={levelTitle} subtitle={`Opening ${levelTitle}...`} /> : null}</AnimatePresence>
       <div className={`talkora-lesson ${experience === 'lesson_complete' ? 'is-celebrating' : ''}`} data-experience={experience}
         style={experienceId === 'g01-l01' ? { height: '100dvh', maxHeight: '100dvh', overflow: 'hidden', display: 'flex', flexDirection: 'column' } : undefined}>
-        {activity?.activityKey?.startsWith('class1-l01-v3-') ? null : <LessonHud
+        {/^class1-l01-v(?:3|4)-/.test(activity?.activityKey || '') ? null : <LessonHud
           title={syllabusName}
           levelLabel={stageLabel}
           xp={xp}
@@ -1109,7 +1109,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
           <Class1LessonIntro
             key={`${introVideoKey}:${introReplayRequest}`}
             approvedVideoUrl={class1IntroVideoUrl}
-            firstDayOnly={activity?.activityKey?.startsWith('class1-l01-v3-') === true}
+            firstDayOnly={/^class1-l01-v(?:3|4)-/.test(activity?.activityKey || '') === true}
             onAvailable={markIntroAvailable}
             onDone={finishIntro}
           />

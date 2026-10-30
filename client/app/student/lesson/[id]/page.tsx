@@ -52,9 +52,13 @@ export default function StudentLessonPage() {
   const firstDayV3 = lesson.experienceId === 'g01-l01' &&
     lesson.activities.length === 10 &&
     lesson.activities.every(activity => activity.activityKey?.startsWith('class1-l01-v3-'))
+  const firstDayPoem = lesson.experienceId === 'g01-l01' &&
+    lesson.activities.length === 6 &&
+    lesson.activities.every(activity => activity.activityKey?.startsWith('class1-l01-v4-poem-'))
+  const firstDayReady = firstDayV3 || firstDayPoem
   // The old two-letter-word draft is NOT Balbharati 1.1. Do not put a child
   // through the outdated intro or award credit for the wrong chapter.
-  if (lesson.experienceId === 'g01-l01' && !firstDayV3) {
+  if (lesson.experienceId === 'g01-l01' && !firstDayReady) {
     return <main className="talkora-error" role="alert" style={{ minHeight: '75vh', display: 'grid', placeContent: 'center', gap: 18, textAlign: 'center', padding: 32 }}>
       <h1>Miss Julie is preparing your First Day adventure</h1>
       <p>This lesson is not installed on Talkora yet. Your earlier learning and progress are safely preserved.</p>
@@ -71,20 +75,24 @@ export default function StudentLessonPage() {
     studentName={student?.fullName?.trim() || 'Explorer'}
     completedActivityIds={lesson.completedActivityIds}
     experienceId={lesson.experienceId}
-    backgroundSrc={lesson.experienceId === 'g01-l01' && !firstDayV3
+    backgroundSrc={lesson.experienceId === 'g01-l01' && !firstDayReady
       ? '/lessons/class-01/level-01/two-letter-word-meadow.webp'
       : undefined}
     completionMessage={lesson.experienceId === 'g01-l01'
-      ? firstDayV3
+      ? firstDayPoem
+        ? 'Hurray! You listened to, practised and recited My First Day, the Grade One poem.'
+        : firstDayV3
         ? 'Wonderful! You learnt about skipping, running, walking, smiling, the school bell, jumping and playing on your first day at school.'
         : `You did it, ${student?.fullName?.trim() || 'Explorer'}! You practised am, an, at, in, is, it, on, and up, then began learning about your first day at school. Your progress is saved.`
       : undefined}
     homeworkMessage={lesson.experienceId === 'g01-l01'
-      ? firstDayV3
+      ? firstDayPoem
+        ? 'Homework: recite the My First Day poem with actions for someone at home.'
+        : firstDayV3
         ? 'Homework: tell someone at home: I can walk, I can play, and I am in Grade One.'
         : 'Homework: say “It is up” and “I walk to school” with someone at home.'
       : undefined}
-    class1IntroVideoUrl={firstDayV3 && typeof lesson.lesson.settings?.introVideoUrl === 'string'
+    class1IntroVideoUrl={firstDayReady && typeof lesson.lesson.settings?.introVideoUrl === 'string'
       ? lesson.lesson.settings.introVideoUrl
       : undefined}
     introVideoKey={lesson.experienceId === 'g01-l01' && lesson.completedActivityIds.length === 0
@@ -94,6 +102,6 @@ export default function StudentLessonPage() {
         : undefined}
   />
   return lesson.experienceId === 'g01-l01'
-    ? <Class1Immersion voiceOnly={firstDayV3}>{experience}</Class1Immersion>
+    ? <Class1Immersion voiceOnly={firstDayReady}>{experience}</Class1Immersion>
     : experience
 }
