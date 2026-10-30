@@ -644,6 +644,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       if (generation.current !== token) return
       pendingResultRef.current = null; setPhase('finished')
       try { await playClip('homework-abcd') } catch { /* printed homework remains visible */ }
+      if (preview) router.replace('/school/kg-preview')
       return
     }
     await beginStep(nextIndex)

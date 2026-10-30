@@ -60,6 +60,9 @@ jobs:
         working-directory: backend
       - run: pnpm build
         working-directory: backend
+      - name: Refuse invalid placeholder Class 1 intro URL before media staging
+        run: pnpm exec jest --runInBand tests/unit/class1IntroUrl.test.ts
+        working-directory: backend
       - name: Verify First Day v3 never takes over historic v2 progress early
         run: pnpm exec jest --runInBand tests/unit/class1DemoAccess.test.ts
         working-directory: backend
@@ -69,11 +72,20 @@ jobs:
       - name: Test Class 1 Node-Python bridge security
         run: pnpm exec jest --runInBand tests/unit/pythonAIProviderBridge.test.ts tests/unit/class1StaticAudio.test.ts
         working-directory: backend
+      - name: Verify real First Day spoken-word progress, corrections and home-language retries
+        run: pnpm exec jest --runInBand tests/unit/firstDayEvidence.test.ts
+        working-directory: backend
       - name: Verify server-side First Day voice acknowledgment and no premature progress
         run: pnpm exec jest --runInBand tests/unit/class1AudioAck.test.ts
         working-directory: backend
       - name: Verify audio stream, Azure payload and audio-format regression tests
         run: pnpm exec jest --runInBand tests/voice-response-stream.test.ts tests/class1-azure-audio.test.ts tests/voice-audio-format.test.ts
+        working-directory: backend
+      - name: Verify Hindi and Marathi Azure voice routing for reviewed First Day clips
+        run: pnpm exec jest --runInBand tests/unit/class1FirstDayAzureLocale.test.ts
+        working-directory: backend
+      - name: Guard real Class 1 Sarvam to Qwen to Azure smoke route
+        run: pnpm exec jest --runInBand tests/unit/class1LiveSmokeContract.test.ts
         working-directory: backend
       - name: Verify First Day teacher voice pack manifest and review gates
         run: pnpm exec jest --runInBand tests/class1-first-day-voice-manifest.test.ts

@@ -2,6 +2,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { ArrowLeft, LoaderCircle, Mic, RotateCw, Sparkles } from 'lucide-react'
 import { createSubmissionGate, LEVEL3_LETTERS, microphoneFailureMessage, resolveLevel3Attempt, type Letter } from './level3-flow'
@@ -27,6 +28,7 @@ const LETTER_PICTURES: Record<Letter, { src: string; word: string }> = {
 
 const LETTER_TRANSITION_PAUSE_MS = 900
 export default function LevelExperience({ preview = false, previewStartLetter = 'K', onPreviewBack }: LevelExperienceProps) {
+  const router = useRouter()
   const reduceMotion = useReducedMotion()
   const [selected, setSelected] = useState<Letter>(previewStartLetter)
   const [julieState, setJulieState] = useState<'idle' | 'speaking'>('idle')
@@ -171,7 +173,11 @@ export default function LevelExperience({ preview = false, previewStartLetter = 
             return
           }
           if (transition.complete) {
-            transitionTimer = window.setTimeout(() => { if (active) setPhase('finished') }, LETTER_TRANSITION_PAUSE_MS)
+            transitionTimer = window.setTimeout(() => {
+              if (!active) return
+              setPhase('finished')
+              if (preview) router.replace('/school/kg-preview')
+            }, LETTER_TRANSITION_PAUSE_MS)
           } else {
             transitionTimer = window.setTimeout(() => {
               if (!active) return
@@ -232,7 +238,7 @@ export default function LevelExperience({ preview = false, previewStartLetter = 
       releaseMicrophone()
       audioRef.current?.pause()
     }
-  }, [attemptCycle, preview, selected])
+  }, [attemptCycle, preview, router, selected])
 
   useEffect(() => () => {
     audioRef.current?.pause()
