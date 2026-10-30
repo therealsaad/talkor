@@ -72,6 +72,9 @@ jobs:
         working-directory: backend
       - run: pnpm build
         working-directory: backend
+      - name: Verify Azure-first KG narration and S3 failover without external credentials
+        run: pnpm run test:kg-azure-audio
+        working-directory: backend
       - name: Refuse invalid placeholder Class 1 intro URL before media staging
         run: pnpm exec jest --runInBand tests/unit/class1IntroUrl.test.ts
         working-directory: backend
