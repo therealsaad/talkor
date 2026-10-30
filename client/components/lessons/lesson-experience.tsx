@@ -20,6 +20,7 @@ import { firstUnfinishedActivity, isOpenLessonConversation, personalizeLessonTex
 import { KGLessonIntro } from '@/components/student/lesson/kg-lesson-intro'
 import { Class1LessonIntro } from '@/features/lessons/grades/class-01/level-01/Class1LessonIntro'
 import { Class1SpokenHomework } from '@/features/lessons/grades/class-01/level-01/Class1SpokenHomework'
+import { FIRST_DAY_POEM_COMPLETE, FIRST_DAY_POEM_LINES } from '@/features/lessons/grades/class-01/level-01/FirstDayPoemClassroom'
 import { class1SpokenSpelling } from '@/features/lessons/grades/class-01/level-01/first-day-voice-guide'
 
 /**
@@ -161,6 +162,8 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
   const [introAvailable, setIntroAvailable] = useState(false)
   const [introReplayRequest, setIntroReplayRequest] = useState(0)
   const [homeworkSaved, setHomeworkSaved] = useState(false)
+  const [poemRecitalChunk, setPoemRecitalChunk] = useState(0)
+  const poemRecitalParts = useRef<string[]>([])
 
   const activity = playableActivities[index]
   const julie = useMissJulieVoice()
@@ -239,6 +242,8 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     setRetryAttempt(0)
     setSpokenWarmupAnswer(null)
     setAudioBlocked(false)
+    setPoemRecitalChunk(0)
+    poemRecitalParts.current = []
     spokenTurnIds.current.clear()
     speakingTurnIds.current.clear()
     pendingTeacherAck.current = null
@@ -248,7 +253,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     const timer = window.setTimeout(() => {
       void (async () => {
         try {
-          if (activity.activityKey?.startsWith('class1-l01-v3-')) {
+          if (/^class1-l01-v(?:3|4)-/.test(activity.activityKey || '')) {
             // A previous Qwen final reply may be pending after a browser reload
             // or failed Azure playback. Restore that exact turn before asking
             // a new question so students don't get trapped by completed state.
@@ -368,7 +373,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     try {
       if (!audioEnabled && experienceId === 'g01-l01') {
         setAudioBlocked(true)
-        setFeedback('Teacher audio is required for this voice-first lesson. Ask a teacher to enable sound.')
+        setFeedback('Teacher audio is required for this voice-first lesson. Please enable sound.')
         setExperience('recoverable_error')
         return false
       }
@@ -381,8 +386,8 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         if (playback !== 'spoken') {
           setAudioBlocked(true)
           setFeedback(playback === 'autoplay-blocked'
-            ? 'Sound permission is needed. Ask your teacher to enable sound once.'
-            : 'Miss Julie could not play her voice. Ask your teacher to check Azure Speech and the backend.')
+            ? 'Sound permission is needed. Please enable sound once.'
+            : 'Miss Julie could not play her voice. Please check the sound service.')
           setExperience('recoverable_error')
           return false
         }
@@ -676,7 +681,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
             ? await voiceService.transcribeAudioDetailed(blob, durationMs, 'en-IN')
             : { transcript: await voiceService.transcribeAudio(blob, durationMs, 'en-IN'), languageCode: undefined }
 
-          const normalizedText = voiceResult.transcript.trim()
+          let normalizedText = voiceResult.transcript.trim()
 
           if (!normalizedText) {
             throw new Error('I could not hear that clearly. Try once more.')
@@ -696,6 +701,37 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
             // including an unacknowledged final reply or a playback failure.
             await replayCurrentTeacherTurn()
             return
+          }
+
+          // Sarvam accepts short clips only. For the full ten-line poem,
+          // collect five consecutive two-line recordings without scoring
+          // any intermediate take. Only the final combined transcript is
+          // sent to Qwen and can ever earn activity progress.
+          if (activity.activityKey === 'class1-l01-v4-poem-full') {
+            if (poemRecitalChunk < 4) {
+              poemRecitalParts.current.push(normalizedText)
+              await cancelActiveVoiceSession()
+              const next = poemRecitalChunk + 1
+              setPoemRecitalChunk(next)
+              setTranscript(normalizedText)
+              const nextLines = FIRST_DAY_POEM_LINES.slice(next*2,next*2+2).join('. ')
+              const nextTurn: TeacherTurn = {
+                id: `poem-next-${activity.id}-${next}-${Date.now()}`,
+                text: `Lovely effort! Listen to the next two lines: ${nextLines}. Now recite them.`,
+                emotion: 'encouraging',
+                intent: 'ask',
+                requiresStudentResponse: true,
+                retryRequired: false,
+                hintLevel: 0,
+                activityComplete: false,
+                voicePriority: 'CONVERSATION',
+                staticAudioActivityId: activity.id,
+              }
+              setTeacherText(nextTurn.text)
+              await commitTeacherTurn(nextTurn, 'waiting_for_student')
+              return
+            }
+            normalizedText = [...poemRecitalParts.current, normalizedText].join(' ')
           }
 
           setTranscript(normalizedText)
@@ -873,7 +909,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       const retryRequired = Boolean(ai?.shouldRetry || ai?.conversation?.retryState?.waiting)
       const serverComplete = Boolean(ai?.activityComplete || ai?.conversation?.complete)
       const controlledComplete = !ai && Number(result.evaluation?.score || 0) >= 70
-      const complete = activity?.activityKey?.startsWith('class1-l01-v3-')
+      const complete = /^class1-l01-v(?:3|4)-/.test(activity?.activityKey || '')
         ? serverComplete && Boolean(ai?.conversation?.id)
         : serverComplete || controlledComplete
       const normalizedTurn = normalizeTeacherTurnFromAi(ai, fallbackText, {
@@ -893,7 +929,11 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       setModelSentence(retryRequired ? normalizedTurn.modelSentence || '' : '')
       setXp((value) => value + (result.xpAwarded || 0))
       setConversationTurn((value) => value + 1)
-      const firstDayV3 = activity?.activityKey?.startsWith('class1-l01-v3-') === true
+      if (activity?.activityKey === 'class1-l01-v4-poem-full' && !complete) {
+        poemRecitalParts.current = []
+        setPoemRecitalChunk(0)
+      }
+      const firstDayV3 = /^class1-l01-v(?:3|4)-/.test(activity?.activityKey || '') === true
       if (!firstDayV3) setActivityComplete(complete)
       setPose(poseFromAi(ai, retryRequired, complete))
       setRetryAttempt(ai?.conversation?.retryState?.attempt || 0)
@@ -973,16 +1013,20 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         : `You did it, ${studentName}! You finished ${syllabusName} and used clear English in real speaking turns.`)
       void commitTeacherTurn({
         id: `teacher-${activity?.id || index}-complete`,
-        text: experienceId === 'g01-l01' && homeworkMessage
-          ? `${celebration} For your speaking homework, ${homeworkMessage.replace(/^Homework:\s*/i, '')}`
-          : celebration,
+        text: activity?.activityKey === 'class1-l01-v4-poem-full'
+          ? `${celebration} Let us hear the whole poem one last time with our happy rhythm. ${FIRST_DAY_POEM_COMPLETE} For your speaking homework, recite it with actions at home!`
+          : experienceId === 'g01-l01' && homeworkMessage
+            ? `${celebration} For your speaking homework, ${homeworkMessage.replace(/^Homework:\s*/i, '')}`
+            : celebration,
         emotion: 'celebrating',
         intent: 'celebrate',
         requiresStudentResponse: false,
         retryRequired: false,
         hintLevel: 0,
         activityComplete: true,
-        voicePriority: 'LESSON',
+        // The finale's complete poem is a live Azure reading, never a v3 S3 word clip.
+        voicePriority: activity?.activityKey === 'class1-l01-v4-poem-full' ? 'CONVERSATION' : 'LESSON',
+        staticAudioActivityId: activity?.activityKey === 'class1-l01-v4-poem-full' ? activity.id : undefined,
       }, 'lesson_complete')
       return
     }
@@ -1003,7 +1047,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       <AnimatePresence>{experience === 'entering' ? <TalkoraWorldLoader key="arrival" destination={levelTitle} subtitle={`Opening ${levelTitle}...`} /> : null}</AnimatePresence>
       <div className={`talkora-lesson ${experience === 'lesson_complete' ? 'is-celebrating' : ''}`} data-experience={experience}
         style={experienceId === 'g01-l01' ? { height: '100dvh', maxHeight: '100dvh', overflow: 'hidden', display: 'flex', flexDirection: 'column' } : undefined}>
-        {activity?.activityKey?.startsWith('class1-l01-v3-') ? null : <LessonHud
+        {/^class1-l01-v(?:3|4)-/.test(activity?.activityKey || '') ? null : <LessonHud
           title={syllabusName}
           levelLabel={stageLabel}
           xp={xp}
@@ -1056,6 +1100,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
               conversationTurn={conversationTurn}
               xpEarned={xp}
               onReplayFromStart={index > 0 && completedActivityIds.length > 0 ? () => setIndex(0) : undefined}
+              poemRecitalChunk={poemRecitalChunk}
               onStartMic={() => void startMic()}
               onStopMic={stopMic}
               onReplayJulie={() => void replayCurrentTeacherTurn()}
@@ -1109,7 +1154,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
           <Class1LessonIntro
             key={`${introVideoKey}:${introReplayRequest}`}
             approvedVideoUrl={class1IntroVideoUrl}
-            firstDayOnly={activity?.activityKey?.startsWith('class1-l01-v3-') === true}
+            firstDayOnly={/^class1-l01-v(?:3|4)-/.test(activity?.activityKey || '') === true}
             onAvailable={markIntroAvailable}
             onDone={finishIntro}
           />

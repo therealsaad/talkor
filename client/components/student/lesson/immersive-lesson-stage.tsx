@@ -29,6 +29,7 @@ import { personalizeLessonText } from '@/services/lesson-progress'
 import { class1TeachingCue } from '@/features/lessons/grades/class-01/level-01/first-day-voice-guide'
 import { Class1StorybookBoard } from '@/features/lessons/grades/class-01/level-01/first-day-storybook-board'
 import { FirstDayClassroom } from '@/features/lessons/grades/class-01/level-01/FirstDayClassroom'
+import { FirstDayPoemClassroom } from '@/features/lessons/grades/class-01/level-01/FirstDayPoemClassroom'
 import {
   getWarmupPrompts,
   isWarmupActivity,
@@ -74,6 +75,7 @@ export interface ImmersiveLessonStageProps {
   conversationTurn: number
   xpEarned: number
   onStartMic: () => void
+  poemRecitalChunk?: number
   onStopMic: () => void
   onReplayJulie: () => void
   onSelectChoice: (choice: string) => void
@@ -125,6 +127,7 @@ export function ImmersiveLessonStage({
   conversationTurn,
   xpEarned,
   onStartMic,
+  poemRecitalChunk = 0,
   onStopMic,
   onReplayJulie,
   onSelectChoice,
@@ -386,6 +389,32 @@ export function ImmersiveLessonStage({
   // Class 1 is a hands-free lesson, not a scrollable answer-sheet. Reuse the
   // parent engine's authenticated mic, speech and progress state; never add a
   // second recorder or mark activities complete from presentation code.
+  const poemV4Id = activity.activityKey?.match(/^class1-l01-v4-(poem-.+)$/)?.[1]
+  if (isClass1Classroom && poemV4Id) {
+    return <FirstDayPoemClassroom
+      sceneId={poemV4Id}
+      recitalChunk={poemRecitalChunk}
+      teacherText={julieMessage}
+      teacherImage={julieImage}
+      animationUrl={julieAnimation}
+      isSpeaking={isJulieSpeaking}
+      isListening={isRecording}
+      isProcessing={isProcessing}
+      isCompleted={isCompleted}
+      isRetry={isRetry}
+      transcript={studentTurnText || transcript}
+      feedback={feedback}
+      modelSentence={modelSentence}
+      needsAudioGesture={needsAudioGesture}
+      isAudioEnabled={audioEnabled}
+      onEnableAudio={onEnableAudio}
+      onReplayJulie={onReplayJulie}
+      onStartMic={onStartMic}
+      onStopMic={onStopMic}
+      step={index + 1}
+      total={totalActivities}
+    />
+  }
   const firstDayV3Id = activity.activityKey?.match(/^class1-l01-v3-(.+)$/)?.[1]
   if (isClass1Classroom && firstDayV3Id) {
     return <FirstDayClassroom

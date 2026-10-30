@@ -77,17 +77,20 @@ export function isClass1DemoActivity(activity: {
 }): boolean {
   return activity.status === 'draft' &&
     activity.curriculumVersion === CLASS1_DEMO_VERSION &&
-    Boolean(activity.activityKey && /^class1-l01-v(?:2|3)-/.test(activity.activityKey))
+    Boolean(activity.activityKey && /^class1-l01-v(?:2|3|4)-/.test(activity.activityKey))
 }
 
 /** An additive Class 1 First Day lesson coexists with historic v2 student
  * attempts and progress. Prefer it only after the media-verified installer
  * marks all ten scenes ready. KG and ordinary published lessons are unchanged. */
 export const CLASS1_FIRST_DAY_PARALLEL_REVISION = 'class1-first-day-only-v3-parallel'
+export const CLASS1_FIRST_DAY_POEM_REVISION = 'class1-first-day-poem-v4'
 
 export function preferClass1FirstDayLesson<T extends { settings?: Record<string, unknown> | null }>(
   lessons: T[],
 ): T[] {
+  const poem = lessons.filter(lesson => lesson.settings?.lessonPlanRevision === CLASS1_FIRST_DAY_POEM_REVISION)
+  if (poem.length) return poem
   const firstDay = lessons.filter(lesson =>
     lesson.settings?.lessonPlanRevision === CLASS1_FIRST_DAY_PARALLEL_REVISION)
   return firstDay.length ? firstDay : lessons
