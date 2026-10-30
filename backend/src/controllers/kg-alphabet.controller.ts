@@ -165,18 +165,26 @@ async function sendKGAzure(res: Response, text: string) {
     return res.send(azure.audio)
   }
 
-  const priya = await new PythonVoiceProvider().synthesize(text)
-  const bytes = priya.audioBase64 ? Buffer.from(priya.audioBase64, 'base64') : Buffer.alloc(0)
-  const contentType = priya.contentType?.trim() || ''
-  if (!priya.available || bytes.length < 256 || bytes.length > 8 * 1024 * 1024 ||
-      !/^audio\/[a-z0-9.+-]+(?:\s*;.*)?$/i.test(contentType)) {
-    throw ApiError.provider('KG_FEEDBACK_AUDIO_UNAVAILABLE')
+  try {
+    const priya = await new PythonVoiceProvider().synthesize(text)
+    const bytes = priya.audioBase64 ? Buffer.from(priya.audioBase64, 'base64') : Buffer.alloc(0)
+    const contentType = priya.contentType?.trim() || ''
+    if (!priya.available || bytes.length < 256 || bytes.length > 8 * 1024 * 1024 ||
+        !/^audio\\/[a-z0-9.+-]+(?:\\s*;.*)?$/i.test(contentType)) {
+      throw new Error('Invalid fallback audio')
+    }
+    res.setHeader('Content-Type', contentType)
+    res.setHeader('Content-Length', String(bytes.length))
+    res.setHeader('Cache-Control', 'private, no-store')
+    res.setHeader('X-Voice-Provider', 'python-priya-fallback')
+    return res.send(bytes)
+  } catch {
+    // A failed emergency fallback must remain a retryable voice error,
+    // not a generic 500 that strands the child's replay button.
+    throw new ApiError(503, 'TTS_SERVICE_UNAVAILABLE', 'Miss Julie voice is temporarily unavailable.', {
+      retryable: true,
+    })
   }
-  res.setHeader('Content-Type', contentType)
-  res.setHeader('Content-Length', String(bytes.length))
-  res.setHeader('Cache-Control', 'private, no-store')
-  res.setHeader('X-Voice-Provider', 'python-priya-fallback')
-  return res.send(bytes)
 }
 
 async function sendManifestAudio(res: Response, id: AudioId, options: { preview?: boolean; ifNoneMatch?: string } = {}) {
