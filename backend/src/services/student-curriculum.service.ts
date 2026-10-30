@@ -26,6 +26,7 @@ import {
   CLASS1_DEMO_ACTIVITY_FILTER,
   CLASS1_DEMO_LESSON_FILTER,
   CLASS1_DEMO_VERSION,
+  CLASS1_FIRST_DAY_PARALLEL_REVISION,
   preferClass1FirstDayLesson,
 } from './class1-demo-access'
 
@@ -431,6 +432,9 @@ export const StudentCurriculumService = {
              LESSON SUMMARY
              =============================================== */
 
+          const hasFirstDay = isClass1Demo && unitLessons.some(
+            lesson => lesson.settings?.lessonPlanRevision === CLASS1_FIRST_DAY_PARALLEL_REVISION,
+          )
           const lessonSummary =
             unitLessons.map(
               (lesson) => {
@@ -485,13 +489,13 @@ export const StudentCurriculumService = {
              * Curriculum title remains authoritative.
              */
             title:
-              unit.title,
+              hasFirstDay ? 'My First Day — School Adventure' : unit.title,
 
             /*
              * Product world label stays separate.
              */
             worldName:
-              unit.place,
+              hasFirstDay ? 'School Garden' : unit.place,
 
             term:
               unit.term,
@@ -534,12 +538,14 @@ export const StudentCurriculumService = {
               unit.badge,
 
             learningObjectives:
-              unit.learningObjectives ??
-              [],
+              hasFirstDay
+                ? ['Listen to and speak the First Day school actions in English']
+                : (unit.learningObjectives ?? []),
 
             speakingGoals:
-              unit.speakingGoals ??
-              [],
+              hasFirstDay
+                ? ['Speak about school, walk, run, skip, jump, grin, bell and play']
+                : (unit.speakingGoals ?? []),
 
             lessonCount:
               unitLessons.length,

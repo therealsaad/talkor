@@ -141,3 +141,11 @@ test('additive first-day v3 redirects old lesson bookmarks to new, reviewed less
   assert.match(staging, /existingStudentRecordsWillBeUpdated: false/)
   assert.doesNotMatch(staging, /Activity\.deleteMany|Progress\.updateMany|ActivityAttempt\.delete/)
 })
+
+test('when Class 1 v3 is installed student-facing map labels school adventure, not obsolete AM word meadow', async () => {
+  const curriculum = await load('../../../backend/src/services/student-curriculum.service.ts')
+  const fast = await load('../../../backend/src/services/student-lesson-fast.service.ts')
+  assert.match(curriculum, /hasFirstDay \? 'My First Day — School Adventure'/)
+  assert.match(curriculum, /hasFirstDay \? 'School Garden'/)
+  assert.match(fast, /title: 'My First Day — School Adventure', place: 'School Garden'/)
+})
