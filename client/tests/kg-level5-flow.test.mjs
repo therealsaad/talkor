@@ -34,6 +34,7 @@ test('Level 05 entry is gated by the real video ended event and lesson video is 
   assert.match(source, /introComplete\) return/) // lesson UI remains gated
   assert.match(source, /kg-level5-introduction/)
   assert.doesNotMatch(source, /kg-level5-video-card|videoRef|toggleVideo|videoPlaying/) 
+  assert.match(source, /transition\.complete[\s\S]*?router\.replace\('\/school\/kg-preview'\)/)
 })
 
 test('Level 05 uses the shared Miss Julie media handoff without duplicate fallback pose', () => {
@@ -84,10 +85,12 @@ test('Level 05 keeps its supplied background and contains responsive animated im
 
 test('KG preview Level 05 link resolves to the matching Next.js route', () => {
   const preview = fs.readFileSync(new URL('../app/school/kg-preview/page.tsx', import.meta.url), 'utf8')
+  const map = fs.readFileSync(new URL('../features/lessons/grades/kg/level-01/components/LevelMap.tsx', import.meta.url), 'utf8')
   const levelPage = new URL('../app/school/kg-preview/level-5/page.tsx', import.meta.url)
   const letterPage = new URL('../app/school/kg-preview/level-5/[letter]/page.tsx', import.meta.url)
 
-  assert.match(preview, /['"]\/school\/kg-preview\/level-5['"]/) 
+  assert.match(preview, /KGAlphabetMap preview previewDashboard/)
+  assert.match(map, /5: '\/school\/kg-preview\/level-5'/)
   assert.ok(fs.existsSync(levelPage))
   assert.ok(fs.existsSync(letterPage))
 })

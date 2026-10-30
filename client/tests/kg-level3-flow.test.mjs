@@ -68,6 +68,7 @@ test('all six letter buttons are available and correct K–P answers progress au
   }
   assert.deepEqual(resolveLevel3Attempt('P', 'correct'), { letter: 'P', complete: true, retry: false })
   assert.match(lesson, /transitionTimer = window\.setTimeout\(\(\) => \{[\s\S]*?setSelected\(transition\.letter\)/)
+  assert.match(lesson, /transition\.complete[\s\S]*?router\.replace\('\/school\/kg-preview'\)/)
   assert.doesNotMatch(lesson, /Next letter button|aria-label="Next letter"/i)
 })
 

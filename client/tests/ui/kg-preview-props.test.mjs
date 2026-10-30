@@ -20,4 +20,5 @@ test('school Level 1 preview opens the existing lesson experience directly', asy
   assert.match(lesson, /<Suspense fallback=\{<main className="kg-alpha kg-alpha-loading"/)
   assert.match(lesson, /<KGAlphabetLesson \{\.\.\.props\} \/>/)
   assert.match(lesson, /if \(preview\) \{[\s\S]*?makeKGPreviewState\(previewStartIndex\)/)
+  assert.match(lesson, /if \(preview\) router\.replace\('\/school\/kg-preview'\)/)
 })

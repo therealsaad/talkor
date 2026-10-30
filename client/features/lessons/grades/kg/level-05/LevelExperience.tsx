@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { ArrowLeft, Check, LoaderCircle, Mic, Play, RotateCw, Sparkles, Volume2 } from 'lucide-react'
 import { AnimatedMissJulie } from '../level-01/components/AnimatedMissJulie'
@@ -23,6 +24,7 @@ const LESSONS: Record<Level5Letter, { word: string; picture: string; color: stri
 type Phase = 'narrating' | 'requesting' | 'listening' | 'checking' | 'feedback' | 'error' | 'finished'
 
 export default function LevelExperience({ preview = false, previewStartLevel5Letter = 'W', onPreviewBack }: LevelExperienceProps) {
+  const router = useRouter()
   const reducedMotion = useReducedMotion()
   const initial = LEVEL5_LETTERS.includes(previewStartLevel5Letter as Level5Letter) ? previewStartLevel5Letter as Level5Letter : 'W'
   const [letter, setLetter] = useState<Level5Letter>(initial)
@@ -91,7 +93,11 @@ export default function LevelExperience({ preview = false, previewStartLevel5Let
           await kgLevel5PreviewService.playFeedback(result.outcome === 'correct' ? 'great' : result.outcome === 'unclear' ? 'repeat' : 'try-again', audioRef.current!, controller.signal)
           if (!active) return
           if (transition.retry) { setAttemptCycle((value) => value + 1); return }
-          if (transition.complete) timer = window.setTimeout(() => active && setPhase('finished'), reducedMotion ? 0 : 700)
+          if (transition.complete) timer = window.setTimeout(() => {
+            if (!active) return
+            setPhase('finished')
+            if (preview) router.replace('/school/kg-preview')
+          }, reducedMotion ? 0 : 700)
           else timer = window.setTimeout(() => active && setLetter(LEVEL5_LETTERS[index + 1]), reducedMotion ? 0 : 900)
         }).catch(fail)
       }
@@ -103,7 +109,7 @@ export default function LevelExperience({ preview = false, previewStartLevel5Let
       timer = window.setTimeout(() => { if (recorder?.state === 'recording') recorder.stop() }, 12000)
     } catch (error) { fail(error) }
     return () => { active = false; controller.abort(); release() }
-  }, [letter, index, reducedMotion])
+  }, [letter, index, preview, reducedMotion, router])
 
   useEffect(() => {
     if (!introComplete) return

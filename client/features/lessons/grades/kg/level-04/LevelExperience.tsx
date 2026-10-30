@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { LoaderCircle, Mic, Play, RotateCw, Sparkles } from 'lucide-react'
 import { requestKGMicrophone } from '@/lib/kg-microphone'
@@ -32,6 +33,7 @@ type VideoState = 'ready' | 'loading' | 'playing' | 'paused' | 'blocked' | 'erro
 type Phase = 'narrating' | 'requesting' | 'listening' | 'checking' | 'feedback' | 'error' | 'finished'
 
 export default function LevelExperience({ preview = false }: LevelExperienceProps) {
+  const router = useRouter()
   const reducedMotion = useReducedMotion()
   const [videoState, setVideoState] = useState<VideoState>('ready')
   const [videoError, setVideoError] = useState('')
@@ -191,7 +193,10 @@ export default function LevelExperience({ preview = false }: LevelExperienceProp
           )
           if (!active) return
           if (transition.retry) setAttemptCycle((cycle) => cycle + 1)
-          else if (transition.complete) setPhase('finished')
+          else if (transition.complete) {
+            setPhase('finished')
+            if (preview) router.replace('/school/kg-preview')
+          }
           else { setLetter(transition.letter); setAttemptCycle(0) }
         }).catch(fail)
       }
@@ -217,7 +222,7 @@ export default function LevelExperience({ preview = false }: LevelExperienceProp
       release()
       audioRef.current?.pause()
     }
-  }, [attemptCycle, letter])
+  }, [attemptCycle, letter, preview, router])
 
   useEffect(() => {
     if (videoState !== 'complete') return

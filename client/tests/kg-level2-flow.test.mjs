@@ -102,6 +102,7 @@ test('only correct E–J attempts advance; incorrect and unclear responses retry
   assert.match(activity, /const noSpeech = \(!speechDetected && vadAvailable\) \|\| blob\.size < 800/)
   assert.match(activity, /transition\.retry\)[\s\S]*?setAttemptCycle\(\(cycle\) => cycle \+ 1\)/)
   assert.match(activity, /transition\.complete[\s\S]*?setPhase\('finished'\)/)
+  assert.match(activity, /transition\.complete[\s\S]*?router\.replace\('\/school\/kg-preview'\)/)
   assert.match(activity, /The connection was interrupted/)
   assert.match(activity, /Try again/)
   assert.match(activity, /releaseMicrophone/)

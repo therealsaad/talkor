@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { ArrowLeft, LoaderCircle, Mic, RotateCw, Sparkles } from 'lucide-react'
 import { useReducedMotion } from 'framer-motion'
 import { requestKGMicrophone } from '@/lib/kg-microphone'
@@ -43,6 +44,7 @@ const LETTER_TRANSITION_PAUSE_MS = 900
 type Phase = 'narrating' | 'requesting' | 'listening' | 'checking' | 'feedback' | 'error' | 'finished'
 
 export default function LevelExperience({ preview = false, onPreviewBack }: LevelExperienceProps) {
+  const router = useRouter()
   const reduceMotion = useReducedMotion()
   const [selected, setSelected] = useState<Level2Letter>('E')
   const [julieState, setJulieState] = useState<'idle' | 'speaking'>('idle')
@@ -181,7 +183,11 @@ export default function LevelExperience({ preview = false, onPreviewBack }: Leve
             return
           }
           if (transition.complete) {
-            transitionTimer = window.setTimeout(() => { if (active) setPhase('finished') }, LETTER_TRANSITION_PAUSE_MS)
+            transitionTimer = window.setTimeout(() => {
+              if (!active) return
+              setPhase('finished')
+              if (preview) router.replace('/school/kg-preview')
+            }, LETTER_TRANSITION_PAUSE_MS)
           } else {
             transitionTimer = window.setTimeout(() => {
               if (!active) return
@@ -241,7 +247,7 @@ export default function LevelExperience({ preview = false, onPreviewBack }: Leve
       releaseMicrophone()
       audioRef.current?.pause()
     }
-  }, [attemptCycle, preview, selected])
+  }, [attemptCycle, preview, router, selected])
 
   useEffect(() => () => {
     audioRef.current?.pause()
