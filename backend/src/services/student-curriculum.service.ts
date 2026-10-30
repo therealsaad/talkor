@@ -26,6 +26,7 @@ import {
   CLASS1_DEMO_ACTIVITY_FILTER,
   CLASS1_DEMO_LESSON_FILTER,
   CLASS1_DEMO_VERSION,
+  preferClass1FirstDayLesson,
 } from './class1-demo-access'
 
 /* =========================================================
@@ -120,7 +121,7 @@ export const StudentCurriculumService = {
           unit._id,
       )
 
-    const lessons =
+    const lessonCandidates =
       unitIds.length >
       0
         ? await Lesson.find({
@@ -138,6 +139,9 @@ export const StudentCurriculumService = {
             })
             .lean()
         : []
+    const lessons = isClass1Demo
+      ? preferClass1FirstDayLesson(lessonCandidates)
+      : lessonCandidates
 
     /* =====================================================
        ACTIVITIES
@@ -680,7 +684,7 @@ export const StudentCurriculumService = {
        ===================================================== */
 
     const contentStatus = access.isKGPilot || access.isClass1Demo ? 'draft' : 'active'
-    const lessons =
+    const lessonCandidates =
       await Lesson.find({
         levelId:
           currentUnit.id,
@@ -691,6 +695,9 @@ export const StudentCurriculumService = {
           order: 1,
         })
         .lean()
+    const lessons = access.isClass1Demo
+      ? preferClass1FirstDayLesson(lessonCandidates)
+      : lessonCandidates
 
     /* =====================================================
        ACTIVITIES
