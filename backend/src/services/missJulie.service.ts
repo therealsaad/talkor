@@ -10,27 +10,7 @@ import { MemoryService } from './memory.service'
 import { MistakeService } from './mistake.service'
 import { StudentContextService } from './student-context.service'
 import { finalizeConversationTeacherResponse } from './conversationTurns'
-
-/** Text-only evidence for the ten original First Day speaking scenes.
- * Not a pronunciation or cognitive ability score. A request for help is NOT
- * evidence of English mastery even when it mentions the target word. */
-function firstDaySceneSkills(sceneKey: string, message: string): string[] {
-  const text = message.toLowerCase().trim()
-  if (/\b(?:what is|what does|meaning|don't know|dont know|i need help|please help|explain)\b|क्या|काय|समजत|म्हणजे|नहीं|नाही|मदद/.test(text)) return []
-  const evidence: Record<string, RegExp> = {
-    'hello-school': /\b(school|happy|hello)\b/,
-    'skip-bunny': /\b(skip|skipping)\b/,
-    'run-race': /\b(run|running)\b/,
-    'walk-school': /\b(walk|walking)\b/,
-    'big-grin': /\b(smile|grin|smiling)\b/,
-    'school-bell': /\b(bell|rings)\b/,
-    'jump-frog': /\b(jump|jumping)\b/,
-    'play-friends': /\b(play|playing)\b/,
-    'enter-class': /\b(classroom|go in|go into)\b/,
-    'grade-one': /\b(grade one|grade 1|school|play|skip|run|walk|jump)\b/,
-  }
-  return evidence[sceneKey]?.test(text) ? ['first_day_english_attempt'] : []
-}
+import { firstDaySceneSkills } from './first-day-evidence'
 
 function detectedConcepts(message: string): string[] {
   const text = message.toLowerCase()
@@ -298,7 +278,11 @@ export const MissJulieService = {
       input.lessonId &&
       input.activityId,
     )
-    const minTurns = Math.max(1, goal?.minTurns || 2)
+    // In a voice-first beginner scene, the first demonstrated English word
+    // counts. Keeping a child for two mandatory turns after a correct answer
+    // feels like the teacher ignored them. Other grades keep their original
+    // conversation pacing and mastery requirements.
+    const minTurns = isFirstDayScene ? 1 : Math.max(1, goal?.minTurns || 2)
     const maxTurns = Math.max(minTurns, goal?.maxTurns || activity?.maxConversationTurns || 5)
     const demonstratedRequiredSkills = required.length === 0
       ? nextTurn >= minTurns
@@ -334,7 +318,8 @@ export const MissJulieService = {
 
     const calculatedMasteryStatus = isGoldEpisode
       ? masteryFor(required, skillEvidence, bounded)
-      : required.length > 0 && required.every((item) => goalState.includes(item)) && nextTurn >= (goal?.minTurns || 1)
+      : required.length > 0 && required.every((item) => goalState.includes(item)) &&
+        nextTurn >= (isFirstDayScene ? 1 : (goal?.minTurns || 1))
         ? 'MASTERED'
         : bounded && required.length > 0
           ? 'NEEDS_PRACTICE'
