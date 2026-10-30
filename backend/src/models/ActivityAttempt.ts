@@ -48,5 +48,7 @@ activityAttemptSchema.index({ studentId: 1, idempotencyKey: 1 }, { unique: true,
 activityAttemptSchema.index({ studentId: 1, activityId: 1, attemptNumber: 1 }, { unique: true })
 activityAttemptSchema.index({ studentId: 1, createdAt: -1 })
 activityAttemptSchema.index({ studentId: 1, createdAt: -1, score: 1 })
+/** Level-scoped reporting: who has attempts on a given level. */
+activityAttemptSchema.index({ levelId: 1, studentId: 1 })
 
 export const ActivityAttempt = model<IActivityAttempt>('ActivityAttempt', activityAttemptSchema)

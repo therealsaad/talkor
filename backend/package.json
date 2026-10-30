@@ -15,6 +15,7 @@
     "migrate:curriculum-v1": "tsx src/scripts/migrate-curriculum-v1.ts",
     "db:ensure-indexes": "tsx src/scripts/ensure-indexes.ts",
     "reports:export": "tsx src/scripts/export-school-reports.ts",
+    "reports:reconcile-completions": "tsx src/scripts/reconcile-level-completions.ts",
     "audit:curriculum": "tsx src/scripts/audit-curriculum-atlas.ts",
     "audit:kg-assets": "tsx src/scripts/audit-kg-picture-assets.ts",
     "curriculum:kg": "tsx src/scripts/kg-curriculum-publisher.ts",
