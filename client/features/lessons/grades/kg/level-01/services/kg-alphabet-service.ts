@@ -1,4 +1,4 @@
-import { apiClient, apiClientBlob } from '@/lib/api-client'
+import { apiClient, apiClientBlob, getStoredToken } from '@/lib/api-client'
 import { kgRequest } from './kg-request'
 
 export type KGOutcome = 'correct' | 'incorrect' | 'unclear' | 'supported'
@@ -50,6 +50,7 @@ let playbackId: string | null = null
 // React Strict Mode may mount twice while the first intro/start is in flight.
 // Never issue two requests that invalidate one another's watch tickets.
 let pendingIntroStart: Promise<{ playbackId: string }> | null = null
+let pendingIntroStudentToken: string | null = null
 
 function introTicketHeaders(): Record<string, string> {
   if (!playbackId) throw new Error('Miss Julie intro ticket missing. Please restart the story.')
@@ -136,18 +137,31 @@ export const kgAlphabetService = {
   hasIntroTicket: () => Boolean(playbackId),
 
   async beginIntro() {
-    if (pendingIntroStart) return pendingIntroStart
+    const token = getStoredToken()
+    if (!token) throw new Error('KG story requires student login')
+    // Deduplicate Strict Mode starts only for the SAME login. A different
+    // student on a shared computer must never inherit a pending intro
+    // ticket from the previous student's tab session.
+    if (pendingIntroStart && pendingIntroStudentToken === token) return pendingIntroStart
     playbackId = null
-    const pending = apiClient<{ playbackId: string }>('/kg-alphabet/intro/start', {
+    let pending: Promise<{ playbackId: string }>
+    pending = apiClient<{ playbackId: string }>('/kg-alphabet/intro/start', {
       method: 'POST', cache: 'no-store',
     }).then((session) => {
-      playbackId = session.playbackId
+      if (pendingIntroStart === pending &&
+          pendingIntroStudentToken === token && getStoredToken() === token) {
+        playbackId = session.playbackId
+      }
       return session
     })
     pendingIntroStart = pending
+    pendingIntroStudentToken = token
     try { return await pending }
     finally {
-      if (pendingIntroStart === pending) pendingIntroStart = null
+      if (pendingIntroStart === pending) {
+        pendingIntroStart = null
+        pendingIntroStudentToken = null
+      }
     }
   },
 
