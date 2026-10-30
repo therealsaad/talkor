@@ -557,3 +557,37 @@ it('uses local Priya for the same saved KG teacher reply if live Azure is unavai
   const progress = await KGAlphabetProgress.findOne({ studentId: student._id })
   expect(progress?.currentIndex).toBe(0)
 })
+
+
+it('KG1 409 only when the intro ticket is absent; both audio and completion ACK accept a valid ticket', async () => {
+  const { student, authorization } = await makePilot()
+  await approveIntro(authorization)
+  const submissionId = 'kg-valid-feedback-ticket-123'
+  await KGAlphabetAttempt.create({ studentId: student._id, schoolId: student.schoolId,
+    activityId: 'say-a', letter: 'A', mode: 'speak',
+    outcome: 'correct', replay: false, submissionId,
+    feedbackText: 'Good effort! A is for apple. Say apple!'
+  })
+  const url = `/api/kg-alphabet/attempt/${submissionId}/feedback-audio`
+  const ack = `/api/kg-alphabet/attempt/${submissionId}/feedback-played`
+  const azure = jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached')
+    .mockResolvedValue({ audio: Buffer.alloc(300, 65), contentType: 'audio/mpeg' })
+
+  // Even if the audio provider is healthy, no intro ticket is a hard 409.
+  await request(app).get(url).set('Authorization', authorization).expect(409)
+  expect(azure).not.toHaveBeenCalled()
+  await request(app).post(ack).set('Authorization', authorization).expect(409)
+  let state = await KGAlphabetProgress.findOne({ studentId: student._id })
+  expect(state?.currentIndex).toBe(0)
+
+  const response = await request(app).get(url).set('Authorization', authorization)
+    .set('X-KG-Intro-Playback', activePlaybackId).expect(200)
+  expect(response.headers['x-voice-provider']).toBe('azure')
+  expect(azure).toHaveBeenCalledWith('Good effort! A is for apple. Say apple!')
+
+  // The server moves forward ONLY when the same authenticated ticket is
+  // presented after the client has heard the returned audio.
+  const completed = await request(app).post(ack).set('Authorization', authorization)
+    .set('X-KG-Intro-Playback', activePlaybackId).expect(200)
+  expect(completed.body.data.state.currentIndex).toBe(1)
+})

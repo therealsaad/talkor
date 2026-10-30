@@ -32,6 +32,9 @@ jobs:
       - name: Verify stable SSR hydration for student and school authentication
         run: node --test tests/ui/auth-hydration-contract.test.mjs
         working-directory: client
+      - name: Verify KG1 authenticated feedback audio and playback ticket are forwarded
+        run: node --test tests/ui/kg-ticket-feedback-headers.test.mjs
+        working-directory: client
       - name: Guard KG1 replayable Azure coaching and a single retry CTA
         run: node --test tests/ui/kg-audio-feedback-retry.test.mjs
         working-directory: client
@@ -80,6 +83,9 @@ jobs:
         working-directory: backend
       - name: Verify authenticated student can open v3 from a historic Class 1 link
         run: pnpm exec jest --runInBand tests/integration/class1DemoAccess.test.ts
+        working-directory: backend
+      - name: Verify KG1 feedback 409 is resolved with valid authenticated intro ticket
+        run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'KG1 409 only when the intro ticket'
         working-directory: backend
       - name: Verify KG1 feedback text is stable across audio retries
         run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'KG1 caches each Qwen teacher reply once'
