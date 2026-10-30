@@ -19,8 +19,13 @@ Grade, hurray). The lesson is a poem, **not ten isolated word scenes**.
    recites the lines first; the child repeats using the existing Sarvam STT
    -> local Qwen 8002 -> Azure TTS live loop. If one line is missing, Qwen
    coaches it in short, kind English/Hindi/Marathi and stays on the same page.
-4. Full three-stanza recitation. A one-word answer cannot pass. Read-only
-   text evidence checks do not claim to measure accent, pitch or comprehension.
+4. Full three-stanza recitation in **five two-line microphone segments** (each
+   less than the existing ten-second limit). Miss Julie prompts each next pair;
+   intermediate STT clips cancel their temporary voice session and never score.
+   The five transcriptions are combined into one final authenticated Qwen
+   evaluation. A one-word answer cannot pass. The child recites every line in
+   order with brief pauses, not a seamless uninterrupted karaoke recording.
+   Text evidence does not claim to measure accent, pitch or comprehension.
 5. Only after complete teacher feedback playback does the existing
    authenticated teacher-audio acknowledgment save an activity attempt.
    Existing lesson resume, spoken homework and student PIN are preserved.

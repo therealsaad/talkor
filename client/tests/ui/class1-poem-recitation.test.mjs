@@ -23,3 +23,15 @@ test('Poem classroom shows ten authentic lines and preserves live engine ownersh
   assert.match(poem,/useOriginalInstrumental/)
   assert.doesNotMatch(poem,/submitAttempt|createConversation|markComplete/)
 })
+
+test('full ten-line challenge aggregates five microphone clips and never submits partial poem as mastery',()=>{
+  const engine=source('components/lessons/lesson-experience.tsx')
+  const stage=source('components/student/lesson/immersive-lesson-stage.tsx')
+  const board=source('features/lessons/grades/class-01/level-01/FirstDayPoemClassroom.tsx')
+  assert.match(engine, /poemRecitalChunk < 4/)
+  assert.match(engine, /await cancelActiveVoiceSession\(\)/)
+  assert.match(engine, /normalizedText = \[\.\.\.poemRecitalParts\.current, normalizedText\]\.join\(' '\)/)
+  assert.match(stage, /recitalChunk=\{poemRecitalChunk\}/)
+  assert.match(board, /activeStart=final\?Math\.min\(4,recitalChunk\)\*2/)
+  assert.match(engine, /poemRecitalParts\.current = \[\]/)
+})
