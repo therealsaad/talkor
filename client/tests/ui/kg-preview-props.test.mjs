@@ -33,7 +33,8 @@ test('KG Level 6 stays staff-only and previews its supplied video with audible p
     read('../../features/lessons/grades/kg/level-06/assets.json'),
   ])
   const assetManifest = JSON.parse(assets)
-  assert.match(page, /setSelectedLevel\(6\)/)
+  assert.match(page, /setShowLevel6\(true\)/)
+  assert.match(page, /if \(showLevel6\) \{[\s\S]*?return \([\s\S]*?<RegisteredLevelExperience/)
   assert.match(page, /<RegisteredLevelExperience[\s\S]*?level=\{6\}[\s\S]*?staffPreview/)
   assert.ok(preview.includes("const VIDEO_URL = '/lessons/kg/level-06/vowels.MOV'"))
   assert.equal(assetManifest.introVideo, '/lessons/kg/level-06/vowels.MOV')
@@ -44,7 +45,7 @@ test('KG Level 6 stays staff-only and previews its supplied video with audible p
   assert.match(preview, /onClick=\{tapVideoToPlay\}/)
   assert.match(preview, /controls=\{false\}/)
   assert.doesNotMatch(preview, /<button/)
-  assert.match(page, /Level 6 · Vowel Garden/)
+  assert.match(page, /Level 6 · Video preview/)
   assert.match(page, /document\.documentElement\.requestFullscreen\(\)/)
   assert.match(preview, /objectFit: 'cover'/)
   assert.match(config, /studentPlayable: false/)
@@ -54,19 +55,13 @@ test('KG Level 6 stays staff-only and previews its supplied video with audible p
   assert.match(schoolShell, /\['\/school\/kg-preview', 'KG Preview', Shapes\]/)
 })
 
-test('KG Level 6 is Miss Julie-led and does not use lesson buttons', async () => {
-  const [experience, activities, route] = await Promise.all([
+test('KG Level 6 preview plays only the intro video and omits the follow-up lesson', async () => {
+  const [experience, activities] = await Promise.all([
     read('../../features/lessons/grades/kg/level-06/LevelExperience.tsx'),
     read('../../features/lessons/grades/kg/level-06/activities.ts'),
-    read('../../../backend/src/routes/kg-vowel-preview.routes.ts'),
   ])
-  const orderedIds = [...activities.matchAll(/id: '(say-[^']+)'/g)].map((match) => match[1])
-  assert.deepEqual(orderedIds, ['say-a-apple', 'say-e-elephant', 'say-i-igloo', 'say-o-orange', 'say-u-umbrella'])
-  assert.doesNotMatch(experience, /AnimatedMissJulie/)
-  assert.doesNotMatch(experience, /current\.letter\} — \{current\.word/)
-  assert.match(experience, /watchVoiceActivity/)
-  assert.match(experience, /kg-vowel-preview\/speech/)
-  assert.match(experience, /MAX_ATTEMPTS = 3/)
+  assert.deepEqual([...activities.matchAll(/id: '(say-[^']+)'/g)].map((match) => match[1]), [])
+  assert.match(experience, /Level6VideoPreview/)
+  assert.doesNotMatch(experience, /AnimatedMissJulie|watchVoiceActivity|requestKGMicrophone|kg-vowel-preview/)
   assert.doesNotMatch(experience, /<button/)
-  assert.match(route, /requireRole\('TEACHER', 'SCHOOL_ADMIN'\)/)
 })

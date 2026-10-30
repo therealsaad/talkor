@@ -1,11 +1,7 @@
 import { ApiError } from '../utils/ApiError'
 import { KGSpeechService } from '../services/kg-speech.service'
 import { isSupportedVoiceAudioMimeType } from '../schemas/voice.schema'
-import { PythonVoiceProvider } from '../providers/voice/PythonVoiceProvider'
 import { AzureVoiceProvider } from '../providers/voice/AzureVoiceProvider'
-
-const KG_LEVEL1_VOICE_ID = 'talkora-priya-v6-indian-kids-teacher'
-const KG_VOICE_LANGUAGE = 'en-IN'
 
 export const KG_VOWEL_TARGETS = [
   { activityId: 'say-a-apple', letter: 'A', word: 'apple' },
@@ -31,7 +27,7 @@ export function kgVowelSpeechScript(line: unknown, activityId: unknown): string 
     throw ApiError.badRequest('Unknown Vowel Garden speech line')
   }
   const phrase = `${target.letter} for ${target.word}`
-  if (line === 'prompt') return `Look at the picture. ${phrase}. Now you say: ${phrase}.`
+  if (line === 'prompt') return `Look at the picture. The letter is ${target.letter}. ${phrase}. Now you say: ${phrase}.`
   if (line === 'replay') return `Let’s listen once more. ${phrase}. Now you try: ${phrase}.`
   if (line === 'correct') return `You said ${phrase}! Wonderful speaking!`
   if (line === 'incorrect') return `Nice try! The phrase is ${phrase}. Listen: ${phrase}. You can try again when you’re ready.`
@@ -70,19 +66,8 @@ function validateAudio(input: Record<string, unknown>) {
 export const KGVowelPreviewController = {
   async speech(line: unknown, activityId: unknown) {
     const text = kgVowelSpeechScript(line, activityId)
-    try {
-      const result = await new PythonVoiceProvider().synthesizeWithVoice(text, KG_LEVEL1_VOICE_ID, KG_VOICE_LANGUAGE)
-      if (!result.available || !result.audioBase64) throw ApiError.provider('Level 1 Priya voice is unavailable')
-      return { audio: Buffer.from(result.audioBase64, 'base64'), contentType: result.contentType || 'audio/wav' }
-    } catch {
-      // Keep lessons audible when the local Level 1 voice service is offline.
-      // Azure Neerja is Talkora’s standard Miss Julie voice; browser/system TTS is never used.
-      try {
-        return await new AzureVoiceProvider().synthesizeUncached(text)
-      } catch {
-        throw ApiError.provider('Miss Julie voice is unavailable')
-      }
-    }
+    // Use one configured Miss Julie voice for every Level 6 line; do not switch providers between cards.
+    return new AzureVoiceProvider().synthesizeUncached(text)
   },
   async attempt(input: unknown): Promise<{ outcome: KGVowelOutcome }> {
     if (!input || typeof input !== 'object' || Array.isArray(input)) throw ApiError.badRequest('A valid vowel practice request is required')

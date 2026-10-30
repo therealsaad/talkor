@@ -43,8 +43,8 @@ export class AzureVoiceProvider implements VoiceProvider {
     const selected = chooseTalkoraBilingualVoice(text, s.voice, class1Lesson)
 
     const url = `https://${s.region}.tts.speech.microsoft.com/cognitiveservices/v1`
-    const rate = kindergarten ? (process.env.KG_AZURE_SPEECH_RATE?.trim() || s.rate) : s.rate
-    const pitch = kindergarten ? (process.env.KG_AZURE_SPEECH_PITCH?.trim() || s.pitch) : s.pitch
+    const rate = kindergarten ? (process.env.KG_AZURE_SPEECH_RATE?.trim() || "+5%") : s.rate
+    const pitch = kindergarten ? (process.env.KG_AZURE_SPEECH_PITCH?.trim() || "+6%") : s.pitch
     const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${selected.locale}"><voice name="${selected.voice}"><prosody rate="${rate}" pitch="${pitch}">${escapeXml(text)}</prosody></voice></speak>`
 
     let response: Response

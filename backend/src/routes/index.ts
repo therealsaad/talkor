@@ -14,7 +14,6 @@ import analyticsRoutes from './analytics.routes'
 import dailyChallengeRoutes from './dailyChallenge.routes'
 import educatorAIRoutes from './educator-ai.routes'
 import kgAlphabetRoutes from './kg-alphabet.routes'
-import kgVowelPreviewRoutes from './kg-vowel-preview.routes'
 import kgLevel2PreviewRoutes from './kg-level2-preview.routes'
 import kgLevel3PreviewRoutes from './kg-level3-preview.routes'
 import kgLevel4PreviewRoutes from './kg-level4-preview.routes'
@@ -36,7 +35,6 @@ router.use('/memory', memoryRoutes)
 router.use('/ai', aiRoutes)
 router.use('/voice', voiceRoutes)
 router.use('/kg-alphabet', kgAlphabetRoutes)
-router.use('/kg-vowel-preview', kgVowelPreviewRoutes)
 router.use('/kg-level2-preview', kgLevel2PreviewRoutes)
 router.use('/kg-level3-preview', kgLevel3PreviewRoutes)
 router.use('/kg-level4-preview', kgLevel4PreviewRoutes)
