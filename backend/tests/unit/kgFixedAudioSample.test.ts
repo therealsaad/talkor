@@ -15,5 +15,6 @@ it('KG audio generator does not sample or upload the dynamic Priya opening as S3
   expect(script).toContain("const SAMPLE_ID = 'word-apple'")
   expect(script).not.toContain("const SAMPLE_ID = 'say-a'")
   expect(script).toContain('CURRICULUM_STATIC_AUDIO_MANIFEST')
-  expect(script).toContain('IfNoneMatch')
+  expect(script).toContain('S3Service.putAudio')
+  expect(script).toContain("}, '*')")
 })
