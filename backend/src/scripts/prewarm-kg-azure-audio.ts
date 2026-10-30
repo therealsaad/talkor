@@ -30,6 +30,7 @@ async function main() {
     await Promise.all(rows.slice(i, i + 3).map(async (line) => {
       try {
         const result = await getKGAzureNarrationAudio(line)
+        if (!result.storedInS3) throw new Error('Azure audio played but S3 persistence failed')
         console.log(`KG${line.level} ${line.id}: ${result.source} (${result.audio.length} bytes)`)
         succeeded++
       } catch (error) {
