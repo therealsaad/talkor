@@ -39,7 +39,7 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
     if (!sourceReady) {
       setLoading(false)
       setCanPlay(false)
-      setError('Miss Julie's First Day story is not available yet. Please check again after the Talkora media update.')
+      setError("Miss Julie's First Day story is not available yet. Please check again after the Talkora media update.")
     }
   }, [sourceReady])
 
