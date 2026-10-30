@@ -1,5 +1,5 @@
 import type { Request, Response } from 'express'
-import { AzureVoiceProvider } from '../providers/voice/AzureVoiceProvider'
+import { getKGAzureNarrationAudio } from '../services/kg-azure-narration.service'
 import { KGSpeechService } from '../services/kg-speech.service'
 import { isSupportedVoiceAudioMimeType } from '../schemas/voice.schema'
 import { ApiError } from '../utils/ApiError'
@@ -26,9 +26,12 @@ export const KGLevel5PreviewController = {
       throw ApiError.notFound('Level 5 narration not found')
     }
 
-    const { audio, contentType } = await new AzureVoiceProvider().synthesizeUncached(LEVEL5_NARRATION[narrationId])
+    const { audio, contentType, source } = await getKGAzureNarrationAudio({
+      level: 5, id: narrationId, text: LEVEL5_NARRATION[narrationId],
+    })
     res.setHeader('Content-Type', contentType)
     res.setHeader('Content-Length', String(audio.length))
+    res.setHeader('X-Talkora-Cache', source.toUpperCase())
     res.setHeader('Cache-Control', 'private, no-store')
     res.setHeader('X-Content-Type-Options', 'nosniff')
     res.send(audio)
