@@ -5,6 +5,9 @@
  * pnpm exec tsx -r dotenv/config src/scripts/stage-class1-first-day-poem.ts --apply
  */
 import 'dotenv/config'
+import { existsSync, statSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { spawnSync } from 'node:child_process'
 import mongoose from 'mongoose'
 import { env } from '../config/env'
 import { CurriculumClass } from '../models/CurriculumClass'
@@ -17,19 +20,64 @@ import { CLASS1_DEMO_VERSION, CLASS1_DEMO_LESSON_FILTER,
   CLASS1_FIRST_DAY_POEM_REVISION } from '../services/class1-demo-access'
 import { FIRST_DAY_POEM_LINES, FIRST_DAY_POEM_FULL, FIRST_DAY_POEM_STEPS,
   FIRST_DAY_POEM_WORD_BANK } from '../curriculum/class1-first-day-poem'
-import { isRealFirstDayIntroUrl } from './class1-first-day-intro-url'
+import { CLASS1_BUNDLED_FIRST_DAY_INTRO, chooseClass1IntroSource,
+  isAllowedClass1IntroSource } from './class1-first-day-intro-url'
 
 const APPLY = process.argv.includes('--apply')
 const INSTALLING = 'class1-first-day-poem-v4-installing'
+
+/** Before a local lab's read-only/draft install, inspect the existing file
+ * physically, without fetching anything or changing published media.
+ * The browser still strictly requires 87-93 s of unmuted viewing.
+ */
+function inspectBundledIntro() {
+  const cwd = process.cwd()
+  const root = existsSync(resolve(cwd, 'client', 'public')) ? cwd : resolve(cwd, '..')
+  const videoFile = resolve(root, 'client', 'public', CLASS1_BUNDLED_FIRST_DAY_INTRO.slice(1))
+  if (!existsSync(videoFile) || statSync(videoFile).size < 1_000_000) {
+    throw new Error('BUNDLED_CLASS1_INTRO_MISSING: expected the real MP4 in client/public/lessons/class-01/level-01/')
+  }
+  const result = spawnSync('ffprobe', [
+    '-v', 'error', '-show_entries', 'format=duration:stream=codec_type',
+    '-of', 'json', videoFile,
+  ], { encoding: 'utf8', timeout: 20_000 })
+  if (result.error) {
+    if ((result.error as NodeJS.ErrnoException).code !== 'ENOENT')
+      throw new Error('Unable to inspect bundled First Day intro: ' + result.error.message)
+    console.log('CHECK: ffprobe not installed; manually verify 87-93 s and sound. The browser will also reject invalid duration.')
+  } else {
+    if (result.status !== 0) throw new Error('Bundled First Day MP4 could not be decoded by ffprobe')
+    const info = JSON.parse(result.stdout) as {
+      format?: { duration?: string }
+      streams?: Array<{ codec_type?: string }>
+    }
+    const duration = Number(info.format?.duration)
+    if (!Number.isFinite(duration) || duration < 87 || duration > 93 ||
+      !info.streams?.some(stream => stream.codec_type === 'audio') ||
+      !info.streams?.some(stream => stream.codec_type === 'video')) {
+      throw new Error('BUNDLED_CLASS1_INTRO_INVALID: needs 87-93 seconds, video and audio')
+    }
+    console.log('PASS: bundled intro has video/audio streams and ' + duration.toFixed(1) + ' s runtime')
+  }
+  return videoFile
+}
+
 async function main() {
   if (process.argv.slice(2).some(arg=>arg!=='--apply')) throw new Error('Unknown argument')
   if (process.env.NODE_ENV !== 'development') throw new Error('Local development demo only')
   if (APPLY && process.env.TALKORA_CLASS1_POEM_STAGE !== 'YES')
     throw new Error('Explicit TALKORA_CLASS1_POEM_STAGE=YES required to install')
-  const introUrl = (process.env.TALKORA_FIRST_DAY_INTRO_URL || '').trim()
-  if (APPLY && (!isRealFirstDayIntroUrl(introUrl) ||
-    process.env.TALKORA_FIRST_DAY_INTRO_REVIEWED !== 'YES'))
-    throw new Error('Review a REAL full-screen First Day intro with sound and supply its valid HTTPS URL')
+  const introUrl = chooseClass1IntroSource(
+    process.env.TALKORA_FIRST_DAY_INTRO_URL,
+    process.env.TALKORA_FIRST_DAY_USE_BUNDLED_INTRO === 'YES',
+  )
+  if (APPLY) {
+    if (!isAllowedClass1IntroSource(introUrl) ||
+      process.env.TALKORA_FIRST_DAY_INTRO_REVIEWED !== 'YES') {
+      throw new Error('Review the ACTUAL complete First Day video with sound, and set the real HTTPS URL or TALKORA_FIRST_DAY_USE_BUNDLED_INTRO=YES')
+    }
+    if (introUrl === CLASS1_BUNDLED_FIRST_DAY_INTRO) inspectBundledIntro()
+  }
   await mongoose.connect(env.mongodbUri, { autoIndex:false, serverSelectionTimeoutMS:10000 })
   try {
     if (mongoose.connection.db?.databaseName !== 'test') throw new Error('Only local test database allowed')
@@ -62,7 +110,8 @@ async function main() {
       twoLinePracticeSteps:5, finalFullRecitation:1, oldLessons:historical.length,
       existingAttempts:oldAttempts, existingProgressDocs:oldProgress,
       existingPoemActivities:readyActivities.length, partialInstall:partial.length>0,
-      introUrlValid:isRealFirstDayIntroUrl(introUrl),
+      introUrlValid:isAllowedClass1IntroSource(introUrl),
+      introSource:introUrl === CLASS1_BUNDLED_FIRST_DAY_INTRO ? 'bundled-MP4' : introUrl ? 'HTTPS' : 'missing',
       existingStudentRecordsWillBeUpdated:false,
       voice:'Azure dynamic spoken recitation and Qwen per attempt; original music is client-side',
     },null,2))

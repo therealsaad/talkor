@@ -9,6 +9,8 @@ import { voiceService } from '@/services/voice-service'
 export const CLASS1_FIRST_DAY_VIDEO = process.env.NEXT_PUBLIC_TALKORA_CLASS1_INTRO_URL?.trim() ||
   '/lessons/class-01/level-01/miss-julie-first-day-intro.mp4'
 
+export const CLASS1_FIRST_DAY_VIDEO_BUNDLED = '/lessons/class-01/level-01/miss-julie-first-day-intro.mp4'
+
 const MIN_DURATION_SECONDS = 87
 const MAX_DURATION_SECONDS = 93
 const REQUIRED_WATCH_SECONDS = 85
@@ -19,11 +21,16 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
   firstDayOnly?: boolean
   approvedVideoUrl?: string
 }) {
-  // The exact reviewed HTTPS video can travel with the authenticated v3
+  // The reviewed video source can travel with the authenticated v3/v4
   // lesson, avoiding a new Next.js build or an administrator permission gate.
-  const reviewedSource = /^https:\/\//.test(approvedVideoUrl || '')
-    ? approvedVideoUrl?.trim()
-    : process.env.NEXT_PUBLIC_TALKORA_CLASS1_INTRO_URL?.trim()
+  // A video explicitly reviewed and pinned by the developer may use
+  // our *exact* same-origin shipped MP4. Keep all other relative paths
+  // forbidden so an old/placeholder chapter cannot silently sneak in.
+  const candidate = approvedVideoUrl?.trim() ||
+    process.env.NEXT_PUBLIC_TALKORA_CLASS1_INTRO_URL?.trim() || ''
+  const reviewedSource = candidate === CLASS1_FIRST_DAY_VIDEO_BUNDLED ||
+    /^https:\/\//.test(candidate)
+    ? candidate : ''
   const sourceReady = !firstDayOnly || Boolean(reviewedSource)
   const videoSource = firstDayOnly ? reviewedSource : CLASS1_FIRST_DAY_VIDEO
   const frame = useRef<HTMLDivElement>(null)

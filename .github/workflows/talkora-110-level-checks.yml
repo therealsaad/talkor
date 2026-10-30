@@ -35,6 +35,9 @@ jobs:
       - name: Verify Class 1 hands-free audio and landscape contracts
         run: node --test tests/ui/class1-voice-runtime-contract.test.mjs
         working-directory: client
+      - name: Verify bundled First Day intro staging and mandatory playback gate
+        run: node --test tests/ui/class1-bundled-firstday-intro.test.mjs
+        working-directory: client
       - name: Verify Class 1 poem UI and existing voice loop contracts
         run: node --test tests/ui/class1-poem-recitation.test.mjs
         working-directory: client
