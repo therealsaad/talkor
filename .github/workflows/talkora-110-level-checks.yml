@@ -60,6 +60,12 @@ jobs:
         working-directory: backend
       - run: pnpm build
         working-directory: backend
+      - name: Verify First Day v3 never takes over historic v2 progress early
+        run: pnpm exec jest --runInBand tests/unit/class1DemoAccess.test.ts
+        working-directory: backend
+      - name: Verify authenticated student can open v3 from a historic Class 1 link
+        run: pnpm exec jest --runInBand tests/integration/class1DemoAccess.test.ts
+        working-directory: backend
       - name: Test Class 1 Node-Python bridge security
         run: pnpm exec jest --runInBand tests/unit/pythonAIProviderBridge.test.ts tests/unit/class1StaticAudio.test.ts
         working-directory: backend

@@ -94,6 +94,7 @@ export interface LessonExperienceProps {
   avatarType?: 'BOY' | 'GIRL'
   studentName?: string
   introVideoKey?: string
+  class1IntroVideoUrl?: string
   experienceId?: string
   backgroundSrc?: string
   completionMessage?: string
@@ -129,7 +130,7 @@ type HistoryTurn = { id: string; role: 'teacher' | 'student'; text: string }
 
 import { ImmersiveLessonStage } from '@/components/student/lesson/immersive-lesson-stage'
 
-export function LessonExperience({ activities, levelTitle = 'Favourite Fair', syllabusName = 'My Favourite Things', levelNumber = 1, avatarType = 'BOY', studentName = 'Explorer', onLessonComplete, completedActivityIds = [], introVideoKey, experienceId, backgroundSrc, completionMessage, homeworkMessage }: LessonExperienceProps) {
+export function LessonExperience({ activities, levelTitle = 'Favourite Fair', syllabusName = 'My Favourite Things', levelNumber = 1, avatarType = 'BOY', studentName = 'Explorer', onLessonComplete, completedActivityIds = [], introVideoKey, class1IntroVideoUrl, experienceId, backgroundSrc, completionMessage, homeworkMessage }: LessonExperienceProps) {
   const router = useRouter()
   const skippedPictureActivityCount = activities.filter((item) => typeof item.content?.pilotUnavailableMessage === 'string').length
   const playableActivities = activities.filter((item) => typeof item.content?.pilotUnavailableMessage !== 'string')
@@ -1107,6 +1108,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         introVideoKey === 'class1-g01-l01' ? (
           <Class1LessonIntro
             key={`${introVideoKey}:${introReplayRequest}`}
+            approvedVideoUrl={class1IntroVideoUrl}
             firstDayOnly={activity?.activityKey?.startsWith('class1-l01-v3-') === true}
             onAvailable={markIntroAvailable}
             onDone={finishIntro}

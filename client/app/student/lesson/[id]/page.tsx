@@ -56,8 +56,8 @@ export default function StudentLessonPage() {
   // through the outdated intro or award credit for the wrong chapter.
   if (lesson.experienceId === 'g01-l01' && !firstDayV3) {
     return <main className="talkora-error" role="alert" style={{ minHeight: '75vh', display: 'grid', placeContent: 'center', gap: 18, textAlign: 'center', padding: 32 }}>
-      <h1>Miss Julie's First Day lesson needs a teacher update</h1>
-      <p>The new Balbharati 1.1 classroom has not been activated for this school yet. We will keep your existing progress safe.</p>
+      <h1>Miss Julie is preparing your First Day adventure</h1>
+      <p>This lesson is not installed on Talkora yet. Your earlier learning and progress are safely preserved.</p>
       <button type="button" onClick={() => router.replace('/student/continue')}>Back to my lessons</button>
     </main>
   }
@@ -83,6 +83,9 @@ export default function StudentLessonPage() {
       ? firstDayV3
         ? 'Homework: tell someone at home: I can walk, I can play, and I am in Grade One.'
         : 'Homework: say “It is up” and “I walk to school” with someone at home.'
+      : undefined}
+    class1IntroVideoUrl={firstDayV3 && typeof lesson.lesson.settings?.introVideoUrl === 'string'
+      ? lesson.lesson.settings.introVideoUrl
       : undefined}
     introVideoKey={lesson.experienceId === 'g01-l01' && lesson.completedActivityIds.length === 0
       ? 'class1-g01-l01'
