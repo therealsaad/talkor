@@ -1,21 +1,17 @@
-# Kindergarten / Level 06 — Family Words
+# Kindergarten / Level 06 — Vowel Garden
 
-**Code:** `g00-l06` · **Design:** Rainbow Valley · **Status:** draft
+**Code:** `g00-l06` · **Design:** Rainbow Valley · **Status:** staff-only draft preview
 
-- `LevelExperience.tsx` — staff-only visual design prototype. Never directly route students here.
-- `config.ts` — grade-specific objectives, theme, animation mood, audio policy, and resume behavior.
-- `activities.ts` — real approved activities (empty until authored); ideas do not count as activities.
-- `interactions.ts` — available voice/touch/corrective-feedback modes.
-- `assets.json` — references to approved media; never add dead placeholder URLs.
-- `index.ts` — exports used by the lazy-loaded 110-level registry.
+The approved staff preview plays `/lessons/kg/level-06/vowels.MOV` full-screen as the introduction. When the video ends, it continues into Vowel Garden and teaches the five video-board pairs in order:
 
-## Authoring workflow
+1. A — apple
+2. E — elephant
+3. I — igloo
+4. O — orange
+5. U — umbrella
 
-1. Verify the official syllabus and update `config.syllabus` with school-approved outcomes; set `syllabusVerified` only after review.
-2. Build real prompts, answer rubrics, and follow-up hints in `activities.ts` using the shared activity engine. Keep activities empty until end-to-end tests exist.
-3. Store optimized per-level art/media in `client/public/lessons/kg/level-06/`; register real paths in `assets.json`.
-4. Use the existing Azure/Groq/STT backend providers; static clips may use S3, while spontaneous corrections are uncached.
-5. Preview via `/school/curriculum-studio/0/6`; test microphone, playback, reduced motion, student resume, and permission boundaries.
-6. Publish only using authorized existing DB publication workflow after approval. Do not set `studentPlayable: true` merely to make the preview look complete.
+The garden uses a teacher-and-learning-board layout inspired by the Level 4 preview: Miss Julie appears beside the active vowel card, with a progress strip and a speech bubble. The intro video is no longer on screen during this phase, so only one Julie is visible. There are no distractors or lesson-control buttons. Miss Julie speaks each prompt and feedback, pauses five seconds, then listens automatically for the learner. Each card shows its letter and picture with a short label, and the cards advance in order.
 
-This is an intentionally blank level workspace. The student route must not expose it until approved.
+Speech requests use the existing staff-only preview authorization and rate limit. Attempt audio and transcripts are processed for the preview response only; this flow does not save student progress, recordings, or transcripts.
+
+This level remains unpublished: `studentPlayable` is `false` and `staffOnlyPreview` is `true`. Do not route students to it or publish it without curriculum review and authorization.

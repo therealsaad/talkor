@@ -1,0 +1,107 @@
+.kg-level6-vowel-play {
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  min-height: 100dvh;
+  background:
+    linear-gradient(rgba(232, 250, 224, .16), rgba(232, 250, 224, .16)),
+    url('/lessons/kg/level-06/vowel-garden-scene.png') center / cover no-repeat;
+}
+
+.kg-level6-vowel-play.is-fullscreen {
+  position: fixed;
+  z-index: 9998;
+  inset: 0;
+  width: 100vw;
+  height: 100dvh;
+  min-height: 100dvh;
+}
+
+.kg-level6-vowel-play .kg-alpha-quest {
+  min-height: min(68dvh, 630px);
+  border: 1px solid rgba(255, 255, 255, .98);
+  background:
+    radial-gradient(ellipse at 14% 4%, rgba(255, 255, 255, .98), transparent 48%),
+    linear-gradient(145deg, rgba(255, 255, 255, .97), rgba(247, 249, 255, .96) 54%, rgba(255, 249, 239, .96));
+  color: #183246;
+  box-shadow:
+    0 2px 0 rgba(255, 255, 255, .95) inset,
+    0 0 0 1px rgba(222, 232, 242, .9),
+    0 14px 0 rgba(136, 105, 81, .26),
+    0 30px 70px rgba(30, 50, 48, .30);
+  backdrop-filter: blur(12px) saturate(1.12);
+}
+
+.kg-level6-vowel-play .kg-alpha-quest::before {
+  inset: 12px;
+  border: 1px solid rgba(183, 156, 124, .25);
+  border-radius: inherit;
+}
+
+.kg-level6-vowel-learning { width: 100%; }
+.kg-level6-vowel-play .kg-alpha-activity-label { color: #735a9c; }
+.kg-level6-vowel-play .kg-alpha-learning h1 { color: #354864; }
+.kg-level6-vowel-play .kg-alpha-learning h1 strong { color: #c45f79; }
+.kg-level6-vowel-play .kg-alpha-learning p,
+.kg-level6-vowel-play .kg-level3-letter-count { color: #596b7e; }
+
+.kg-level6-vowel-card-frame {
+  display: grid;
+  width: min(100%, 520px);
+  height: min(47dvh, 410px);
+  place-items: center;
+}
+
+.kg-level6-vowel-card-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 3px solid #fff;
+  border-radius: clamp(18px, 2vw, 28px);
+  background: #fff;
+  object-fit: contain;
+  box-shadow: 0 8px 0 #b58c62, 0 15px 30px rgba(54, 58, 47, .18);
+}
+
+.kg-level6-vowel-play .kg-alpha-teacher-image {
+  height: min(64dvh, 560px);
+  max-height: 64dvh;
+}
+
+.kg-level6-vowel-play .kg-alpha-teacher-image img {
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.kg-level6-vowel-play .kg-alpha-speech {
+  color: #573c64;
+  background: linear-gradient(145deg, #fff9e9, #fff0d8);
+  box-shadow: 0 8px 0 rgba(190, 162, 126, .48), 0 13px 24px rgba(58, 48, 67, .18);
+}
+
+.kg-level6-vowel-play .kg-alpha-speech::before { background: #fff5df; }
+.kg-level6-vowel-listening { color: #a54c67; }
+.kg-level6-vowel-error { max-width: 36rem; color: #9a3942; font-weight: 800; }
+.kg-level6-vowel-complete { max-width: 38rem; }
+.kg-level6-vowel-complete p { line-height: 1.5; }
+
+@media (max-width: 760px) {
+  .kg-level6-vowel-play .kg-alpha-scene {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 10px;
+    overflow-y: auto;
+  }
+
+  .kg-level6-vowel-play .kg-alpha-teacher { height: auto; }
+  .kg-level6-vowel-play .kg-alpha-teacher-image { height: 18dvh; min-height: 92px; max-height: 150px; }
+  .kg-level6-vowel-play .kg-alpha-speech { width: min(100%, 520px); min-height: 46px; padding: 8px 13px; }
+  .kg-level6-vowel-play .kg-alpha-quest { min-height: 0; max-height: none; padding: 16px 14px; }
+  .kg-level6-vowel-card-frame { width: min(100%, 440px); height: min(40dvh, 330px); }
+  .kg-level6-vowel-play .kg-alpha-play-top { grid-template-columns: 1fr auto; min-height: 44px; }
+  .kg-level6-vowel-play .kg-alpha-progress-wrap { grid-column: 1 / -1; grid-row: 2; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kg-level6-vowel-play::before,
+  .kg-level6-vowel-play .kg-alpha-step-bar i.current { animation: none; }
+}
