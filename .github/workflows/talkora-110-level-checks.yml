@@ -78,6 +78,9 @@ jobs:
       - name: Verify audio stream, Azure payload and audio-format regression tests
         run: pnpm exec jest --runInBand tests/voice-response-stream.test.ts tests/class1-azure-audio.test.ts tests/voice-audio-format.test.ts
         working-directory: backend
+      - name: Verify Hindi and Marathi Azure voice routing for reviewed First Day clips
+        run: pnpm exec jest --runInBand tests/unit/class1FirstDayAzureLocale.test.ts
+        working-directory: backend
       - name: Verify First Day teacher voice pack manifest and review gates
         run: pnpm exec jest --runInBand tests/class1-first-day-voice-manifest.test.ts
         working-directory: backend
