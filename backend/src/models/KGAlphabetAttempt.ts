@@ -8,6 +8,8 @@ export interface IKGAlphabetAttempt {
   mode: 'speak' | 'touch'
   outcome: 'correct' | 'incorrect' | 'unclear' | 'supported'
   transcript?: string
+  /** Final server-owned teacher words chosen once for an idempotent attempt. */
+  feedbackText?: string
   selected?: string
   timeSpentMs?: number
   requestHash?: string
@@ -26,6 +28,7 @@ const schema = new Schema<IKGAlphabetAttempt>({
   mode: { type: String, enum: ['speak', 'touch'], required: true },
   outcome: { type: String, enum: ['correct', 'incorrect', 'unclear', 'supported'], required: true },
   transcript: { type: String, maxlength: 240 },
+  feedbackText: { type: String, maxlength: 280 },
   selected: { type: String, maxlength: 20 },
   timeSpentMs: { type: Number, min: 0, max: 300000, default: 0 },
   requestHash: { type: String },

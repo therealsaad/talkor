@@ -11,6 +11,8 @@ import { S3Service } from '../../src/services/S3Service'
 import { KGSpeechService } from '../../src/services/kg-speech.service'
 import { clearKGStaticAudioCache } from '../../src/services/kg-static-audio-cache'
 import { PythonVoiceProvider } from '../../src/providers/voice/PythonVoiceProvider'
+import { AzureVoiceProvider } from '../../src/providers/voice/AzureVoiceProvider'
+import { KGQwenFeedbackService } from '../../src/services/kg-qwen-feedback.service'
 import { ApiError } from '../../src/utils/ApiError'
 import { signToken } from '../../src/utils/jwt'
 import { clearTestDatabase, connectTestDatabase, disconnectTestDatabase } from './dbTestUtils'
@@ -467,4 +469,91 @@ it('records Hindi vocabulary understanding without advancing spoken-English mast
   expect(response.body.data.state.pronunciationNeedsPractice).not.toContain('A')
   const saved = await KGAlphabetAttempt.findOne({ studentId: student._id, submissionId: 'hindi-bridge-123456' })
   expect(saved?.outcome).toBe('supported')
+})
+
+
+it('KG1 caches each Qwen teacher reply once and synthesizes the identical Azure sentence on audio retry', async () => {
+  const { student, authorization } = await makePilot()
+  await approveIntro(authorization)
+  const qwen = jest.spyOn(KGQwenFeedbackService, 'compose').mockResolvedValue({
+    text: 'I heard your apple. Great try! Let us say apple once more.',
+    source: 'qwen-8002',
+  })
+  const synthesize = jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached').mockResolvedValue({
+    audio: Buffer.from('ID3\\x04\\x00\\x00KG Azure test payload'),
+    contentType: 'audio/mpeg',
+  })
+  jest.spyOn(KGSpeechService, 'transcribe').mockResolvedValue({
+    transcript: 'apple', available: true, provider: 'test',
+  } as never)
+
+  const submissionId = 'kg-stable-azure-reply-1234'
+  const body = { activityId: 'say-a', submissionId,
+    audioBase64: 'Y'.repeat(160), mimeType: 'audio/webm', durationMs: 1200 }
+  const result = await request(app).post('/api/kg-alphabet/attempt')
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
+    .send(body).expect(200)
+  expect(result.body.data.feedbackText).toBe('I heard your apple. Great try! Let us say apple once more.')
+  const saved = await KGAlphabetAttempt.findOne({ studentId: student._id, submissionId })
+  expect(saved?.feedbackText).toBe(result.body.data.feedbackText)
+
+  const audio = () => request(app)
+    .get(`/api/kg-alphabet/attempt/${submissionId}/feedback-audio`)
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
+    .expect(200)
+
+  await audio()
+  await audio()
+  expect(qwen).toHaveBeenCalledTimes(1)
+  expect(synthesize).toHaveBeenCalledTimes(2)
+  expect(synthesize).toHaveBeenNthCalledWith(1, result.body.data.feedbackText)
+  expect(synthesize).toHaveBeenNthCalledWith(2, result.body.data.feedbackText)
+
+  const recovered = await request(app).post('/api/kg-alphabet/attempt')
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
+    .send(body).expect(200)
+  expect(recovered.body.data.duplicate).toBe(true)
+  expect(recovered.body.data.feedbackText).toBe(result.body.data.feedbackText)
+  expect(qwen).toHaveBeenCalledTimes(1)
+  // A resumed client can still acknowledge the specific saved turn.
+  await request(app).post(`/api/kg-alphabet/attempt/${submissionId}/feedback-played`)
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
+    .expect(200)
+})
+
+
+it('uses local Priya for the same saved KG teacher reply if live Azure is unavailable, without auto-advancing', async () => {
+  const { student, authorization } = await makePilot()
+  await approveIntro(authorization)
+  const submissionId = 'kg-azure-priya-fallback-1234'
+  const feedbackText = 'Apple is our English word. Good try! Say apple with me.'
+  await KGAlphabetAttempt.create({
+    studentId: student._id, schoolId: student.schoolId,
+    activityId: 'say-a', letter: 'A', mode: 'speak', outcome: 'incorrect',
+    submissionId, replay: false, feedbackText,
+  })
+
+  jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached')
+    .mockRejectedValueOnce(new Error('Azure temporarily unavailable'))
+  const priya = jest.spyOn(PythonVoiceProvider.prototype, 'synthesize')
+    .mockResolvedValueOnce({
+      audioUrl: null,
+      audioBase64: Buffer.alloc(320, 65).toString('base64'),
+      contentType: 'audio/wav',
+      available: true,
+      provider: 'python-priya',
+    })
+
+  const response = await request(app)
+    .get(`/api/kg-alphabet/attempt/${submissionId}/feedback-audio`)
+    .set('Authorization', authorization)
+    .set('X-KG-Intro-Playback', activePlaybackId)
+    .expect(200)
+
+  expect(response.headers['x-voice-provider']).toBe('python-priya-fallback')
+  expect(response.headers['content-type']).toMatch(/audio\/wav/)
+  expect(priya).toHaveBeenCalledTimes(1)
+  expect(priya).toHaveBeenCalledWith(feedbackText)
+  const progress = await KGAlphabetProgress.findOne({ studentId: student._id })
+  expect(progress?.currentIndex).toBe(0)
 })

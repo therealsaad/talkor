@@ -611,7 +611,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     }
     catch {
       if (generation.current !== token) return
-      setFeedback('Miss Julie could not finish her reply. Tap Try again to hear her before continuing.')
+      setFeedback('Miss Julie’s reply needs another try. Tap Try again to hear it before continuing.')
       setPhase('error')
       return
     }
@@ -905,7 +905,8 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
           </AnimatePresence>
         </section>
       </div>
-      {phase === 'error' && current ? <div className="kg-alpha-recoverable" role="alert"><span>{feedback}</span>{isPictureRound ? null : <button type="button" onClick={() => void retryLesson()}>Try again</button>}</div> : null}
+      {/* The teacher bubble and lesson card already show the recoverable
+          error and retry control. Don't render a third overlapping alert. */}
       {(phase === 'listening' || phase === 'touch' || phase === 'assist') && <button type="button" className="kg-alpha-hear-again" onClick={() => { generation.current++; audioRef.current?.pause(); stopRecording(); releaseMic(); void beginStep(cursorRef.current) }}><Volume2 size={17} /> Hear Julie again</button>}
     </>}
     <div className="kg-alpha-rotate-lock" aria-hidden="true"><RotateCw size={38} /><strong>Rotate your phone</strong><span>Turn your screen sideways to play in the garden.</span></div>
