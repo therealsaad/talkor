@@ -29,7 +29,10 @@ test('KG voice request reuses original model text and never repeats Qwen for pla
 })
 
 test('KG retries show a single lesson-card CTA, not overlapping bottom alerts', () => {
-  assert.doesNotMatch(lesson, /className="kg-alpha-recoverable"/)
+  // The map's independent connectivity alert is valid. Only the
+  // overlapping *lesson feedback* banner must be absent.
+  assert.doesNotMatch(lesson, /phase === 'error' && current \? <div className="kg-alpha-recoverable"/)
+  assert.match(lesson, /mapError \? <p className="kg-alpha-recoverable"/)
   assert.match(lesson, /phase === 'error' \? <button type="button" className="kg-story-play" onClick=\{\(\) => void retryLesson\(\)\}/)
   assert.match(lesson, /pendingResultRef\.current = \{ result, stepIndex \}/)
 })
