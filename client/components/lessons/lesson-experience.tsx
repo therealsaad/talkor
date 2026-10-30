@@ -20,7 +20,7 @@ import { firstUnfinishedActivity, isOpenLessonConversation, personalizeLessonTex
 import { KGLessonIntro } from '@/components/student/lesson/kg-lesson-intro'
 import { Class1LessonIntro } from '@/features/lessons/grades/class-01/level-01/Class1LessonIntro'
 import { Class1SpokenHomework } from '@/features/lessons/grades/class-01/level-01/Class1SpokenHomework'
-import { FIRST_DAY_POEM_COMPLETE } from '@/features/lessons/grades/class-01/level-01/FirstDayPoemClassroom'
+import { FIRST_DAY_POEM_COMPLETE, FIRST_DAY_POEM_LINES } from '@/features/lessons/grades/class-01/level-01/FirstDayPoemClassroom'
 import { class1SpokenSpelling } from '@/features/lessons/grades/class-01/level-01/first-day-voice-guide'
 
 /**
@@ -162,6 +162,8 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
   const [introAvailable, setIntroAvailable] = useState(false)
   const [introReplayRequest, setIntroReplayRequest] = useState(0)
   const [homeworkSaved, setHomeworkSaved] = useState(false)
+  const [poemRecitalChunk, setPoemRecitalChunk] = useState(0)
+  const poemRecitalParts = useRef<string[]>([])
 
   const activity = playableActivities[index]
   const julie = useMissJulieVoice()
@@ -240,6 +242,8 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     setRetryAttempt(0)
     setSpokenWarmupAnswer(null)
     setAudioBlocked(false)
+    setPoemRecitalChunk(0)
+    poemRecitalParts.current = []
     spokenTurnIds.current.clear()
     speakingTurnIds.current.clear()
     pendingTeacherAck.current = null
@@ -677,7 +681,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
             ? await voiceService.transcribeAudioDetailed(blob, durationMs, 'en-IN')
             : { transcript: await voiceService.transcribeAudio(blob, durationMs, 'en-IN'), languageCode: undefined }
 
-          const normalizedText = voiceResult.transcript.trim()
+          let normalizedText = voiceResult.transcript.trim()
 
           if (!normalizedText) {
             throw new Error('I could not hear that clearly. Try once more.')
@@ -697,6 +701,37 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
             // including an unacknowledged final reply or a playback failure.
             await replayCurrentTeacherTurn()
             return
+          }
+
+          // Sarvam accepts short clips only. For the full ten-line poem,
+          // collect five consecutive two-line recordings without scoring
+          // any intermediate take. Only the final combined transcript is
+          // sent to Qwen and can ever earn activity progress.
+          if (activity.activityKey === 'class1-l01-v4-poem-full') {
+            if (poemRecitalChunk < 4) {
+              poemRecitalParts.current.push(normalizedText)
+              await cancelActiveVoiceSession()
+              const next = poemRecitalChunk + 1
+              setPoemRecitalChunk(next)
+              setTranscript(normalizedText)
+              const nextLines = FIRST_DAY_POEM_LINES.slice(next*2,next*2+2).join('. ')
+              const nextTurn: TeacherTurn = {
+                id: `poem-next-${activity.id}-${next}-${Date.now()}`,
+                text: `Lovely effort! Listen to the next two lines: ${nextLines}. Now recite them.`,
+                emotion: 'encouraging',
+                intent: 'ask',
+                requiresStudentResponse: true,
+                retryRequired: false,
+                hintLevel: 0,
+                activityComplete: false,
+                voicePriority: 'CONVERSATION',
+                staticAudioActivityId: activity.id,
+              }
+              setTeacherText(nextTurn.text)
+              await commitTeacherTurn(nextTurn, 'waiting_for_student')
+              return
+            }
+            normalizedText = [...poemRecitalParts.current, normalizedText].join(' ')
           }
 
           setTranscript(normalizedText)
@@ -894,6 +929,10 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       setModelSentence(retryRequired ? normalizedTurn.modelSentence || '' : '')
       setXp((value) => value + (result.xpAwarded || 0))
       setConversationTurn((value) => value + 1)
+      if (activity?.activityKey === 'class1-l01-v4-poem-full' && !complete) {
+        poemRecitalParts.current = []
+        setPoemRecitalChunk(0)
+      }
       const firstDayV3 = /^class1-l01-v(?:3|4)-/.test(activity?.activityKey || '') === true
       if (!firstDayV3) setActivityComplete(complete)
       setPose(poseFromAi(ai, retryRequired, complete))
@@ -1061,6 +1100,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
               conversationTurn={conversationTurn}
               xpEarned={xp}
               onReplayFromStart={index > 0 && completedActivityIds.length > 0 ? () => setIndex(0) : undefined}
+              poemRecitalChunk={poemRecitalChunk}
               onStartMic={() => void startMic()}
               onStopMic={stopMic}
               onReplayJulie={() => void replayCurrentTeacherTurn()}

@@ -75,6 +75,7 @@ export interface ImmersiveLessonStageProps {
   conversationTurn: number
   xpEarned: number
   onStartMic: () => void
+  poemRecitalChunk?: number
   onStopMic: () => void
   onReplayJulie: () => void
   onSelectChoice: (choice: string) => void
@@ -126,6 +127,7 @@ export function ImmersiveLessonStage({
   conversationTurn,
   xpEarned,
   onStartMic,
+  poemRecitalChunk = 0,
   onStopMic,
   onReplayJulie,
   onSelectChoice,
@@ -391,6 +393,7 @@ export function ImmersiveLessonStage({
   if (isClass1Classroom && poemV4Id) {
     return <FirstDayPoemClassroom
       sceneId={poemV4Id}
+      recitalChunk={poemRecitalChunk}
       teacherText={julieMessage}
       teacherImage={julieImage}
       animationUrl={julieAnimation}

@@ -15,6 +15,7 @@ const STANZAS = [
   ['See me jump', 'See me play', 'I’m in Grade One!', 'Hip hip hurray!'],
 ] as const
 const LINES = STANZAS.flat()
+export const FIRST_DAY_POEM_LINES = LINES
 /** Reuse the same complete source poem for the celebratory encore. */
 export const FIRST_DAY_POEM_COMPLETE = STANZAS.map(lines=>lines.join('\n')).join('\n\n')
 const PAIRS = [
@@ -31,7 +32,7 @@ type Props = {
   transcript?:string;feedback?:string;modelSentence?:string
   needsAudioGesture?:boolean;isAudioEnabled?:boolean
   onEnableAudio?:()=>void;onReplayJulie?:()=>void;onStartMic?:()=>void;onStopMic?:()=>void
-  step?:number;total?:number
+  step?:number;total?:number;recitalChunk?:number
 }
 
 /** Original, quiet musical pulse. It never records or speaks, never competes
@@ -69,7 +70,7 @@ export function FirstDayPoemClassroom({
   sceneId,teacherText,teacherImage,animationUrl,
   isSpeaking,isListening,isProcessing,isCompleted,isRetry=false,
   transcript,feedback,modelSentence,needsAudioGesture=false,isAudioEnabled=true,
-  onEnableAudio,onReplayJulie,onStartMic,onStopMic,step=1,total=6,
+  onEnableAudio,onReplayJulie,onStartMic,onStopMic,step=1,total=6,recitalChunk=0,
 }:Props) {
   const reduced=useReducedMotion()
   const [music,setMusic]=useState(false)
@@ -79,7 +80,8 @@ export function FirstDayPoemClassroom({
   const final=sceneId==='poem-full'
   const pairIndex=Number(sceneId.match(/^poem-pair-(\d)$/)?.[1] || 1)-1
   const pair=PAIRS[Math.min(Math.max(pairIndex,0),PAIRS.length-1)]
-  const activeStart=final?0:pair.start, activeEnd=final?10:pair.end
+  const activeStart=final?Math.min(4,recitalChunk)*2:pair.start
+  const activeEnd=final?activeStart+2:pair.end
   useOriginalInstrumental(music,isSpeaking && !isListening && !isProcessing)
   const status=isListening?'Miss Julie is listening':isProcessing?'Thinking about your recitation':
     isSpeaking?'Miss Julie is reciting':isRetry?'Let us try those lines again':
@@ -88,7 +90,7 @@ export function FirstDayPoemClassroom({
     <main className="poem-classroom" data-testid="class1-firstday-poem" data-poem-scene={sceneId}>
       <header className="poem-header">
         <div className="poem-header__title"><BookOpen size={23}/><div><strong>MY FIRST DAY</strong><span>ENGLISH BALBHARATI · 1.1 · LISTEN & SING</span></div></div>
-        <div className="poem-header__steps"><span>{final?'Full poem performance':`Two lines at a time · ${step}/${total}`}</span>
+        <div className="poem-header__steps"><span>{final?`Full poem · lines ${activeStart+1}–${activeEnd} of 10`:`Two lines at a time · ${step}/${total}`}</span>
           <div role="progressbar" aria-label="Poem lesson progress" aria-valuenow={step} aria-valuemin={1} aria-valuemax={total}>
             <i style={{width:`${step/Math.max(1,total)*100}%`}}/>
           </div>
@@ -137,7 +139,7 @@ export function FirstDayPoemClassroom({
               </div>
             </div>
           </div>
-          <div className="poem-focus"><span>{final?'🎤 The whole poem':'🎵 Your two lines'}</span>
+          <div className="poem-focus"><span>{final?`🎤 Full recital · part ${recitalChunk+1}/5`:'🎵 Your two lines'}</span>
             <strong>{LINES.slice(activeStart,activeEnd).join('  ·  ')}</strong>
           </div>
           {isRetry?<div className="poem-hints" role="note"><span lang="hi">{final?'पूरी कविता धीरे बोलो।':pair.hintHi}</span><span lang="mr">{final?'संपूर्ण कविता सावकाश म्हण.':pair.hintMr}</span></div>:null}
