@@ -395,7 +395,7 @@ export const VoiceService = {
     // exact Priya/S3 script to unreviewed dynamic TTS.
     if (purpose === 'LESSON' && options.studentId && options.activityId) {
       const current = await CurriculumAccessService.assertActivity(options.studentId, options.activityId)
-      if (current./^class1-l01-v(?:3|4)-/.test(access.activity.activityKey || '')) {
+      if (current.activity.activityKey?.startsWith('class1-l01-v3-')) {
         throw ApiError.provider('CLASS1_FIRST_DAY_APPROVED_AUDIO_MISSING_OR_MISMATCHED')
       }
     }
