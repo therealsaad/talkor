@@ -10,9 +10,9 @@ import { KGAlphabetProgress } from '../models/KGAlphabetProgress'
 import { KGAlphabetAttempt, type IKGAlphabetAttempt } from '../models/KGAlphabetAttempt'
 import { KGAlphabetSubmission } from '../models/KGAlphabetSubmission'
 import { KGIntroPlayback } from '../models/KGIntroPlayback'
-import { AUDIO_IDS, AUDIO_LINES, AUDIO_MANIFEST, LETTERS, activityAt, audioKey, evaluateKGSpeech, KG_ALPHABET_VERSION, KG_AUDIO_VERSION, type AudioId } from '../kg/alphabet-content'
+import { AUDIO_IDS, AUDIO_LINES, AUDIO_MANIFEST, LETTERS, activityAt, evaluateKGSpeech, KG_ALPHABET_VERSION, KG_AUDIO_VERSION, type AudioId } from '../kg/alphabet-content'
 import { isAuthorizedKGAlphabetStudent } from '../services/kg-pilot-access'
-import { getKGStaticAudio } from '../services/kg-static-audio-cache'
+import { getKGAzureNarrationAudio } from '../services/kg-azure-narration.service'
 import { PythonVoiceProvider } from '../providers/voice/PythonVoiceProvider'
 import { AzureVoiceProvider } from '../providers/voice/AzureVoiceProvider'
 import { KGQwenFeedbackService } from '../services/kg-qwen-feedback.service'
@@ -135,33 +135,9 @@ function spokenFeedback(input: { letter: typeof LETTERS[number]['letter']; mode:
 }
 
 async function sendKGVoice(res: Response, text: string) {
-  const safeText = text.trim()
-  if (!safeText || safeText.length > 800) throw ApiError.badRequest('KG voice line is invalid')
-  let result: Awaited<ReturnType<PythonVoiceProvider['synthesize']>>
-  try {
-    result = await new PythonVoiceProvider().synthesize(safeText)
-  } catch (error) {
-    const reason = error instanceof ApiError ? error.message : 'TTS_SERVICE_UNAVAILABLE'
-    const retryable = error instanceof ApiError
-      ? (error.details as { retryable?: boolean } | undefined)?.retryable === true
-      : true
-    throw new ApiError(retryable ? 503 : 502, 'TTS_SERVICE_UNAVAILABLE', 'Miss Julie voice is temporarily unavailable.', {
-      retryable, providerReason: reason,
-    })
-  }
-  if (!result.available || !result.audioBase64) {
-    throw new ApiError(503, 'TTS_SERVICE_UNAVAILABLE', 'Miss Julie voice is temporarily unavailable.', { retryable: true })
-  }
-  const audio = Buffer.from(result.audioBase64, 'base64')
-  const contentType = result.contentType?.trim() || ''
-  if (!audio.length || audio.length > 8 * 1024 * 1024 || !/^audio\/[a-z0-9.+-]+(?:\s*;.*)?$/i.test(contentType)) {
-    throw new ApiError(502, 'TTS_SERVICE_UNAVAILABLE', 'Miss Julie voice returned an invalid audio response.', { retryable: false })
-  }
-  res.setHeader('Content-Type', contentType)
-  res.setHeader('Content-Length', String(audio.length))
-  res.setHeader('Cache-Control', 'private, no-store')
-  res.setHeader('X-Content-Type-Options', 'nosniff')
-  res.send(audio)
+  // Fixed navigation/feedback lines use the same verified Azure-first path as
+  // submitted feedback. No dependency on local Python for normal KG playback.
+  return sendKGAzure(res, text)
 }
 
 async function kgDynamicFeedback(input: { letter: typeof LETTERS[number]['letter']; mode: 'speak' | 'touch'; outcome: 'correct' | 'incorrect' | 'unclear' | 'supported'; transcript?: string; selected?: string; noSpeech?: boolean }) {
@@ -203,53 +179,19 @@ async function sendKGAzure(res: Response, text: string) {
   return res.send(bytes)
 }
 
-function s3ErrorDetails(error: unknown) {
-  const value = error && typeof error === 'object' ? error as {
-    name?: string; Code?: string; code?: string; $metadata?: { httpStatusCode?: number }
-  } : {}
-  return { status: value.$metadata?.httpStatusCode, code: value.name || value.Code || value.code || 'UnknownS3Error' }
-}
-
-async function getApprovedStaticClip(id: AudioId): Promise<Buffer> {
-  const key = audioKey(id)
-  try {
-    const audio = await getKGStaticAudio(key)
-    if (!audio) {
-      throw new ApiError(404, 'KG_AUDIO_MISSING', `Approved curriculum audio is missing from S3: ${key}`, {
-        s3Key: key, storageCode: 'NoSuchKey', retryable: false,
-      })
-    }
-    return audio
-  } catch (error) {
-    if (error instanceof ApiError) throw error
-    const details = s3ErrorDetails(error)
-    if (details.status === 404 || ['NoSuchKey', 'NotFound'].includes(details.code)) {
-      throw new ApiError(404, 'KG_AUDIO_MISSING', `Approved curriculum audio is missing from S3: ${key}`, {
-        s3Key: key, storageCode: details.code, retryable: false,
-      })
-    }
-    if (details.status === 403 || ['AccessDenied', 'AllAccessDisabled', 'Forbidden'].includes(details.code)) {
-      throw new ApiError(502, 'KG_AUDIO_STORAGE_ACCESS_DENIED', `S3 denied access to approved curriculum audio: ${key}`, {
-        s3Key: key, storageCode: details.code, status: details.status, retryable: false,
-      })
-    }
-    throw new ApiError(503, 'KG_AUDIO_STORAGE_UNAVAILABLE', `S3 could not serve approved curriculum audio: ${key}`, {
-      s3Key: key, storageCode: details.code, status: details.status, retryable: true,
-    })
-  }
-}
-
 async function sendManifestAudio(res: Response, id: AudioId, options: { preview?: boolean; ifNoneMatch?: string } = {}) {
   const line = AUDIO_MANIFEST.find((clip) => clip.id === id)
   if (!line) throw ApiError.notFound('Audio clip not found')
   if (line.kind === 'dynamic_tts') return sendKGVoice(res, line.text)
 
-  const audio = await getApprovedStaticClip(id)
+  const result = await getKGAzureNarrationAudio({ level: 1, id, text: line.text })
+  const audio = result.audio
   const etag = `"${createHash('sha256').update(audio).digest('hex')}"`
-  res.setHeader('Content-Type', 'audio/mpeg')
+  res.setHeader('Content-Type', result.contentType)
   res.setHeader('Content-Length', String(audio.length))
-  res.setHeader('Content-Disposition', `inline; filename="${id}.mp3"`)
-  res.setHeader('Cache-Control', options.preview ? 'private, no-store' : 'private, max-age=31536000, immutable')
+  res.setHeader('Content-Disposition', `inline; filename="${id}.${result.contentType === 'audio/wav' ? 'wav' : 'mp3'}"`)
+  res.setHeader('X-Talkora-Cache', result.source.toUpperCase())
+  res.setHeader('Cache-Control', options.preview ? 'private, no-store' : 'private, max-age=300')
   res.setHeader('Vary', 'Authorization')
   res.setHeader('ETag', etag)
   res.setHeader('X-Content-Type-Options', 'nosniff')
