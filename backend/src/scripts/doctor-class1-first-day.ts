@@ -2,6 +2,7 @@
  * pnpm exec tsx -r dotenv/config src/scripts/doctor-class1-first-day.ts
  */
 import { parsePriyaHealth, checkPriyaHealth, formatPriyaHealth } from '../services/priya-tts-health'
+import { isAllowedClass1IntroSource, chooseClass1IntroSource } from './class1-first-day-intro-url'
 
 const BASE = [
   { name: 'node-5000', url: 'http://127.0.0.1:5000/health' },
@@ -10,6 +11,10 @@ const BASE = [
   { name: 'ollama-11434', url: 'http://127.0.0.1:11434/api/tags' },
 ]
 async function main() {
+  const chosenIntro = chooseClass1IntroSource(
+    process.env.TALKORA_FIRST_DAY_INTRO_URL || process.env.NEXT_PUBLIC_TALKORA_CLASS1_INTRO_URL,
+    process.env.TALKORA_FIRST_DAY_USE_BUNDLED_INTRO === 'YES',
+  )
   const flags = {
     'Class 1 Qwen override': process.env.TALKORA_CLASS1_QWEN_PILOT === 'true',
     'Class 1 draft access': process.env.TALKORA_CLASS1_STUDENT_DEMO === 'true',
@@ -18,7 +23,8 @@ async function main() {
     'Sarvam bilingual auto detect': ['unknown', 'auto', ''].includes(String(process.env.SARVAM_STT_LANGUAGE || '').toLowerCase()),
     'Azure credential exists': Boolean(process.env.AZURE_SPEECH_KEY),
     'Sarvam credential exists': Boolean(process.env.SARVAM_API_KEY),
-    'Approved First Day intro URL exists': Boolean(process.env.NEXT_PUBLIC_TALKORA_CLASS1_INTRO_URL || process.env.TALKORA_FIRST_DAY_INTRO_URL),
+    'First Day intro source configured (NOT review)': isAllowedClass1IntroSource(chosenIntro),
+    'Developer has reviewed First Day intro': process.env.TALKORA_FIRST_DAY_INTRO_REVIEWED === 'YES',
   }
   for (const [key, value] of Object.entries(flags)) console.log(value ? 'OK  ' + key : 'CHECK ' + key)
   for (const item of BASE) {

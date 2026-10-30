@@ -17,3 +17,25 @@ export function isRealFirstDayIntroUrl(raw: string): boolean {
     return false
   }
 }
+
+/** Only this exact same-origin shipped asset is eligible for a local-lab
+ * First Day intro. Other relative paths are forbidden. This is source
+ * selection, NOT verification of the video's educational content.
+ */
+export const CLASS1_BUNDLED_FIRST_DAY_INTRO =
+  '/lessons/class-01/level-01/miss-julie-first-day-intro.mp4'
+
+export function isAllowedClass1IntroSource(raw: string): boolean {
+  return raw === CLASS1_BUNDLED_FIRST_DAY_INTRO || isRealFirstDayIntroUrl(raw)
+}
+
+/** Deliberately opt in to a locally reviewed bundled intro: never guess
+ * teacher approval or silently reuse a video for a different chapter.
+ */
+export function chooseClass1IntroSource(
+  inputUrl: string | undefined,
+  allowBundled: boolean,
+): string {
+  const url = inputUrl?.trim() || ''
+  return url || (allowBundled ? CLASS1_BUNDLED_FIRST_DAY_INTRO : '')
+}
