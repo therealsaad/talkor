@@ -66,7 +66,12 @@ async function azureVoice(line: Line): Promise<Buffer> {
   if (process.env.TALKORA_FIRST_DAY_PAID_BATCH !== 'YES')
     throw new Error('Azure charges are disabled. Set TALKORA_FIRST_DAY_PAID_BATCH=YES for a one-time reviewed Hindi/Marathi batch.')
   // Explicit Class 1 voice selection. This makes only one paid TTS request.
-  const result = await new AzureVoiceProvider().synthesizeStream(line.text, { class1Lesson: true })
+  // Hindi and Marathi share Devanagari. Inferencing from text is not
+  // reliable for school words containing English. The reviewed manifest is
+  // authoritative for one-time, language-specific Azure voice selection.
+  const result = await new AzureVoiceProvider().synthesizeStream(line.text, {
+    class1Lesson: true, language: line.language,
+  })
   const chunks: Buffer[] = []
   const reader = result.body.getReader()
   try {
