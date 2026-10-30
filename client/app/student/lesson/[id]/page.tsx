@@ -84,6 +84,9 @@ export default function StudentLessonPage() {
         ? 'Homework: tell someone at home: I can walk, I can play, and I am in Grade One.'
         : 'Homework: say “It is up” and “I walk to school” with someone at home.'
       : undefined}
+    class1IntroVideoUrl={firstDayV3 && typeof lesson.lesson.settings?.introVideoUrl === 'string'
+      ? lesson.lesson.settings.introVideoUrl
+      : undefined}
     introVideoKey={lesson.experienceId === 'g01-l01' && lesson.completedActivityIds.length === 0
       ? 'class1-g01-l01'
       : lesson.grade === 0 && typeof lesson.lesson.settings?.lessonKey === 'string'

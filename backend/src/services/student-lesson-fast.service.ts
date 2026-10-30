@@ -13,6 +13,8 @@ import {
   CLASS1_DEMO_EXPERIENCE_ID,
   CLASS1_DEMO_LESSON_FILTER,
   CLASS1_DEMO_VERSION,
+  CLASS1_FIRST_DAY_PARALLEL_REVISION,
+  preferClass1FirstDayLesson,
 } from './class1-demo-access'
 
 /**
@@ -41,11 +43,16 @@ export const StudentLessonFastService = {
     for (const unit of units) {
       const unitProgress = progress.levels.find(item => item.levelId.toString() === unit._id.toString())
       const unitIsAccessible = Boolean(unitProgress && ['unlocked', 'in-progress'].includes(unitProgress.status))
-      const lessons = await Lesson.find({
+      const lessonCandidates = await Lesson.find({
         levelId: unit._id,
         ...(isClass1Demo ? CLASS1_DEMO_LESSON_FILTER : { status: contentStatus }),
       })
-        .select('_id order').sort('order').lean()
+        .select('_id order settings').sort('order').lean()
+      // Historical v2 progress stays in MongoDB, but the next-lesson
+      // resolver teaches ONLY the new syllabus once the v3 lesson is ready.
+      const lessons = isClass1Demo
+        ? preferClass1FirstDayLesson(lessonCandidates)
+        : lessonCandidates
       for (const lesson of lessons) {
         const activities = await Activity.find({
           lessonId: lesson._id,
@@ -78,13 +85,25 @@ export const StudentLessonFastService = {
   async lesson(studentId: string, lessonId: string) {
     if (!Types.ObjectId.isValid(lessonId)) throw ApiError.badRequest('Invalid lesson link')
     const { student, curriculumClass, isKGPilot, isClass1Demo } = await CurriculumAccessService.context(studentId)
-    const { lesson, level } = await CurriculumAccessService.assertLesson(studentId, lessonId)
+    const requested = await CurriculumAccessService.assertLesson(studentId, lessonId)
+    const level = requested.level
+    // Existing student bookmarks may point to the old v2 ObjectId. Resolve
+    // only within the SAME authenticated Class 1 level and demo curriculum.
+    const firstDay = isClass1Demo
+      ? await Lesson.findOne({
+          levelId: level._id,
+          ...CLASS1_DEMO_LESSON_FILTER,
+          'settings.lessonPlanRevision': CLASS1_FIRST_DAY_PARALLEL_REVISION,
+        }).lean()
+      : null
+    const lesson = firstDay || requested.lesson
     const contentStatus = isKGPilot || isClass1Demo ? 'draft' : 'active'
     const [progress, activities] = await Promise.all([
       ProgressService.getForStudent(studentId, curriculumClass._id.toString()),
       Activity.find({
         lessonId: lesson._id,
         ...(isClass1Demo ? CLASS1_DEMO_ACTIVITY_FILTER : { status: contentStatus }),
+        ...(firstDay ? { activityKey: /^class1-l01-v3-/ } : {}),
         ...(isClass1Demo ? { core: { $ne: false }, required: { $ne: false } } : {}),
       })
         .select('-answer -answerConfig')

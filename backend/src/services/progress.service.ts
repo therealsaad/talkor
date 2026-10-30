@@ -52,6 +52,7 @@ import {
   CLASS1_DEMO_ACTIVITY_FILTER,
   CLASS1_DEMO_LESSON_FILTER,
   CLASS1_DEMO_VERSION,
+  preferClass1FirstDayLesson,
 } from './class1-demo-access'
 
 import {
@@ -572,12 +573,17 @@ export const ProgressService = {
         true
     }
 
-    const activeLessons = await Lesson.find({
+    const lessonCandidates = await Lesson.find({
       levelId: { $in: levels.map((level) => level._id) },
       ...(isClass1Demo ? CLASS1_DEMO_LESSON_FILTER : { status: levelStatus }),
     })
-      .select('_id levelId')
+      .select('_id levelId settings')
       .lean()
+    // Keep archived/v2 learner records intact. A complete v3 lesson becomes
+    // the only current teaching goal; historic IDs remain in their old lesson.
+    const activeLessons = isClass1Demo
+      ? preferClass1FirstDayLesson(lessonCandidates)
+      : lessonCandidates
     const activeActivities = activeLessons.length
       ? await Activity.find({
           lessonId: { $in: activeLessons.map((lesson) => lesson._id) },

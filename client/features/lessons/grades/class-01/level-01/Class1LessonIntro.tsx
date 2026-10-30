@@ -13,12 +13,17 @@ const MIN_DURATION_SECONDS = 87
 const MAX_DURATION_SECONDS = 93
 const REQUIRED_WATCH_SECONDS = 85
 
-export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false }: {
+export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, approvedVideoUrl }: {
   onAvailable: () => void
   onDone: () => void
   firstDayOnly?: boolean
+  approvedVideoUrl?: string
 }) {
-  const reviewedSource = process.env.NEXT_PUBLIC_TALKORA_CLASS1_INTRO_URL?.trim()
+  // The exact reviewed HTTPS video can travel with the authenticated v3
+  // lesson, avoiding a new Next.js build or an administrator permission gate.
+  const reviewedSource = /^https:\/\//.test(approvedVideoUrl || '')
+    ? approvedVideoUrl?.trim()
+    : process.env.NEXT_PUBLIC_TALKORA_CLASS1_INTRO_URL?.trim()
   const sourceReady = !firstDayOnly || Boolean(reviewedSource)
   const videoSource = firstDayOnly ? reviewedSource : CLASS1_FIRST_DAY_VIDEO
   const frame = useRef<HTMLDivElement>(null)
