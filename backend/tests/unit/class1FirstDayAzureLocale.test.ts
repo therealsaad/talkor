@@ -31,6 +31,20 @@ describe('One-time Class 1 First Day Azure prompts', () => {
     }
   })
 
+  it('routes romanized Hindi and Marathi to the requested Azure voice in live Class 1 turns', () => {
+    expect(chooseTalkoraBilingualVoice('Billi means cat. Can you say cat?', 'en-IN-NeerjaNeural', true, 'hi-IN'))
+      .toEqual({ voice: 'hi-IN-SwaraNeural', locale: 'hi-IN' })
+    expect(chooseTalkoraBilingualVoice('Mala chhan vatla! Say these two lines.', 'en-IN-NeerjaNeural', true, 'mr-IN'))
+      .toEqual({ voice: 'mr-IN-AarohiNeural', locale: 'mr-IN' })
+  })
+
+  it('does not route ordinary English or other classes to Hindi/Marathi without authorization', () => {
+    expect(chooseTalkoraBilingualVoice('See me skip, see me run', 'en-IN-NeerjaNeural', true, 'en-IN'))
+      .toEqual({ voice: 'en-IN-NeerjaNeural', locale: 'en-IN' })
+    expect(chooseTalkoraBilingualVoice('Billi means cat', 'en-IN-NeerjaNeural', false, 'hi-IN'))
+      .toEqual({ voice: 'en-IN-NeerjaNeural', locale: 'en-IN' })
+  })
+
   it('passes manifest language to Azure, rather than guessing from script text', () => {
     const generator = readFileSync(
       path.resolve(__dirname, '../../src/scripts/generate-class1-first-day-voices.ts'),
