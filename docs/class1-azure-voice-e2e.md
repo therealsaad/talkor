@@ -75,14 +75,14 @@ Both ports must be reachable before --check. If Node fails on startup, inspect i
 
    This does not create an activity attempt. It hides the transcript and PIN. No automatic expensive retries. Azure may charge for these requests.
 
-3. **Actual student lesson → Qwen → progress.** The student's next activity must be an AI CONVERSATION, such as guided little-word review. Finish earlier tasks through the app. This call **writes one demo turn and may change progress**, as well as incurring another Sarvam STT + Azure TTS pair:
+3. **Actual First Day v3 student lesson → Qwen → Azure.** The next activity must be a Class 1 *My First Day* v3 AI speaking scene, not the old AM draft. This calls Sarvam STT once, submits a **real authenticated Qwen conversation turn** and asks Azure to synthesize the **entire actual teacher reply including its follow-up**, passing the same activity ID and Sarvam language hint as the student browser. It can write a demo conversation turn; academic activity completion is still blocked until audible playback is acknowledged in the real browser:
 
    ~~~powershell
    $env:TALKORA_E2E_ALLOW_PROGRESS_WRITE = 'YES'
    pnpm exec tsx src/scripts/smoke-class1-azure-voice-e2e.ts --live --commit
    ~~~
 
-   The test confirms a nonempty Miss Julie reply and a readable MongoDB progress endpoint. One turn alone may not earn XP. Verify actual progression, homework, audio playback, PIN resume, and lab logout in a supervised browser session.
+   The test confirms the full live Sarvam → Qwen → Azure HTTP pipeline and prints timings without printing child speech or AI output. It **does not** simulate browser `onended`, mark the activity as heard, or test actual audio playback. Verify real Miss Julie animation, progression after successful English speech, retry until mastery, spoken homework, PIN resume, and lab logout in a supervised browser session.
 
 ## Credit-saving controls now in code
 

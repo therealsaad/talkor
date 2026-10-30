@@ -84,6 +84,9 @@ jobs:
       - name: Verify Hindi and Marathi Azure voice routing for reviewed First Day clips
         run: pnpm exec jest --runInBand tests/unit/class1FirstDayAzureLocale.test.ts
         working-directory: backend
+      - name: Guard real Class 1 Sarvam to Qwen to Azure smoke route
+        run: pnpm exec jest --runInBand tests/unit/class1LiveSmokeContract.test.ts
+        working-directory: backend
       - name: Verify First Day teacher voice pack manifest and review gates
         run: pnpm exec jest --runInBand tests/class1-first-day-voice-manifest.test.ts
         working-directory: backend
