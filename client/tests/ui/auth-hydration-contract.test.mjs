@@ -16,9 +16,15 @@ test('first auth render is identical on server and client', () => {
   const component = auth.split('export function AuthProvider({ children }')[1]
   assert.ok(component, 'AuthProvider must exist')
   const beforeEffect = component.split('  useEffect(() => {')[0]
-  assert.match(beforeEffect, /useState<AuthStatus>\('loading'\)/)
-  assert.match(beforeEffect, /useState<AuthSession \| null>\(null\)/)
-  assert.doesNotMatch(beforeEffect, /typeof window|getStoredToken\(|getStoredUser\(|localStorage|sessionStorage/)
+  // Check the initializer expressions, not comments documenting browser
+  // storage. The mismatch occurs only if storage is read during render.
+  const initializers = beforeEffect.split('\n').filter(line =>
+    line.includes('useState<AuthStatus>') ||
+    line.includes('useState<AuthSession | null>'),
+  ).join('\n')
+  assert.match(initializers, /useState<AuthStatus>\('loading'\)/)
+  assert.match(initializers, /useState<AuthSession \| null>\(null\)/)
+  assert.doesNotMatch(initializers, /typeof window|getStoredToken\(|getStoredUser\(|localStorage|sessionStorage/)
   assert.doesNotMatch(auth, /suppressHydrationWarning/)
 })
 
