@@ -39,7 +39,7 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
     if (!sourceReady) {
       setLoading(false)
       setCanPlay(false)
-      setError('The Balbharati 1.1 lesson needs its reviewed First Day video. Ask your teacher to configure it.')
+      setError('Miss Julie's First Day story is not available yet. Please check again after the Talkora media update.')
     }
   }, [sourceReady])
 
@@ -75,7 +75,7 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
   function validateVideo() {
     const duration = video.current?.duration ?? NaN
     if (!Number.isFinite(duration) || duration < MIN_DURATION_SECONDS || duration > MAX_DURATION_SECONDS) {
-      setError('Miss Julie needs the approved 90-second lesson video. Please ask your teacher to check it.')
+      setError('The First Day introduction must be a complete 90-second video with sound.')
       setCanPlay(false)
       setLoading(false)
       return
@@ -109,7 +109,7 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
     } catch {
       video.current?.pause()
       setNeedsTap(true)
-      setError('The story could not start. Tap to try again, or ask your teacher to check the sound settings.')
+      setError('The story could not start. Check sound permissions on this computer and tap Play again.')
     }
   }
 
@@ -163,7 +163,7 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
         onError={() => {
           setCanPlay(false)
           setLoading(false)
-          setError("Miss Julie's approved 90-second video could not load. Check the video link or ask your teacher.")
+          setError("Miss Julie's First Day video could not load. Please try again after checking the internet connection.")
         }}
       />
       {loading ? <p className="class1-intro-status" role="status">Getting Miss Julie's story ready...</p> : null}
