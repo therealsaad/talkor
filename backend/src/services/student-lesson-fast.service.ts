@@ -109,9 +109,22 @@ export const StudentLessonFastService = {
         .select('-answer -answerConfig')
         .sort('order').lean(),
     ])
-    const levelProgress = progress.levels.find(item => item.levelId.toString() === level._id.toString())
-    if (!levelProgress || levelProgress.status === 'locked') {
-      throw ApiError.unitLocked()
+    let levelProgress = progress.levels.find(item => item.levelId.toString() === level._id.toString())
+    if (!levelProgress) {
+      progress.levels.push({
+        levelId: level._id,
+        status: 'unlocked',
+        lessons: [],
+        accuracy: 0,
+        totalTimeMs: 0,
+        unlockedAt: new Date(),
+      })
+      await progress.save()
+      levelProgress = progress.levels[progress.levels.length - 1]
+    } else if (levelProgress.status === 'locked') {
+      levelProgress.status = 'unlocked'
+      levelProgress.unlockedAt = levelProgress.unlockedAt || new Date()
+      await progress.save()
     }
     if (!activities.length) throw ApiError.activityUnavailable('This lesson has no published activities')
     const lessonProgress = levelProgress.lessons.find(item => item.lessonId.toString() === lesson._id.toString())
