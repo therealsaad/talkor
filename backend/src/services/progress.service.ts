@@ -663,7 +663,7 @@ export const ProgressService = {
           demote status or clear completedAt — that would erase school/teacher history.
         */
       } else {
-        const nextStatus =
+        const nextStatus: 'locked' | 'unlocked' | 'in-progress' =
           previousLevelsComplete
             ? levelProgress.status === 'in-progress'
               ? 'in-progress'
