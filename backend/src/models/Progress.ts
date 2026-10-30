@@ -74,5 +74,9 @@ const progressSchema = new Schema<IProgress>(
 
 progressSchema.index({ studentId: 1, classId: 1 }, { unique: true })
 progressSchema.index({ studentId: 1, 'levels.levelId': 1 })
+/** School/teacher reporting: filter verified completions and open levels without full document scans. */
+progressSchema.index({ 'levels.levelId': 1, 'levels.status': 1 })
+progressSchema.index({ 'levels.status': 1, 'levels.completedAt': 1 })
+progressSchema.index({ studentId: 1, 'levels.status': 1 })
 
 export const Progress = model<IProgress>('Progress', progressSchema)

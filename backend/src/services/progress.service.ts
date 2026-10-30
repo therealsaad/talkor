@@ -656,6 +656,12 @@ export const ProgressService = {
           levelProgress.completedAt = new Date()
           changed = true
         }
+      } else if (levelProgress.status === 'completed' && levelProgress.completedAt) {
+        /*
+          Verified completions are immutable for reporting.
+          Curriculum sync may add new required activities, but must never
+          demote status or clear completedAt — that would erase school/teacher history.
+        */
       } else {
         const nextStatus =
           previousLevelsComplete
@@ -677,7 +683,9 @@ export const ProgressService = {
         }
       }
 
-      previousLevelsComplete = previousLevelsComplete && levelComplete
+      previousLevelsComplete =
+        previousLevelsComplete &&
+        (levelComplete || (levelProgress.status === 'completed' && !!levelProgress.completedAt))
     }
 
     /* =====================================================
@@ -1722,7 +1730,14 @@ export const ProgressService = {
     }
 
     /* =====================================================
-       LEVEL COMPLETION
+       LEVEL COMPLETION (canonical verified completion)
+
+       School/teacher Learning Progress reports read
+       Progress.levels[].status === 'completed' + completedAt.
+       Never accept a client "completed: true" flag — only this
+       path (required+core activities across all lessons) may
+       mark a level completed. Idempotent: re-entry after
+       wasLevelComplete does not re-emit events or re-unlock.
        ===================================================== */
 
     const wasLevelComplete =
