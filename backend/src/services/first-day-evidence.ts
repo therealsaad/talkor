@@ -1,0 +1,26 @@
+/** Small, auditable evidence gate for active Balbharati 1.1 scenes.
+ * A word detected in Sarvam text is NOT a pronunciation assessment. The
+ * student can learn/continue with one appropriate English attempt, including
+ * a lone word, but questions, negation and support-language-only attempts
+ * must not auto-advance. This gate cannot choose a different scene.
+ */
+export function firstDaySceneSkills(sceneKey: string, message: string): string[] {
+  const text = message.toLowerCase().trim().normalize('NFC')
+  if (!text) return []
+  // The child may say 'skip?' to ask what to say; that is NOT evidence of
+  // independent use. Nor is the target word inside "what does skip mean".
+  if (/\?|\b(?:what|why|how|meaning|mean|explain|help|repeat|again|don['’]?t\s+know|do\s+not\s+know|can['’]?t|cannot|no\s+idea)\b|क्या|काय|समजत|म्हणजे|नहीं|नाही|मदद|मतलब|समझा|पुन्हा/.test(text)) return []
+  const evidence: Record<string, RegExp> = {
+    'hello-school': /\b(school|happy|hello)\b/,
+    'skip-bunny': /\b(skip|skipping)\b/,
+    'run-race': /\b(run|running)\b/,
+    'walk-school': /\b(walk|walking)\b/,
+    'big-grin': /\b(smile|grin|smiling)\b/,
+    'school-bell': /\b(bell|rings|ringing)\b/,
+    'jump-frog': /\b(jump|jumping)\b/,
+    'play-friends': /\b(play|playing)\b/,
+    'enter-class': /\b(classroom|go in|go into)\b/,
+    'grade-one': /\b(grade one|grade 1|school|play|skip|run|walk|jump)\b/,
+  }
+  return evidence[sceneKey]?.test(text) ? ['first_day_english_attempt'] : []
+}
