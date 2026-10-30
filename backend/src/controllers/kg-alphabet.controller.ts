@@ -180,18 +180,21 @@ async function sendKGVoice(res: Response, text: string) {
   }
 }
 
-async function kgDynamicFeedback(input: { letter: typeof LETTERS[number]['letter']; mode: 'speak' | 'touch'; outcome: 'correct' | 'incorrect' | 'unclear' | 'supported'; transcript?: string; selected?: string; noSpeech?: boolean }) {
+async function kgDynamicFeedback(input: { letter: typeof LETTERS[number]['letter']; mode: 'speak' | 'touch'; outcome: 'correct' | 'incorrect' | 'unclear' | 'supported'; transcript?: string; selected?: string; noSpeech?: boolean; languageCode?: 'en-IN' | 'hi-IN' | 'mr-IN' }) {
   const coached = await KGQwenFeedbackService.compose(input)
   return { feedbackText: coached.text, feedbackAudioBase64: null, feedbackVoice: 'azure' as const }
 }
 
-async function sendKGAzure(res: Response, text: string) {
+async function sendKGAzure(res: Response, text: string, languageCode?: 'en-IN' | 'hi-IN' | 'mr-IN') {
   // Live Azure is the preferred voice. If its audio generation fails, use
   // local Priya 8001 for this *same, server-owned* feedback sentence. Never
   // let a failed provider mark the attempt heard or silently progress.
   let azure: Awaited<ReturnType<AzureVoiceProvider['synthesizeUncached']>> | null = null
   try {
-    azure = await new AzureVoiceProvider().synthesizeUncached(text)
+    const provider = new AzureVoiceProvider()
+    azure = languageCode
+      ? await provider.synthesizeUncached(text, { language: languageCode })
+      : await provider.synthesizeUncached(text)
   } catch (error) {
     console.warn('KG1_FEEDBACK_AZURE_FAILED', {
       reason: error instanceof Error ? error.name : 'upstream-error',
@@ -442,7 +445,7 @@ export const KGAlphabetController = {
       (await spokenFeedback({ letter: attempt.letter as typeof LETTERS[number]['letter'],
         mode: attempt.mode, outcome: attempt.outcome,
         noSpeech: attempt.recognitionReason === 'silence' })).feedbackText
-    await sendKGAzure(res, words)
+    await sendKGAzure(res, words, attempt.languageCode)
   }),
   previewAttempt: catchAsync(async (req: Request, res: Response) => {
     // Staff preview uses the KG-selected STT and reviewed feedback without progress writes.
@@ -516,6 +519,7 @@ export const KGAlphabetController = {
       const recordedDuringLease = await KGAlphabetAttempt.findOne(identity)
       if (recordedDuringLease) return await returnRecorded(recordedDuringLease)
       let sttProvider: string | undefined
+      let languageCode: 'en-IN' | 'hi-IN' | 'mr-IN' | undefined
       let sttConfidence: number | undefined
       let recognitionReason: 'silence' | 'uncertain' | undefined
 
@@ -545,6 +549,9 @@ export const KGAlphabetController = {
         if (!transcription.available) throw ApiError.provider('Speech recognition is temporarily unavailable')
         transcript = String(transcription.transcript || '').slice(0, 240)
         sttProvider = transcription.provider
+        const detected = 'languageCode' in transcription ? transcription.languageCode : undefined
+        languageCode = detected === 'hi-IN' || detected === 'mr-IN' || detected === 'en-IN'
+          ? detected : undefined
         const confidence = 'confidence' in transcription ? transcription.confidence : undefined
         sttConfidence = typeof confidence === 'number' && Number.isFinite(confidence) && confidence >= 0 && confidence <= 1 ? confidence : undefined
         outcome = gradeKGTranscription({
@@ -561,7 +568,7 @@ export const KGAlphabetController = {
 
       try {
         const saved = await KGAlphabetAttempt.create({ studentId: student._id, schoolId: student.schoolId, activityId, letter: activity.letter,
-          mode: assistedPicture ? 'touch' : activity.mode, outcome, transcript, selected, replay, timeSpentMs: Math.round(reportedTimeMs), submissionId, requestHash, sttProvider, sttConfidence, recognitionReason })
+          mode: assistedPicture ? 'touch' : activity.mode, outcome, transcript, languageCode, selected, replay, timeSpentMs: Math.round(reportedTimeMs), submissionId, requestHash, sttProvider, sttConfidence, recognitionReason })
         // The attempt is recorded, but progression waits for audible feedback acknowledgment.
       } catch (error) {
         if ((error as { code?: number }).code !== 11000) throw error
@@ -572,7 +579,7 @@ export const KGAlphabetController = {
 
       const latest = await KGAlphabetProgress.findOne({ studentId: student._id, schoolId: student.schoolId })
       const voice = await kgDynamicFeedback({ letter: activity.letter, mode: assistedPicture ? 'touch' : activity.mode, outcome,
-        transcript, selected, noSpeech: recognitionReason === 'silence' })
+        transcript, languageCode, selected, noSpeech: recognitionReason === 'silence' })
       // Persist only the guarded teacher sentence, never audio, after the
       // speech attempt is recorded. Duplicate submissions and replay-audio
       // endpoints must use the exact same line, not regenerate Qwen text.

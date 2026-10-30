@@ -34,7 +34,8 @@ export const KGQwenFeedbackService = {
           allowedVocabulary: [target, input.letter],
           recentMistakes: [],
           conversationHistory: [],
-          preferredExplanationLanguage: 'English',
+          preferredExplanationLanguage: input.languageCode === 'hi-IN' ? 'Hindi'
+            : input.languageCode === 'mr-IN' ? 'Marathi' : 'English',
           waitingForRetry: input.outcome !== 'correct',
           hintLevel: input.outcome === 'correct' ? 0 : 1,
           studentMessage: spoken,

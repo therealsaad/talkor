@@ -624,3 +624,33 @@ it('speaks the same canonical KG teaching line with Azure when local Priya is un
   expect(result.headers['x-voice-provider']).toBe('azure-fallback')
   expect(azure).toHaveBeenCalledWith('A! A for apple! Can you say apple?')
 })
+
+
+it('preserves Sarvam Hindi detection on KG1 attempt for native-language Azure audio', async () => {
+  const { student, authorization } = await makePilot()
+  await approveIntro(authorization)
+  jest.spyOn(KGSpeechService, 'transcribe').mockResolvedValue({
+    transcript: 'seb', available: true, provider: 'sarvam', languageCode: 'hi-IN',
+  } as never)
+  const qwen = jest.spyOn(KGQwenFeedbackService, 'compose').mockResolvedValue({
+    text: 'अच्छी कोशिश! Apple का मतलब सेब है। अब apple बोलो.',
+    source: 'qwen-8002',
+  })
+  const submissionId='kg-hindi-tutoring-123456'
+  const answer=await request(app).post('/api/kg-alphabet/attempt')
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
+    .send({activityId:'say-a',submissionId,
+      audioBase64:'Y'.repeat(160),mimeType:'audio/webm',durationMs:800}).expect(200)
+  expect(answer.body.data.outcome).not.toBe('correct')
+  const recorded=await KGAlphabetAttempt.findOne({studentId:student._id,submissionId})
+  expect(recorded?.languageCode).toBe('hi-IN')
+  expect(qwen).toHaveBeenCalledWith(expect.objectContaining({ languageCode: 'hi-IN' }))
+  const azure=jest.spyOn(AzureVoiceProvider.prototype,'synthesizeUncached')
+    .mockResolvedValue({audio:Buffer.alloc(400,65),contentType:'audio/mpeg'})
+  await request(app).get(`/api/kg-alphabet/attempt/${submissionId}/feedback-audio`)
+    .set('Authorization',authorization).set('X-KG-Intro-Playback',activePlaybackId)
+    .expect(200)
+  expect(azure).toHaveBeenCalledWith(answer.body.data.feedbackText,{language:'hi-IN'})
+  const progress=await KGAlphabetProgress.findOne({studentId:student._id})
+  expect(progress?.currentIndex).toBe(0)
+})
