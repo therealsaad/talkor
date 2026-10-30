@@ -29,6 +29,9 @@ jobs:
         working-directory: client
       - run: pnpm build
         working-directory: client
+      - name: Verify stable SSR hydration for student and school authentication
+        run: node --test tests/ui/auth-hydration-contract.test.mjs
+        working-directory: client
       - name: Verify Class 1 hands-free audio and landscape contracts
         run: node --test tests/ui/class1-voice-runtime-contract.test.mjs
         working-directory: client

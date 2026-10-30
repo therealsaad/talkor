@@ -46,8 +46,11 @@ export function homeForRole(role: AuthSession['role']): string {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [status, setStatus] = useState<AuthStatus>(() => { if (typeof window !== 'undefined' && getStoredToken() && getStoredUser()) return 'authenticated'; return 'loading' })
-  const [session, setSession] = useState<AuthSession | null>(() => { if (typeof window !== 'undefined' && getStoredToken()) return getStoredUser<AuthSession>(); return null })
+  // The server cannot read local/sessionStorage. Both SSR and the first
+  // browser render must start from the same snapshot to hydrate safely.
+  // Rehydrate the cached login AFTER hydration, then verify it via /auth/me.
+  const [status, setStatus] = useState<AuthStatus>('loading')
+  const [session, setSession] = useState<AuthSession | null>(null)
   const sessionRef = useRef<AuthSession | null>(session)
 
   const acceptSession = useCallback((next: AuthSession) => {
@@ -87,6 +90,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [acceptSession, clearSession])
 
   useEffect(() => {
+    // Preserve the existing cached-session behavior (including resilience
+    // to temporary backend outages), but never read browser storage during
+    // React's initial server/client render.
+    const cached = getStoredToken() ? getStoredUser<AuthSession>() : null
+    if (cached) {
+      sessionRef.current = cached
+      setSession(cached)
+      setStatus('authenticated')
+    }
     void restore()
 
     const invalidate = () => clearSession()
