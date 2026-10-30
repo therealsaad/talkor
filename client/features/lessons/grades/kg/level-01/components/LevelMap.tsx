@@ -69,7 +69,8 @@ export function KGAlphabetMap({
             2: '/school/kg-preview/level-2',
             3: '/school/kg-preview/level-3',
             4: '/school/kg-preview/level-4',
-          }[level as 1 | 2 | 3 | 4]
+            5: '/school/kg-preview/level-5',
+          }[level as 1 | 2 | 3 | 4 | 5]
 
           if (previewDashboard && dashboardHref) {
             return (
