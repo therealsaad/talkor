@@ -29,6 +29,7 @@ import {
 } from '../services/class1-demo-access'
 import { FIRST_DAY_SCENES } from './class1-first-day-scenes'
 import manifest from './class1-first-day-voice-v3.json'
+import { isRealFirstDayIntroUrl } from './class1-first-day-intro-url'
 
 const APPLY = process.argv.includes('--apply')
 const STAGING_REVISION = 'class1-first-day-v3-installing'
@@ -53,7 +54,7 @@ async function main() {
 
   // The intro is provided with the lesson, not via a Next.js rebuild.
   const introUrl = (process.env.TALKORA_FIRST_DAY_INTRO_URL || '').trim()
-  if (APPLY && !/^https:\/\/[^\s]+$/i.test(introUrl))
+  if (APPLY && !isRealFirstDayIntroUrl(introUrl))
     throw new Error('Provide the reviewed HTTPS First Day-only 90-second video as TALKORA_FIRST_DAY_INTRO_URL')
 
   await mongoose.connect(env.mongodbUri, { autoIndex: false, serverSelectionTimeoutMS: 10000 })
@@ -106,6 +107,7 @@ async function main() {
       existingStudentRecordsWillBeUpdated: false,
       requiredAudioKeys: approved.map(x => x.s3Key),
       introUrlPresent: Boolean(introUrl),
+      introUrlFormatValid: isRealFirstDayIntroUrl(introUrl),
       note: 'New v3 lesson is independent. Student login remains required; no teacher/school permission screen.',
     }, null, 2))
     if (!APPLY) return

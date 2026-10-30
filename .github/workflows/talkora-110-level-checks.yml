@@ -60,6 +60,9 @@ jobs:
         working-directory: backend
       - run: pnpm build
         working-directory: backend
+      - name: Refuse invalid placeholder Class 1 intro URL before media staging
+        run: pnpm exec jest --runInBand tests/unit/class1IntroUrl.test.ts
+        working-directory: backend
       - name: Verify First Day v3 never takes over historic v2 progress early
         run: pnpm exec jest --runInBand tests/unit/class1DemoAccess.test.ts
         working-directory: backend
