@@ -136,8 +136,11 @@ export const StudentLessonFastService = {
       experienceId: isClass1Demo ? CLASS1_DEMO_EXPERIENCE_ID : undefined,
       curriculumClass: { id: curriculumClass._id.toString(), grade: student.grade, name: curriculumClass.name, order: curriculumClass.order },
       level: { ...level,
-        ...(firstDay ? { title: 'My First Day — Poem Garden', place: 'Poem Garden',
-          learningObjectives: ['Listen, chant and recite the whole Grade One Balbharati 1.1 poem'] } : {}),
+        ...(firstDay ? firstDay.settings?.lessonPlanRevision === CLASS1_FIRST_DAY_POEM_REVISION
+          ? { title: 'My First Day — Poem Garden', place: 'Poem Garden',
+              learningObjectives: ['Listen, chant and recite the whole Grade One Balbharati 1.1 poem'] }
+          : { title: 'My First Day — School Adventure', place: 'School Garden',
+              learningObjectives: ['Speak the First Day school actions in English'] } : {}),
         id: level._id.toString(), classId: level.classId.toString() },
       lesson: { ...lesson, id: lesson._id.toString(), levelId: level._id.toString() },
       activities: activities.map(item => {
