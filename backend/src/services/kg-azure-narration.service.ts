@@ -43,6 +43,7 @@ function cacheIdentity(level: number, id: string, text: string) {
     voice: process.env.AZURE_SPEECH_VOICE?.trim() || 'en-IN-NeerjaNeural',
     rate: process.env.KG_AZURE_SPEECH_RATE?.trim() || '+5%',
     pitch: process.env.KG_AZURE_SPEECH_PITCH?.trim() || '+6%',
+    bilingualRouting: process.env.TALKORA_CLASS1_BILINGUAL_TTS === 'true',
     format,
     version: process.env.AZURE_VOICE_PROFILE_VERSION?.trim() || 'v2-mp3',
   }
