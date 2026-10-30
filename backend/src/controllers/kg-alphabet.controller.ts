@@ -136,32 +136,48 @@ function spokenFeedback(input: { letter: typeof LETTERS[number]['letter']; mode:
 
 async function sendKGVoice(res: Response, text: string) {
   const safeText = text.trim()
-  if (!safeText || safeText.length > 800) throw ApiError.badRequest('KG voice line is invalid')
-  let result: Awaited<ReturnType<PythonVoiceProvider['synthesize']>>
+  if (!safeText || safeText.length > 320) throw ApiError.badRequest('KG voice line is invalid')
+  // Prepare the exact canonical teacher prompt once. Priya 8001 is FIRST
+  // for KG letter instruction; when local voice is slow/offline, Azure
+  // generates the same sentence. No user-controlled TTS text reaches here.
   try {
-    result = await new PythonVoiceProvider().synthesize(safeText)
+    const priya = await new PythonVoiceProvider().synthesize(safeText)
+    const bytes = priya.audioBase64 ? Buffer.from(priya.audioBase64, 'base64') : Buffer.alloc(0)
+    const type = priya.contentType?.trim() || ''
+    if (!priya.available || bytes.length < 256 || bytes.length > 8 * 1024 * 1024 ||
+        !/^audio\/[a-z0-9.+-]+(?:\s*;.*)?$/i.test(type)) {
+      throw new Error('Invalid Priya audio payload')
+    }
+    res.setHeader('Content-Type', type)
+    res.setHeader('Content-Length', String(bytes.length))
+    res.setHeader('Cache-Control', 'private, no-store')
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('X-Voice-Provider', 'python-priya')
+    return res.send(bytes)
   } catch (error) {
-    const reason = error instanceof ApiError ? error.message : 'TTS_SERVICE_UNAVAILABLE'
-    const retryable = error instanceof ApiError
-      ? (error.details as { retryable?: boolean } | undefined)?.retryable === true
-      : true
-    throw new ApiError(retryable ? 503 : 502, 'TTS_SERVICE_UNAVAILABLE', 'Miss Julie voice is temporarily unavailable.', {
-      retryable, providerReason: reason,
+    console.warn('KG1_PRIYA_TEACHING_FALLBACK_AZURE', {
+      reason: error instanceof Error ? error.name : 'upstream',
     })
   }
-  if (!result.available || !result.audioBase64) {
-    throw new ApiError(503, 'TTS_SERVICE_UNAVAILABLE', 'Miss Julie voice is temporarily unavailable.', { retryable: true })
+
+  // User-verified in local backend with kg-apple.mp3. Fallback never
+  // changes correct answers, progress or the mandatory full-video ticket.
+  try {
+    const azure = await new AzureVoiceProvider().synthesizeUncached(safeText)
+    if (azure.audio.length < 256) throw new Error('Azure returned no playable audio')
+    res.setHeader('Content-Type', azure.contentType)
+    res.setHeader('Content-Length', String(azure.audio.length))
+    res.setHeader('Cache-Control', 'private, no-store')
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('X-Voice-Provider', 'azure-fallback')
+    return res.send(azure.audio)
+  } catch (error) {
+    console.warn('KG1_TEACHING_VOICE_UNAVAILABLE', {
+      reason: error instanceof Error ? error.name : 'upstream',
+    })
+    throw new ApiError(503, 'TTS_SERVICE_UNAVAILABLE',
+      'Miss Julie voice is temporarily unavailable.', { retryable: true })
   }
-  const audio = Buffer.from(result.audioBase64, 'base64')
-  const contentType = result.contentType?.trim() || ''
-  if (!audio.length || audio.length > 8 * 1024 * 1024 || !/^audio\/[a-z0-9.+-]+(?:\s*;.*)?$/i.test(contentType)) {
-    throw new ApiError(502, 'TTS_SERVICE_UNAVAILABLE', 'Miss Julie voice returned an invalid audio response.', { retryable: false })
-  }
-  res.setHeader('Content-Type', contentType)
-  res.setHeader('Content-Length', String(audio.length))
-  res.setHeader('Cache-Control', 'private, no-store')
-  res.setHeader('X-Content-Type-Options', 'nosniff')
-  res.send(audio)
 }
 
 async function kgDynamicFeedback(input: { letter: typeof LETTERS[number]['letter']; mode: 'speak' | 'touch'; outcome: 'correct' | 'incorrect' | 'unclear' | 'supported'; transcript?: string; selected?: string; noSpeech?: boolean }) {

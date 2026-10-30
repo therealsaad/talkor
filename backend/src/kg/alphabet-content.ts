@@ -67,6 +67,10 @@ export type KGAudioKind = 'curriculum_static' | 'dynamic_tts'
  * with the Hindi word "billi", so it is coaching feedback, not curriculum audio.
  */
 const DYNAMIC_TTS_IDS = new Set<AudioId>([
+  // The FIRST teaching instruction for each letter must be spoken by local
+  // Priya. Azure is the reliable fallback. The other approved fixed
+  // narration remains immutable and reusable from S3.
+  'say-a', 'say-b', 'say-c', 'say-d',
   'welcome', 'great', 'try-again', 'repeat', 'silence', 'picture-support',
   'bridge-a', 'bridge-b', 'bridge-c', 'bridge-d',
   'model-a', 'model-b', 'model-c', 'model-d',

@@ -47,6 +47,14 @@ const MISSING_CLIP_TTL_MS = 60_000
 
 // Tab-memory-only. A fresh watch ticket is required for every KG Level 1 entry.
 let playbackId: string | null = null
+// React Strict Mode may mount twice while the first intro/start is in flight.
+// Never issue two requests that invalidate one another's watch tickets.
+let pendingIntroStart: Promise<{ playbackId: string }> | null = null
+
+function introTicketHeaders(): Record<string, string> {
+  if (!playbackId) throw new Error('Miss Julie intro ticket missing. Please restart the story.')
+  return { 'X-KG-Intro-Playback': playbackId }
+}
 
 function audioPath(id: string, path?: string): string {
   if (path?.startsWith('/kg-alphabet/audio/v1/') && !path.includes('..')) return path
@@ -68,7 +76,8 @@ function trimClipCache() {
   }
 }
 
-async function loadAudioUrl(key: string, signal?: AbortSignal, kind: KGAudioKind = 'curriculum_static'): Promise<string> {
+async function loadAudioUrl(key: string, signal?: AbortSignal, kind: KGAudioKind = 'curriculum_static',
+  headers?: Record<string, string>): Promise<string> {
   const existing = clipCache.get(key)
   if (existing && (!existing.expiresAt || existing.expiresAt > Date.now())) {
     clipCache.delete(key)
@@ -79,7 +88,7 @@ async function loadAudioUrl(key: string, signal?: AbortSignal, kind: KGAudioKind
 
   const entry: ClipCacheEntry = { promise: Promise.resolve(''), settled: false, url: null, expiresAt: 0 }
   entry.promise = kgRequest(
-    (requestSignal) => apiClientBlob(key, { cache: 'no-store', signal: requestSignal }),
+    (requestSignal) => apiClientBlob(key, { cache: 'no-store', signal: requestSignal, headers }),
     signal,
     { retries: 1, timeoutMs: kind === 'dynamic_tts' ? 35000 : 30000, delayMs: 300 },
   ).then((blob) => {
@@ -127,12 +136,19 @@ export const kgAlphabetService = {
   hasIntroTicket: () => Boolean(playbackId),
 
   async beginIntro() {
+    if (pendingIntroStart) return pendingIntroStart
     playbackId = null
-    const session = await apiClient<{ playbackId: string }>('/kg-alphabet/intro/start', {
+    const pending = apiClient<{ playbackId: string }>('/kg-alphabet/intro/start', {
       method: 'POST', cache: 'no-store',
+    }).then((session) => {
+      playbackId = session.playbackId
+      return session
     })
-    playbackId = session.playbackId
-    return session
+    pendingIntroStart = pending
+    try { return await pending }
+    finally {
+      if (pendingIntroStart === pending) pendingIntroStart = null
+    }
   },
 
   introSeen: () => {
@@ -185,17 +201,25 @@ export const kgAlphabetService = {
       }) }
   },
   async playAttemptFeedback(submissionId: string, audio: HTMLAudioElement, signal?: AbortSignal) {
-    const url = await loadAudioUrl(`/kg-alphabet/attempt/${encodeURIComponent(submissionId)}/feedback-audio`, signal, 'dynamic_tts')
+    // The KG intro gate is required for AUDIO and ACK too, not just submit.
+    // Omitting it produced 409 on every reply, independent of Azure health.
+    const url = await loadAudioUrl(
+      `/kg-alphabet/attempt/${encodeURIComponent(submissionId)}/feedback-audio`,
+      signal, 'dynamic_tts', introTicketHeaders(),
+    )
     await playAudioUrl(url, audio, signal)
   },
   acknowledgeFeedback(submissionId: string, signal?: AbortSignal) {
-    return apiClient<{ state: KGAlphabetState }>(`/kg-alphabet/attempt/${encodeURIComponent(submissionId)}/feedback-played`, { method: 'POST', signal })
+    return apiClient<{ state: KGAlphabetState }>(
+      `/kg-alphabet/attempt/${encodeURIComponent(submissionId)}/feedback-played`,
+      { method: 'POST', signal, headers: introTicketHeaders() },
+    )
   },
   submitPrepared(prepared: KGPreparedAttempt, signal?: AbortSignal): Promise<KGAttemptResponse> {
     return kgRequest((requestSignal) => apiClient<KGAttemptResponse>('/kg-alphabet/attempt', {
       method: 'POST', body: prepared.body, signal: requestSignal,
 
-      headers: playbackId ? { 'X-KG-Intro-Playback': playbackId } : {},
+      headers: introTicketHeaders(),
     }), signal, { retries: 1, timeoutMs: 65000 })
   },
   async submit(input: { activityId: string; replay: boolean; selected?: string; audio?: Blob; durationMs?: number; timeSpentMs?: number }): Promise<KGAttemptResponse> {
