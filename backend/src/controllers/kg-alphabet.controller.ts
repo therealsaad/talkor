@@ -170,13 +170,37 @@ async function kgDynamicFeedback(input: { letter: typeof LETTERS[number]['letter
 }
 
 async function sendKGAzure(res: Response, text: string) {
-  const audio = await new AzureVoiceProvider().synthesizeUncached(text)
-  if (!audio.audio.length) throw ApiError.provider('KG_AZURE_AUDIO_MISSING')
-  res.setHeader('Content-Type', audio.contentType)
-  res.setHeader('Content-Length', String(audio.audio.length))
+  // Live Azure is the preferred voice. If its audio generation fails, use
+  // local Priya 8001 for this *same, server-owned* feedback sentence. Never
+  // let a failed provider mark the attempt heard or silently progress.
+  let azure: Awaited<ReturnType<AzureVoiceProvider['synthesizeUncached']>> | null = null
+  try {
+    azure = await new AzureVoiceProvider().synthesizeUncached(text)
+  } catch (error) {
+    console.warn('KG1_FEEDBACK_AZURE_FAILED', {
+      reason: error instanceof Error ? error.name : 'upstream-error',
+    })
+  }
+  if (azure?.audio.length) {
+    res.setHeader('Content-Type', azure.contentType)
+    res.setHeader('Content-Length', String(azure.audio.length))
+    res.setHeader('Cache-Control', 'private, no-store')
+    res.setHeader('X-Voice-Provider', 'azure')
+    return res.send(azure.audio)
+  }
+
+  const priya = await new PythonVoiceProvider().synthesize(text)
+  const bytes = priya.audioBase64 ? Buffer.from(priya.audioBase64, 'base64') : Buffer.alloc(0)
+  const contentType = priya.contentType?.trim() || ''
+  if (!priya.available || bytes.length < 256 || bytes.length > 8 * 1024 * 1024 ||
+      !/^audio\/[a-z0-9.+-]+(?:\s*;.*)?$/i.test(contentType)) {
+    throw ApiError.provider('KG_FEEDBACK_AUDIO_UNAVAILABLE')
+  }
+  res.setHeader('Content-Type', contentType)
+  res.setHeader('Content-Length', String(bytes.length))
   res.setHeader('Cache-Control', 'private, no-store')
-  res.setHeader('X-Voice-Provider', 'azure')
-  res.send(audio.audio)
+  res.setHeader('X-Voice-Provider', 'python-priya-fallback')
+  return res.send(bytes)
 }
 
 function s3ErrorDetails(error: unknown) {
