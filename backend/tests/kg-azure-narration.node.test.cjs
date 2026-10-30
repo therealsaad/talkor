@@ -63,6 +63,7 @@ test('KG narration: Azure on S3 miss, upload once, memory hit, S3 hit after rese
       svc.getKGAzureNarrationAudio(input),
     ])
     assert.equal(first.source, 'azure')
+    assert.equal(first.storedInS3, true)
     assert.equal(together.audio.length, 400)
     assert.deepEqual(counters, { azure: 1, get: 1, put: 1 })
     const second = await svc.getKGAzureNarrationAudio(input)
@@ -117,6 +118,7 @@ test('KG narration: S3 outage never blocks live Azure audio', async () => {
       level: 4, id: 'letter-q', text: 'This is Q.',
     })
     assert.equal(result.source, 'azure')
+    assert.equal(result.storedInS3, false)
     assert.equal(result.audio.length, 400)
     assert.equal(syntheses, 1)
     await assert.rejects(
