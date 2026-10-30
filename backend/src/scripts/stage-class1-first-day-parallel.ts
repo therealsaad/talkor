@@ -79,10 +79,12 @@ async function main() {
     const oldIds = lessons.filter(l => ![STAGING_REVISION, CLASS1_FIRST_DAY_PARALLEL_REVISION].includes(
       String(l.settings?.lessonPlanRevision || ''),
     )).map(l => l._id)
+    if (!oldIds.length) throw new Error('No existing Class 1 draft lesson to preserve')
+    const oldActivityIds = (await Activity.find({ lessonId: { $in: oldIds } })
+      .select('_id').lean()).map(x => x._id)
     const [oldActivities, oldAttempts, oldConversations, oldProgressDocs] = await Promise.all([
       Activity.countDocuments({ lessonId: { $in: oldIds } }),
-      ActivityAttempt.countDocuments({ activityId: { $in:
-        (await Activity.find({ lessonId: { $in: oldIds } }).select('_id').lean()).map(x => x._id) } }),
+      ActivityAttempt.countDocuments({ activityId: { $in: oldActivityIds } }),
       Conversation.countDocuments({ lessonId: { $in: oldIds } }),
       Progress.countDocuments({ classId: level.classId }),
     ])
