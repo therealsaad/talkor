@@ -85,11 +85,14 @@ export class AzureVoiceProvider implements VoiceProvider {
     return this.settings().format.startsWith('audio-') ? 'audio/mpeg' : 'audio/wav'
   }
 
-  /** KG speech is transient: no MongoDB, no S3, no persistent audio cache. */
-  async synthesizeUncached(text: string): Promise<{ audio: Buffer; contentType: string }> {
+  /** KG speech is transient: no MongoDB, no S3, no persistent audio cache.
+   * Honor a server-verified Sarvam language hint for Hindi/Marathi teaching
+   * replies, including Romanized child words. English stays the default.
+   */
+  async synthesizeUncached(text: string, options?: { language?: 'en-IN' | 'hi-IN' | 'mr-IN' }): Promise<{ audio: Buffer; contentType: string }> {
     const normalized = text.replace(/\s+/g, ' ').trim()
     if (!normalized || normalized.length > 320) throw ApiError.badRequest('KG voice text must be 1–320 characters')
-    return { audio: await this.generate(normalized, true), contentType: this.contentType() }
+    return { audio: await this.generate(normalized, true, true, options?.language), contentType: this.contentType() }
   }
 
   async synthesize(text: string): Promise<VoiceSynthesisResult> {

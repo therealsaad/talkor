@@ -84,6 +84,12 @@ jobs:
       - name: Verify authenticated student can open v3 from a historic Class 1 link
         run: pnpm exec jest --runInBand tests/integration/class1DemoAccess.test.ts
         working-directory: backend
+      - name: Verify KG1 live Azure Hindi/Marathi language selection
+        run: pnpm exec jest --runInBand tests/unit/kgAzureBilingualLocale.test.ts
+        working-directory: backend
+      - name: Verify KG1 Sarvam locale survives Qwen and Azure feedback
+        run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'preserves Sarvam Hindi detection'
+        working-directory: backend
       - name: Verify KG1 feedback 409 is resolved with valid authenticated intro ticket
         run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'KG1 409 only when the intro ticket'
         working-directory: backend
