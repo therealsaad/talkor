@@ -7,6 +7,8 @@ export type KGFeedbackInput = {
   mode: 'speak' | 'touch'
   outcome: 'correct' | 'incorrect' | 'unclear' | 'supported'
   transcript?: string
+  /** Only Sarvam's server-reported locale, never a browser-supplied claim. */
+  languageCode?: 'en-IN' | 'hi-IN' | 'mr-IN'
   selected?: string
   noSpeech?: boolean
 }
