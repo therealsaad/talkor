@@ -128,7 +128,7 @@ it('authenticates the student, resolves a static teaching ID to its versioned S3
   const getAudio = jest.spyOn(S3Service, 'getAudio').mockResolvedValue(bytes)
 
   const response = await request(app)
-    .get('/api/kg-alphabet/audio/v1/say-a')
+    .get('/api/kg-alphabet/audio/v1/letter-a')
     .set('Authorization', authorization)
     .buffer(true)
     .parse((res, callback) => {
@@ -145,13 +145,13 @@ it('authenticates the student, resolves a static teaching ID to its versioned S3
   expect(response.headers['cache-control']).toMatch(/private/)
   expect(response.headers.etag).toMatch(/^"[a-f0-9]{64}"$/)
   expect(response.headers['x-content-type-options']).toBe('nosniff')
-  expect(getAudio).toHaveBeenCalledWith('kg/level-1/miss-julie/v1/say-a.mp3')
+  expect(getAudio).toHaveBeenCalledWith('kg/level-1/miss-julie/v1/letter-a.mp3')
 })
 
 it('routes bridge-c to Priya TTS from the reviewed lesson line without touching S3 or accepting client text', async () => {
   const { authorization } = await makePilot()
   const getAudio = jest.spyOn(S3Service, 'getAudio')
-  const bytes = Buffer.from('RIFF\u0000\u0000\u0000\u0000WAVE test audio')
+  const bytes = Buffer.concat([Buffer.from('RIFF\\x00\\x00\\x00\\x00WAVE'), Buffer.alloc(300)])
   const tts = jest.spyOn(PythonVoiceProvider.prototype, 'synthesize').mockResolvedValue({
     audioUrl: null, audioBase64: bytes.toString('base64'), contentType: 'audio/wav', available: true, provider: 'python-priya',
   })
@@ -180,10 +180,10 @@ it('denies audio outside the authorized KG pilot and reports a missing static S3
   await request(app).get('/api/kg-alphabet/audio/v2/say-a').set('Authorization', authorization).expect(404)
   expect(getAudio).not.toHaveBeenCalled()
 
-  const missing = await request(app).get('/api/kg-alphabet/audio/v1/say-a').set('Authorization', authorization).expect(404)
+  const missing = await request(app).get('/api/kg-alphabet/audio/v1/letter-a').set('Authorization', authorization).expect(404)
   expect(missing.body.error).toMatchObject({
     code: 'KG_AUDIO_MISSING',
-    details: { s3Key: 'kg/level-1/miss-julie/v1/say-a.mp3', storageCode: 'NoSuchKey', retryable: false },
+    details: { s3Key: 'kg/level-1/miss-julie/v1/letter-a.mp3', storageCode: 'NoSuchKey', retryable: false },
   })
   expect(tts).not.toHaveBeenCalled()
   expect(await KGAlphabetProgress.countDocuments({ studentId: student._id })).toBe(0)
@@ -200,7 +200,7 @@ it('denies audio outside the authorized KG pilot and reports a missing static S3
   })
   const nonPilotToken = signToken({ sub: nonPilot._id.toString(), schoolId: student.schoolId.toString(), role: 'STUDENT', sv: 0 })
   await request(app)
-    .get('/api/kg-alphabet/audio/v1/say-a')
+    .get('/api/kg-alphabet/audio/v1/letter-a')
     .set('Authorization', `Bearer ${nonPilotToken}`)
     .expect(403)
 })
@@ -210,15 +210,15 @@ it('distinguishes S3 access denial from a retryable S3 provider outage', async (
   const accessDenied = Object.assign(new Error('denied'), { name: 'AccessDenied', $metadata: { httpStatusCode: 403 } })
   jest.spyOn(S3Service, 'getAudio').mockRejectedValueOnce(accessDenied).mockRejectedValueOnce(new Error('socket reset'))
 
-  const denied = await request(app).get('/api/kg-alphabet/audio/v1/say-a').set('Authorization', authorization).expect(502)
+  const denied = await request(app).get('/api/kg-alphabet/audio/v1/letter-a').set('Authorization', authorization).expect(502)
   expect(denied.body.error).toMatchObject({
     code: 'KG_AUDIO_STORAGE_ACCESS_DENIED',
-    details: { s3Key: 'kg/level-1/miss-julie/v1/say-a.mp3', storageCode: 'AccessDenied', retryable: false },
+    details: { s3Key: 'kg/level-1/miss-julie/v1/letter-a.mp3', storageCode: 'AccessDenied', retryable: false },
   })
-  const unavailable = await request(app).get('/api/kg-alphabet/audio/v1/say-a').set('Authorization', authorization).expect(503)
+  const unavailable = await request(app).get('/api/kg-alphabet/audio/v1/letter-a').set('Authorization', authorization).expect(503)
   expect(unavailable.body.error).toMatchObject({
     code: 'KG_AUDIO_STORAGE_UNAVAILABLE',
-    details: { s3Key: 'kg/level-1/miss-julie/v1/say-a.mp3', storageCode: 'Error', retryable: true },
+    details: { s3Key: 'kg/level-1/miss-julie/v1/letter-a.mp3', storageCode: 'Error', retryable: true },
   })
 })
 
@@ -226,6 +226,7 @@ it('returns retryable TTS outage for dynamic feedback without requiring S3', asy
   const { authorization } = await makePilot()
   const getAudio = jest.spyOn(S3Service, 'getAudio')
   jest.spyOn(PythonVoiceProvider.prototype, 'synthesize').mockRejectedValue(new Error('Priya service offline'))
+  jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached').mockRejectedValue(new Error('Azure service offline'))
 
   const response = await request(app).get('/api/kg-alphabet/audio/v1/bridge-c').set('Authorization', authorization).expect(503)
   expect(response.body.error).toMatchObject({ code: 'TTS_SERVICE_UNAVAILABLE', details: { retryable: true } })
@@ -590,4 +591,36 @@ it('KG1 409 only when the intro ticket is absent; both audio and completion ACK 
   const completed = await request(app).post(ack).set('Authorization', authorization)
     .set('X-KG-Intro-Playback', activePlaybackId).expect(200)
   expect(completed.body.data.state.currentIndex).toBe(1)
+})
+
+
+it('serves each first KG A-D prompt from local Priya before listening, never the old S3 say clip', async () => {
+  const { authorization } = await makePilot()
+  const s3 = jest.spyOn(S3Service, 'getAudio')
+  const audio = Buffer.concat([Buffer.from('RIFF\\x00\\x00\\x00\\x00WAVE'), Buffer.alloc(300)])
+  const priya = jest.spyOn(PythonVoiceProvider.prototype, 'synthesize').mockResolvedValue({
+    audioUrl: null, audioBase64: audio.toString('base64'),
+    contentType: 'audio/wav', available: true, provider: 'python-priya',
+  })
+  for (const letter of ['a','b','c','d']) {
+    const result = await request(app).get(`/api/kg-alphabet/audio/v1/say-${letter}`)
+      .set('Authorization', authorization).expect(200)
+    expect(result.headers['x-voice-provider']).toBe('python-priya')
+    expect(result.headers['content-type']).toMatch(/audio\/wav/)
+  }
+  expect(priya).toHaveBeenCalledTimes(4)
+  expect(priya).toHaveBeenNthCalledWith(1, 'A! A for apple! Can you say apple?')
+  expect(s3).not.toHaveBeenCalled()
+})
+
+it('speaks the same canonical KG teaching line with Azure when local Priya is unavailable', async () => {
+  const { authorization } = await makePilot()
+  jest.spyOn(PythonVoiceProvider.prototype, 'synthesize').mockRejectedValue(new Error('8001 down'))
+  const azure = jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached').mockResolvedValue({
+    audio: Buffer.alloc(350, 65), contentType: 'audio/mpeg',
+  })
+  const result = await request(app).get('/api/kg-alphabet/audio/v1/say-a')
+    .set('Authorization', authorization).expect(200)
+  expect(result.headers['x-voice-provider']).toBe('azure-fallback')
+  expect(azure).toHaveBeenCalledWith('A! A for apple! Can you say apple?')
 })
