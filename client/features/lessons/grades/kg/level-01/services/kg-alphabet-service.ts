@@ -81,7 +81,7 @@ async function loadAudioUrl(key: string, signal?: AbortSignal, kind: KGAudioKind
   entry.promise = kgRequest(
     (requestSignal) => apiClientBlob(key, { cache: 'no-store', signal: requestSignal }),
     signal,
-    { retries: 1, timeoutMs: kind === 'dynamic_tts' ? 15000 : 30000, delayMs: 300 },
+    { retries: 1, timeoutMs: kind === 'dynamic_tts' ? 35000 : 30000, delayMs: 300 },
   ).then((blob) => {
     if (clipCache.get(key) !== entry) throw new DOMException('Audio request is no longer active', 'AbortError')
     entry.url = URL.createObjectURL(blob)

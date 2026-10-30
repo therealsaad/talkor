@@ -393,10 +393,16 @@ export const KGAlphabetController = {
     const submissionId = validateSubmissionId(req.params.submissionId)
     const attempt = await KGAlphabetAttempt.findOne({ studentId: student._id, schoolId: student.schoolId, submissionId })
     if (!attempt) throw ApiError.notFound('KG answer not found')
-    const coached = await kgDynamicFeedback({ letter: attempt.letter as typeof LETTERS[number]['letter'],
-      mode: attempt.mode, outcome: attempt.outcome, transcript: attempt.transcript, selected: attempt.selected,
-      noSpeech: attempt.recognitionReason === 'silence' })
-    await sendKGAzure(res, coached.feedbackText)
+    // Do NOT call Qwen again when fetching or retrying a previously
+    // submitted turn. That second 8002 call regularly exceeds the browser's
+    // 15-second dynamic audio timeout, and changes the actual words the
+    // child hears versus the submitted feedback displayed on-screen.
+    // Old attempts pre-dating feedbackText use the guarded deterministic line.
+    const words = attempt.feedbackText ||
+      (await spokenFeedback({ letter: attempt.letter as typeof LETTERS[number]['letter'],
+        mode: attempt.mode, outcome: attempt.outcome,
+        noSpeech: attempt.recognitionReason === 'silence' })).feedbackText
+    await sendKGAzure(res, words)
   }),
   previewAttempt: catchAsync(async (req: Request, res: Response) => {
     // Staff preview uses the KG-selected STT and reviewed feedback without progress writes.
@@ -429,9 +435,12 @@ export const KGAlphabetController = {
         state: { ...presentState(recoveredState), fallbackAvailable: await canUsePictureSupport(student._id, student.schoolId, recoveredState.currentIndex) }, duplicate: true,
         feedbackAudioId: feedbackFor(attempt.outcome, attempt.recognitionReason, attempt.letter as typeof LETTERS[number]['letter'], attempt.mode),
         teachingHint: kgTeachingHint(attempt.letter as typeof LETTERS[number]['letter'], attempt.mode, attempt.outcome),
-        ...(await spokenFeedback({ letter: attempt.letter as typeof LETTERS[number]['letter'], mode: attempt.mode,
-          outcome: attempt.outcome as 'correct' | 'incorrect' | 'unclear' | 'supported',
-          noSpeech: attempt.recognitionReason === 'silence' })) })
+        feedbackText: attempt.feedbackText ||
+          (await spokenFeedback({ letter: attempt.letter as typeof LETTERS[number]['letter'], mode: attempt.mode,
+            outcome: attempt.outcome,
+            noSpeech: attempt.recognitionReason === 'silence' })).feedbackText,
+        feedbackAudioBase64: null,
+        feedbackVoice: 'azure' as const })
     }
     const existing = await KGAlphabetAttempt.findOne(identity)
     if (existing) return returnRecorded(existing)
@@ -524,6 +533,10 @@ export const KGAlphabetController = {
       const latest = await KGAlphabetProgress.findOne({ studentId: student._id, schoolId: student.schoolId })
       const voice = await kgDynamicFeedback({ letter: activity.letter, mode: assistedPicture ? 'touch' : activity.mode, outcome,
         transcript, selected, noSpeech: recognitionReason === 'silence' })
+      // Persist only the guarded teacher sentence, never audio, after the
+      // speech attempt is recorded. Duplicate submissions and replay-audio
+      // endpoints must use the exact same line, not regenerate Qwen text.
+      await KGAlphabetAttempt.updateOne(identity, { $set: { feedbackText: voice.feedbackText } })
       res.setHeader('Cache-Control', 'no-store')
       return ok(res, { submissionId, outcome, replay, advance: outcome === 'correct' || (outcome === 'supported' && assistedPicture), transcript: transcript || '', state: { ...presentState(latest || state),
         fallbackAvailable: await canUsePictureSupport(student._id, student.schoolId, (latest || state).currentIndex) },
