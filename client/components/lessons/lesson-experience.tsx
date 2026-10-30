@@ -368,7 +368,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     try {
       if (!audioEnabled && experienceId === 'g01-l01') {
         setAudioBlocked(true)
-        setFeedback('Teacher audio is required for this voice-first lesson. Ask a teacher to enable sound.')
+        setFeedback('Teacher audio is required for this voice-first lesson. Please enable sound.')
         setExperience('recoverable_error')
         return false
       }
@@ -381,8 +381,8 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         if (playback !== 'spoken') {
           setAudioBlocked(true)
           setFeedback(playback === 'autoplay-blocked'
-            ? 'Sound permission is needed. Ask your teacher to enable sound once.'
-            : 'Miss Julie could not play her voice. Ask your teacher to check Azure Speech and the backend.')
+            ? 'Sound permission is needed. Please enable sound once.'
+            : 'Miss Julie could not play her voice. Please check the sound service.')
           setExperience('recoverable_error')
           return false
         }

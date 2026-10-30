@@ -433,6 +433,9 @@ export const StudentCurriculumService = {
              LESSON SUMMARY
              =============================================== */
 
+          const hasPoem = isClass1Demo && unitLessons.some(
+            lesson => lesson.settings?.lessonPlanRevision === CLASS1_FIRST_DAY_POEM_REVISION,
+          )
           const hasFirstDay = isClass1Demo && unitLessons.some(
             lesson => [CLASS1_FIRST_DAY_PARALLEL_REVISION, CLASS1_FIRST_DAY_POEM_REVISION].includes(String(lesson.settings?.lessonPlanRevision || '')),
           )
@@ -490,13 +493,13 @@ export const StudentCurriculumService = {
              * Curriculum title remains authoritative.
              */
             title:
-              hasFirstDay ? 'My First Day — School Adventure' : unit.title,
+              hasPoem ? 'My First Day — English Poem' : hasFirstDay ? 'My First Day — School Adventure' : unit.title,
 
             /*
              * Product world label stays separate.
              */
             worldName:
-              hasFirstDay ? 'School Garden' : unit.place,
+              hasPoem ? 'Poem Garden' : hasFirstDay ? 'School Garden' : unit.place,
 
             term:
               unit.term,
@@ -540,12 +543,12 @@ export const StudentCurriculumService = {
 
             learningObjectives:
               hasFirstDay
-                ? ['Listen to and speak the First Day school actions in English']
+                ? (hasPoem ? ['Listen and recite My First Day in two-line pairs and as a full poem'] : ['Listen to and speak the First Day school actions in English'])
                 : (unit.learningObjectives ?? []),
 
             speakingGoals:
               hasFirstDay
-                ? ['Speak about school, walk, run, skip, jump, grin, bell and play']
+                ? (hasPoem ? ['Say each two-line poem part and recite all three stanzas'] : ['Speak about school, walk, run, skip, jump, grin, bell and play'])
                 : (unit.speakingGoals ?? []),
 
             lessonCount:

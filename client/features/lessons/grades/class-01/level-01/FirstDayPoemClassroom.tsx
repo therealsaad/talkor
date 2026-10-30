@@ -3,7 +3,7 @@
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
-import { BookOpen, Headphones, Mic, Music2, Music2Off, Volume2, VolumeX, Sparkles } from 'lucide-react'
+import { BookOpen, Headphones, Mic, Music2, Volume2, VolumeX, Sparkles } from 'lucide-react'
 import './first-day-poem-classroom.css'
 
 /** User-provided 2025 English Balbharati Grade One, Lesson 1.1, PDF page 11.
@@ -150,7 +150,7 @@ export function FirstDayPoemClassroom({
         </div>
         <div className="poem-actions">
           <button type="button" aria-pressed={music} onClick={()=>setMusic(x=>!x)} disabled={isListening} title="Original soft instrumental only, no recorded music">
-            {music?<Music2 size={19}/>:<Music2Off size={19}/>} {music?'Music on':'Music off'}
+            {music?<Music2 size={19}/>:<VolumeX size={19}/>} {music?'Music on':'Music off'}
           </button>
           {needsAudioGesture&&onEnableAudio?<button type="button" onClick={onEnableAudio}><VolumeX size={19}/> Enable voice</button>:null}
           {!isSpeaking&&!isProcessing&&!isListening&&!needsAudioGesture&&isAudioEnabled&&onReplayJulie
