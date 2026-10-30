@@ -4,16 +4,17 @@ import { logger } from '../utils/logger'
 import { S3Service } from './S3Service'
 
 type KGAudioSource = 'memory' | 's3' | 'azure'
-export type KGAzureNarration = { audio: Buffer; contentType: string; source: KGAudioSource }
+export type KGAzureNarration = { audio: Buffer; contentType: string; source: KGAudioSource; storedInS3: boolean }
+type CachedNarration = Pick<KGAzureNarration, 'audio' | 'contentType' | 'storedInS3'>
 
 const MAX_ENTRIES = 96
 const MAX_BYTES = 24 * 1024 * 1024
 const MAX_ITEM_BYTES = 2 * 1024 * 1024
-const memory = new Map<string, { audio: Buffer; contentType: string }>()
+const memory = new Map<string, CachedNarration>()
 const inFlight = new Map<string, Promise<KGAzureNarration>>()
 let bytesInMemory = 0
 
-function store(key: string, value: { audio: Buffer; contentType: string }) {
+function store(key: string, value: CachedNarration) {
   if (value.audio.length > MAX_ITEM_BYTES) return
   const previous = memory.get(key)
   if (previous) bytesInMemory -= previous.audio.length
@@ -88,7 +89,7 @@ export async function getKGAzureNarrationAudio(input: {
       try {
         const stored = await S3Service.getAudio(key)
         if (stored && stored.length >= 256 && stored.length <= 8 * 1024 * 1024) {
-          const value = { audio: stored, contentType }
+          const value = { audio: stored, contentType, storedInS3: true }
           store(key, value)
           return { ...value, source: 's3' }
         }
@@ -100,22 +101,26 @@ export async function getKGAzureNarrationAudio(input: {
     }
 
     // The provider's KG preset and audio validation remain authoritative.
-    const value = await new AzureVoiceProvider().synthesizeUncached(text)
+    const generated = await new AzureVoiceProvider().synthesizeUncached(text)
+    let storedInS3 = false
     if (s3Configured()) {
       try {
-        await S3Service.putAudio(key, value.audio, value.contentType, {
+        await S3Service.putAudio(key, generated.audio, generated.contentType, {
           source: 'azure',
           profile: 'kg-v1',
         }, '*')
+        storedInS3 = true
       } catch (error) {
         // A concurrent worker can win an If-None-Match race (412).
         // Neither S3 upload failures nor a race should mute the lesson.
         const status = (error as { $metadata?: { httpStatusCode?: number } })?.$metadata?.httpStatusCode
-        if (status !== 412) logger.warn('KG Azure narration S3 write failed; serving live audio', {
+        if (status === 412) storedInS3 = true
+        else logger.warn('KG Azure narration S3 write failed; serving live audio', {
           level, id, reason: error instanceof Error ? error.name : 'UnknownS3Error',
         })
       }
     }
+    const value = { ...generated, storedInS3 }
     store(key, value)
     return { ...value, source: 'azure' }
   })()
