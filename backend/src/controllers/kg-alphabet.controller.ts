@@ -260,7 +260,29 @@ async function sendManifestAudio(res: Response, id: AudioId, options: { preview?
   if (!line) throw ApiError.notFound('Audio clip not found')
   if (line.kind === 'dynamic_tts') return sendKGVoice(res, line.text)
 
-  const audio = await getApprovedStaticClip(id)
+  let audio: Buffer
+  try {
+    audio = await getApprovedStaticClip(id)
+  } catch (error) {
+    // The full lesson must not dead-end because a *fixed, reviewed* S3 cue
+    // is temporarily missing. Generate exactly its canonical manifest text
+    // with Azure, without inventing content or writing unreviewed audio
+    // into immutable S3 keys. AccessDenied stays a hard failure.
+    if (!(error instanceof ApiError) ||
+        !['KG_AUDIO_MISSING', 'KG_AUDIO_STORAGE_UNAVAILABLE'].includes(error.code)) throw error
+    console.warn('KG_STATIC_S3_AZURE_FALLBACK', { audioId: id, reason: error.code })
+    const replacement = await new AzureVoiceProvider().synthesizeUncached(line.text)
+    if (replacement.audio.length < 256 || replacement.audio.length > 2 * 1024 * 1024 ||
+        !/^audio\/(?:mpeg|wav)$/i.test(replacement.contentType)) {
+      throw ApiError.provider('KG_STATIC_TTS_INVALID')
+    }
+    res.setHeader('Content-Type', replacement.contentType)
+    res.setHeader('Content-Length', String(replacement.audio.length))
+    res.setHeader('Cache-Control', 'private, no-store')
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('X-Voice-Provider', 'azure-static-fallback')
+    return res.send(replacement.audio)
+  }
   const etag = `"${createHash('sha256').update(audio).digest('hex')}"`
   res.setHeader('Content-Type', 'audio/mpeg')
   res.setHeader('Content-Length', String(audio.length))
