@@ -20,6 +20,7 @@ import { KGSpeechService } from '../services/kg-speech.service'
 import { kgTeachingHint } from '../services/kg-teaching-hint'
 import { env } from '../config/env'
 import { isSupportedVoiceAudioMimeType } from '../schemas/voice.schema'
+import { hasExpectedAudioHeader } from '../services/voice-audio-format'
 
 async function studentContext(req: Request) {
   if (req.auth?.role !== 'STUDENT') throw ApiError.forbidden('Student login required')
@@ -272,8 +273,8 @@ async function sendManifestAudio(res: Response, id: AudioId, options: { preview?
         !['KG_AUDIO_MISSING', 'KG_AUDIO_STORAGE_UNAVAILABLE'].includes(error.code)) throw error
     console.warn('KG_STATIC_S3_AZURE_FALLBACK', { audioId: id, reason: error.code })
     const replacement = await new AzureVoiceProvider().synthesizeUncached(line.text)
-    if (replacement.audio.length < 256 || replacement.audio.length > 2 * 1024 * 1024 ||
-        !/^audio\/(?:mpeg|wav)$/i.test(replacement.contentType)) {
+    if (replacement.audio.length > 2 * 1024 * 1024 ||
+        !hasExpectedAudioHeader(replacement.audio, replacement.contentType)) {
       throw ApiError.provider('KG_STATIC_TTS_INVALID')
     }
     res.setHeader('Content-Type', replacement.contentType)
