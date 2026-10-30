@@ -15,6 +15,8 @@ const STANZAS = [
   ['See me jump', 'See me play', 'I’m in Grade One!', 'Hip hip hurray!'],
 ] as const
 const LINES = STANZAS.flat()
+/** Reuse the same complete source poem for the celebratory encore. */
+export const FIRST_DAY_POEM_COMPLETE = STANZAS.map(lines=>lines.join('\\n')).join('\\n\\n')
 const PAIRS = [
   { start:0, end:2, symbol:'🏃', hintHi:'Skip यानी उछलकर चलना। Run यानी दौड़ना।', hintMr:'Skip म्हणजे उड्या मारत चालणे. Run म्हणजे धावणे.' },
   { start:2, end:4, symbol:'🏫', hintHi:'School यानी स्कूल, walk यानी चलना।', hintMr:'School म्हणजे शाळा, walk म्हणजे चालणे.' },

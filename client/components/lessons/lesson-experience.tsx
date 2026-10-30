@@ -20,6 +20,7 @@ import { firstUnfinishedActivity, isOpenLessonConversation, personalizeLessonTex
 import { KGLessonIntro } from '@/components/student/lesson/kg-lesson-intro'
 import { Class1LessonIntro } from '@/features/lessons/grades/class-01/level-01/Class1LessonIntro'
 import { Class1SpokenHomework } from '@/features/lessons/grades/class-01/level-01/Class1SpokenHomework'
+import { FIRST_DAY_POEM_COMPLETE } from '@/features/lessons/grades/class-01/level-01/FirstDayPoemClassroom'
 import { class1SpokenSpelling } from '@/features/lessons/grades/class-01/level-01/first-day-voice-guide'
 
 /**
@@ -973,16 +974,20 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         : `You did it, ${studentName}! You finished ${syllabusName} and used clear English in real speaking turns.`)
       void commitTeacherTurn({
         id: `teacher-${activity?.id || index}-complete`,
-        text: experienceId === 'g01-l01' && homeworkMessage
-          ? `${celebration} For your speaking homework, ${homeworkMessage.replace(/^Homework:\s*/i, '')}`
-          : celebration,
+        text: activity?.activityKey === 'class1-l01-v4-poem-full'
+          ? `${celebration} Let us hear the whole poem one last time with our happy rhythm. ${FIRST_DAY_POEM_COMPLETE} For your speaking homework, recite it with actions at home!`
+          : experienceId === 'g01-l01' && homeworkMessage
+            ? `${celebration} For your speaking homework, ${homeworkMessage.replace(/^Homework:\s*/i, '')}`
+            : celebration,
         emotion: 'celebrating',
         intent: 'celebrate',
         requiresStudentResponse: false,
         retryRequired: false,
         hintLevel: 0,
         activityComplete: true,
-        voicePriority: 'LESSON',
+        // The finale's complete poem is a live Azure reading, never a v3 S3 word clip.
+        voicePriority: activity?.activityKey === 'class1-l01-v4-poem-full' ? 'CONVERSATION' : 'LESSON',
+        staticAudioActivityId: activity?.activityKey === 'class1-l01-v4-poem-full' ? activity.id : undefined,
       }, 'lesson_complete')
       return
     }
