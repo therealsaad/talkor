@@ -3,6 +3,14 @@
  */
 import { parsePriyaHealth, checkPriyaHealth, formatPriyaHealth } from '../services/priya-tts-health'
 import { isAllowedClass1IntroSource, chooseClass1IntroSource } from './class1-first-day-intro-url'
+import mongoose from 'mongoose'
+import { env } from '../config/env'
+import { CurriculumClass } from '../models/CurriculumClass'
+import { Level } from '../models/Level'
+import { Lesson } from '../models/Lesson'
+import { Activity } from '../models/Activity'
+import { CLASS1_DEMO_VERSION, CLASS1_DEMO_LESSON_FILTER,
+  CLASS1_FIRST_DAY_POEM_REVISION } from '../services/class1-demo-access'
 
 const BASE = [
   { name: 'node-5000', url: 'http://127.0.0.1:5000/health' },
@@ -10,6 +18,50 @@ const BASE = [
   { name: 'python-qwen-8002', url: (process.env.TALKORA_CLASS1_AI_URL || 'http://127.0.0.1:8002').replace(/\/$/, '') + '/health' },
   { name: 'ollama-11434', url: 'http://127.0.0.1:11434/api/tags' },
 ]
+/** The HTTP health checks alone cannot tell a developer whether the v4
+ * curriculum exists in the database serving the student. This is read-only
+ * and never touches an attempt or progress record.
+ */
+async function inspectClass1PoemDatabase() {
+  try {
+    await mongoose.connect(env.mongodbUri, {
+      autoIndex: false, serverSelectionTimeoutMS: 5000,
+    })
+    const klass = await CurriculumClass.findOne({
+      grade: 1, status: { $in: ['draft', 'active'] },
+    }).select('_id').lean()
+    const level = klass && await Level.findOne({
+      classId: klass._id, number: 1, curriculumVersion: CLASS1_DEMO_VERSION,
+      status: 'draft', availability: 'UPCOMING',
+    }).select('_id').lean()
+    if (!level) {
+      console.log('BLOCKED class1-poem-v4: canonical Class 1 demo level not found in MongoDB')
+      return
+    }
+    const installed = await Lesson.find({
+      levelId: level._id,
+      ...CLASS1_DEMO_LESSON_FILTER,
+      'settings.lessonPlanRevision': CLASS1_FIRST_DAY_POEM_REVISION,
+    }).select('_id').lean()
+    const matches = installed.length === 1
+      ? await Activity.countDocuments({
+          lessonId: installed[0]._id, activityKey: /^class1-l01-v4-poem-/,
+          status: 'draft', type: 'CONVERSATION', aiEnabled: true, allowMic: true,
+        })
+      : 0
+    if (installed.length === 1 && matches === 6) {
+      console.log('PASS class1-poem-v4: six playable poem activities found')
+    } else {
+      console.log('BLOCKED class1-poem-v4: installed lessons=' + installed.length +
+        ', playable activities=' + matches + '/6')
+      console.log('NEXT: preview stage-class1-first-day-poem.ts, review the intro, then run --apply')
+    }
+  } catch {
+    console.log('CHECK class1-poem-v4: database could not be checked; do not infer the lesson is installed')
+  } finally {
+    await mongoose.disconnect().catch(() => undefined)
+  }
+}
 async function main() {
   const chosenIntro = chooseClass1IntroSource(
     process.env.TALKORA_FIRST_DAY_INTRO_URL || process.env.NEXT_PUBLIC_TALKORA_CLASS1_INTRO_URL,
@@ -40,6 +92,7 @@ async function main() {
       }
     } catch { console.log('OFFLINE ' + item.name) }
   }
+  await inspectClass1PoemDatabase()
   console.log('NOTE: HTTP health does not verify speaker output, account billing, model quality or microphone permission.')
   console.log('NOTE: 8001 is a local narration generator/last fallback, not the primary Azure dynamic TTS path.')
   console.log('NOTE: Python 8002 main must include the separate First Day PR for bilingual school-scene coaching.')
