@@ -170,7 +170,7 @@ async function sendKGAzure(res: Response, text: string) {
     const bytes = priya.audioBase64 ? Buffer.from(priya.audioBase64, 'base64') : Buffer.alloc(0)
     const contentType = priya.contentType?.trim() || ''
     if (!priya.available || bytes.length < 256 || bytes.length > 8 * 1024 * 1024 ||
-        !/^audio\\/[a-z0-9.+-]+(?:\\s*;.*)?$/i.test(contentType)) {
+        !/^audio\/[a-z0-9.+-]+(?:\s*;.*)?$/i.test(contentType)) {
       throw new Error('Invalid fallback audio')
     }
     res.setHeader('Content-Type', contentType)
