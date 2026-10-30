@@ -314,8 +314,12 @@ export default function StudentDetailPage() {
         />
         <MetricCard
           label="Levels Completed"
-          value={`${progress.completedLevels} / ${progress.totalLevels || 10}`}
-          subtext={`${progress.completedLessons ?? 0} lessons passed`}
+          value={
+            progress.totalLevels
+              ? `${progress.completedLevels} / ${progress.totalLevels}`
+              : String(progress.completedLevels)
+          }
+          subtext={`${progress.completedLessons ?? 0} lessons passed · verified Progress records`}
           icon={Award}
           accent="sky"
         />
@@ -362,12 +366,21 @@ export default function StudentDetailPage() {
           <div
             style={{
               height: '100%',
-              width: `${Math.min(100, Math.max(5, (progress.completedLevels / (progress.totalLevels || 10)) * 100))}%`,
+              width: progress.totalLevels
+                ? `${Math.min(100, Math.max(0, (progress.completedLevels / progress.totalLevels) * 100))}%`
+                : progress.completedLevels > 0
+                  ? '100%'
+                  : '0%',
               background: '#4f46e5',
               borderRadius: 'inherit',
             }}
           />
         </div>
+        {!progress.totalLevels ? (
+          <p style={{ margin: '8px 0 0', fontSize: 11, color: '#94a3b8' }}>
+            Curriculum length unavailable — showing verified completed levels only (not a fabricated percentage).
+          </p>
+        ) : null}
       </section>
 
       {/* Home Practice / Audio Reflection Section */}

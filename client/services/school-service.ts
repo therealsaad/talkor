@@ -1,4 +1,4 @@
-import { apiClient, apiClientBlob } from '@/lib/api-client'
+import { apiClient, apiClientBlob, getApiUrl, getStoredToken, handleUnauthorizedResponse } from '@/lib/api-client'
 export interface StudentListItem {
   id: string
   teacherId?: string
@@ -191,4 +191,179 @@ export const schoolService = {
   async getWeakestSkills(): Promise<any> {
     return apiClient('/analytics/weakest-skills')
   },
+
+  async getLearningProgressOverview(params?: LearningProgressQuery): Promise<LearningProgressOverview> {
+    return apiClient(`/analytics/learning-progress/overview${toQuery(params)}`)
+  },
+
+  async getLearningProgressLevels(grade: number): Promise<LearningProgressLevelsForGrade> {
+    return apiClient(`/analytics/learning-progress/grades/${grade}/levels`)
+  },
+
+  async getLearningProgressLevelReport(
+    levelId: string,
+    params?: LearningProgressQuery,
+  ): Promise<LearningProgressLevelReport> {
+    return apiClient(`/analytics/learning-progress/levels/${encodeURIComponent(levelId)}${toQuery(params)}`)
+  },
+
+  async getLearningProgressStudent(studentId: string): Promise<LearningProgressStudentDetail> {
+    return apiClient(`/analytics/learning-progress/students/${encodeURIComponent(studentId)}`)
+  },
+
+  async downloadLearningProgressLevelCsv(
+    levelId: string,
+    params?: LearningProgressQuery,
+  ): Promise<Blob> {
+    const token = getStoredToken()
+    if (!token) throw new Error('Sign in required to export')
+    const response = await fetch(
+      getApiUrl(`/analytics/learning-progress/levels/${encodeURIComponent(levelId)}/export.csv${toQuery(params)}`),
+      { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' },
+    )
+    if (!response.ok) {
+      handleUnauthorizedResponse(response.status)
+      throw new Error(`Export failed (${response.status})`)
+    }
+    return response.blob()
+  },
+}
+
+export type LearningProgressState = 'completed' | 'in_progress' | 'not_started'
+
+export type LearningProgressQuery = {
+  grade?: number
+  className?: string
+  from?: string
+  to?: string
+  search?: string
+  state?: LearningProgressState
+  page?: number
+  limit?: number
+}
+
+export type LearningProgressOverview = {
+  scope: { schoolId: string; teacherId: string | null }
+  filters: { grade: number | null; className: string | null; from: string | null; to: string | null }
+  definitions: Record<string, string>
+  metrics: {
+    enrolledStudents: number
+    teacherCount: number
+    studentsWithLearningActivity: number
+    uniqueVerifiedLevelCompletions: number
+    studentsWhoCompletedAtLeastOneLevel: number
+    studentsInProgress: number
+    activeLearnersInPeriod: number
+    timeSpentMinutes: number | null
+  }
+  recentCompletions: Array<{
+    studentId: string
+    fullName: string
+    rollNumber: string
+    grade: number | null
+    className: string | null
+    levelId: string
+    levelNumber: number | null
+    levelTitle: string
+    completedAt: string | null
+    totalTimeMs: number | null
+    source: 'progress' | 'kg_alphabet'
+  }>
+  gradeBreakdown: Array<{
+    grade: number
+    enrolledStudents: number
+    studentsWithLearningActivity: number
+    uniqueVerifiedLevelCompletions: number
+    studentsWhoCompletedAtLeastOneLevel: number
+    studentsInProgress: number
+    studentsNotStarted: number
+  }>
+}
+
+export type LearningProgressLevelsForGrade = {
+  grade: number
+  classId: string | null
+  levels: Array<{ id: string; number: number; title: string; place?: string; order: number }>
+}
+
+export type LearningProgressLevelReport = {
+  level: {
+    id: string
+    number: number
+    title: string
+    place?: string
+    curriculumVersion?: string
+    grade: number
+    availability?: string
+  }
+  filters: {
+    grade: number | null
+    className: string | null
+    state: LearningProgressState | null
+    from: string | null
+    to: string | null
+  }
+  definitions: Record<string, string>
+  summary: {
+    eligibleStudents: number
+    completed: number
+    inProgress: number
+    notStarted: number
+    completionRate: number | null
+  }
+  students: Array<{
+    studentId: string
+    fullName: string
+    rollNumber: string
+    grade: number
+    className: string | null
+    state: LearningProgressState
+    completedAt: string | null
+    totalTimeMs: number | null
+  }>
+  pagination: { page: number; limit: number; total: number; pages: number }
+}
+
+export type LearningProgressStudentDetail = {
+  student: {
+    id: string
+    fullName: string
+    rollNumber: string
+    grade: number
+    className: string | null
+    status: string
+  }
+  definitions: Record<string, string>
+  summary: {
+    verifiedLevelCompletions: number
+    inProgressLevels: number
+    totalXp: number
+    lastActivityAt: string | null
+  }
+  levels: Array<{
+    levelId: string
+    levelNumber: number | null
+    levelTitle: string
+    state: LearningProgressState
+    completedAt: string | null
+    totalTimeMs: number | null
+    attemptCount: number
+    curriculumVersion: string
+    source: 'progress' | 'kg_alphabet'
+  }>
+}
+
+function toQuery(params?: LearningProgressQuery): string {
+  if (!params) return ''
+  const query = new URLSearchParams()
+  if (params.grade !== undefined) query.set('grade', String(params.grade))
+  if (params.className) query.set('className', params.className)
+  if (params.from) query.set('from', params.from)
+  if (params.to) query.set('to', params.to)
+  if (params.search) query.set('search', params.search)
+  if (params.state) query.set('state', params.state)
+  if (params.page) query.set('page', String(params.page))
+  if (params.limit) query.set('limit', String(params.limit))
+  const qs = query.toString()
+  return qs ? `?${qs}` : ''
 }

@@ -389,13 +389,18 @@ export const LearningProgressService = {
       const uniqueCompletions =
         new Set(completedInGrade.map((c) => `${c.studentId}:${c.levelId}`)).size +
         kgInGrade.filter((c) => !completedInGrade.some((x) => String(x.studentId) === String(c.studentId))).length
+      // Same definition as overview: Progress in-progress ∪ activity without verified completion.
+      const inProgressInGrade = [...groupIds].filter((id) => {
+        if (studentsCompleted.has(id)) return false
+        return studentsInProgressSet.has(id) || activityStudents.has(id)
+      }).length
       return {
         grade,
         enrolledStudents: group.length,
         studentsWithLearningActivity: withActivity,
         uniqueVerifiedLevelCompletions: uniqueCompletions,
         studentsWhoCompletedAtLeastOneLevel: studentsCompleted.size,
-        studentsInProgress: Math.max(0, withActivity - studentsCompleted.size),
+        studentsInProgress: inProgressInGrade,
         studentsNotStarted: Math.max(0, group.length - withActivity),
       }
     })
@@ -416,8 +421,14 @@ export const LearningProgressService = {
         uniqueVerifiedLevelCompletions: uniqueVerified,
         studentsWhoCompletedAtLeastOneLevel: completedStudentIds.size,
         studentsInProgress,
-        activeLearnersInPeriod: hasDate ? activityStudents.size : activityStudents.size,
-        timeSpentMinutes: totalTimeMs > 0 ? Math.round(totalTimeMs / 60000) : totalTimeMs === 0 && activityStudents.size === 0 ? null : 0,
+        // When no date filter is set, active learners = students with any recorded activity.
+        activeLearnersInPeriod: activityStudents.size,
+        timeSpentMinutes:
+          totalTimeMs > 0
+            ? Math.round(totalTimeMs / 60000)
+            : activityStudents.size === 0
+              ? null
+              : 0,
       },
       recentCompletions,
       gradeBreakdown,
@@ -672,7 +683,19 @@ export const LearningProgressService = {
     const levelMap = new Map(levels.map((level) => [String(level._id), level]))
     const attemptMap = new Map(attemptsByLevel.map((row) => [String(row._id), row]))
 
-    const levelHistory = progressDocs.flatMap((doc) =>
+    type LevelHistoryRow = {
+      levelId: string
+      levelNumber: number | null
+      levelTitle: string
+      state: LearningProgressState
+      completedAt: string | null
+      totalTimeMs: number | null
+      attemptCount: number
+      curriculumVersion: string
+      source: 'progress' | 'kg_alphabet'
+    }
+
+    const levelHistory: LevelHistoryRow[] = progressDocs.flatMap((doc) =>
       doc.levels
         .filter((level) => level.status === 'completed' || level.status === 'in-progress' || (level.lessons?.length ?? 0) > 0)
         .map((level) => {
@@ -719,7 +742,7 @@ export const LearningProgressService = {
     }
 
     if (student.grade === 0 && kgProgress) {
-      const kgComplete = (kgProgress.currentIndex ?? 0) === 8
+      const kgComplete = Boolean(kgProgress.completedAt) && (kgProgress.currentIndex ?? 0) === 8
       levelHistory.unshift({
         levelId: 'kg-alphabet-l1',
         levelNumber: 1,
@@ -729,7 +752,7 @@ export const LearningProgressService = {
         totalTimeMs: null,
         attemptCount: 0,
         curriculumVersion: 'kg-alphabet-pilot',
-        source: 'progress',
+        source: 'kg_alphabet' as const,
       })
     }
 
@@ -764,12 +787,14 @@ export const LearningProgressService = {
   },
 
   async exportLevelCsv(scope: LearningProgressScope, levelId: string, filters: LearningProgressFilters = {}) {
-    const first = await this.levelReport(scope, levelId, { ...filters, page: 1, limit: 100 })
-    let students = [...first.students]
-    for (let page = 2; page <= first.pagination.pages; page += 1) {
-      const next = await this.levelReport(scope, levelId, { ...filters, page, limit: 100 })
-      students = students.concat(next.students)
-    }
+    // Two calls max: probe total, then one full-page fetch capped at 5000 (avoids N page re-aggregations).
+    const probe = await this.levelReport(scope, levelId, { ...filters, page: 1, limit: 1 })
+    const exportLimit = Math.min(Math.max(probe.pagination.total, 1), 5000)
+    const report =
+      probe.pagination.total <= 1
+        ? probe
+        : await this.levelReport(scope, levelId, { ...filters, page: 1, limit: exportLimit })
+    const students = report.students
 
     const header = [
       'student_id',
@@ -793,9 +818,9 @@ export const LearningProgressService = {
           csvEscape(row.rollNumber),
           String(row.grade),
           csvEscape(row.className || ''),
-          csvEscape(first.level.id),
-          String(first.level.number),
-          csvEscape(first.level.title),
+          csvEscape(report.level.id),
+          String(report.level.number),
+          csvEscape(report.level.title),
           csvEscape(row.state),
           csvEscape(row.completedAt || ''),
           row.totalTimeMs == null ? '' : String(row.totalTimeMs),
@@ -805,8 +830,8 @@ export const LearningProgressService = {
     return {
       csv: `${lines.join('\n')}\n`,
       records: students.length,
-      level: first.level,
-      summary: first.summary,
+      level: report.level,
+      summary: report.summary,
     }
   },
 }

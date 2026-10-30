@@ -95,24 +95,44 @@ export default function ClassCurriculumPreviewPage() {
         </Link>
 
         {curriculumClass ? (
-          <Link
-            href={`/school/students?grade=${curriculumClass.grade}`}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 6,
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              color: '#0f172a',
-              padding: '7px 12px',
-              borderRadius: 8,
-              fontSize: 12,
-              fontWeight: 700,
-              textDecoration: 'none',
-            }}
-          >
-            View students in this grade →
-          </Link>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <Link
+              href={`/school/reports?grade=${curriculumClass.grade}`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                background: '#4f46e5',
+                border: '1px solid #4f46e5',
+                color: '#fff',
+                padding: '7px 12px',
+                borderRadius: 8,
+                fontSize: 12,
+                fontWeight: 700,
+                textDecoration: 'none',
+              }}
+            >
+              View learning progress →
+            </Link>
+            <Link
+              href={`/school/students?grade=${curriculumClass.grade}`}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 6,
+                background: '#f8fafc',
+                border: '1px solid #e2e8f0',
+                color: '#0f172a',
+                padding: '7px 12px',
+                borderRadius: 8,
+                fontSize: 12,
+                fontWeight: 700,
+                textDecoration: 'none',
+              }}
+            >
+              View students in this grade →
+            </Link>
+          </div>
         ) : null}
       </div>
 

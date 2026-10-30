@@ -23,7 +23,7 @@ const navItems: NavItem[] = [
   { href: '/school/curriculum-map', label: '110-Level Map', icon: Layers3 },
   { href: '/school/kg-preview', label: 'KG Previews', icon: Shapes },
   { href: '/school/teachers', label: 'Teachers', icon: BookOpen, adminOnly: true },
-  { href: '/school/reports', label: 'Reports', icon: BarChart3 },
+  { href: '/school/reports', label: 'Learning Progress', teacherLabel: 'Learning Progress', icon: BarChart3 },
   { href: '/school/settings', label: 'Settings', teacherLabel: 'My Account', icon: Settings },
 ]
 
