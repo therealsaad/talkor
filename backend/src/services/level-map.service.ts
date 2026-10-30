@@ -23,12 +23,28 @@ export const LevelMapService = {
       : []
     const lessonIds = lessons.map((lesson) => lesson._id)
     const counts = lessonIds.length
-      ? await Activity.aggregate<{ _id: string; count: number }>([
-          { $match: { lessonId: { $in: lessonIds }, status: 'active' } },
-          { $group: { _id: '$lessonId', count: { $sum: 1 } } },
+      ? await Activity.aggregate<{ _id: string; total?: number; active?: number; draft?: number; count?: number }>([
+          { $match: { lessonId: { $in: lessonIds } } },
+          {
+            $group: {
+              _id: '$lessonId',
+              total: { $sum: 1 },
+              active: { $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] } },
+              draft: { $sum: { $cond: [{ $eq: ['$status', 'draft'] }, 1, 0] } },
+              count: { $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] } },
+            },
+          },
         ])
       : []
-    const activeCount = new Map(counts.map((item) => [String(item._id), item.count]))
+    const activityMap = new Map(counts.map((item) => [
+      String(item._id),
+      {
+        total: item.total ?? item.count ?? 0,
+        active: item.active ?? item.count ?? 0,
+        draft: item.draft ?? 0,
+        count: item.count ?? item.active ?? 0,
+      },
+    ]))
     const existingByNumber = new Map(levels.map((item) => [item.number, item]))
     const lessonsByLevel = new Map<string, typeof lessons>()
     for (const lesson of lessons) {
@@ -42,7 +58,9 @@ export const LevelMapService = {
       const actual = existingByNumber.get(plan.level)
       const attached = actual ? (lessonsByLevel.get(String(actual._id)) || []) : []
       const activeLessons = attached.filter((item) => item.status === 'active')
-      const activeActivities = activeLessons.reduce((sum, item) => sum + (activeCount.get(String(item._id)) || 0), 0)
+      const activeActivities = attached.reduce((sum, item) => sum + (activityMap.get(String(item._id))?.active || 0), 0)
+      const totalActivities = attached.reduce((sum, item) => sum + (activityMap.get(String(item._id))?.total || 0), 0)
+      const draftActivities = attached.reduce((sum, item) => sum + (activityMap.get(String(item._id))?.draft || 0), 0)
       return {
         address: plan.id, grade, level: plan.level, plannedTitle: plan.title,
         objective: plan.objective, skills: plan.skills, syllabusReviewRequired: plan.teacherReviewRequired,
@@ -55,19 +73,36 @@ export const LevelMapService = {
           activeLessons: activeLessons.length, activeActivities,
         }),
         publication: actual?.availability ?? 'UPCOMING',
-        lessons: attached.map((lesson) => ({
-          id: String(lesson._id), title: lesson.title, order: lesson.order,
-          status: lesson.status, activityCount: activeCount.get(String(lesson._id)) || 0,
-          placeholder: lesson.settings?.mappedPlaceholder === true,
-        })),
+        totalActivities,
+        activeActivities,
+        draftActivities,
+        lessons: attached.map((lesson) => {
+          const stats = activityMap.get(String(lesson._id))
+          return {
+            id: String(lesson._id), title: lesson.title, order: lesson.order,
+            status: lesson.status,
+            activityCount: stats?.total ?? 0,
+            activeCount: stats?.active ?? 0,
+            draftCount: stats?.draft ?? 0,
+            placeholder: lesson.settings?.mappedPlaceholder === true,
+          }
+        }),
       }
     })
+    const totalLessons = mapped.reduce((sum, item) => sum + item.lessons.length, 0)
+    const totalActivities = mapped.reduce((sum, item) => sum + item.totalActivities, 0)
+    const playableActivities = mapped.reduce((sum, item) => sum + item.activeActivities, 0)
+    const draftCount = mapped.filter((item) => item.status === 'DRAFT').length
     return {
       grade, name: gradeName(grade), classId: klass ? String(klass._id) : null,
       classStatus: klass?.status ?? 'NOT_MAPPED',
       total: 10,
       mappedCount: mapped.filter((item) => item.levelId !== null).length,
       publishedCount: mapped.filter((item) => item.status === 'PUBLISHED').length,
+      draftCount,
+      totalLessons,
+      totalActivities,
+      playableActivities,
       levels: mapped,
       note: 'Editor map. Draft/empty levels are NOT student-playable. Existing published lessons are not overwritten.',
     }

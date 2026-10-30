@@ -10,7 +10,6 @@ async function main() {
   const server = app.listen(env.port, () => {
     logger.info(`Talkora backend listening on port ${env.port}`, { nodeEnv: env.nodeEnv })
   })
-
   const cleanup = async (signal: string) => {
     server.close(() => {
       logger.info('HTTP server closed')

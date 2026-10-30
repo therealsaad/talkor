@@ -4,12 +4,36 @@ import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
+import {
+  ArrowLeft,
+  Award,
+  BookOpen,
+  Calendar,
+  CheckCircle2,
+  Clock3,
+  Flame,
+  Mic,
+  Printer,
+  Sparkles,
+  Target,
+  Volume2,
+  AlertCircle,
+} from 'lucide-react'
 import { SchoolShell } from '@/components/school/school-shell'
 import { learnerAvatar } from '@/config/talkora-assets'
-import { schoolService, StudentDetail } from '@/services/school-service'
+import { schoolService, type StudentDetail } from '@/services/school-service'
 import { gradeLabel } from '@/lib/grade-label'
+import { Breadcrumbs } from '@/components/portal/breadcrumbs'
+import { StatusBadge } from '@/components/portal/status-badge'
+import { MetricCard } from '@/components/portal/metric-card'
 
-const card = { background: '#fff', border: '1px solid #e2e8f0', borderRadius: 18, padding: 22 }
+const cardStyle: React.CSSProperties = {
+  background: '#ffffff',
+  border: '1px solid #e2e8f0',
+  borderRadius: 18,
+  padding: 24,
+  boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
+}
 
 function readableAnswer(answer: string): string {
   if (!answer.startsWith('{')) return answer || 'No text captured'
@@ -18,7 +42,9 @@ function readableAnswer(answer: string): string {
     if (reflection.kind === 'Favourite Finder reflection' && Array.isArray(reflection.ratings)) {
       return `Favourite Finder reflection: ${reflection.ratings.map(({ skill, rating }) => `${skill}: ${rating?.replace('_', ' ')}`).join('; ')}`
     }
-  } catch { /* Preserve a plain learner answer. */ }
+  } catch {
+    /* Preserve plain answer */
+  }
   return answer
 }
 
@@ -31,7 +57,22 @@ export default function StudentDetailPage() {
   const [practiceAudioError, setPracticeAudioError] = useState('')
 
   useEffect(() => {
-    schoolService.getStudent(id).then(setStudent).catch(() => setStudent(null)).finally(() => setLoading(false))
+    let active = true
+    setLoading(true)
+    schoolService
+      .getStudent(id)
+      .then((data) => {
+        if (active) setStudent(data)
+      })
+      .catch(() => {
+        if (active) setStudent(null)
+      })
+      .finally(() => {
+        if (active) setLoading(false)
+      })
+    return () => {
+      active = false
+    }
   }, [id])
 
   useEffect(() => {
@@ -44,63 +85,455 @@ export default function StudentDetailPage() {
     }
     const unit = student.homePractice.unitKey === 'CLASS1_L01_FIRST_DAY' ? 'class1-first-day' : 'favourites'
     setPracticeAudioLoading(true)
-    schoolService.getHomePracticeAudio(id, unit).then((audio) => {
-      audioUrl = URL.createObjectURL(audio)
-      if (alive) setPracticeAudioUrl(audioUrl)
-      else URL.revokeObjectURL(audioUrl)
-    }).catch(() => {
-      if (alive) setPracticeAudioError('The home-practice recording could not be loaded.')
-    }).finally(() => {
-      if (alive) setPracticeAudioLoading(false)
-    })
+    schoolService
+      .getHomePracticeAudio(id, unit)
+      .then((audio) => {
+        audioUrl = URL.createObjectURL(audio)
+        if (alive) setPracticeAudioUrl(audioUrl)
+        else URL.revokeObjectURL(audioUrl)
+      })
+      .catch(() => {
+        if (alive) setPracticeAudioError('The home-practice recording could not be loaded.')
+      })
+      .finally(() => {
+        if (alive) setPracticeAudioLoading(false)
+      })
     return () => {
       alive = false
       if (audioUrl) URL.revokeObjectURL(audioUrl)
     }
   }, [id, student?.homePractice?.hasAudio, student?.homePractice?.unitKey])
 
-  if (loading) return <SchoolShell title="Student progress"><div className="educator-loading">Loading verified learning data...</div></SchoolShell>
-  if (!student) return <SchoolShell title="Student not found"><div style={card}><p>This student is unavailable or outside your access.</p><Link href="/school/students">Back to students</Link></div></SchoolShell>
+  if (loading) {
+    return (
+      <SchoolShell title="Student Profile" subtitle="Loading verified learning records…">
+        <div style={{ ...cardStyle, textAlign: 'center', padding: '48px 24px', color: '#64748b' }}>
+          <div
+            style={{
+              width: 36,
+              height: 36,
+              border: '3px solid #e2e8f0',
+              borderTopColor: '#4f46e5',
+              borderRadius: '50%',
+              margin: '0 auto 16px',
+              animation: 'spin 1s linear infinite',
+            }}
+          />
+          <p style={{ margin: 0, fontWeight: 700 }}>Retrieving student learning data…</p>
+        </div>
+      </SchoolShell>
+    )
+  }
 
-  const progress = student.progress ?? { accuracy: 0, completedLevels: 0, totalXp: 0, learningTimeMinutes: 0, streak: 0 }
+  if (!student) {
+    return (
+      <SchoolShell title="Student Not Found" subtitle="This student record is unavailable.">
+        <div style={cardStyle}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#dc2626', marginBottom: 12 }}>
+            <AlertCircle size={20} />
+            <strong style={{ fontSize: 16 }}>Student record could not be found</strong>
+          </div>
+          <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 18px' }}>
+            This student may have been removed or belongs to another classroom.
+          </p>
+          <Link
+            href="/school/students"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              background: '#0f172a',
+              color: '#ffffff',
+              padding: '8px 16px',
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 700,
+              textDecoration: 'none',
+            }}
+          >
+            <ArrowLeft size={14} /> Back to student directory
+          </Link>
+        </div>
+      </SchoolShell>
+    )
+  }
+
+  const progress = student.progress ?? {
+    accuracy: 0,
+    completedLevels: 0,
+    totalLevels: 10,
+    completedLessons: 0,
+    completedActivities: 0,
+    totalXp: 0,
+    learningTimeMinutes: 0,
+    streak: 0,
+  }
   const attempts = student.recentAttempts ?? []
 
-  return <SchoolShell title={student.fullName} subtitle={`${gradeLabel(student.grade)}${student.className ? ` · ${student.className}` : ''} · Roll ${student.rollNumber}`}>
-    <div style={{ marginBottom: 18, display: 'flex', gap: 18, flexWrap: 'wrap' }}><Link href="/school/students" style={{ color: '#0369a1', fontWeight: 800 }}>← Back to student directory</Link><Link href={`/school/students/${encodeURIComponent(id)}/report`} style={{ color: '#7657d7', fontWeight: 800 }}>Printable parent / teacher report →</Link></div>
-    <section style={{ ...card, display: 'flex', alignItems: 'center', gap: 18, marginBottom: 20, flexWrap: 'wrap' }}>
-      <Image src={learnerAvatar(student.avatarType)} alt="" width={72} height={72} style={{ borderRadius: 18, objectFit: 'cover', background: '#dbeafe' }} />
-      <div style={{ flex: 1 }}><h2 style={{ margin: 0, color: '#0f172a' }}>{student.fullName}</h2><p style={{ margin: '6px 0 0', color: '#64748b' }}>{student.avatarType === 'GIRL' ? 'Girl' : 'Boy'} character · {student.status === 'active' ? 'Active learner' : 'Inactive learner'}</p></div>
-      <span style={{ padding: '7px 12px', borderRadius: 999, background: progress.accuracy >= 75 ? '#dcfce7' : '#fff7ed', color: progress.accuracy >= 75 ? '#166534' : '#9a3412', fontWeight: 800 }}>{attempts.length ? (progress.accuracy >= 75 ? 'On track' : 'Needs attention') : 'Awaiting activity'}</span>
-    </section>
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))', gap: 14, marginBottom: 20 }}>
-      {[["Recent accuracy", attempts.length ? `${progress.accuracy}%` : '—'], ["Levels completed", `${progress.completedLevels} / ${progress.totalLevels || '—'}`], ["Learning time", `${progress.learningTimeMinutes} min`], ["Total XP", `${progress.totalXp} XP`], ["Current streak", `${progress.streak} days`], ["Recent attempts", String(attempts.length)]].map(([label, value]) => <div key={label} style={card}><small style={{ color: '#64748b', fontWeight: 800, textTransform: 'uppercase' }}>{label}</small><strong style={{ display: 'block', marginTop: 7, fontSize: 25, color: '#0f172a' }}>{value}</strong></div>)}
-    </div>
-    <section style={{ ...card, marginBottom: 20 }}>
-      <h3 style={{ margin: '0 0 12px', color: '#0f172a' }}>Learning progress</h3>
-      <p style={{ margin: 0, color: '#334155', fontWeight: 700 }}>
-        {progress.completedActivities ?? 0} activities completed · {progress.completedLessons ?? 0} lessons completed
-      </p>
-    </section>
-    <section style={{ ...card, marginBottom: 20 }}>
-      <h3 style={{ margin: '0 0 12px', color: '#0f172a' }}>{student.homePractice?.unitKey === 'CLASS1_L01_FIRST_DAY' ? 'Class 1 first day speaking practice' : 'Level 1 home practice'}</h3>
-      {student.homePractice ? <>
-        <p style={{ margin: '0 0 8px', color: '#334155' }}>{student.homePractice.reflection}</p>
-        <small style={{ color: '#64748b' }}>Submitted {new Date(student.homePractice.submittedAt).toLocaleString()}</small>
-        {student.homePractice.hasAudio ? <div style={{ marginTop: 14 }}>
-          <h4 style={{ margin: '0 0 8px', color: '#0f172a' }}>{student.homePractice.unitKey === 'CLASS1_L01_FIRST_DAY' ? 'Student speaking recording' : 'Family conversation recording'}</h4>
-          {practiceAudioLoading ? <p role="status" style={{ color: '#64748b' }}>Loading recording…</p> : null}
-          {practiceAudioUrl ? <audio controls src={practiceAudioUrl} style={{ width: '100%' }} aria-label={`${student.fullName}'s ${student.homePractice.unitKey === 'CLASS1_L01_FIRST_DAY' ? 'speaking homework' : 'family conversation'} recording`} /> : null}
-          {practiceAudioError ? <p role="alert" style={{ color: '#b91c1c' }}>{practiceAudioError}</p> : null}
-        </div> : <p style={{ margin: '12px 0 0', color: '#64748b' }}>No recording was saved with this reflection.</p>}
-      </> : <p style={{ margin: 0, color: '#64748b' }}>{student.grade === 1 ? 'No first day speaking practice has been submitted yet.' : 'No family conversation reflection submitted yet.'}</p>}
-    </section>
-    <section style={card}>
-      <h3 style={{ margin: '0 0 6px', color: '#0f172a' }}>Recent learning attempts</h3>
-      <p style={{ margin: '0 0 18px', color: '#64748b' }}>Only recorded learner activity is shown. Recommendations are not generated until the educator AI service is connected.</p>
-      {!attempts.length ? <div style={{ padding: '28px 0', textAlign: 'center', color: '#64748b' }}>No activity attempts have been recorded yet.</div> : <div style={{ overflowX: 'auto' }}><table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 650 }}>
-        <thead><tr style={{ textAlign: 'left', color: '#64748b', borderBottom: '1px solid #e2e8f0' }}><th style={{ padding: 12 }}>Answer</th><th>Result</th><th>Score</th><th>Time</th><th>Date</th></tr></thead>
-        <tbody>{attempts.map((attempt, index) => <tr key={`${attempt.activityId}-${attempt.createdAt}-${index}`} style={{ borderBottom: '1px solid #f1f5f9' }}><td style={{ padding: 12, fontWeight: 700 }}>{readableAnswer(attempt.answer)}</td><td><span style={{ color: attempt.correct ? '#166534' : '#b91c1c', fontWeight: 800 }}>{attempt.correct ? 'Correct' : 'Retry'}</span></td><td>{attempt.speakingAccuracy ?? attempt.score ?? '—'}{typeof (attempt.speakingAccuracy ?? attempt.score) === 'number' ? '%' : ''}</td><td>{attempt.timeTakenSeconds}s</td><td>{new Date(attempt.createdAt).toLocaleString()}</td></tr>)}</tbody>
-      </table></div>}
-    </section>
-  </SchoolShell>
+  return (
+    <SchoolShell
+      title={student.fullName}
+      subtitle={`${gradeLabel(student.grade)}${student.className ? ` · Class ${student.className}` : ''} · Roll No. ${student.rollNumber}`}
+    >
+      <Breadcrumbs
+        items={[
+          { label: 'Students', href: '/school/students' },
+          { label: student.fullName },
+        ]}
+      />
+
+      {/* Action Bar */}
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 16,
+          marginBottom: 20,
+          flexWrap: 'wrap',
+        }}
+      >
+        <Link
+          href="/school/students"
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            color: '#4f46e5',
+            fontWeight: 700,
+            fontSize: 13,
+            textDecoration: 'none',
+          }}
+        >
+          <ArrowLeft size={15} /> Back to student directory
+        </Link>
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <Link
+            href={`/school/students/${encodeURIComponent(id)}/report`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              background: '#f8fafc',
+              border: '1px solid #e2e8f0',
+              color: '#0f172a',
+              padding: '8px 14px',
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 700,
+              textDecoration: 'none',
+            }}
+          >
+            <Printer size={15} color="#64748b" />
+            Printable parent / teacher report
+          </Link>
+          <Link
+            href={`/school/classes`}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 6,
+              background: '#4f46e5',
+              color: '#ffffff',
+              padding: '8px 14px',
+              borderRadius: 8,
+              fontSize: 13,
+              fontWeight: 700,
+              textDecoration: 'none',
+            }}
+          >
+            <BookOpen size={15} />
+            Grade curriculum
+          </Link>
+        </div>
+      </div>
+
+      {/* Student Profile Header Card */}
+      <section
+        style={{
+          ...cardStyle,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: 20,
+          marginBottom: 24,
+          flexWrap: 'wrap',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 18, minWidth: 260 }}>
+          <div
+            style={{
+              position: 'relative',
+              width: 72,
+              height: 72,
+              borderRadius: 18,
+              overflow: 'hidden',
+              background: student.avatarType === 'GIRL' ? '#fdf2f8' : '#eff6ff',
+              border: '2px solid #e2e8f0',
+              flexShrink: 0,
+            }}
+          >
+            <Image src={learnerAvatar(student.avatarType)} alt="" fill sizes="72px" style={{ objectFit: 'cover' }} />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#0f172a' }}>{student.fullName}</h2>
+              <StatusBadge status={student.status === 'active' ? 'Active' : 'Inactive'} size="md" />
+            </div>
+            <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: 13 }}>
+              {gradeLabel(student.grade)} {student.className ? `· Section ${student.className}` : ''} · Roll No. {student.rollNumber}
+            </p>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <StatusBadge
+            status={attempts.length ? (progress.accuracy >= 70 ? 'On Track' : 'Needs Attention') : 'Awaiting Activity'}
+            variant={attempts.length ? (progress.accuracy >= 70 ? 'on-track' : 'needs-support') : 'draft'}
+            size="md"
+          />
+        </div>
+      </section>
+
+      {/* KPI Overview Metrics */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+          gap: 16,
+          marginBottom: 24,
+        }}
+      >
+        <MetricCard
+          label="Recent Accuracy"
+          value={attempts.length ? `${progress.accuracy}%` : '—'}
+          subtext="Speaking correctness"
+          icon={Target}
+          accent={progress.accuracy >= 70 ? 'emerald' : 'amber'}
+        />
+        <MetricCard
+          label="Levels Completed"
+          value={`${progress.completedLevels} / ${progress.totalLevels || 10}`}
+          subtext={`${progress.completedLessons ?? 0} lessons passed`}
+          icon={Award}
+          accent="sky"
+        />
+        <MetricCard
+          label="Learning Time"
+          value={`${progress.learningTimeMinutes} min`}
+          subtext="Interactive speaking"
+          icon={Clock3}
+          accent="purple"
+        />
+        <MetricCard
+          label="Total XP"
+          value={`${progress.totalXp} XP`}
+          subtext="Recorded achievement score"
+          icon={Sparkles}
+          accent="indigo"
+        />
+        <MetricCard
+          label="Current Streak"
+          value={`${progress.streak} days`}
+          subtext="Consecutive learning days"
+          icon={Flame}
+          accent="amber"
+        />
+        <MetricCard
+          label="Recent Attempts"
+          value={String(attempts.length)}
+          subtext="Logged activities"
+          icon={CheckCircle2}
+          accent="slate"
+        />
+      </div>
+
+      {/* Learning Progress Section */}
+      <section style={{ ...cardStyle, marginBottom: 24 }}>
+        <h3 style={{ margin: '0 0 10px', fontSize: 17, fontWeight: 800, color: '#0f172a' }}>
+          Learning Progress & Activity Summary
+        </h3>
+        <p style={{ margin: '0 0 16px', color: '#64748b', fontSize: 13 }}>
+          {progress.completedActivities ?? 0} individual activities completed · {progress.completedLessons ?? 0} lessons completed
+        </p>
+
+        <div style={{ height: 10, background: '#f1f5f9', borderRadius: 999, overflow: 'hidden', maxWidth: 480 }}>
+          <div
+            style={{
+              height: '100%',
+              width: `${Math.min(100, Math.max(5, (progress.completedLevels / (progress.totalLevels || 10)) * 100))}%`,
+              background: '#4f46e5',
+              borderRadius: 'inherit',
+            }}
+          />
+        </div>
+      </section>
+
+      {/* Home Practice / Audio Reflection Section */}
+      <section style={{ ...cardStyle, marginBottom: 24 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <Mic size={18} color="#4f46e5" />
+          <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0f172a' }}>
+            {student.homePractice?.unitKey === 'CLASS1_L01_FIRST_DAY'
+              ? 'Class 1 First Day Speaking Practice'
+              : 'Level 1 Home Practice Reflection'}
+          </h3>
+        </div>
+
+        {student.homePractice ? (
+          <div>
+            <blockquote
+              style={{
+                margin: '0 0 12px',
+                padding: '12px 16px',
+                background: '#f8fafc',
+                borderLeft: '4px solid #4f46e5',
+                borderRadius: '0 10px 10px 0',
+                fontSize: 13,
+                color: '#334155',
+                lineHeight: 1.5,
+              }}
+            >
+              &ldquo;{student.homePractice.reflection}&rdquo;
+            </blockquote>
+            <small style={{ color: '#64748b', fontSize: 12 }}>
+              Submitted on {new Date(student.homePractice.submittedAt).toLocaleString()}
+            </small>
+
+            {student.homePractice.hasAudio ? (
+              <div
+                style={{
+                  marginTop: 16,
+                  padding: 16,
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: 14,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <Volume2 size={16} color="#0284c7" />
+                  <strong style={{ fontSize: 13, color: '#0f172a' }}>
+                    {student.homePractice.unitKey === 'CLASS1_L01_FIRST_DAY'
+                      ? 'Student Speaking Recording'
+                      : 'Family Conversation Recording'}
+                  </strong>
+                </div>
+
+                {practiceAudioLoading ? (
+                  <p role="status" style={{ color: '#64748b', fontSize: 12, margin: 0 }}>
+                    Loading verified recording from secure storage…
+                  </p>
+                ) : null}
+
+                {practiceAudioUrl ? (
+                  <audio
+                    controls
+                    src={practiceAudioUrl}
+                    style={{ width: '100%', height: 40 }}
+                    aria-label={`${student.fullName}'s ${student.homePractice.unitKey === 'CLASS1_L01_FIRST_DAY' ? 'speaking homework' : 'family conversation'} recording`}
+                  />
+                ) : null}
+
+                {practiceAudioError ? (
+                  <p role="alert" style={{ color: '#b91c1c', fontSize: 12, margin: '6px 0 0' }}>
+                    {practiceAudioError}
+                  </p>
+                ) : null}
+              </div>
+            ) : (
+              <p style={{ margin: '12px 0 0', color: '#64748b', fontSize: 12 }}>
+                No voice recording was attached to this reflection.
+              </p>
+            )}
+          </div>
+        ) : (
+          <p style={{ margin: 0, color: '#64748b', fontSize: 13 }}>
+            {student.grade === 1
+              ? 'No First Day speaking practice has been submitted yet.'
+              : 'No family conversation reflection submitted yet.'}
+          </p>
+        )}
+      </section>
+
+      {/* Recent Learning Attempts Table */}
+      <section style={cardStyle}>
+        <div style={{ marginBottom: 16 }}>
+          <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 800, color: '#0f172a' }}>
+            Recent Learning Attempts
+          </h3>
+          <p style={{ margin: 0, color: '#64748b', fontSize: 13 }}>
+            Verified attempts recorded by the Talkora backend evaluation engine.
+          </p>
+        </div>
+
+        {!attempts.length ? (
+          <div
+            style={{
+              padding: '36px 16px',
+              textAlign: 'center',
+              color: '#64748b',
+              fontSize: 13,
+              background: '#f8fafc',
+              borderRadius: 12,
+            }}
+          >
+            No activity attempts have been recorded for this student yet.
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
+              <thead>
+                <tr style={{ textAlign: 'left', color: '#64748b', borderBottom: '2px solid #e2e8f0', fontSize: 12 }}>
+                  <th style={{ padding: '12px 14px' }}>Learner Response</th>
+                  <th style={{ padding: '12px 14px' }}>Evaluation</th>
+                  <th style={{ padding: '12px 14px' }}>Score</th>
+                  <th style={{ padding: '12px 14px' }}>Duration</th>
+                  <th style={{ padding: '12px 14px' }}>Date & Time</th>
+                </tr>
+              </thead>
+              <tbody>
+                {attempts.map((attempt, index) => (
+                  <tr
+                    key={`${attempt.activityId}-${attempt.createdAt}-${index}`}
+                    style={{
+                      borderBottom: '1px solid #f1f5f9',
+                      fontSize: 13,
+                    }}
+                  >
+                    <td style={{ padding: '12px 14px', fontWeight: 700, color: '#0f172a' }}>
+                      {readableAnswer(attempt.answer)}
+                    </td>
+                    <td style={{ padding: '12px 14px' }}>
+                      <span
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          color: attempt.correct ? '#166534' : '#b91c1c',
+                          fontWeight: 800,
+                          fontSize: 12,
+                        }}
+                      >
+                        {attempt.correct ? <CheckCircle2 size={14} /> : <AlertCircle size={14} />}
+                        {attempt.correct ? 'Correct' : 'Retry'}
+                      </span>
+                    </td>
+                    <td style={{ padding: '12px 14px', fontWeight: 700 }}>
+                      {attempt.speakingAccuracy ?? attempt.score ?? '—'}
+                      {typeof (attempt.speakingAccuracy ?? attempt.score) === 'number' ? '%' : ''}
+                    </td>
+                    <td style={{ padding: '12px 14px', color: '#64748b' }}>{attempt.timeTakenSeconds}s</td>
+                    <td style={{ padding: '12px 14px', color: '#64748b', fontSize: 12 }}>
+                      {new Date(attempt.createdAt).toLocaleString()}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </SchoolShell>
+  )
 }

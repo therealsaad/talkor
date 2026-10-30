@@ -359,15 +359,13 @@ export const ProgressService = {
       levels.map(
         (
           level,
-          index,
         ) => ({
           levelId:
             level._id,
 
+          // Any level made available to the student's class is accessible without staff approval
           status:
-            index === 0
-              ? 'unlocked'
-              : 'locked',
+            'unlocked',
 
           lessons:
             [],
@@ -379,9 +377,7 @@ export const ProgressService = {
             0,
 
           unlockedAt:
-            index === 0
-              ? new Date()
-              : undefined,
+            new Date(),
         }),
       )
 
@@ -531,27 +527,13 @@ export const ProgressService = {
         continue
       }
 
-      /*
-       * A newly published first level may be unlocked.
-       *
-       * Later newly published levels remain locked until
-       * progression unlocks them.
-       */
-      const shouldUnlock =
-        index ===
-          0 &&
-        progress.levels.length ===
-          0
-
       progress.levels.push(
         {
           levelId:
             level._id,
 
           status:
-            shouldUnlock
-              ? 'unlocked'
-              : 'locked',
+            'unlocked',
 
           lessons:
             [],
@@ -563,9 +545,7 @@ export const ProgressService = {
             0,
 
           unlockedAt:
-            shouldUnlock
-              ? new Date()
-              : undefined,
+            new Date(),
         },
       )
 
@@ -795,7 +775,7 @@ export const ProgressService = {
       )
     }
 
-    const levelProgress =
+    let levelProgress =
       progress.levels.find(
         (
           item,
@@ -804,14 +784,22 @@ export const ProgressService = {
           levelId,
       )
 
-    if (
-      !levelProgress ||
-      levelProgress.status ===
-        'locked'
-    ) {
-      throw ApiError.businessRule(
-        'This unit is locked. Complete the previous unit first.',
-      )
+    // Priority 4: Students do not need school/teacher permission or previous level completion
+    // to access any level made available to their student account.
+    if (!levelProgress) {
+      progress.levels.push({
+        levelId: level._id,
+        status: 'unlocked',
+        lessons: [],
+        accuracy: 0,
+        totalTimeMs: 0,
+        unlockedAt: new Date(),
+      })
+      await progress.save()
+    } else if (levelProgress.status === 'locked') {
+      levelProgress.status = 'unlocked'
+      levelProgress.unlockedAt = levelProgress.unlockedAt || new Date()
+      await progress.save()
     }
 
     return progress

@@ -47,7 +47,10 @@ export const CurriculumController = {
     if (req.auth?.role === 'STUDENT') {
       const progress = await ProgressService.getForStudent(req.auth.id, req.params.classId)
       const statusByLevel = new Map(progress.levels.map((l) => [l.levelId.toString(), l.status]))
-      const annotated = levels.map((l) => ({ ...l, status: statusByLevel.get(l._id.toString()) ?? 'locked' }))
+      const annotated = levels.map((l) => {
+        const recorded = statusByLevel.get(l._id.toString())
+        return { ...l, status: recorded === 'completed' || recorded === 'in-progress' ? recorded : 'unlocked' }
+      })
       return ok(res, annotated)
     }
     ok(res, levels)
