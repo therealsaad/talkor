@@ -520,3 +520,40 @@ it('KG1 caches each Qwen teacher reply once and synthesizes the identical Azure 
     .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
     .expect(200)
 })
+
+
+it('uses local Priya for the same saved KG teacher reply if live Azure is unavailable, without auto-advancing', async () => {
+  const { student, authorization } = await makePilot()
+  await approveIntro(authorization)
+  const submissionId = 'kg-azure-priya-fallback-1234'
+  const feedbackText = 'Apple is our English word. Good try! Say apple with me.'
+  await KGAlphabetAttempt.create({
+    studentId: student._id, schoolId: student.schoolId,
+    activityId: 'say-a', letter: 'A', mode: 'speak', outcome: 'incorrect',
+    submissionId, replay: false, feedbackText,
+  })
+
+  jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached')
+    .mockRejectedValueOnce(new Error('Azure temporarily unavailable'))
+  const priya = jest.spyOn(PythonVoiceProvider.prototype, 'synthesize')
+    .mockResolvedValueOnce({
+      audioUrl: null,
+      audioBase64: Buffer.alloc(320, 65).toString('base64'),
+      contentType: 'audio/wav',
+      available: true,
+      provider: 'python-priya',
+    })
+
+  const response = await request(app)
+    .get(`/api/kg-alphabet/attempt/${submissionId}/feedback-audio`)
+    .set('Authorization', authorization)
+    .set('X-KG-Intro-Playback', activePlaybackId)
+    .expect(200)
+
+  expect(response.headers['x-voice-provider']).toBe('python-priya-fallback')
+  expect(response.headers['content-type']).toMatch(/audio\/wav/)
+  expect(priya).toHaveBeenCalledTimes(1)
+  expect(priya).toHaveBeenCalledWith(feedbackText)
+  const progress = await KGAlphabetProgress.findOne({ studentId: student._id })
+  expect(progress?.currentIndex).toBe(0)
+})
