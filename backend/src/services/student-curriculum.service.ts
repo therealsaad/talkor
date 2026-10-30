@@ -27,6 +27,7 @@ import {
   CLASS1_DEMO_LESSON_FILTER,
   CLASS1_DEMO_VERSION,
   CLASS1_FIRST_DAY_PARALLEL_REVISION,
+  CLASS1_FIRST_DAY_POEM_REVISION,
   preferClass1FirstDayLesson,
 } from './class1-demo-access'
 
@@ -433,7 +434,7 @@ export const StudentCurriculumService = {
              =============================================== */
 
           const hasFirstDay = isClass1Demo && unitLessons.some(
-            lesson => lesson.settings?.lessonPlanRevision === CLASS1_FIRST_DAY_PARALLEL_REVISION,
+            lesson => [CLASS1_FIRST_DAY_PARALLEL_REVISION, CLASS1_FIRST_DAY_POEM_REVISION].includes(String(lesson.settings?.lessonPlanRevision || '')),
           )
           const lessonSummary =
             unitLessons.map(

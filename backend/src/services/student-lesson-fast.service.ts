@@ -14,6 +14,7 @@ import {
   CLASS1_DEMO_LESSON_FILTER,
   CLASS1_DEMO_VERSION,
   CLASS1_FIRST_DAY_PARALLEL_REVISION,
+  CLASS1_FIRST_DAY_POEM_REVISION,
   preferClass1FirstDayLesson,
 } from './class1-demo-access'
 
@@ -89,13 +90,14 @@ export const StudentLessonFastService = {
     const level = requested.level
     // Existing student bookmarks may point to the old v2 ObjectId. Resolve
     // only within the SAME authenticated Class 1 level and demo curriculum.
-    const firstDay = isClass1Demo
-      ? await Lesson.findOne({
+    const firstDayCandidates = isClass1Demo
+      ? await Lesson.find({
           levelId: level._id,
           ...CLASS1_DEMO_LESSON_FILTER,
-          'settings.lessonPlanRevision': CLASS1_FIRST_DAY_PARALLEL_REVISION,
+          'settings.lessonPlanRevision': { $in: [CLASS1_FIRST_DAY_POEM_REVISION, CLASS1_FIRST_DAY_PARALLEL_REVISION] },
         }).lean()
-      : null
+      : []
+    const firstDay = preferClass1FirstDayLesson(firstDayCandidates)[0] || null
     const lesson = firstDay || requested.lesson
     const contentStatus = isKGPilot || isClass1Demo ? 'draft' : 'active'
     const [progress, activities] = await Promise.all([
@@ -103,7 +105,8 @@ export const StudentLessonFastService = {
       Activity.find({
         lessonId: lesson._id,
         ...(isClass1Demo ? CLASS1_DEMO_ACTIVITY_FILTER : { status: contentStatus }),
-        ...(firstDay ? { activityKey: /^class1-l01-v3-/ } : {}),
+        ...(firstDay ? { activityKey: firstDay.settings?.lessonPlanRevision === CLASS1_FIRST_DAY_POEM_REVISION
+          ? /^class1-l01-v4-poem-/ : /^class1-l01-v3-/ } : {}),
         ...(isClass1Demo ? { core: { $ne: false }, required: { $ne: false } } : {}),
       })
         .select('-answer -answerConfig')
@@ -133,8 +136,8 @@ export const StudentLessonFastService = {
       experienceId: isClass1Demo ? CLASS1_DEMO_EXPERIENCE_ID : undefined,
       curriculumClass: { id: curriculumClass._id.toString(), grade: student.grade, name: curriculumClass.name, order: curriculumClass.order },
       level: { ...level,
-        ...(firstDay ? { title: 'My First Day — School Adventure', place: 'School Garden',
-          learningObjectives: ['Speak the First Day school actions in English'] } : {}),
+        ...(firstDay ? { title: 'My First Day — Poem Garden', place: 'Poem Garden',
+          learningObjectives: ['Listen, chant and recite the whole Grade One Balbharati 1.1 poem'] } : {}),
         id: level._id.toString(), classId: level.classId.toString() },
       lesson: { ...lesson, id: lesson._id.toString(), levelId: level._id.toString() },
       activities: activities.map(item => {

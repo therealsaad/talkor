@@ -270,7 +270,7 @@ export const VoiceService = {
   async pendingTeacherAudio(studentId: string, activityId: string) {
     if (!Types.ObjectId.isValid(activityId)) throw ApiError.badRequest('Invalid activity ID')
     const access = await CurriculumAccessService.assertActivity(studentId, activityId)
-    if (!access.activity.activityKey?.startsWith('class1-l01-v3-')) throw ApiError.forbidden()
+    if (!access./^class1-l01-v(?:3|4)-/.test(access.activity.activityKey || '')) throw ApiError.forbidden()
     const session = await VoiceSession.findOne({
       studentId, activityId, status: 'completed',
       'aiResponse.activityComplete': true,
@@ -293,7 +293,7 @@ export const VoiceService = {
       throw ApiError.conflict('No completed First Day teacher turn to acknowledge')
     }
     const access = await CurriculumAccessService.assertActivity(studentId, session.activityId.toString())
-    if (!access.activity.activityKey?.startsWith('class1-l01-v3-')) throw ApiError.forbidden()
+    if (!access./^class1-l01-v(?:3|4)-/.test(access.activity.activityKey || '')) throw ApiError.forbidden()
     const ai = session.aiResponse as {
       activityComplete?: boolean
       conversation?: { id?: string; masteryStatus?: string }
@@ -395,7 +395,7 @@ export const VoiceService = {
     // exact Priya/S3 script to unreviewed dynamic TTS.
     if (purpose === 'LESSON' && options.studentId && options.activityId) {
       const current = await CurriculumAccessService.assertActivity(options.studentId, options.activityId)
-      if (current.activity.activityKey?.startsWith('class1-l01-v3-')) {
+      if (current./^class1-l01-v(?:3|4)-/.test(access.activity.activityKey || '')) {
         throw ApiError.provider('CLASS1_FIRST_DAY_APPROVED_AUDIO_MISSING_OR_MISMATCHED')
       }
     }
