@@ -1,4 +1,4 @@
-import { apiClient, apiClientBlob } from '@/lib/api-client'
+import { apiClient, apiClientBlob, getStoredToken } from '@/lib/api-client'
 import { kgRequest } from './kg-request'
 
 export type KGOutcome = 'correct' | 'incorrect' | 'unclear' | 'supported'
@@ -47,12 +47,15 @@ const MISSING_CLIP_TTL_MS = 60_000
 
 // Tab-memory-only. A fresh watch ticket is required for every KG Level 1 entry.
 let playbackId: string | null = null
+// Bind completed tickets to the login that created them, not only pending starts.
+let playbackStudentToken: string | null = null
 // React Strict Mode may mount twice while the first intro/start is in flight.
 // Never issue two requests that invalidate one another's watch tickets.
 let pendingIntroStart: Promise<{ playbackId: string }> | null = null
+let pendingIntroStudentToken: string | null = null
 
 function introTicketHeaders(): Record<string, string> {
-  if (!playbackId) throw new Error('Miss Julie intro ticket missing. Please restart the story.')
+  if (!playbackId || !playbackStudentToken || getStoredToken() !== playbackStudentToken) throw new Error('Miss Julie intro ticket missing or belongs to another login. Please restart the story.')
   return { 'X-KG-Intro-Playback': playbackId }
 }
 
@@ -133,26 +136,41 @@ async function playAudioUrl(url: string, audio: HTMLAudioElement, signal?: Abort
 export const kgAlphabetService = {
   state: () => apiClient<KGAlphabetState>('/kg-alphabet/state', { cache: 'no-store' }),
 
-  hasIntroTicket: () => Boolean(playbackId),
+  hasIntroTicket: () => Boolean(playbackId && playbackStudentToken && getStoredToken() === playbackStudentToken),
 
   async beginIntro() {
-    if (pendingIntroStart) return pendingIntroStart
+    const token = getStoredToken()
+    if (!token) throw new Error('KG story requires student login')
+    // Deduplicate Strict Mode starts only for the SAME login. A different
+    // student on a shared computer must never inherit a pending intro
+    // ticket from the previous student's tab session.
+    if (pendingIntroStart && pendingIntroStudentToken === token) return pendingIntroStart
     playbackId = null
-    const pending = apiClient<{ playbackId: string }>('/kg-alphabet/intro/start', {
+    playbackStudentToken = null
+    let pending: Promise<{ playbackId: string }>
+    pending = apiClient<{ playbackId: string }>('/kg-alphabet/intro/start', {
       method: 'POST', cache: 'no-store',
     }).then((session) => {
-      playbackId = session.playbackId
+      if (pendingIntroStart === pending &&
+          pendingIntroStudentToken === token && getStoredToken() === token) {
+        playbackId = session.playbackId
+        playbackStudentToken = token
+      }
       return session
     })
     pendingIntroStart = pending
+    pendingIntroStudentToken = token
     try { return await pending }
     finally {
-      if (pendingIntroStart === pending) pendingIntroStart = null
+      if (pendingIntroStart === pending) {
+        pendingIntroStart = null
+        pendingIntroStudentToken = null
+      }
     }
   },
 
   introSeen: () => {
-    if (!playbackId) throw new Error('Start the full story first')
+    if (!playbackId || !playbackStudentToken || getStoredToken() !== playbackStudentToken) throw new Error('Start the full story first with this student login')
     return apiClient('/kg-alphabet/intro-seen', {
       method: 'POST', cache: 'no-store', body: JSON.stringify({ videoEnded: true, playbackId }),
     })

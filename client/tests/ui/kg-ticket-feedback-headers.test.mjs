@@ -20,13 +20,31 @@ test('KG1 passes the same completed intro ticket on all protected requests', () 
 
 test('one in-flight intro watch is shared across React Strict Mode mounts', () => {
   assert.match(service, /let pendingIntroStart: Promise<\{ playbackId: string \}> \| null = null/)
-  assert.match(service, /if \(pendingIntroStart\) return pendingIntroStart/)
+  assert.match(service, /if \(pendingIntroStart && pendingIntroStudentToken === token\) return pendingIntroStart/)
   assert.match(service, /pendingIntroStart = pending/)
-  assert.match(service, /if \(pendingIntroStart === pending\) pendingIntroStart = null/)
+  assert.match(service, /if \(pendingIntroStart === pending\) \{\s*pendingIntroStart = null\s*pendingIntroStudentToken = null\s*\}/)
 })
 
 test('ticket checks stay mandatory; no intro bypass, no fake completed playback', () => {
   assert.match(backend, /completedAt: \{ \$exists: true \}, expiresAt: \{ \$gt: new Date\(\) \}/)
   assert.match(service, /audio\.onended = \(\) => \{ clean\(\); resolve\(\) \}/)
   assert.match(backend, /await applyRecordedProgress\(attempt\)/)
+})
+
+test('concurrent KG intro ticket cannot be adopted by a different student login', () => {
+  assert.match(service, /const token = getStoredToken\(\)/)
+  assert.match(service, /pendingIntroStudentToken = token/)
+  assert.match(service, /pendingIntroStudentToken === token && getStoredToken\(\) === token/)
+  assert.match(service, /pendingIntroStudentToken = null/)
+})
+
+
+test('completed KG intro ticket is accepted only for the owning student login', () => {
+  assert.match(service, /let playbackStudentToken: string \| null = null/)
+  assert.match(service, /playbackStudentToken = token/)
+  assert.match(service, /playbackStudentToken = null/)
+  assert.match(service, /hasIntroTicket: \(\) => Boolean\(playbackId && playbackStudentToken && getStoredToken\(\) === playbackStudentToken\)/)
+  assert.match(service, /if \(!playbackId \|\| !playbackStudentToken \|\| getStoredToken\(\) !== playbackStudentToken\)/)
+  assert.match(service, /'X-KG-Intro-Playback': playbackId/)
+  assert.match(backend, /await assertIntroTicket\(req, student\._id, student\.schoolId\)/)
 })
