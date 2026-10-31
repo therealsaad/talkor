@@ -127,7 +127,7 @@ function requireDevHarness(): { url: string; key: string } {
 
   // Never accept arbitrary hosts, paths or URLs from callers / env. This
   // must reach only the disposable localhost Python process, not port 8002.
-  return { url: `${`http://127.0.0.1:${port}/dev/teaching/turn`}`, key }
+  return { url: 'http://127.0.0.1:' + port + '/dev/teaching/turn', key }
 }
 
 /**
@@ -165,7 +165,7 @@ export async function sendSyntheticTeachingTurn(input: SyntheticTeachingInput): 
       signal: controller.signal,
       body: JSON.stringify(request),
     })
-    if (!response.ok) throw new Error(`${`SYNTHETIC_TEACHING_HTTP_${response.status}`}`)
+    if (!response.ok) throw new Error('SYNTHETIC_TEACHING_HTTP_' + response.status)
     if (!response.headers.get('content-type')?.toLowerCase().includes('application/json')) {
       throw new Error('SYNTHETIC_TEACHING_INVALID_CONTENT_TYPE')
     }
