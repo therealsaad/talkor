@@ -53,6 +53,11 @@ export interface SmartLearningBoardProps {
   selectedChoiceId?: string
   onSelectChoice?: (choiceId: string) => void
   disabled?: boolean
+  /** Confirmed XP awarded by server-authoritative progress update. Only rendered as +XP when confirmed. */
+  confirmedXp?: number
+  /** Potential XP available upon completion. Rendered as "Goal: X XP", never "+XP". */
+  potentialXp?: number
+  /** @deprecated Use potentialXp or confirmedXp */
   xpReward?: number
   step?: { current: number; total: number }
   className?: string
@@ -95,6 +100,7 @@ export const SAMPLE_CHOICES_SKIP_RUN: ChoiceOption[] = [
  * Reusable Smart Learning Board presentation component.
  * Displays Balbharati curriculum visuals (Phonics, Vocabulary, Storybook, Choices)
  * without modifying lesson orchestration or auto-activating the mic.
+ * Strictly guards XP presentation: only displays "+XP" when confirmed by backend.
  */
 export function SmartLearningBoard({
   mode = 'vocabulary',
@@ -107,11 +113,14 @@ export function SmartLearningBoard({
   selectedChoiceId,
   onSelectChoice,
   disabled = false,
-  xpReward = 15,
+  confirmedXp,
+  potentialXp,
+  xpReward,
   step = { current: 1, total: 6 },
   className = '',
 }: SmartLearningBoardProps) {
   const reduceMotion = useReducedMotion()
+  const displayGoalXp = potentialXp ?? (confirmedXp ? undefined : xpReward)
 
   return (
     <section
@@ -133,11 +142,25 @@ export function SmartLearningBoard({
         </div>
 
         <div className="flex items-center gap-3">
-          {xpReward > 0 ? (
-            <span className="text-xs font-black text-amber-400 flex items-center gap-1 bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
-              <Trophy size={13} /> +{xpReward} XP
+          {/* XP Guard: Only show +XP when confirmed by backend. Otherwise show unearned goal or nothing. */}
+          {confirmedXp && confirmedXp > 0 ? (
+            <span
+              className="text-xs font-black text-amber-300 flex items-center gap-1 bg-amber-400/15 px-2 py-0.5 rounded-md border border-amber-400/30"
+              role="status"
+              aria-label={`${confirmedXp} XP confirmed`}
+            >
+              <Trophy size={13} /> +{confirmedXp} XP (Earned)
+            </span>
+          ) : displayGoalXp && displayGoalXp > 0 ? (
+            <span
+              className="text-xs font-bold text-slate-400 flex items-center gap-1 bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700"
+              role="note"
+              aria-label={`Goal: ${displayGoalXp} XP`}
+            >
+              <Trophy size={13} className="text-slate-500" /> Goal: {displayGoalXp} XP
             </span>
           ) : null}
+
           {step ? (
             <span className="text-xs font-bold text-slate-400 bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700">
               Step {step.current} of {step.total}

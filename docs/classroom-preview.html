@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Talkora — AI Classroom Design Specification Preview</title>
+  <title>Talkora — AI Classroom Design Specification (Preview Sandbox)</title>
   <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
   <style>
     @keyframes pulseRing {
@@ -29,6 +29,27 @@
   </style>
 </head>
 <body class="bg-slate-950 text-slate-100 font-sans min-h-screen p-4 md:p-6 antialiased">
+
+  <!-- TOP SAFETY BANNER: Explicit Staff Sandbox Disclaimer -->
+  <div class="max-w-6xl mx-auto mb-4 p-3.5 rounded-2xl bg-amber-500/15 border-2 border-amber-500/40 text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+    <div class="flex items-center gap-3">
+      <span class="text-2xl" aria-hidden="true">🛡️</span>
+      <div class="text-xs">
+        <strong class="block text-amber-300 uppercase tracking-wider font-extrabold">
+          STAFF &amp; DEVELOPER SANDBOX · NOT AN ACCREDITED LESSON
+        </strong>
+        <span>
+          Simulated presentation demo. No student voice recordings, attempts, or XP are saved to the database. Real XP is only awarded in authenticated lessons.
+        </span>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 flex-none">
+      <a href="/" class="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 text-xs font-bold transition-colors">
+        Exit Sandbox
+      </a>
+    </div>
+  </div>
+
   <header class="max-w-6xl mx-auto mb-6 flex flex-wrap items-center justify-between gap-4 bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl">
     <div class="flex items-center gap-3">
       <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-400 to-orange-500 flex items-center justify-center text-slate-950 font-black text-xl shadow-md">
@@ -37,9 +58,9 @@
       <div>
         <div class="flex items-center gap-2">
           <h1 class="text-lg font-bold tracking-tight text-white">TALKORA AI CLASSROOM</h1>
-          <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">SPRINT 1 SPEC</span>
+          <span class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">PREVIEW DEMO</span>
         </div>
-        <p class="text-xs text-slate-400">Balbharati English Curriculum · School Computer Lab UX</p>
+        <p class="text-xs text-slate-400">Balbharati English Curriculum · School Computer Lab UX (Simulated Showcase)</p>
       </div>
     </div>
 
@@ -78,7 +99,7 @@
         <div class="w-full mt-4 bg-slate-950/90 border border-slate-800 rounded-2xl p-4 shadow-lg z-10">
           <div class="flex items-center justify-between mb-1.5">
             <span class="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1">
-              ✨ Teacher Audio
+              ✨ Teacher Audio (Simulated)
             </span>
             <button onclick="playMockTeacherAudio()" class="text-xs font-bold px-2 py-0.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 flex items-center gap-1 transition-colors">
               🔊 Hear again
@@ -93,18 +114,19 @@
             <span class="wave-bar w-1 bg-amber-400 rounded-full"></span>
             <span class="wave-bar w-1 bg-amber-400 rounded-full"></span>
             <span class="wave-bar w-1 bg-amber-400 rounded-full"></span>
-            <span class="text-xs font-semibold text-amber-400/80 ml-2">Speaking aloud...</span>
+            <span class="text-xs font-semibold text-amber-400/80 ml-2">Simulated speech active...</span>
           </div>
         </div>
 
         <div class="w-full mt-4 pt-3 border-t border-slate-800">
-          <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-2">Simulate Miss Julie Visual States:</span>
+          <span class="text-xs font-bold uppercase tracking-wider text-slate-400 block mb-1">Simulate Miss Julie Visual States (Demo Only):</span>
+          <span class="text-[11px] text-slate-400 block mb-2">Tests visual state transitions without live AI calls.</span>
           <div class="grid grid-cols-3 gap-1.5 text-xs font-bold">
             <button onclick="setJulieState('speaking', '/miss-julie/speaking.webp', 'Speaking', 'Listening to teacher line', 'bg-amber-400/20 text-amber-300 border-amber-400/30')" class="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-left">🗣️ Speaking</button>
             <button onclick="setJulieState('listening', '/miss-julie/listening.webp', 'Listening', 'Listening for student speech', 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30')" class="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-left">👂 Listening</button>
             <button onclick="setJulieState('thinking', '/miss-julie/thinking.webp', 'Thinking', 'Evaluating voice transcript', 'bg-indigo-500/20 text-indigo-300 border-indigo-500/30')" class="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-left">🤔 Thinking</button>
             <button onclick="setJulieState('encouraging', '/miss-julie/encouraging.webp', 'Encouraging', 'Offering scaffold & hint', 'bg-orange-500/20 text-orange-300 border-orange-500/30')" class="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-left">👍 Encouraging</button>
-            <button onclick="setJulieState('celebrating', '/miss-julie/celebrating.webp', 'Celebrating', 'Mastery achieved! +15 XP', 'bg-yellow-400/20 text-yellow-300 border-yellow-400/30')" class="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-left">🎉 Celebrating</button>
+            <button onclick="setJulieState('celebrating', '/miss-julie/celebrating.webp', 'Celebrating', 'Mastery achieved! (Demo)', 'bg-yellow-400/20 text-yellow-300 border-yellow-400/30')" class="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-left">🎉 Celebrating</button>
             <button onclick="setJulieState('welcome', '/miss-julie/welcome.webp', 'Welcoming', 'Ready for lesson', 'bg-blue-400/20 text-blue-300 border-blue-400/30')" class="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-left">🌟 Welcoming</button>
           </div>
         </div>
@@ -118,11 +140,14 @@
             <span class="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs">📖</span>
             <div>
               <h2 id="board-title" class="text-xs font-black uppercase tracking-wider text-slate-300">SMART LEARNING BOARD · CLASS 1 BALBHARATI</h2>
-              <p id="board-subtitle" class="text-xs text-slate-400 font-medium">Lesson 1.1 · My First Day at School</p>
+              <p id="board-subtitle" class="text-xs text-slate-400 font-medium">Lesson 1.1 · My First Day at School (Preview Mode)</p>
             </div>
           </div>
           <div class="flex items-center gap-3">
-            <span class="text-xs font-extrabold text-amber-400 flex items-center gap-1">✦ 45 XP</span>
+            <!-- XP Guard: Never shows unearned +XP. Shows Goal only. -->
+            <span class="text-xs font-bold text-slate-400 flex items-center gap-1 bg-slate-800 px-2 py-0.5 rounded-md border border-slate-700">
+              Goal: 15 XP (Demo)
+            </span>
             <span class="text-xs font-bold text-slate-400 bg-slate-800 px-2 py-1 rounded-md border border-slate-700">Step 3 of 6</span>
           </div>
         </div>
@@ -182,23 +207,25 @@
 
         <div class="flex items-center gap-2">
           <button onclick="simulateRetry()" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-bold text-slate-200 transition-colors">
-            🔄 Need Hint
+            🔄 Simulate Hint
           </button>
           <button onclick="simulateSuccess()" class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white shadow-md transition-all">
-            ✨ Submit Answer
+            ✨ Simulate Correct (Demo)
           </button>
         </div>
       </div>
 
-      <div id="feedback-banner" class="hidden bg-emerald-500/15 border border-emerald-500/30 rounded-2xl p-4 flex items-center justify-between">
+      <!-- Feedback Banner: Explicitly labeled as demo with 0 real XP awarded -->
+      <div id="feedback-banner" class="hidden bg-emerald-500/15 border-2 border-emerald-500/40 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md">
         <div class="flex items-center gap-3">
-          <span class="text-2xl">🌟</span>
+          <span class="text-2xl" role="img" aria-hidden="true">🌟</span>
           <div>
-            <h4 class="text-xs font-extrabold uppercase text-emerald-400 tracking-wider">Miss Julie says:</h4>
-            <p id="feedback-text" class="text-sm font-semibold text-emerald-200">"Wonderful! You said 'skip' clearly!"</p>
+            <h4 class="text-xs font-extrabold uppercase text-emerald-400 tracking-wider">Demo Teacher Feedback:</h4>
+            <p id="feedback-text" class="text-sm font-semibold text-emerald-200">"Wonderful! You spoke that with confidence!"</p>
+            <span class="text-xs text-slate-400 block mt-0.5">Real XP is awarded only after backend attempt verification in official lessons.</span>
           </div>
         </div>
-        <span class="text-xs font-black text-amber-300 bg-amber-400/20 px-2.5 py-1 rounded-full border border-amber-400/30">+10 XP</span>
+        <span class="text-xs font-bold text-amber-300 bg-amber-400/15 px-3 py-1 rounded-full border border-amber-400/30 flex-none">Simulated Demo (0 XP Awarded)</span>
       </div>
     </section>
   </main>
@@ -229,7 +256,7 @@
     }
 
     function renderKgGarden() {
-      document.getElementById('board-title').innerText = 'KINDERGARTEN ALPHABET GARDEN';
+      document.getElementById('board-title').innerText = 'KINDERGARTEN ALPHABET GARDEN (PREVIEW)';
       document.getElementById('board-subtitle').innerText = 'Step 1 of 8 · Letter A Discovery';
       document.getElementById('julie-dialogue').innerText = '"Welcome to the English Garden! Look at the letter A. Say: A for Apple!"';
       document.getElementById('board-dynamic-content').innerHTML = `
@@ -258,7 +285,7 @@
 
     function renderClass1Balbharati() {
       document.getElementById('board-title').innerText = 'SMART LEARNING BOARD · CLASS 1 BALBHARATI';
-      document.getElementById('board-subtitle').innerText = 'Lesson 1.1 · My First Day at School';
+      document.getElementById('board-subtitle').innerText = 'Lesson 1.1 · My First Day at School (Preview Mode)';
       document.getElementById('julie-dialogue').innerText = '"Hello, superstar! Look at the picture on our board. Can you say: \'I skip\'?"';
       document.getElementById('board-dynamic-content').innerHTML = `
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
@@ -295,7 +322,7 @@
     }
 
     function renderLevelMap() {
-      document.getElementById('board-title').innerText = 'TALKORA ADVENTURE PROGRESS MAP';
+      document.getElementById('board-title').innerText = 'TALKORA ADVENTURE PROGRESS MAP (PREVIEW)';
       document.getElementById('board-subtitle').innerText = 'Balbharati English Progression · 10 Levels';
       document.getElementById('julie-dialogue').innerText = '"Here is your English journey! Level 1 and 2 are complete. Level 3 is ready for you!"';
       document.getElementById('board-dynamic-content').innerHTML = `
@@ -329,7 +356,7 @@
         </div>
       `;
       document.getElementById('board-interactive-choices').innerHTML = `
-        <button onclick="setGrade('class1')" class="col-span-2 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm rounded-xl transition-all shadow-md">
+        <button onclick="setGrade('class1')" class="col-span-2 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm rounded-xl transition-all shadow-md cursor-pointer">
           ▶ Continue with Level 3: My Classroom Friends
         </button>
       `;
@@ -374,8 +401,8 @@
         aura.className = 'absolute -top-12 -left-12 w-80 h-80 rounded-full bg-yellow-400/35 blur-3xl transition-all duration-700 pointer-events-none';
         wave.classList.add('hidden');
         beaconBtn.className = 'w-14 h-14 rounded-full bg-amber-400 text-slate-950 font-bold text-2xl flex items-center justify-center shadow-xl ring-4 ring-amber-300 z-10';
-        beaconStatus.innerHTML = '<span class="text-amber-300 font-black">🌟 Superstar! You did it!</span>';
-        beaconHint.innerText = 'Advancing to next activity in 2 seconds...';
+        beaconStatus.innerHTML = '<span class="text-amber-300 font-black">🌟 Superstar! (Demo Celebration)</span>';
+        beaconHint.innerText = 'Simulated transition in 2 seconds...';
       } else {
         aura.className = 'absolute -top-12 -left-12 w-72 h-72 rounded-full bg-blue-400/15 blur-3xl transition-all duration-700 pointer-events-none';
         wave.classList.add('hidden');

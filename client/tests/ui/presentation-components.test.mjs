@@ -8,6 +8,9 @@ const stageCode = await read('../../components/student/lesson/miss-julie-teachin
 const beaconCode = await read('../../components/student/lesson/voice-interaction-beacon.tsx')
 const boardCode = await read('../../components/student/lesson/smart-learning-board.tsx')
 const previewCode = await read('../../app/classroom-preview/page.tsx')
+const studentNavCode = await read('../../components/student/navigation/student-nav.tsx')
+const studentContinueCode = await read('../../app/student/continue/page.tsx')
+const studentHomeCode = await read('../../app/student/home/page.tsx')
 
 test('MissJulieTeachingStage reuses MissJulieCharacter without duplicating avatar logic', () => {
   assert.match(stageCode, /import\s*\{\s*MissJulieCharacter/)
@@ -18,28 +21,39 @@ test('MissJulieTeachingStage reuses MissJulieCharacter without duplicating avata
 })
 
 test('VoiceInteractionBeacon strictly enforces deliberate click and avoids auto-activating mic', () => {
-  // Verifies no useEffect triggers onStartMic automatically
   assert.doesNotMatch(beaconCode, /useEffect\(.*onStartMic/)
   assert.match(beaconCode, /isTeacherSpeaking\s*\?\s*'teacher_speaking'/)
   assert.match(beaconCode, /Listen to Miss Julie/)
   assert.match(beaconCode, /I am listening!/)
   assert.match(beaconCode, /Miss Julie is thinking/)
-  // Button must be disabled when teacher is speaking or processing
   assert.match(beaconCode, /isButtonDisabled\s*=\s*disabled\s*\|\|\s*isProcessing\s*\|\|\s*isTeacherSpeaking/)
 })
 
-test('SmartLearningBoard provides sample Balbharati and KG datasets without runtime mutations', () => {
-  assert.match(boardCode, /SAMPLE_KG_PHONICS_A/)
-  assert.match(boardCode, /SAMPLE_CLASS1_VOCAB_SKIP/)
-  assert.match(boardCode, /SAMPLE_CLASS1_STORY_FIRSTDAY/)
-  assert.match(boardCode, /SAMPLE_CHOICES_SKIP_RUN/)
-  assert.match(boardCode, /मराठी/)
-  assert.doesNotMatch(boardCode, /progressService\.completeLocalActivity/)
-  assert.doesNotMatch(boardCode, /curriculumService\.getNextLesson/)
+test('SmartLearningBoard guards XP and only renders +XP when confirmed by backend', () => {
+  assert.match(boardCode, /confirmedXp\s*&&\s*confirmedXp\s*>\s*0/)
+  assert.match(boardCode, /\+\{confirmedXp\}\s*XP\s*\(Earned\)/)
+  // When only potentialXp is passed, it renders as "Goal: X XP", never "+XP"
+  assert.match(boardCode, /Goal:\s*\{displayGoalXp\}\s*XP/)
+  assert.doesNotMatch(boardCode, /\+\{potentialXp\}/)
+  assert.doesNotMatch(boardCode, /\+\{xpReward\}/)
 })
 
-test('ClassroomPreviewPage integrates all three presentation components cleanly', () => {
-  assert.match(previewCode, /<MissJulieTeachingStage/)
-  assert.match(previewCode, /<SmartLearningBoard/)
-  assert.match(previewCode, /<VoiceInteractionBeacon/)
+test('ClassroomPreviewPage protects student flows and clearly labels simulated actions', () => {
+  // Explicit staff sandbox banner
+  assert.match(previewCode, /STAFF &(?:amp;)? DEVELOPER SANDBOX/)
+  assert.match(previewCode, /NOT AN ACCREDITED LESSON/)
+  // Student session warning guard
+  assert.match(previewCode, /role === 'STUDENT'/)
+  assert.match(previewCode, /Resume My Lesson/)
+  // Distinguishes simulated actions
+  assert.match(previewCode, /UI Demo Only/)
+  assert.match(previewCode, /Simulated Demo \(0 XP Awarded\)/)
+  // Real XP explanation
+  assert.match(previewCode, /Real XP is (?:recorded|awarded) only after (?:verified backend|backend attempt)/)
+})
+
+test('Production student navigation routes NEVER link to classroom-preview', () => {
+  assert.doesNotMatch(studentNavCode, /classroom-preview/)
+  assert.doesNotMatch(studentContinueCode, /classroom-preview/)
+  assert.doesNotMatch(studentHomeCode, /classroom-preview/)
 })

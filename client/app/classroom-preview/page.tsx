@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react'
 import Link from 'next/link'
-import { Sparkles, ArrowLeft, RefreshCw } from 'lucide-react'
+import { Sparkles, ArrowLeft, RefreshCw, ShieldAlert, GraduationCap, Home } from 'lucide-react'
+import { useAuth } from '@/components/auth/auth-provider'
 import { MissJulieTeachingStage } from '@/components/student/lesson/miss-julie-teaching-stage'
 import { VoiceInteractionBeacon } from '@/components/student/lesson/voice-interaction-beacon'
 import {
@@ -20,9 +21,17 @@ import type { JulieVisualState } from '@/components/student/lesson/miss-julie-ch
  * - MissJulieTeachingStage
  * - SmartLearningBoard
  * - VoiceInteractionBeacon
- * Does NOT alter production lesson orchestration or touch student progress.
+ * 
+ * SAFETY GUARDS:
+ * 1. Protected from production student flows (not linked in student navigation).
+ * 2. Clearly distinguishes simulated actions from actual learning.
+ * 3. Never awards or displays unconfirmed XP as earned.
+ * 4. Does NOT alter production lesson orchestration or touch student progress.
  */
 export default function ClassroomPreviewPage() {
+  const { status, role } = useAuth()
+  const isStudentSession = status === 'authenticated' && role === 'STUDENT'
+
   const [julieState, setJulieState] = useState<JulieVisualState>('teaching')
   const [isSpeaking, setIsSpeaking] = useState(false)
   const [boardMode, setBoardMode] = useState<SmartBoardMode>('vocabulary')
@@ -31,6 +40,7 @@ export default function ClassroomPreviewPage() {
   const [isProcessing, setIsProcessing] = useState(false)
   const [isError, setIsError] = useState(false)
   const [recordSeconds, setRecordSeconds] = useState(0)
+  const [showFeedback, setShowFeedback] = useState(false)
   const [teacherText, setTeacherText] = useState(
     'Look at the picture on the board! Can you say: "I skip to school"?'
   )
@@ -40,6 +50,7 @@ export default function ClassroomPreviewPage() {
     setIsRecording(false)
     setIsProcessing(false)
     setIsError(false)
+    setShowFeedback(false)
     setJulieState('speaking')
     setTeacherText('See me skip, see me run! I am going to school like everyone.')
   }
@@ -54,6 +65,7 @@ export default function ClassroomPreviewPage() {
     setIsRecording(true)
     setIsProcessing(false)
     setIsError(false)
+    setShowFeedback(false)
     setJulieState('listening')
     setRecordSeconds(1)
   }
@@ -65,14 +77,16 @@ export default function ClassroomPreviewPage() {
     setTimeout(() => {
       setIsProcessing(false)
       setJulieState('celebrating')
+      setShowFeedback(true)
       setTeacherText('Wonderful! You spoke that with great confidence!')
-    }, 1500)
+    }, 1200)
   }
 
   function simulateErrorState() {
     setIsRecording(false)
     setIsProcessing(false)
     setIsError(true)
+    setShowFeedback(false)
     setJulieState('gentle-correction')
     setTeacherText('I did not catch that clearly. Let us try together: say "skip"!')
   }
@@ -82,14 +96,57 @@ export default function ClassroomPreviewPage() {
     setIsRecording(false)
     setIsProcessing(false)
     setIsError(false)
+    setShowFeedback(false)
     setJulieState('teaching')
     setTeacherText('Look at the picture on the board! Can you say: "I skip to school"?')
   }
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 antialiased">
+      {/* 1. TOP SAFETY BANNER: Explicit Staff Sandbox Disclaimer */}
+      <div className="max-w-6xl mx-auto mb-4 p-3.5 rounded-2xl bg-amber-500/15 border-2 border-amber-500/40 text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
+        <div className="flex items-center gap-3">
+          <ShieldAlert className="text-amber-400 flex-none" size={22} aria-hidden="true" />
+          <div className="text-xs">
+            <strong className="block text-amber-300 uppercase tracking-wider font-extrabold">
+              STAFF &amp; DEVELOPER SANDBOX · NOT AN ACCREDITED LESSON
+            </strong>
+            <span>
+              Simulated presentation demo. No student voice recordings, attempts, or XP are saved to the database.
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2 flex-none">
+          <Link
+            href="/"
+            className="px-3 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-200 border border-slate-700 text-xs font-bold flex items-center gap-1.5 transition-colors"
+          >
+            <Home size={14} /> Exit Sandbox
+          </Link>
+        </div>
+      </div>
+
+      {/* 2. STUDENT WARNING GUARD: If an authenticated student lands here */}
+      {isStudentSession ? (
+        <div className="max-w-6xl mx-auto mb-4 p-4 rounded-2xl bg-rose-500/20 border-2 border-rose-500/50 text-rose-200 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <GraduationCap className="text-rose-400 flex-none" size={24} />
+            <div className="text-xs md:text-sm">
+              <strong className="block text-rose-300 font-bold">You are signed in as a student!</strong>
+              <span>This sandbox does not count toward your class lessons or stars. Click below to resume your real lesson.</span>
+            </div>
+          </div>
+          <Link
+            href="/student/continue"
+            className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md transition-all flex-none"
+          >
+            Resume My Lesson
+          </Link>
+        </div>
+      ) : null}
+
       {/* Header bar */}
-      <header className="max-w-6xl mx-auto mb-6 flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900 border border-slate-800">
+      <header className="max-w-6xl mx-auto mb-6 flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-md">
         <div className="flex items-center gap-3">
           <Link
             href="/"
@@ -104,11 +161,11 @@ export default function ClassroomPreviewPage() {
                 CLASSROOM PRESENTATION PREVIEW
               </h1>
               <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-bold border border-emerald-500/30">
-                Sprint 1
+                Sprint 1 Prototype
               </span>
             </div>
             <p className="text-xs text-slate-400">
-              Isolated presentation components for Miss Julie, Smart Board &amp; Voice Beacon
+              Isolated visual review for Miss Julie Stage, Smart Board &amp; Voice Interaction Beacon
             </p>
           </div>
         </div>
@@ -143,10 +200,13 @@ export default function ClassroomPreviewPage() {
             onReplayTeacher={simulateTeacherSpeak}
           />
 
-          {/* Interactive State Simulation Palette */}
+          {/* Interactive State Simulation Palette (Explicitly labeled as Demo) */}
           <div className="p-4 rounded-2xl bg-slate-900 border border-slate-800">
-            <span className="text-xs font-extrabold uppercase tracking-wider text-slate-400 block mb-2">
-              Simulate Teacher Pose:
+            <span className="text-xs font-extrabold uppercase tracking-wider text-slate-400 block mb-1">
+              Teacher Pose Simulator (UI Demo Only):
+            </span>
+            <span className="text-[11px] text-slate-400 block mb-2">
+              Tests visual state transitions without making real AI calls.
             </span>
             <div className="grid grid-cols-3 gap-1.5 text-xs font-bold">
               <button
@@ -212,12 +272,13 @@ export default function ClassroomPreviewPage() {
 
         {/* Right Column: Smart Learning Board & Voice Interaction Beacon */}
         <div className="lg:col-span-7 flex flex-col gap-5">
+          {/* Smart Learning Board: Uses potentialXp (never falsely claiming +XP earned) */}
           <SmartLearningBoard
             mode={boardMode}
             title={
               boardMode === 'phonics'
-                ? 'KINDERGARTEN ALPHABET GARDEN'
-                : 'ENGLISH BALBHARATI · CLASS 1'
+                ? 'KINDERGARTEN ALPHABET GARDEN (PREVIEW)'
+                : 'ENGLISH BALBHARATI · CLASS 1 (PREVIEW)'
             }
             subtitle={
               boardMode === 'phonics'
@@ -231,7 +292,7 @@ export default function ClassroomPreviewPage() {
             selectedChoiceId={selectedChoice}
             onSelectChoice={setSelectedChoice}
             step={{ current: 2, total: 6 }}
-            xpReward={15}
+            potentialXp={15}
           />
 
           <VoiceInteractionBeacon
@@ -246,38 +307,61 @@ export default function ClassroomPreviewPage() {
             onRetry={handleStartMic}
           />
 
-          {/* Test Simulation Controls */}
+          {/* Test Simulation Controls (Explicitly marked as simulated) */}
           <div className="flex flex-wrap items-center gap-2 p-3.5 rounded-2xl bg-slate-900 border border-slate-800 text-xs">
-            <span className="font-bold text-slate-400 mr-2">Beacon Simulator:</span>
+            <span className="font-bold text-slate-400 mr-2">Beacon Simulator (Demo Only):</span>
             <button
               type="button"
               onClick={simulateTeacherSpeak}
-              className="px-2.5 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold hover:bg-amber-500/30"
+              className="px-2.5 py-1.5 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold hover:bg-amber-500/30 cursor-pointer"
             >
-              Teacher Speaks
+              Simulate Teacher Speaks
             </button>
             <button
               type="button"
               onClick={simulateStopTeacherSpeak}
-              className="px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 font-bold hover:bg-slate-700"
+              className="px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-300 border border-slate-700 font-bold hover:bg-slate-700 cursor-pointer"
             >
-              Teacher Done
+              Simulate Teacher Stops
             </button>
             <button
               type="button"
               onClick={simulateErrorState}
-              className="px-2.5 py-1.5 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold hover:bg-rose-500/30"
+              className="px-2.5 py-1.5 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/30 font-bold hover:bg-rose-500/30 cursor-pointer"
             >
-              Simulate Error
+              Simulate Error (Demo)
             </button>
             <button
               type="button"
               onClick={resetAll}
-              className="px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-400 border border-slate-700 font-bold hover:bg-slate-700 ml-auto"
+              className="px-2.5 py-1.5 rounded-lg bg-slate-800 text-slate-400 border border-slate-700 font-bold hover:bg-slate-700 ml-auto cursor-pointer"
             >
               Clear
             </button>
           </div>
+
+          {/* Simulated Feedback Banner: Explicitly labeled as demo, 0 real XP awarded */}
+          {showFeedback ? (
+            <div className="bg-emerald-500/15 border-2 border-emerald-500/40 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-md">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl" role="img" aria-hidden="true">🌟</span>
+                <div>
+                  <h4 className="text-xs font-extrabold uppercase text-emerald-400 tracking-wider">
+                    Demo Teacher Feedback:
+                  </h4>
+                  <p className="text-sm font-semibold text-emerald-200">
+                    "Wonderful! You spoke with great confidence!"
+                  </p>
+                  <span className="text-[11px] text-slate-400 block mt-0.5">
+                    Real XP is recorded only after verified backend attempts in official lessons.
+                  </span>
+                </div>
+              </div>
+              <span className="text-xs font-bold text-amber-300 bg-amber-400/15 px-3 py-1 rounded-full border border-amber-400/30 flex-none">
+                Simulated Demo (0 XP Awarded)
+              </span>
+            </div>
+          ) : null}
         </div>
       </main>
     </div>
