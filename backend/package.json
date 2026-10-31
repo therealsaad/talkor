@@ -32,7 +32,9 @@
     "curriculum:map:dry-run": "tsx src/scripts/map-110-curriculum.ts",
     "curriculum:map:apply": "tsx src/scripts/map-110-curriculum.ts --apply",
     "kg:azure:warm": "tsx src/scripts/prewarm-kg-azure-audio.ts",
-    "test:kg-azure-audio": "node --test tests/kg-azure-narration.node.test.cjs"
+    "test:kg-azure-audio": "node --test tests/kg-azure-narration.node.test.cjs",
+    "test:synthetic-teaching-harness": "jest --runInBand tests/unit/syntheticTeachingHarness.test.ts",
+    "dev:synthetic-teaching-demo": "tsx src/scripts/check-synthetic-teaching-harness.ts"
   },
   "engines": {
     "node": ">=18"
