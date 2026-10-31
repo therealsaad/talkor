@@ -143,6 +143,9 @@ jobs:
       - name: Guard synthetic-only Node to Python advisory teaching contract
         run: pnpm run test:synthetic-teaching-harness
         working-directory: backend
+      - name: Verify isolated version-scoped teaching checkpoints are idempotent and give no XP
+        run: pnpm exec jest --runInBand tests/unit/teachingCheckpointService.test.ts
+        working-directory: backend
       - name: Verify authentic Balbharati 1.1 poem pairs and whole recitation
         run: pnpm exec jest --runInBand tests/unit/class1PoemRecitation.test.ts
         working-directory: backend
