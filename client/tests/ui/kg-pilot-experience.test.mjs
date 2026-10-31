@@ -110,7 +110,7 @@ test('staff preview uses real recorded speech, not fake success',async()=>{
  assert.match(level3Preview,/Level3PreviewIntro/)
  assert.match(level3Preview,/sessionStorage\.setItem\(LEVEL3_INTRO_COMPLETED_KEY, 'complete'\)/)
  assert.match(level3Preview,/router\.push\('\/school\/kg-preview\/level-3\/K'\)/)
- assert.match(kgPreviewLanding,/KGAlphabetMap preview previewDashboard/)
+ assert.match(kgPreviewLanding,/kg-preview-garden/)
  assert.match(replayMap,/1: '\/school\/kg-preview\/level-1'/)
  assert.match(replayMap,/3: '\/school\/kg-preview\/level-3'/)
  assert.doesNotMatch(level3Preview,/<Mic|requestKGMicrophone|MediaRecorder|speech-recognition/i)
