@@ -26,7 +26,9 @@ Automated PR tests:
 
 **Not automated here:** Authorized real Azure TTS + S3 smoke, 403/IAM policy behavior against actual credentials, spoken language and voice-quality review by a school teacher, low-spec school-lab playback. No live provider claim is made without those tests.
 
-After the publisher/teacher explicitly approves **each** fixed narration line and S3 policy, an operator may separately run `cd backend && pnpm run kg:azure:warm` using the existing approved Azure/AWS environment. This script **writes cloud objects and incurs costs**: do not run it as a CI job or without deployment approval. A successful warmup does not mean any curriculum preview is student-published.
+**Paid warmup is now dry-run by default.** An ordinary `cd backend && pnpm run kg:azure:warm` prints only the fixed KG1–5 line count, voice profile and content SHA-256; it makes no Azure or S3 calls and requires no credentials. A qualified teacher and rights owner must independently review the exact lines, locales and voice settings and record a review reference that matches the displayed SHA-256. The current repo has **no such teacher approval**.
+
+After explicit operator authorization, set `TALKORA_KG_PREWARM_APPROVED=YES`, `TALKORA_KG_NARRATION_REVIEW_REF=<documented-reviewed-release>` and `TALKORA_KG_PREWARM_MANIFEST_SHA256=<exact-dry-run-digest>` in a private operator environment alongside the approved Azure/AWS credentials, then run `cd backend && pnpm run kg:azure:warm -- --apply`. This mode **writes cloud objects and may incur costs**; it refuses any missing approval, digest drift or credentials before the first provider call. A local env reference is a safeguard, **not proof of teacher signoff or permission**. The runtime cache flag stays OFF separately and is not automatically enabled by prewarm. Do not run `--apply` in CI or without explicit human signoff.
 
 Monitor only non-sensitive cache status (`MEMORY`, `S3`, `AZURE`) and transient error rates; never log student audio or tokens. If cold/invalid audio, S3 access or voice mismatches occur, disable the flag and investigate without modifying student progress.
 
