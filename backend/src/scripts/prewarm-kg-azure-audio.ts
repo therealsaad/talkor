@@ -11,7 +11,7 @@ async function main() {
   const arguments_ = process.argv.slice(2)
   if (arguments_.some(value => !['--dry-run', '--apply'].includes(value)) ||
       (arguments_.includes('--dry-run') && arguments_.includes('--apply'))) {
-    throw new Error('Usage: pnpm run kg:azure:warm [-- --dry-run | -- --apply]')
+    throw new Error('Usage: pnpm run kg:azure:warm (dry run), or pnpm exec tsx src/scripts/prewarm-kg-azure-audio.ts --apply')
   }
 
   const plan = getKGPrewarmPlan()
