@@ -104,7 +104,7 @@ describe('isolated Class 1 teaching checkpoint (no live student API)', () => {
     expect(result).toEqual({
       revision: 3, hintLevel: 2, retryPending: true, latestStrategy: 'RETEACH',
     })
-    const [query, change, options] = db.mock.calls[0]
+    const [query, change, options] = db.mock.calls[0] as [any, any, any]
     expect(query.studentId.toString()).toBe(studentId)
     expect(query.activityId.toString()).toBe(activityId)
     expect(query.scopeHash).toMatch(/^[0-9a-f]{64}$/)
@@ -118,8 +118,8 @@ describe('isolated Class 1 teaching checkpoint (no live student API)', () => {
       _id: new Types.ObjectId(), revision: 0, hintLevel: 0,
       retryPending: false, turnReceipts: [],
     }
-    jest.spyOn(TeachingCheckpoint, 'findOne').mockImplementation(async () => document as any)
-    const update = jest.spyOn(TeachingCheckpoint, 'findOneAndUpdate').mockImplementation(async (query: any, change: any) => {
+    jest.spyOn(TeachingCheckpoint, 'findOne').mockImplementation((async () => document) as any)
+    const update = jest.spyOn(TeachingCheckpoint, 'findOneAndUpdate').mockImplementation((async (query: any, change: any) => {
       expect(query.revision).toBe(document.revision)
       expect(query['turnReceipts.requestId']).toEqual({ $ne: requestId })
       expect(change).not.toHaveProperty('$set.xpAwarded')
@@ -128,7 +128,7 @@ describe('isolated Class 1 teaching checkpoint (no live student API)', () => {
       document.retryPending = change.$set.retryPending
       document.turnReceipts.push(change.$push.turnReceipts)
       return document
-    })
+    }) as any)
     const first = await TeachingCheckpointService.commitTurn(turn)
     expect(first).toMatchObject({ revision: 1, replayed: false, evidenceAccepted: false, xpAwarded: 0 })
     const second = await TeachingCheckpointService.commitTurn(turn)
