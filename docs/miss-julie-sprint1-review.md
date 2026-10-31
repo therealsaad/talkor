@@ -2,6 +2,42 @@
 
 Date: 2026-10-31. Status: proposed; runtime implementation awaits shared-contract review as required by the assignment.
 
+## Publication checkpoint and review clarifications
+
+This document contains historical audit snapshots below. At publication, the original checkout is on `feature/ai-frontend-qa` at `66eac2642b9d89b9d2ed1850c2e26492f75e24b3`, rather than the earlier Class 1 branch. Existing modified files are `client/package.json` and `client/tsconfig.tsbuildinfo`; existing untracked work includes the two backend scripts, frontend safety test, curriculum-research directory, frontend audit/QA/test-matrix documents, teaching-engine integration plan and these two audit drafts. They remain in the original checkout without staging or modification by this publication task.
+
+Publication uses the separate worktree `D:\talkor\talkor-ai-audit` on `feature/ai-teaching-engine-audit`, based on freshly fetched `origin/feature/saad-class1-oct27` at `e1fc98f15f35287fcbfa79c04501e627a73c5c8b`. Only this review document and the standalone proposed TypeScript contract are included. Earlier statements about no implementation branch/commit/PR describe the audit checkpoint before this documentation publication. Publishing these documents does not approve the contract, authorize runtime implementation or authorize a migration. Audit observations describe the original inspected checkout, not a fresh re-audit of every runtime file at the publication base.
+
+### A. Completion, independence and mastery
+
+Activity completion is the existing server-owned activity gate. Lesson completion aggregates the required activities under current progression rules; neither certifies proficiency. Assisted correctness includes hints, selected options and repeating a supplied answer. Independent correctness requires a new unprompted response to an approved criterion without an answer-bearing hint. A single independent correct response is evidence, not automatic mastery. Retention/recall requires a separately scheduled or delayed, independently answered approved check; immediate repetition cannot establish it. Mastery eligibility requires all curriculum-owner-reviewed criteria and evidence dimensions, including retention where required. Missing criteria or unavailable assessment cannot yield mastery. Existing `COMPLETED_WITH_SUPPORT` remains distinct from `MASTERED`; historical completion records are preserved.
+
+### B. Interrupted-lesson persistence
+
+Prefer existing Conversation, ActivityAttempt, LearningEvent and Progress services as evidence and completion authorities. The proposed durable checkpoint needs curriculum version, activity/objective, teaching state, retry/support status, revision and a committed result reference for each accepted submission. Existing schemas do not fully represent that checkpoint. Review either an additive checkpoint schema or a documented event-metadata reconstruction protocol before implementation; neither is approved here. Resume reauthorizes the student and reconstructs the last committed state and evidence. An uncommitted model response cannot advance progress. Pending inference may be retried; previously committed progress must be replayed as a response, never re-awarded. Old curriculum versions require an explicit compatible-resume policy rather than silently rebasing evidence.
+
+### C. Submission consistency and duplicate handling
+
+Proposed protocol: scope an idempotency key to authenticated student, conversation and submission; persist a normalized payload digest with its result. Same key and same payload returns the stored result without inference or progress writes. Same key with different payload is a conflict. A submission carries expectedRevision; compare-and-set accepts only the current revision, rejecting stale submissions before inference admission. Before committing a generated response, recheck revision and authorization; discard stale inference output. Serialize active turns per student lesson across processes, with a durable revision as the final guard. A browser-only lock or an in-process queue is insufficient.
+
+Checkpoint/evidence writes, result deduplication and existing progress updates need an atomicity strategy appropriate to the deployed Mongo topology. If transactions are unavailable, use a reviewed recoverable write protocol with idempotent progress application and reconciliation. A partial failure must not return success or trigger duplicate XP on retry. Existing ActivityAttempt idempotency indexes are reusable but do not alone make all conversation and progress writes atomic. Exact response/error types, lock scope and storage remain contract-review decisions.
+
+### D. Existing gates remain authoritative
+
+All proposed transitions must preserve curriculum authorization, published/draft-demo allowlists, grade/class-specific progression, existing introductory-video tickets, teacher-audio acknowledgement, Azure requirements and student authentication/session revocation. The model cannot waive any gate or unlock a lesson. Current KG/Class 1 completion behavior is preserved until a separately reviewed rollout explicitly changes it. Shared-computer identity changes cancel pending speech/inference and require fresh ownership checks before writes.
+
+### E. Proposed reliability budget
+
+For review, use the current 16-second Node AI deadline as the outer budget, with a shorter upstream deadline (for example 12 seconds) and propagated cancellation; retain KG feedback's existing seven-second cap. Allow at most one retry for transient transport/5xx failures only when it fits the original budget. Do not retry malformed output indefinitely. These are proposed values requiring measurement, not deployed changes. Validate model JSON shape, field lengths, approved actions and curriculum grounding; reject model progress/unlock claims. Use reviewed curriculum-authored en/hi/mr fallback wording on failure, preserve teaching state and add no evidence.
+
+Retain current STT/TTS deadline boundaries (source defaults 18/12 seconds) and existing Azure-specific paths. STT failure/no speech is unavailable evidence, not an incorrect response. TTS failure retains pending playback/acknowledgement requirements and offers replay; it cannot auto-advance a listening gate. Retry speech only within bounded budgets and existing submission deduplication. Class 1 local-AI and dynamic-Azure failure behavior remains fail-closed; no silent cloud/provider substitution. These paths require fault-injection and live-provider verification before rollout.
+
+### F. Verification provenance and final ownership
+
+The 45 passing tests in six suites are historical results from the earlier audit turn, not fresh verification for this publication. Jest reported an open asynchronous handle after completing assertions; the process was subsequently interrupted. The handle was not diagnosed, and no full regression or live Qwen/Azure success is claimed. Publication validation consists of the staged two-file allowlist and whitespace checks; new engine behavior has not been implemented or tested.
+
+The Project Manager's latest ownership order supersedes earlier proposed assignments below: Z.ai owns curriculum schemas and rubric content; Antigravity owns student classroom UI; Copilot owns frontend QA and regression tests; Codex owns backend/AI research, design proposals and later authorized backend work. Shared interfaces require Project Manager approval after reviewing relevant agents' findings. No agent-owned runtime files are changed here. Future unavailable-curriculum tests will use explicitly synthetic fixtures; this publication introduces no curriculum fixtures or official lesson content.
+
 ## Repository audit
 
 - Main checkout: `D:\talkor\talkor`, branch `feature/saad-class1-oct27`, origin `https://github.com/therealsaad/talkor.git`.

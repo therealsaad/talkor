@@ -90,6 +90,12 @@ jobs:
       - name: Verify KG1 Sarvam locale survives Qwen and Azure feedback
         run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'preserves Sarvam Hindi detection'
         working-directory: backend
+      - name: Guard KG1 S3 static sample against live Priya opening
+        run: pnpm exec jest --runInBand tests/unit/kgFixedAudioSample.test.ts
+        working-directory: backend
+      - name: Verify approved KG static S3 audio can fail over to Azure without publishing
+        run: pnpm exec jest --runInBand tests/unit/kgS3AzureFallbackContract.test.ts tests/integration/kgAlphabetAudio.test.ts -t 'static|missing|S3|Azure'
+        working-directory: backend
       - name: Verify KG1 feedback 409 is resolved with valid authenticated intro ticket
         run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'KG1 409 only when the intro ticket'
         working-directory: backend
