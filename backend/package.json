@@ -30,7 +30,9 @@
     "test:watch": "jest --watch",
     "lint": "tsc -p tsconfig.json --noEmit",
     "curriculum:map:dry-run": "tsx src/scripts/map-110-curriculum.ts",
-    "curriculum:map:apply": "tsx src/scripts/map-110-curriculum.ts --apply"
+    "curriculum:map:apply": "tsx src/scripts/map-110-curriculum.ts --apply",
+    "kg:azure:warm": "tsx src/scripts/prewarm-kg-azure-audio.ts",
+    "test:kg-azure-audio": "node --test tests/kg-azure-narration.node.test.cjs"
   },
   "engines": {
     "node": ">=18"
