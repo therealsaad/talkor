@@ -8,6 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
+    "test:frontend-safety": "node --test tests/frontend-safety-contract.test.mjs",
     "test:student-enrollment": "node --test tests/ui/student-enrollment-modal.test.mjs",
     "test:kg-pilot-ui": "node --test tests/ui/kg-pilot-experience.test.mjs",
     "test:kg-speech": "node --test tests/kg-speech-runtime.test.mjs",
