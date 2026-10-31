@@ -22,3 +22,5 @@ jobs:
         run: node curriculum-research/tools/validate-curriculum.mjs
       - name: Guard dual-track ID separation and bilingual checkpoint examples
         run: node --test curriculum-research/tools/dualtrack-contract.test.mjs
+      - name: Verify 84 objective addresses, source integrity and mandatory teacher review
+        run: node --test curriculum-research/tools/objective-registry.test.mjs
