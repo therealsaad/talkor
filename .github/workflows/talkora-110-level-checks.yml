@@ -32,6 +32,26 @@ jobs:
       - name: Guard development-only classroom preview and static asset
         run: node --test tests/ui/classroom-preview-production-gate.test.mjs
         working-directory: client
+      - name: Verify production preview endpoints are truly unavailable
+        working-directory: client
+        shell: bash
+        run: |
+          pnpm exec next start -p 3100 > /tmp/talkora-preview-next.log 2>&1 &
+          next_pid=$!
+          trap 'kill "$next_pid" 2>/dev/null || true' EXIT
+          code="000"
+          for attempt in {1..45}; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3100/classroom-preview || true)
+            if [ "$code" != "000" ]; then break; fi
+            sleep 1
+          done
+          if [ "$code" != "404" ]; then
+            cat /tmp/talkora-preview-next.log
+            echo "Expected 404 for classroom-preview, got $code"
+            exit 1
+          fi
+          static_code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3100/classroom-preview.html || true)
+          test "$static_code" = "404"
       - name: Verify stable SSR hydration for student and school authentication
         run: node --test tests/ui/auth-hydration-contract.test.mjs
         working-directory: client
