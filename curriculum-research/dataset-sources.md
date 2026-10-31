@@ -104,3 +104,19 @@
 ### Sources consulted (checkpoint update, 2026-10-31)
 - [My English Book — Grade One PDF (official)](https://ebooks.ebalbharati.in/pdfs/103050035.pdf)
 - [Mozilla Data Collective — Hindi v26.0 snapshot](https://mozilladatacollective.com/datasets/cmqiod71900zgnr07uiyw57br) · [Marathi v27.0 snapshot](https://mozilladatacollective.com/datasets/cmu5vlwjk009xo107s7i4qmzm)
+
+### Sources consulted (checkpoint 2, 2026-10-31 — PM-directed additional verification)
+
+**1. MEB workbook library — https://books.ebalbharati.in/ebookmeb.aspx**
+A plain download page listing eight English workbooks, "My English Book 1" through "My English Book 8", each with a Download button. It shows **no editions, years, or grade labels**, and no Grade One textbook (English Balbharati / My English Book textbook) entries. **Do not conflate these numbered workbooks with the Std 1 textbook *My English Book — Grade One (Non-English Medium)*** (https://ebooks.ebalbharati.in/pdfs/103050035.pdf): the workbook series is a separate asset line with no stated year. Status: page fetched and read 2026-10-31; edition/copyright of the workbook PDFs themselves still unverified — treated as `UNVERIFIED` until a workbook PDF is opened and its imprint page read.
+
+**2. Older SCERT teacher guide — https://www.maa.ac.in/documents/sm/ShikshakMargdarshikaStdOne.pdf**
+Downloaded fully (40.5 MB, 152 pages, PDF 1.3). Verified properties: **scanned images only — zero text layer**; producer metadata shows Adobe InDesign CS5.5 with creation date **2020-12-04** and internal layout title "1) Marathi - 1-37 (P).indd" (a Marathi-medium Std 1 teacher guide, Maharashtra Academic Authority/SCERT family). Per the PM's instruction this is recorded as an **older (2020-era) guide that must NOT be presented as a verified 2025 handbook**: the 2025 textbooks were approved 2025-04-16 under the Foundational Stage Curriculum 2024, which post-dates this guide. Its contents (page images) have not been OCR-matched to the 2025 syllabus. Status: `SECONDARY_SOURCE_CORROBORATED` as a historical pedagogy reference only; excluded from all syllabus-verification claims in the datasets.
+
+**3. Both official 2025 textbook PDFs — full-book verification (second pass)**
+- *English Balbharati Grade One* (92 PDF pages): full Contents re-verified — 44 chapters across 4 units (Unit One 10, Unit Two 12, Unit Three 11, Unit Four 11); third-party credits named on the Contents page: (1) My First Day — A to Z Teacher's Stuff; (2) It's Time to Play — Devon Thagard/Troy McDonald; (3) Everybody has a name — Jean Warren; (4) My Flower — Margaret Schrodr; (5) My Kitty Cat — Ryan Gibbs; (6) Cookout — Lauren Shirk. The Contents page also states: "Some permission are awaited. Acknowledgement to them will be made in subsequent reprint."
+- *My English Book Grade One (Non-English Medium)* (87 PDF pages): full Index re-verified — 42 chapters (Unit One 11, Unit Two 10, Unit Three 10, Unit Four 9); **no per-chapter third-party credits printed** — only the general acknowledgment that permissions are awaited. All Unit One song/rhyme chapters are therefore categorized `THIRD_PARTY_PERMISSION_AWAITED` in the dataset (honest default), not `ALL_RIGHTS_RESERVED`.
+- Both title pages carry the same approval chain: SCERT-verified, Coordination Committee meeting 2025-04-16 (GR No. Abhyas-2116/(Pra.Kra.43/16) SD-4), first use AY 2025-26, Foundational Stage Curriculum 2024 / NEP 2020.
+
+**4. Common Voice citation rule (PM instruction)**
+Any hours/coverage claim in Talkora documents must cite the exact release, e.g. "Hindi v26.0: 26.67 h recorded / 15.6 h validated (Mozilla Data Collective snapshot, checked 2026-10-31)". §2 above already complies; the rule is now recorded here as the standing convention.

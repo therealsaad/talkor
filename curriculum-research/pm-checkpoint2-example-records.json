@@ -1,0 +1,84 @@
+{
+  "schemaVersion": "1.1.0",
+  "dataset": {
+    "name": "pm-checkpoint2-example-records",
+    "description": "Two complete teaching-example records (one per textbook track) delivered for PM checkpoint 2, including the CORRECTED bilingual bridge example (शाळा is Marathi; Hindi for school is विद्यालय). These records conform to curriculum.schema.json v1.1.0 and are appended to the main example bank only after PM review.",
+    "generatedOn": "2026-10-31",
+    "generatedBy": "Z.ai Curriculum Agent (Sprint 1, checkpoint 2)",
+    "textbookTrack": null
+  },
+  "examples": [
+    {
+      "exampleId": "tje-134",
+      "textbookId": "ENGLISH_BALBHARATI_G01",
+      "chapterRef": "1.1",
+      "curriculumIdRef": "bal-g01-u1-c1.01",
+      "learnerState": "BEGINNER_HINDI",
+      "stage": "CORRECT",
+      "studentSays": "शाळा!",
+      "studentLanguage": "mr",
+      "missJulieTurns": [
+        {
+          "text": "Very good! You said शाळा — that is Marathi, and it is a beautiful word for it.",
+          "language": "en",
+          "ttsNote": "Warm acceptance; do not flag as an error."
+        },
+        {
+          "text": "Marathi madhye mhaṇatat शाळा; Hindi mein vidyalay kehte hain. Aur English mein — school. Can you say school?",
+          "language": "hi-en",
+          "ttsNote": "The PM bridge pattern (accept → attribute each home language CORRECTLY → request). The turn names both home languages; शाळा is explicitly attributed to Marathi per the checkpoint-2 correction."
+        },
+        {
+          "text": "School! Shabash. Tomorrow when you come in, tell me one thing you see at school.",
+          "language": "hi-en"
+        }
+      ],
+      "intent": "Accept the home-language answer, attribute it to the CORRECT home language, then request the English word. Corrects the checkpoint-1 draft where शाळा was mislabelled as Hindi.",
+      "masteryCheck": "INDEPENDENT_ANSWERING: later in the same session Miss Julie points at the school picture and asks 'What is this?' with no model — 'school' must come without the bridge. DELAYED_RECALL: the tomorrow line above checks it survives overnight.",
+      "review": {
+        "status": "REVIEWED_SYLLABUS_ALIGNED",
+        "reviewedBy": "Z.ai Curriculum Agent (syllabus alignment only)",
+        "reviewedOn": "2026-10-31",
+        "note": "Syllabus alignment verified against the official PDF word bank (printed p.1). This is NOT teacher approval; pedagogyStatus remains DRAFT_PENDING_TEACHER_REVIEW."
+      }
+    },
+    {
+      "exampleId": "tje-135",
+      "textbookId": "MY_ENGLISH_BOOK_G01_NON_ENGLISH_MEDIUM",
+      "chapterRef": "1.2",
+      "curriculumIdRef": "meb-g01-u1-c1.02",
+      "learnerState": "BEGINNER_MARATHI",
+      "stage": "ASK",
+      "studentSays": "माझं नाव सलमा.",
+      "studentLanguage": "mr",
+      "missJulieTurns": [
+        {
+          "text": "छान, Salman-कडून सुरुवात! माझं नाव — in English: My name is…",
+          "language": "mr-en",
+          "ttsNote": "Marathi-first acceptance, then the English frame. Non-English-medium track: Marathi is the bridge, never a failure."
+        },
+        {
+          "text": "My name is Salma. Your turn — say the whole line!",
+          "language": "en"
+        },
+        {
+          "text": "Wonderful! Now YOU ask me — What is your name?",
+          "language": "en"
+        },
+        {
+          "text": "(after the child asks) My name is Miss Julie. Glad to meet you, Salma!",
+          "language": "en",
+          "ttsNote": "Teacher deliberately becomes the answerer so the child practises the QUESTION too."
+        }
+      ],
+      "intent": "On the non-English-medium track, accept the Marathi answer, hand over the English frame, and reverse roles so the child produces the question — the book's own chain-drill pattern (For the Teacher note, printed p.2).",
+      "masteryCheck": "INDEPENDENT_ANSWERING: a peer-pair exchange with no teacher model in which the child both asks 'What is your name?' and answers it. DELAYED_RECALL: next session's attendance game — child answers the roll with 'My name is ___' unprompted.",
+      "review": {
+        "status": "REVIEWED_SYLLABUS_ALIGNED",
+        "reviewedBy": "Z.ai Curriculum Agent (syllabus alignment only)",
+        "reviewedOn": "2026-10-31",
+        "note": "Frame and activity verified against My English Book printed p.2 (I am Jaya. / My name is Kiran.; chain drill). NOT teacher approval; pedagogyStatus remains DRAFT_PENDING_TEACHER_REVIEW."
+      }
+    }
+  ]
+}
