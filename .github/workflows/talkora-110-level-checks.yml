@@ -29,6 +29,9 @@ jobs:
         working-directory: client
       - run: pnpm build
         working-directory: client
+      - name: Guard development-only classroom preview and static asset
+        run: node --test tests/ui/classroom-preview-production-gate.test.mjs
+        working-directory: client
       - name: Verify stable SSR hydration for student and school authentication
         run: node --test tests/ui/auth-hydration-contract.test.mjs
         working-directory: client
