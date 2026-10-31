@@ -51,7 +51,15 @@ A qualified school teacher with relevant Class 1 English and medium expertise mu
 | Publisher rights and assets | Source metadata and original pedagogy drafts; permissions undecided | Rights clearance or original, licensed alternative assets |
 | Real AI/voice delivery | Python synthetic harness and optional KG cache only | Safe Node bridge, provider parity, real STT/TTS school-lab validation |
 
-## Safe verification
+## Unsigned teacher-review packet and chapter-order risk audit
+
+Run `node curriculum-research/tools/audit-objective-release.mjs --audit` to inspect a **read-only, no-network, no-approval** report. It identifies four source-order-versus-earliest-level review flags in the current feeder plan: Balbharati 1.6→1.7, and My English Book 1.3→1.4, 1.5→1.6, 1.7→1.8. These are **review triggers**, not an automatically corrected teaching schedule: a spiral curriculum might legitimately revisit prior material, but an educator must document the first-teach order.
+
+Run `node curriculum-research/tools/audit-objective-release.mjs --packet > class1-unsigned-review-packet.json` **in a private approved review workspace**, not on a live application path, to create 84 unsigned rows with exact book, edition, chapter and proposed objective addresses. Reviewer, rights, approval, canonical lesson/activity, independent check and school-admin fields are intentionally null. Do not commit completed review sheets containing staff identifiers or student data to a public repository.
+
+The audit report is always `BLOCKED_REQUIRES_EXTERNAL_HUMAN_APPROVAL`. Even if someone hand-edits a JSON flag to say approved, neither this script nor a GitHub CI pass becomes a signed educator decision, a legal license, a school-admin track selection or a student-access grant. School-medium selection and review-signature verification require a separately authorized Node implementation after the #64 release decision.
+
+## Safe verification\n- `node --test curriculum-research/tools/objective-release-audit.test.mjs`
 
 ```sh
 node curriculum-research/tools/validate-curriculum.mjs
