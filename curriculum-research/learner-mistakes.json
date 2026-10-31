@@ -29,7 +29,10 @@
       "likelyCause": "Hindi and Marathi lack a separate /v/-/w/ contrast; both map near [ʋ].",
       "correctionStrategy": "Bite-lip cue: 'Gently touch your teeth to your lip — vvv.' Contrast pairs: van/wan played as a fun game, not a drill.",
       "languageNote": "Do not overcorrect; [ʋ] is fully intelligible in Indian English.",
-      "chapterRefs": ["1.1", "1.2"],
+      "chapterRefs": [
+        "1.1",
+        "1.2"
+      ],
       "severity": "MEDIUM",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -41,7 +44,9 @@
       "likelyCause": "Devanagari ज covers both /j/ and /z/ in many speakers' mapping.",
       "correctionStrategy": "Bee-buzz game: 'Z is the bee's letter — /zzz/ like a bee in your mouth.'",
       "languageNote": "zebra is a 1.5 word bank item.",
-      "chapterRefs": ["1.5"],
+      "chapterRefs": [
+        "1.5"
+      ],
       "severity": "MEDIUM",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -53,7 +58,11 @@
       "likelyCause": "Hindi/Marathi vowel inventories do not split /æ-ɛ-ɪ/ the way English does.",
       "correctionStrategy": "Minimal-pair listening battles with pictures deciding the winner (cat/cot, pen/pin). Never lecture — the ears judge.",
       "languageNote": "Directly targets 1.5's missing-vowel skill; expect improvement through the vowel work itself.",
-      "chapterRefs": ["1.3", "1.4", "1.5"],
+      "chapterRefs": [
+        "1.3",
+        "1.4",
+        "1.5"
+      ],
       "severity": "MEDIUM",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -65,7 +74,10 @@
       "likelyCause": "Many Marathi/Hindi words end in vowels; final stops are weak in the L1 phonology.",
       "correctionStrategy": "Clap-the-tail game: one clap for the head, one snap for the tail sound — 'skoo-L!'",
       "languageNote": "school is a core 1.1 word; practise in the chant, not in isolation.",
-      "chapterRefs": ["1.1", "1.4"],
+      "chapterRefs": [
+        "1.1",
+        "1.4"
+      ],
       "severity": "MEDIUM",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -77,7 +89,10 @@
       "likelyCause": "L1 syllable structure resists /st-, sk-/ onsets.",
       "correctionStrategy": "Whisper-then-say: whisper 'sss-tamp' smoothly (whispering removes the extra vowel), then say it.",
       "languageNote": "Whisper trick works well with young children.",
-      "chapterRefs": ["1.2", "1.4"],
+      "chapterRefs": [
+        "1.2",
+        "1.4"
+      ],
       "severity": "MEDIUM",
       "reviewStatus": "UNREVIEWED_SYNTHETIC_CANDIDATE"
     },
@@ -89,7 +104,9 @@
       "likelyCause": "Dental fricatives /θ, ð/ do not exist in Hindi or Marathi.",
       "correctionStrategy": "Accept meaning always; once per session model the tongue-between-teeth cue playfully ('peek-a-boo tongue'). Never block a polite moment for phonetics.",
       "languageNote": "Indian English widely uses /t, d/ for 'th' — this is a low-priority polish item.",
-      "chapterRefs": ["1.7"],
+      "chapterRefs": [
+        "1.7"
+      ],
       "severity": "LOW",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -101,7 +118,11 @@
       "likelyCause": "Hindi उ (/ʊ/) is the nearest vowel; /ʌ/ is absent.",
       "correctionStrategy": "Mouth-mirror: 'Open like a tiny crocodile — /ʌ/!' Contrast up/oop with the timeline picture (sun up vs balloon up).",
       "languageNote": "get up, up us are 1.4/1.10 items.",
-      "chapterRefs": ["1.1", "1.4", "1.10"],
+      "chapterRefs": [
+        "1.1",
+        "1.4",
+        "1.10"
+      ],
       "severity": "MEDIUM",
       "reviewStatus": "UNREVIEWED_SYNTHETIC_CANDIDATE"
     },
@@ -113,7 +134,10 @@
       "likelyCause": "Letter names were learned first (1.3 teaches names AND sounds); child defaults to names.",
       "correctionStrategy": "Sound-box tapping: /m/ /a/ /n/ one tap each, then slide together. 'Letters are singers — they sing their sounds!'",
       "languageNote": "Anticipated directly by 1.3→1.4 sequencing in the textbook.",
-      "chapterRefs": ["1.3", "1.4"],
+      "chapterRefs": [
+        "1.3",
+        "1.4"
+      ],
       "severity": "HIGH",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -125,7 +149,9 @@
       "likelyCause": "Any vowel seems fillable; meaning is not yet driving the check.",
       "correctionStrategy": "Picture referee: say both candidate words aloud with their pictures; the picture picks the winner.",
       "languageNote": "Directly the 1.5 exercise (s__n, c__t, f__sh, __gg, __wl).",
-      "chapterRefs": ["1.5"],
+      "chapterRefs": [
+        "1.5"
+      ],
       "severity": "MEDIUM",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -137,7 +163,11 @@
       "likelyCause": "Hindi and Marathi have no articles; bare nouns are grammatical in L1.",
       "correctionStrategy": "One-word bridge: echo back with just the article highlighted — 'a DOG! yes!' — never a rule speech.",
       "languageNote": "Articles are taught in 1.6 ('Let us know' a/an/the).",
-      "chapterRefs": ["1.6", "1.8", "1.10"],
+      "chapterRefs": [
+        "1.6",
+        "1.8",
+        "1.10"
+      ],
       "severity": "HIGH",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -149,7 +179,9 @@
       "likelyCause": "Rule remembered as 'vowel letter' not 'vowel sound', or not remembered at all.",
       "correctionStrategy": "First-sound test: say the word's beginning — /a/… /a-pple — special sound! So: an apple.",
       "languageNote": "The book's own framing: 'an' for singular common noun beginning with vowels a, e, i, o, u.",
-      "chapterRefs": ["1.6"],
+      "chapterRefs": [
+        "1.6"
+      ],
       "severity": "HIGH",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -161,7 +193,9 @@
       "likelyCause": "Unique-thing concept not yet formed in English; L1 uses demonstratives differently.",
       "correctionStrategy": "Boss-'the' story: only-one things (the sun, the sky, the Ganga, the Earth) wear the boss crown. Sort pictures into boss vs friends.",
       "languageNote": "Book's exercise pairs: box, elephant, boy, apple, pen, Ganga, star, inkpot, umpire, octopus, Mars, hill.",
-      "chapterRefs": ["1.6"],
+      "chapterRefs": [
+        "1.6"
+      ],
       "severity": "MEDIUM",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -173,7 +207,10 @@
       "likelyCause": "Hindi/Marathi zero-copula in present tense ('मैं खुश हूँ' keeps हूँ, but 'यह बड़ा है'-style ambiguity plus general dropping in child speech).",
       "correctionStrategy": "Heartbeat 'am': 'Every I-sentence has a heartbeat word — I AM happy.' Tap chest while saying it.",
       "languageNote": "Key 1.8 pattern 'I am ___' is the natural fix vehicle.",
-      "chapterRefs": ["1.8", "1.10"],
+      "chapterRefs": [
+        "1.8",
+        "1.10"
+      ],
       "severity": "HIGH",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -185,7 +222,9 @@
       "likelyCause": "L1 numerals don't trigger plural marking.",
       "correctionStrategy": "Echo with emphasis: 'Two BELLSSS — two friends ringing together!' Count-with-fingers plus -s stretch.",
       "languageNote": "Low priority at this stage; numbers appear in 1.2 (one-five).",
-      "chapterRefs": ["1.2"],
+      "chapterRefs": [
+        "1.2"
+      ],
       "severity": "LOW",
       "reviewStatus": "UNREVIEWED_SYNTHETIC_CANDIDATE"
     },
@@ -197,7 +236,10 @@
       "likelyCause": "Devanagari has no case distinction; the concept is new.",
       "correctionStrategy": "Capital-hat ritual: special names (people, cities, days) wear hats. Put a paper hat on the written name before rewriting it.",
       "languageNote": "Directly asked by 1.8 ('Why do we use capital letters at the beginning of special names?').",
-      "chapterRefs": ["1.8", "1.9"],
+      "chapterRefs": [
+        "1.8",
+        "1.9"
+      ],
       "severity": "MEDIUM",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -209,7 +251,9 @@
       "likelyCause": "Emergent writing stage; punctuation is not yet meaningful.",
       "correctionStrategy": "Sentence train: capital = engine, full stop = station. 'Where does your sentence train stop?'",
       "languageNote": "Keep gentle — speech is the primary channel in Class 1; writing is emerging.",
-      "chapterRefs": ["1.9"],
+      "chapterRefs": [
+        "1.9"
+      ],
       "severity": "LOW",
       "reviewStatus": "UNREVIEWED_SYNTHETIC_CANDIDATE"
     },
@@ -221,7 +265,11 @@
       "likelyCause": "Vocabulary gap; L1 is the thinking language.",
       "correctionStrategy": "Harvest-and-bridge: answer the need, give the English word once, resume in English. Hindi is a bridge, never a fault.",
       "languageNote": "Matches the assignment's own model exchange pattern (Hindi word → English word → say it).",
-      "chapterRefs": ["1.1", "1.2", "1.4"],
+      "chapterRefs": [
+        "1.1",
+        "1.2",
+        "1.4"
+      ],
       "severity": "LOW",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -233,19 +281,24 @@
       "likelyCause": "Vocabulary gap; honesty strategy for not knowing.",
       "correctionStrategy": "Honour the honesty, then shrink the question: 'Let us find out together — is it this one or this one?'",
       "languageNote": "मला माहीत नाही = I don't know — a healthy thing to say; teach 'I don't know' as its English twin.",
-      "chapterRefs": ["1.3", "1.6"],
+      "chapterRefs": [
+        "1.3",
+        "1.6"
+      ],
       "severity": "LOW",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
     {
       "mistakeId": "mist-019",
-      "category": "L1_TRANSFER_HINDI",
-      "pattern": "Answers with the L1 object word instead of the English one (सेब for apple; शाळा for school)",
+      "category": "L1_TRANSFER_MARATHI",
+      "pattern": "Answers with the L1 object word instead of the English one (सेब/seb for apple — Hindi; शाळा for school — Marathi; example utterance uses the Marathi word)",
       "exampleUtterance": "शाळा!",
       "likelyCause": "The concept is stored under its L1 label.",
-      "correctionStrategy": "The PM's model move: 'Very good! Hindi mein शाळा. English mein school. Can you say school?' — accept, translate, request.",
-      "languageNote": "This is the canonical Talkora bridge exchange; treat as success, not error.",
-      "chapterRefs": ["1.1"],
+      "correctionStrategy": "The PM's model move, corrected for language attribution: 'Very good! Marathi madhye शाळा, Hindi mein vidyalay — and in English, school. Can you say school?' — accept, name the home language CORRECTLY (शाळा is Marathi only), then request the English word.",
+      "languageNote": "PM checkpoint-2 correction: an earlier draft said 'Hindi mein शाळा', but शाळा is Marathi. Hindi for school is विद्यालय / पाठशाला / स्कूल. The bridge pattern itself (accept, translate, request) is unchanged.",
+      "chapterRefs": [
+        "1.1"
+      ],
       "severity": "LOW",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -257,7 +310,9 @@
       "likelyCause": "One respectful greeting serves all situations in L1.",
       "correctionStrategy": "Register game: elder cards get Namaste, friend cards get Hello/Hi. Both are polite — the game teaches choice, not correction.",
       "languageNote": "The book itself pairs Hello (friends) with Namaste (elders) in 1.7.",
-      "chapterRefs": ["1.7"],
+      "chapterRefs": [
+        "1.7"
+      ],
       "severity": "LOW",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -269,7 +324,10 @@
       "likelyCause": "Emotional attachment to kin terms; English labels feel distant.",
       "correctionStrategy": "Both-names rule: 'At home she is आई, in English class she is mother — your mother has two beautiful names.' Never force replacement.",
       "languageNote": "The book models exactly this with Aaji/Ajoba sitting inside an English dialogue.",
-      "chapterRefs": ["1.7", "1.9"],
+      "chapterRefs": [
+        "1.7",
+        "1.9"
+      ],
       "severity": "LOW",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -281,7 +339,9 @@
       "likelyCause": "All four map to one L1 motion concept at this age.",
       "correctionStrategy": "Body-first disambiguation: do the action, then name it; reversed check (Miss Julie acts silently, child names).",
       "languageNote": "1.1 word bank contains all four; the poem is the natural drilling ground.",
-      "chapterRefs": ["1.1"],
+      "chapterRefs": [
+        "1.1"
+      ],
       "severity": "MEDIUM",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -293,7 +353,10 @@
       "likelyCause": "Near-homophone; green is more frequent in child input.",
       "correctionStrategy": "Mouth-cue + contrast: grin = happy teeth show; green = colour of leaves. Two pictures, two words, quick fire.",
       "languageNote": "Both are Unit One words (grin in 1.1, green in 1.6) — a designed contrast pair.",
-      "chapterRefs": ["1.1", "1.6"],
+      "chapterRefs": [
+        "1.1",
+        "1.6"
+      ],
       "severity": "MEDIUM",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -305,7 +368,9 @@
       "likelyCause": "One strong word dominates; discrimination not yet built.",
       "correctionStrategy": "Colour-hunt with objects: touch something blue, something yellow — the world decides the word.",
       "languageNote": "1.6 gives seven bands; teach 3 first, grow the set.",
-      "chapterRefs": ["1.6"],
+      "chapterRefs": [
+        "1.6"
+      ],
       "severity": "LOW",
       "reviewStatus": "UNREVIEWED_SYNTHETIC_CANDIDATE"
     },
@@ -317,7 +382,9 @@
       "likelyCause": "Irregular plural of tooth unknown; singular/plural mapping incomplete.",
       "correctionStrategy": "Smile-mirror: 'How many teeth do you see? Many! Teeth — the team word.' One exposure per session; irregulars settle slowly.",
       "languageNote": "teeth is a Help Box word in 1.10.",
-      "chapterRefs": ["1.10"],
+      "chapterRefs": [
+        "1.10"
+      ],
       "severity": "LOW",
       "reviewStatus": "UNREVIEWED_SYNTHETIC_CANDIDATE"
     },
@@ -329,7 +396,10 @@
       "likelyCause": "Mirror-image confusion is developmentally normal at ages 5-6.",
       "correctionStrategy": "Belly cue: b has its belly on the right, d on the left. Trace while saying. Expect natural resolution; do not stress.",
       "languageNote": "Letter shapes arise in 1.3-1.4 word building.",
-      "chapterRefs": ["1.3", "1.4"],
+      "chapterRefs": [
+        "1.3",
+        "1.4"
+      ],
       "severity": "MEDIUM",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -341,7 +411,10 @@
       "likelyCause": "Consonant clusters are hard to segment in L1 phonology.",
       "correctionStrategy": "Stretched-words: 's-t-amp… stamp!' Tap per sound. Blend ladders (go → sto → stop) as a game.",
       "languageNote": "st- and gr- appear in 1.1/1.2 word banks.",
-      "chapterRefs": ["1.1", "1.2"],
+      "chapterRefs": [
+        "1.1",
+        "1.2"
+      ],
       "severity": "MEDIUM",
       "reviewStatus": "UNREVIEWED_SYNTHETIC_CANDIDATE"
     },
@@ -353,7 +426,9 @@
       "likelyCause": "One/two are high-frequency irregular spellings; blending backfires.",
       "correctionStrategy": "Sight-word friends: these words are memorised as faces, not decoded. Flash-card faces with actions.",
       "languageNote": "Number words enter via 1.2 actions.",
-      "chapterRefs": ["1.2"],
+      "chapterRefs": [
+        "1.2"
+      ],
       "severity": "MEDIUM",
       "reviewStatus": "UNREVIEWED_SYNTHETIC_CANDIDATE"
     },
@@ -365,7 +440,12 @@
       "likelyCause": "New interface, new language, shared-lab visibility; affective filter high.",
       "correctionStrategy": "Channel ladder: action → point → whisper → voice. Any channel counts as an answer; praise the step, not the volume.",
       "languageNote": "The SILENT learner path across all chapters implements this ladder.",
-      "chapterRefs": ["1.1", "1.2", "1.7", "1.9"],
+      "chapterRefs": [
+        "1.1",
+        "1.2",
+        "1.7",
+        "1.9"
+      ],
       "severity": "HIGH",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -377,7 +457,12 @@
       "likelyCause": "Guessing has previously been rewarded by chance, or the task feels unbounded.",
       "correctionStrategy": "Shrink the field: two choices with visible referents; require a look-listen-decide beat before every answer.",
       "languageNote": "GUESSING_REPEATEDLY path in every chapter implements two-choice re-anchoring.",
-      "chapterRefs": ["1.1", "1.5", "1.6", "1.10"],
+      "chapterRefs": [
+        "1.1",
+        "1.5",
+        "1.6",
+        "1.10"
+      ],
       "severity": "HIGH",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -389,7 +474,11 @@
       "likelyCause": "Production cost of sentences is high; one word feels sufficient.",
       "correctionStrategy": "Two-word ladder: accept the word, offer the frame with a gap — 'I go to ___.' Fill-in-together, then solo.",
       "languageNote": "Pattern completion, not demand: the frame does half the work.",
-      "chapterRefs": ["1.1", "1.8", "1.10"],
+      "chapterRefs": [
+        "1.1",
+        "1.8",
+        "1.10"
+      ],
       "severity": "MEDIUM",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -401,7 +490,11 @@
       "likelyCause": "Echo is a low-cost strategy that mimics success.",
       "correctionStrategy": "VERIFY stage discipline: reverse the direction (act→word, picture→word, new-listener retell). Mastery only after an independent use.",
       "languageNote": "This is why Miss Julie never declares mastery on a first correct answer (assignment requirement).",
-      "chapterRefs": ["1.1", "1.4", "1.7"],
+      "chapterRefs": [
+        "1.1",
+        "1.4",
+        "1.7"
+      ],
       "severity": "HIGH",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -413,7 +506,11 @@
       "likelyCause": "Shyness; unclear mic expectations in shared labs.",
       "correctionStrategy": "Big-voice game: 'Talk to the rainbow!' — imagine the mic is a friend far away. Practise loud-soft switches for fun first.",
       "languageNote": "Backend hint: retry prompt should model the target volume, not just re-ask.",
-      "chapterRefs": ["1.1", "1.2", "1.9"],
+      "chapterRefs": [
+        "1.1",
+        "1.2",
+        "1.9"
+      ],
       "severity": "MEDIUM",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -425,7 +522,10 @@
       "likelyCause": "Excitement; L1 rhythm transferred to English.",
       "correctionStrategy": "Turtle-race: 'Turtle words win today — slow and proud.' Clap per word while saying.",
       "languageNote": "Also helps ASR accuracy materially.",
-      "chapterRefs": ["1.8", "1.10"],
+      "chapterRefs": [
+        "1.8",
+        "1.10"
+      ],
       "severity": "MEDIUM",
       "reviewStatus": "UNREVIEWED_SYNTHETIC_CANDIDATE"
     },
@@ -437,7 +537,11 @@
       "likelyCause": "Social politeness; fear of appearing lost.",
       "correctionStrategy": "Do-don't-say checks: comprehension is verified by actions ('Show me!') not by yes/no. No shame — the action IS the fun.",
       "languageNote": "Book's Activity Time (1.9 cap folding) is a natural do-check environment.",
-      "chapterRefs": ["1.2", "1.9", "1.10"],
+      "chapterRefs": [
+        "1.2",
+        "1.9",
+        "1.10"
+      ],
       "severity": "HIGH",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -449,7 +553,10 @@
       "likelyCause": "Hindi grammatical gender (माँ = feminine but verb agreement differs in structure); pronoun mapping is not one-to-one.",
       "correctionStrategy": "Anchor pairs with photos: 'Mother — she. Father — he.' Picture-tap game she/he, two rounds only per session.",
       "languageNote": "Low priority inside Unit One (pronouns not formally taught); fix in passing, never as the lesson focus.",
-      "chapterRefs": ["1.7", "1.9"],
+      "chapterRefs": [
+        "1.7",
+        "1.9"
+      ],
       "severity": "LOW",
       "reviewStatus": "UNREVIEWED_SYNTHETIC_CANDIDATE"
     },
@@ -461,7 +568,10 @@
       "likelyCause": "Group excitement; lab setting removes natural turn cues.",
       "correctionStrategy": "Listening-ears ritual: finger on ear, count two heartbeats, THEN answer. Make the wait a game, not a rule.",
       "languageNote": "Book's outcome mapping includes 'waits for his/her turn to speak' (learning outcome 9.3).",
-      "chapterRefs": ["1.1", "1.8"],
+      "chapterRefs": [
+        "1.1",
+        "1.8"
+      ],
       "severity": "LOW",
       "reviewStatus": "REVIEWED_SYLLABUS_ALIGNED"
     },
@@ -473,7 +583,9 @@
       "likelyCause": "L1 question formation (क्या तुम्हारा नाम…? / तुझं नाव काय?) maps differently.",
       "correctionStrategy": "Question melody: sing the English question with a rising end — 'What is your naaame?' Melody carries the order better than a rule.",
       "languageNote": "1.8's question is a core outcome; melody-first, analysis never.",
-      "chapterRefs": ["1.8"],
+      "chapterRefs": [
+        "1.8"
+      ],
       "severity": "MEDIUM",
       "reviewStatus": "UNREVIEWED_SYNTHETIC_CANDIDATE"
     }

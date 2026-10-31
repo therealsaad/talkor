@@ -1,20 +1,23 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "talkora/curriculum.schema.json",
-  "title": "Talkora Curriculum Intelligence Schema (Sprint 1)",
-  "description": "Machine-readable contract for Balbharati-derived curriculum datasets. TypeScript-compatible: every object maps 1:1 to an interface in handoff-to-codex.md. Schema changes must be coordinated with the Project Manager before contracts are finalized.",
+  "title": "Talkora Curriculum Intelligence Schema (Sprint 1, revised)",
+  "description": "Machine-readable contract for Talkora curriculum datasets across BOTH official Maharashtra Std 1 English textbooks (dual-track decision, PM checkpoint 1): English Balbharati Grade One (English-medium track) and My English Book Grade One (non-English-medium track). TypeScript-compatible: every object maps 1:1 to an interface in handoff-to-codex.md. REVISION 1.1.0 decisions (PM, 2026-10-31): explicit textbook discriminator; curriculum-version metadata preserved; syllabus-verification and pedagogy-review statuses kept distinct; DRAFT_PENDING_TEACHER_REVIEW is the mandatory initial pedagogy status; audioAsset optional; namespaced curriculum entry IDs (bal-/meb-) requiring no database migration because IDs are only consumed by new additive lookups; chapter-to-level mapping remains PROPOSED_MAPPING_PENDING_PM_APPROVAL. Schema changes must be coordinated with the Project Manager before contracts are finalized.",
   "type": "object",
   "required": ["schemaVersion", "dataset", "entries"],
   "properties": {
-    "schemaVersion": { "type": "string", "const": "1.0.0" },
+    "schemaVersion": { "type": "string", "const": "1.1.0" },
     "dataset": {
       "type": "object",
-      "required": ["name", "generatedOn", "generatedBy", "editionVerification"],
+      "required": ["name", "generatedOn", "generatedBy", "textbookTrack", "textbookEdition", "curriculumVersion", "editionVerification"],
       "properties": {
         "name": { "type": "string" },
         "description": { "type": "string" },
         "generatedOn": { "type": "string", "format": "date" },
         "generatedBy": { "type": "string" },
+        "textbookTrack": { "$ref": "#/$defs/textbookTrack" },
+        "textbookEdition": { "$ref": "#/$defs/editionVerification" },
+        "curriculumVersion": { "$ref": "#/$defs/curriculumVersion" },
         "editionVerification": { "$ref": "#/$defs/editionVerification" },
         "comparisonWithTalkoraCurrent": {
           "type": "object",
@@ -31,6 +34,38 @@
     "entries": { "type": "array", "items": { "$ref": "#/$defs/curriculumEntry" } }
   },
   "$defs": {
+    "textbookTrack": {
+      "type": "object",
+      "description": "PM decision: Talkora supports BOTH official Std 1 English textbooks as separately identified curriculum tracks. School/admin configuration selects the applicable textbook; students never choose their curriculum or difficulty.",
+      "required": ["textbookId", "trackType", "selectionModel"],
+      "properties": {
+        "textbookId": {
+          "type": "string",
+          "enum": ["ENGLISH_BALBHARATI_G01", "MY_ENGLISH_BOOK_G01_NON_ENGLISH_MEDIUM"],
+          "description": "Stable discriminator. Existing canonical level IDs (g01-l01 …) and the existing English Balbharati implementation are unchanged; textbookId namespaces datasets, never runtime level IDs."
+        },
+        "trackType": {
+          "type": "string",
+          "enum": ["ENGLISH_MEDIUM", "NON_ENGLISH_MEDIUM"]
+        },
+        "selectionModel": {
+          "type": "string",
+          "description": "Must state that school/admin configuration selects the track and students do not choose curriculum or difficulty."
+        }
+      }
+    },
+    "curriculumVersion": {
+      "type": "object",
+      "description": "Curriculum-framework metadata preserved alongside the textbook edition so edition drift and framework drift are independently detectable.",
+      "required": ["framework", "policyBasis", "coordinationCommitteeApprovalDate", "academicYearOfFirstUse", "verificationAuthority"],
+      "properties": {
+        "framework": { "type": "string", "description": "e.g. 'Foundational Stage Curriculum 2024 (SCF Maharashtra)'" },
+        "policyBasis": { "type": "string", "description": "e.g. 'National Education Policy (NEP) 2020'" },
+        "coordinationCommitteeApprovalDate": { "type": "string", "format": "date" },
+        "academicYearOfFirstUse": { "type": "string" },
+        "verificationAuthority": { "type": "string", "description": "e.g. 'SCERT Maharashtra, Pune-30 (stated on the book's title page)'" }
+      }
+    },
     "editionVerification": {
       "type": "object",
       "required": ["title", "publisher", "editionYear", "sourceUrl", "verifiedOn", "confidence"],
@@ -58,24 +93,43 @@
           "type": "string",
           "enum": ["OFFICIAL_TEXTBOOK_PDF", "OFFICIAL_EBOOK_LIBRARY", "TALKORA_SOURCE_CODE", "TEACHER_HANDBOOK", "WORKBOOK", "SECONDARY_SOURCE", "OPEN_EDUCATIONAL_DATASET"]
         },
-        "locator": { "type": "string", "description": "Precise locator, e.g. 'English Balbharati Grade One (2025), printed p.5, chapter 1.4'." },
+        "locator": { "type": "string", "description": "Precise locator, e.g. 'My English Book Grade One (2025), printed p.5, chapter 1.5'." },
         "url": { "type": "string", "format": "uri" },
         "verifiedOn": { "type": "string", "format": "date" },
         "confidence": { "$ref": "#/$defs/confidence" },
         "note": { "type": "string" }
       }
     },
+    "audioAsset": {
+      "type": "object",
+      "description": "OPTIONAL per PM checkpoint 1. The official books carry QR audio, but rights are undecided; datasets must never claim an audio asset exists.",
+      "required": ["status"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["MISSING", "RIGHTS_UNDECIDED", "REQUESTED", "APPROVED"],
+          "description": "MISSING or RIGHTS_UNDECIDED until Balbharati authorization is documented; APPROVED requires a permission reference."
+        },
+        "officialQrRef": { "type": "string", "description": "Locator of the in-book QR code the asset would complement." },
+        "note": { "type": "string" }
+      }
+    },
     "curriculumEntry": {
       "type": "object",
       "required": [
-        "curriculumId", "board", "grade", "subject", "textbookEdition", "unit", "chapter",
+        "curriculumId", "textbookId", "board", "grade", "subject", "textbookEdition", "unit", "chapter",
         "lesson", "sourceReferences", "learningObjectives", "review"
       ],
       "properties": {
         "curriculumId": {
           "type": "string",
-          "pattern": "^bal-g01-u[1-4]-c[1-4]\\.[0-9]{2}$",
-          "description": "Stable Balbharati address: bal-g<grade 2-digit>-u<unit>-c<unit>.<chapter-in-unit, zero-padded to 2>. Derivation from chapter.code: code 1.N maps to suffix c1.<pad(N,2)> (printed 1.1 → c1.01; printed 1.10 → c1.10)."
+          "pattern": "^(bal|meb)-g01-u[1-4]-c[1-4]\\.[0-9]{2}$",
+          "description": "Namespaced stable address (no database migration required: IDs are additive and no existing ID is reused or changed). Prefix encodes the textbook: bal- = English Balbharati; meb- = My English Book. Suffix derivation unchanged: printed unit.chapter code N.M maps to c<N>.<pad(M,2)> (printed 1.1 → c1.01; printed 1.11 → c1.11). Chapter codes are unique WITHIN a textbook only — cross-textbook disambiguation is via the textbookId discriminator and the ID prefix."
+        },
+        "textbookId": {
+          "type": "string",
+          "enum": ["ENGLISH_BALBHARATI_G01", "MY_ENGLISH_BOOK_G01_NON_ENGLISH_MEDIUM"],
+          "description": "Required per-entry discriminator; must match dataset.textbookTrack.textbookId and the curriculumId prefix (bal ↔ ENGLISH_BALBHARATI_G01, meb ↔ MY_ENGLISH_BOOK_G01_NON_ENGLISH_MEDIUM)."
         },
         "board": { "type": "string", "const": "Maharashtra State Board (Balbharati)" },
         "grade": { "type": "integer", "const": 1 },
@@ -94,7 +148,7 @@
           "type": "object",
           "required": ["code", "title", "printedPage", "contentCategory", "copyrightStatus"],
           "properties": {
-            "code": { "type": "string", "pattern": "^1\\.(?:[1-9]|10)$", "description": "Chapter number exactly as printed in the Contents (1.1 … 1.10)." },
+            "code": { "type": "string", "pattern": "^1\\.[0-9]{1,2}$", "description": "Chapter number exactly as printed in the Contents (1.1 … 1.10 for English Balbharati Unit One; 1.1 … 1.11 for My English Book Unit One). Per-track bounds are enforced by the validator." },
             "title": { "type": "string", "description": "Chapter title exactly as printed in the Contents." },
             "printedPage": { "type": "integer", "minimum": 1 },
             "contentCategory": {
@@ -102,8 +156,10 @@
               "enum": [
                 "POEM", "ACTION_RHYME", "ALPHABET_PRACTICE", "WORD_FAMILIES", "VOWELS_INTRODUCTION",
                 "COLOURS_POEM", "FAMILY_DIALOGUE", "SELF_INTRODUCTION", "NAME_POEM", "DAILY_ROUTINE",
-                "ACTIVITY_TIME", "OTHER"
-              ]
+                "ACTIVITY_TIME", "PICTURE_TALK", "PHONICS_SOUNDS", "GREETINGS_DIALOGUE",
+                "ABILITY_GAME", "PICTURE_STORY", "OTHER"
+              ],
+              "description": "PICTURE_TALK / PHONICS_SOUNDS / GREETINGS_DIALOGUE / ABILITY_GAME / PICTURE_STORY added in v1.1.0 for My English Book's oral-first chapter types; original values unchanged."
             },
             "copyrightStatus": {
               "type": "object",
@@ -113,8 +169,9 @@
                   "type": "string",
                   "enum": [
                     "BALBHARATI_ALL_RIGHTS_RESERVED", "THIRD_PARTY_LICENSED_CREDITED_IN_BOOK",
-                    "UNKNOWN"
-                  ]
+                    "THIRD_PARTY_PERMISSION_AWAITED", "UNKNOWN"
+                  ],
+                  "description": "THIRD_PARTY_PERMISSION_AWAITED added in v1.1.0: the official contents page of both 2025 books states 'Some permission are awaited. Acknowledgement to them will be made in subsequent reprint.'"
                 },
                 "creditNote": { "type": "string" },
                 "reproductionRule": {
@@ -136,8 +193,13 @@
                 "type": "object",
                 "required": ["talkoraLevelId", "roadmapTitle", "status"],
                 "properties": {
-                  "talkoraLevelId": { "type": "string", "pattern": "^g01-l(0[1-9]|10)$", "description": "Address from backend/src/curriculum/level-map-contract.ts roadmap." },
+                  "talkoraLevelId": { "type": "string", "pattern": "^g01-l(0[1-9]|10)$", "description": "Canonical level address from backend/src/curriculum/level-map-contract.ts. UNCHANGED by the dual-track decision; both tracks map onto the same ten canonical levels." },
                   "roadmapTitle": { "type": "string", "description": "Exact title from roadmap.ts, echoed for drift detection." },
+                  "role": {
+                    "type": "string",
+                    "enum": ["INTRODUCES", "CONSOLIDATES", "REVISITS"],
+                    "description": "Added in v1.1.0 for the ordered coverage matrix: a chapter may introduce an objective early (oral/TPR) and a later level consolidates it, so no objective appears only at a late level and no level is skipped."
+                  },
                   "status": { "type": "string", "enum": ["PROPOSED_MAPPING_PENDING_PM_APPROVAL", "APPROVED_BY_PM"] }
                 }
               }
@@ -154,13 +216,14 @@
             "required": ["en", "hi", "mr", "origin"],
             "properties": {
               "en": { "type": "string" },
-              "hi": { "type": "string", "description": "Hindi support gloss (Devanagari), written by Talkora — not from the textbook." },
+              "hi": { "type": "string", "description": "Hindi support gloss (Devanagari), written by Talkora — not from the textbook. Terminology discipline (PM correction): school = Hindi विद्यालय/पाठशाला; शाळा is Marathi ONLY." },
               "mr": { "type": "string", "description": "Marathi support gloss (Devanagari), written by Talkora — not from the textbook." },
               "origin": {
                 "type": "string",
                 "enum": ["TEXTBOOK_WORD_BANK", "DIALOGUE_DERIVED", "PICTURE_PROMPT_DERIVED", "TEACHER_ENRICHMENT"]
               },
-              "sourceRef": { "type": "string", "description": "e.g. '1.1 Look and say, printed p.1'." }
+              "sourceRef": { "type": "string", "description": "e.g. '1.1 Look and say, printed p.1'." },
+              "audioAsset": { "$ref": "#/$defs/audioAsset" }
             }
           }
         },
@@ -172,7 +235,7 @@
             "required": ["concept", "childFriendlyFraming"],
             "properties": {
               "concept": { "type": "string" },
-              "childFriendlyFraming": { "type": "string" }
+              "childFriendlyFraming": { "type": "string", "description": "Child-appropriate AND accurate. Articles rule (PM correction): 'an' goes before vowel SOUNDS (not letters) — an elephant, an egg; 'a' before consonant sounds — a box; 'the' for the one we all know — the sun, the sky. No written-language exceptions at Grade 1." }
             }
           }
         },
@@ -205,6 +268,19 @@
         "hindiExplanations": { "type": "array", "items": { "type": "string" } },
         "marathiExplanations": { "type": "array", "items": { "type": "string" } },
         "expectedStudentAnswers": { "type": "array", "items": { "type": "string" } },
+        "recallDesign": {
+          "type": "array",
+          "description": "Added in v1.1.0 (PM correction): every entry must distinguish three memory milestones — IMMEDIATE_REPETITION (child repeats right after Miss Julie), INDEPENDENT_ANSWERING (child answers a fresh prompt in the same session with no model), DELAYED_RECALL (child produces the language in a later session, e.g. next day or at home). A child who only repeats has met the first milestone only; mastery indicators below must not be satisfiable by repetition alone.",
+          "minItems": 3,
+          "items": {
+            "type": "object",
+            "required": ["milestone", "activity"],
+            "properties": {
+              "milestone": { "type": "string", "enum": ["IMMEDIATE_REPETITION", "INDEPENDENT_ANSWERING", "DELAYED_RECALL"] },
+              "activity": { "type": "string" }
+            }
+          }
+        },
         "commonBeginnerMistakeIds": {
           "type": "array",
           "description": "References into learner-mistakes.json mistakeId values.",
@@ -233,7 +309,7 @@
         "assessmentCriteria": { "type": "array", "items": { "type": "string" } },
         "masteryIndicators": {
           "type": "array",
-          "description": "Independent-use checks; a correct first answer alone never declares mastery.",
+          "description": "Independent-use checks; a correct first answer alone never declares mastery. Must be satisfiable only at the INDEPENDENT_ANSWERING or DELAYED_RECALL milestone, never by IMMEDIATE_REPETITION.",
           "items": { "type": "string" }
         },
         "revisionActivities": { "type": "array", "items": { "type": "string" } },
@@ -255,6 +331,7 @@
         },
         "review": {
           "type": "object",
+          "description": "The two review axes stay distinct (PM decision): syllabus verification is about source fidelity, pedagogy status is about a human teacher's sign-off. Synthetic example validation NEVER counts as teacher approval.",
           "required": ["syllabusVerification", "pedagogyStatus"],
           "properties": {
             "syllabusVerification": {
@@ -263,7 +340,8 @@
             },
             "pedagogyStatus": {
               "type": "string",
-              "enum": ["DRAFT_PENDING_TEACHER_REVIEW", "REVIEWED_BY_TEACHER"]
+              "enum": ["DRAFT_PENDING_TEACHER_REVIEW", "REVIEWED_BY_TEACHER"],
+              "description": "DRAFT_PENDING_TEACHER_REVIEW is the mandatory initial state; the validator fails any entry claiming teacher approval."
             },
             "notes": { "type": "string" }
           }
@@ -272,11 +350,19 @@
     },
     "teachingExample": {
       "type": "object",
-      "required": ["exampleId", "chapterRef", "learnerState", "stage", "studentSays", "missJulieTurns", "intent", "review"],
+      "required": ["exampleId", "textbookId", "chapterRef", "learnerState", "stage", "studentSays", "missJulieTurns", "intent", "review"],
       "properties": {
-        "exampleId": { "type": "string", "pattern": "^tje-[0-9]{3}$" },
-        "chapterRef": { "type": "string", "pattern": "^1\\.[0-9]{2}$" },
-        "curriculumIdRef": { "type": "string", "pattern": "^bal-g01-u1-c1\\.[0-9]{2}$" },
+        "exampleId": {
+          "type": "string",
+          "pattern": "^tje-[0-9]{3}$",
+          "description": "Globally unique across both tracks (single example bank; textbookId on each record disambiguates)."
+        },
+        "textbookId": {
+          "type": "string",
+          "enum": ["ENGLISH_BALBHARATI_G01", "MY_ENGLISH_BOOK_G01_NON_ENGLISH_MEDIUM"]
+        },
+        "chapterRef": { "type": "string", "pattern": "^1\\.[0-9]{1,2}$", "description": "Chapter code within the record's own textbook." },
+        "curriculumIdRef": { "type": "string", "pattern": "^(bal|meb)-g01-u1-c1\\.[0-9]{2}$" },
         "learnerState": {
           "type": "string",
           "enum": [
@@ -307,7 +393,7 @@
         "intent": { "type": "string" },
         "masteryCheck": {
           "type": "string",
-          "description": "How Miss Julie later verifies independent use instead of declaring mastery immediately."
+          "description": "How Miss Julie later verifies independent use instead of declaring mastery immediately. Must reference INDEPENDENT_ANSWERING or DELAYED_RECALL, never repetition alone."
         },
         "review": {
           "type": "object",
@@ -337,9 +423,9 @@
         "pattern": { "type": "string" },
         "exampleUtterance": { "type": "string" },
         "likelyCause": { "type": "string" },
-        "correctionStrategy": { "type": "string", "description": "Miss Julie's corrective move; gentle, never shaming." },
+        "correctionStrategy": { "type": "string", "description": "Miss Julie's corrective move; gentle, never shaming. Language attribution must be correct (शाळा is Marathi; Hindi for school is विद्यालय/पाठशाला/स्कूल)." },
         "languageNote": { "type": "string" },
-        "chapterRefs": { "type": "array", "items": { "type": "string", "pattern": "^1\\.[0-9]{2}$" } },
+        "chapterRefs": { "type": "array", "items": { "type": "string", "pattern": "^1\\.[0-9]{1,2}$" } },
         "severity": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH"] },
         "reviewStatus": { "type": "string", "enum": ["REVIEWED_SYLLABUS_ALIGNED", "UNREVIEWED_SYNTHETIC_CANDIDATE"] }
       }

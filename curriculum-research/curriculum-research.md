@@ -122,3 +122,19 @@ Key character of the book (verified from its pages): **oral-first** ("Listen / S
 **Why this matters:** Sprint 1's map covers *English Balbharati* (the repo's implicit basis, i.e., English-medium schools). If Talkora targets Maharashtra schools generally, *My English Book* is the higher-volume textbook, and its oral-first design is arguably an even closer fit for Miss Julie's speaking pedagogy. **This is a PM decision** (checkpoint question 1) with a direct schema consequence: the schema currently has no book discriminator, and `curriculumId` (`bal-g01-u1-c1.NN`) would need a book segment (e.g., `bal-g01-eb-…` / `bal-g01-meb-…`) if dual-track support is chosen. The schema remains v1.0.0 **draft** pending this decision.
 
 **Also corrected during checkpoint research:** Common Voice Hindi/Marathi per-release validated hours are ~15–19 hrs each (release snapshots on Mozilla Data Collective), not "hundreds" as an earlier draft of `dataset-sources.md` stated. The file now carries the verified figures with a correction note.
+
+---
+
+## 11. Checkpoint 2 (2026-10-31): dual-track decision applied
+
+The PM accepted checkpoint 1 with required revisions and decided: **support both official Std 1 English textbooks** as separate curriculum tracks. Everything in §10's open questions is now resolved in the data:
+
+- **Schema v1.1.0** (`curriculum.schema.json`): `textbookTrack` discriminator (`textbookId` / `trackType` / school-admin `selectionModel`), `curriculumVersion` metadata (framework, policy, 2025-04-16 committee approval, AY 2025-26, SCERT verification authority), distinct `syllabusVerification` vs `pedagogyStatus` (kept), `audioAsset` optional with rights-undecided statuses, namespaced `curriculumId`s (`bal-`/`meb-`) that require **no database migration**, new `contentCategory` values for MEB's oral-first chapter types, and `recallDesign` (repetition / independent / delayed milestones).
+- **New dataset** `my-english-book-class1-unit1-map.json`: 11 chapters, 106 vocabulary items with hi/mr glosses, 8 learner states × 11 chapters, all honesty rules enforced. Verified facts: Unit One pp. 1–17; full book 42 chapters (2.1–2.10, 3.1–3.10, 4.1–4.9); Index prints no per-chapter credits (permissions awaited) → rhyme chapters categorized `THIRD_PARTY_PERMISSION_AWAITED`.
+- **Balbharati map migrated to v1.1.0** with roles on every level mapping; **1.2 "Clap your hands." now introduces action instructions at g01-l02** (week 1) and consolidates at g01-l07 — fixing the checkpoint-1 mapping's late-only placement.
+- **Corrections applied** (PM list): mist-019 recategorized `L1_TRANSFER_MARATHI` with शाळा-is-Marathi correction note (validator now blocks Hindi attribution of शाळा); all 133 example masteryChecks carry explicit `[INDEPENDENT_ANSWERING]`/`[DELAYED_RECALL]` labels; the tje-134 bridge record attributes each home language correctly.
+- **Additional sources verified** (see `dataset-sources.md` checkpoint-2 section): books.ebalbharati.in/ebookmeb.aspx is a numbered MEB *workbook* download page (no editions shown; must not be conflated with the Std 1 textbook); the maa.ac.in Std 1 teacher guide is a **2020-era scanned document (PDF created 2020-12-04, no text layer)** — recorded as a historical reference only, never a verified 2025 handbook.
+- **Validator** rewritten for dual track: ALL CHECKS PASSED (bal 10/10 + meb 11/11, examples 135, mistakes 38).
+- **Coverage matrices** for both books (whole-book view, ordered, role-tagged): `chapter-to-level-coverage.md` — all rows pending PM approval.
+
+The PM checklist-2 response lives in `checkpoint-2-pm.md`.
