@@ -1,0 +1,348 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "talkora/curriculum.schema.json",
+  "title": "Talkora Curriculum Intelligence Schema (Sprint 1)",
+  "description": "Machine-readable contract for Balbharati-derived curriculum datasets. TypeScript-compatible: every object maps 1:1 to an interface in handoff-to-codex.md. Schema changes must be coordinated with the Project Manager before contracts are finalized.",
+  "type": "object",
+  "required": ["schemaVersion", "dataset", "entries"],
+  "properties": {
+    "schemaVersion": { "type": "string", "const": "1.0.0" },
+    "dataset": {
+      "type": "object",
+      "required": ["name", "generatedOn", "generatedBy", "editionVerification"],
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "generatedOn": { "type": "string", "format": "date" },
+        "generatedBy": { "type": "string" },
+        "editionVerification": { "$ref": "#/$defs/editionVerification" },
+        "comparisonWithTalkoraCurrent": {
+          "type": "object",
+          "properties": {
+            "talkoraEditionClaim": { "type": "string" },
+            "officialEdition": { "type": "string" },
+            "editionDriftFound": { "type": "boolean" },
+            "evidence": { "type": "array", "items": { "type": "string" } }
+          },
+          "required": ["talkoraEditionClaim", "officialEdition", "editionDriftFound"]
+        }
+      }
+    },
+    "entries": { "type": "array", "items": { "$ref": "#/$defs/curriculumEntry" } }
+  },
+  "$defs": {
+    "editionVerification": {
+      "type": "object",
+      "required": ["title", "publisher", "editionYear", "sourceUrl", "verifiedOn", "confidence"],
+      "properties": {
+        "title": { "type": "string", "description": "Exact textbook title as printed." },
+        "publisher": { "type": "string" },
+        "editionYear": { "type": "integer" },
+        "approval": { "type": "string", "description": "Approval statement as printed in the book (committee, date, academic year of first use)." },
+        "academicYearOfFirstUse": { "type": "string" },
+        "sourceUrl": { "type": "string", "format": "uri" },
+        "verifiedOn": { "type": "string", "format": "date" },
+        "verificationMethod": { "type": "string" },
+        "confidence": { "$ref": "#/$defs/confidence" }
+      }
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["OFFICIAL_SOURCE_VERIFIED", "SECONDARY_SOURCE_CORROBORATED", "UNVERIFIED"]
+    },
+    "sourceReference": {
+      "type": "object",
+      "required": ["type", "locator", "verifiedOn", "confidence"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["OFFICIAL_TEXTBOOK_PDF", "OFFICIAL_EBOOK_LIBRARY", "TALKORA_SOURCE_CODE", "TEACHER_HANDBOOK", "WORKBOOK", "SECONDARY_SOURCE", "OPEN_EDUCATIONAL_DATASET"]
+        },
+        "locator": { "type": "string", "description": "Precise locator, e.g. 'English Balbharati Grade One (2025), printed p.5, chapter 1.4'." },
+        "url": { "type": "string", "format": "uri" },
+        "verifiedOn": { "type": "string", "format": "date" },
+        "confidence": { "$ref": "#/$defs/confidence" },
+        "note": { "type": "string" }
+      }
+    },
+    "curriculumEntry": {
+      "type": "object",
+      "required": [
+        "curriculumId", "board", "grade", "subject", "textbookEdition", "unit", "chapter",
+        "lesson", "sourceReferences", "learningObjectives", "review"
+      ],
+      "properties": {
+        "curriculumId": {
+          "type": "string",
+          "pattern": "^bal-g01-u[1-4]-c[1-4]\\.[0-9]{2}$",
+          "description": "Stable Balbharati address: bal-g<grade 2-digit>-u<unit>-c<unit>.<chapter-in-unit, zero-padded to 2>. Derivation from chapter.code: code 1.N maps to suffix c1.<pad(N,2)> (printed 1.1 → c1.01; printed 1.10 → c1.10)."
+        },
+        "board": { "type": "string", "const": "Maharashtra State Board (Balbharati)" },
+        "grade": { "type": "integer", "const": 1 },
+        "subject": { "type": "string", "const": "English" },
+        "textbookEdition": { "$ref": "#/$defs/editionVerification" },
+        "unit": {
+          "type": "object",
+          "required": ["number", "printedPageRange"],
+          "properties": {
+            "number": { "type": "integer", "minimum": 1, "maximum": 4 },
+            "title": { "type": ["string", "null"], "description": "Only if the book prints a unit title; otherwise null. Never invented." },
+            "printedPageRange": { "type": "string" }
+          }
+        },
+        "chapter": {
+          "type": "object",
+          "required": ["code", "title", "printedPage", "contentCategory", "copyrightStatus"],
+          "properties": {
+            "code": { "type": "string", "pattern": "^1\\.(?:[1-9]|10)$", "description": "Chapter number exactly as printed in the Contents (1.1 … 1.10)." },
+            "title": { "type": "string", "description": "Chapter title exactly as printed in the Contents." },
+            "printedPage": { "type": "integer", "minimum": 1 },
+            "contentCategory": {
+              "type": "string",
+              "enum": [
+                "POEM", "ACTION_RHYME", "ALPHABET_PRACTICE", "WORD_FAMILIES", "VOWELS_INTRODUCTION",
+                "COLOURS_POEM", "FAMILY_DIALOGUE", "SELF_INTRODUCTION", "NAME_POEM", "DAILY_ROUTINE",
+                "ACTIVITY_TIME", "OTHER"
+              ]
+            },
+            "copyrightStatus": {
+              "type": "object",
+              "required": ["category"],
+              "properties": {
+                "category": {
+                  "type": "string",
+                  "enum": [
+                    "BALBHARATI_ALL_RIGHTS_RESERVED", "THIRD_PARTY_LICENSED_CREDITED_IN_BOOK",
+                    "UNKNOWN"
+                  ]
+                },
+                "creditNote": { "type": "string" },
+                "reproductionRule": {
+                  "type": "string",
+                  "description": "How Talkora may use this chapter: reference-only, title-only, or short attributed excerpt."
+                }
+              }
+            }
+          }
+        },
+        "lesson": {
+          "type": "object",
+          "required": ["orderInUnit", "talkoraLevelMapping"],
+          "properties": {
+            "orderInUnit": { "type": "integer", "minimum": 1 },
+            "talkoraLevelMapping": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["talkoraLevelId", "roadmapTitle", "status"],
+                "properties": {
+                  "talkoraLevelId": { "type": "string", "pattern": "^g01-l(0[1-9]|10)$", "description": "Address from backend/src/curriculum/level-map-contract.ts roadmap." },
+                  "roadmapTitle": { "type": "string", "description": "Exact title from roadmap.ts, echoed for drift detection." },
+                  "status": { "type": "string", "enum": ["PROPOSED_MAPPING_PENDING_PM_APPROVAL", "APPROVED_BY_PM"] }
+                }
+              }
+            }
+          }
+        },
+        "sourceReferences": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/sourceReference" } },
+        "learningObjectives": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+        "prerequisiteSkills": { "type": "array", "items": { "type": "string" } },
+        "vocabulary": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["en", "hi", "mr", "origin"],
+            "properties": {
+              "en": { "type": "string" },
+              "hi": { "type": "string", "description": "Hindi support gloss (Devanagari), written by Talkora — not from the textbook." },
+              "mr": { "type": "string", "description": "Marathi support gloss (Devanagari), written by Talkora — not from the textbook." },
+              "origin": {
+                "type": "string",
+                "enum": ["TEXTBOOK_WORD_BANK", "DIALOGUE_DERIVED", "PICTURE_PROMPT_DERIVED", "TEACHER_ENRICHMENT"]
+              },
+              "sourceRef": { "type": "string", "description": "e.g. '1.1 Look and say, printed p.1'." }
+            }
+          }
+        },
+        "phonicsConcepts": { "type": "array", "items": { "type": "string" } },
+        "grammarConcepts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["concept", "childFriendlyFraming"],
+            "properties": {
+              "concept": { "type": "string" },
+              "childFriendlyFraming": { "type": "string" }
+            }
+          }
+        },
+        "comprehensionGoals": { "type": "array", "items": { "type": "string" } },
+        "speakingObjectives": { "type": "array", "items": { "type": "string" } },
+        "suggestedVisualActivities": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["title", "description", "assetStatus"],
+            "properties": {
+              "title": { "type": "string" },
+              "description": { "type": "string" },
+              "assetStatus": { "type": "string", "enum": ["MISSING", "SKETCH_REQUESTED", "APPROVED"], "description": "Mirrors KG visualAssets.status convention; never claims an asset exists." }
+            }
+          }
+        },
+        "teacherExplanationExamples": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["en"],
+            "properties": {
+              "en": { "type": "string" },
+              "hi": { "type": "string" },
+              "mr": { "type": "string" }
+            }
+          }
+        },
+        "hindiExplanations": { "type": "array", "items": { "type": "string" } },
+        "marathiExplanations": { "type": "array", "items": { "type": "string" } },
+        "expectedStudentAnswers": { "type": "array", "items": { "type": "string" } },
+        "commonBeginnerMistakeIds": {
+          "type": "array",
+          "description": "References into learner-mistakes.json mistakeId values.",
+          "items": { "type": "string", "pattern": "^mist-[0-9]{3}$" }
+        },
+        "adaptiveTeachingHints": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["learnerState", "hint"],
+            "properties": {
+              "learnerState": {
+                "type": "string",
+                "enum": [
+                  "BEGINNER_COMPLETE", "BEGINNER_HINDI", "BEGINNER_MARATHI",
+                  "ANSWERED_INCORRECT", "SILENT", "GUESSING_REPEATEDLY",
+                  "FAST_LEARNER", "NEEDS_REVISION"
+                ]
+              },
+              "hint": { "type": "string" }
+            }
+          },
+          "description": "Difficulty is adaptive only — students never pick a level; these hints drive Miss Julie's branch selection."
+        },
+        "remediationStrategies": { "type": "array", "items": { "type": "string" } },
+        "assessmentCriteria": { "type": "array", "items": { "type": "string" } },
+        "masteryIndicators": {
+          "type": "array",
+          "description": "Independent-use checks; a correct first answer alone never declares mastery.",
+          "items": { "type": "string" }
+        },
+        "revisionActivities": { "type": "array", "items": { "type": "string" } },
+        "shortSpokenHomework": { "type": "string" },
+        "teachingStages": {
+          "type": "array",
+          "description": "Subset of the 8 stages actually used by this chapter; stages are a design language, not a mandatory repeat.",
+          "items": {
+            "type": "object",
+            "required": ["stage", "note"],
+            "properties": {
+              "stage": {
+                "type": "string",
+                "enum": ["DISCOVER", "EXPLAIN", "DEMONSTRATE", "ASK", "LISTEN", "CORRECT", "VERIFY", "RECALL"]
+              },
+              "note": { "type": "string" }
+            }
+          }
+        },
+        "review": {
+          "type": "object",
+          "required": ["syllabusVerification", "pedagogyStatus"],
+          "properties": {
+            "syllabusVerification": {
+              "type": "string",
+              "enum": ["OFFICIAL_PDF_VERIFIED", "SECONDARY_SOURCE_ONLY", "UNVERIFIED"]
+            },
+            "pedagogyStatus": {
+              "type": "string",
+              "enum": ["DRAFT_PENDING_TEACHER_REVIEW", "REVIEWED_BY_TEACHER"]
+            },
+            "notes": { "type": "string" }
+          }
+        }
+      }
+    },
+    "teachingExample": {
+      "type": "object",
+      "required": ["exampleId", "chapterRef", "learnerState", "stage", "studentSays", "missJulieTurns", "intent", "review"],
+      "properties": {
+        "exampleId": { "type": "string", "pattern": "^tje-[0-9]{3}$" },
+        "chapterRef": { "type": "string", "pattern": "^1\\.[0-9]{2}$" },
+        "curriculumIdRef": { "type": "string", "pattern": "^bal-g01-u1-c1\\.[0-9]{2}$" },
+        "learnerState": {
+          "type": "string",
+          "enum": [
+            "BEGINNER_COMPLETE", "BEGINNER_HINDI", "BEGINNER_MARATHI",
+            "ANSWERED_INCORRECT", "SILENT", "GUESSING_REPEATEDLY",
+            "FAST_LEARNER", "NEEDS_REVISION"
+          ]
+        },
+        "stage": {
+          "type": "string",
+          "enum": ["DISCOVER", "EXPLAIN", "DEMONSTRATE", "ASK", "LISTEN", "CORRECT", "VERIFY", "RECALL"]
+        },
+        "studentSays": { "type": "string" },
+        "studentLanguage": { "type": "string", "enum": ["en", "hi", "mr", "hi-en", "mr-en", "silence"] },
+        "missJulieTurns": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "required": ["text", "language"],
+            "properties": {
+              "text": { "type": "string" },
+              "language": { "type": "string", "enum": ["en", "hi-en", "mr-en"] },
+              "ttsNote": { "type": "string", "description": "Optional voice-routing note (Azure/Qwen), no runtime behaviour implied." }
+            }
+          }
+        },
+        "intent": { "type": "string" },
+        "masteryCheck": {
+          "type": "string",
+          "description": "How Miss Julie later verifies independent use instead of declaring mastery immediately."
+        },
+        "review": {
+          "type": "object",
+          "required": ["status"],
+          "properties": {
+            "status": { "type": "string", "enum": ["REVIEWED_SYLLABUS_ALIGNED", "UNREVIEWED_SYNTHETIC_CANDIDATE"] },
+            "reviewedBy": { "type": "string" },
+            "reviewedOn": { "type": "string", "format": "date" },
+            "note": { "type": "string" }
+          }
+        }
+      }
+    },
+    "learnerMistake": {
+      "type": "object",
+      "required": ["mistakeId", "category", "pattern", "exampleUtterance", "likelyCause", "correctionStrategy", "severity", "reviewStatus"],
+      "properties": {
+        "mistakeId": { "type": "string", "pattern": "^mist-[0-9]{3}$" },
+        "category": {
+          "type": "string",
+          "enum": [
+            "PRONUNCIATION", "GRAMMAR", "ARTICLES", "VOCABULARY_CONFUSION",
+            "L1_TRANSFER_HINDI", "L1_TRANSFER_MARATHI", "CAPITALISATION",
+            "PHONICS_SPELLING", "SPEAKING_BEHAVIOUR"
+          ]
+        },
+        "pattern": { "type": "string" },
+        "exampleUtterance": { "type": "string" },
+        "likelyCause": { "type": "string" },
+        "correctionStrategy": { "type": "string", "description": "Miss Julie's corrective move; gentle, never shaming." },
+        "languageNote": { "type": "string" },
+        "chapterRefs": { "type": "array", "items": { "type": "string", "pattern": "^1\\.[0-9]{2}$" } },
+        "severity": { "type": "string", "enum": ["LOW", "MEDIUM", "HIGH"] },
+        "reviewStatus": { "type": "string", "enum": ["REVIEWED_SYLLABUS_ALIGNED", "UNREVIEWED_SYNTHETIC_CANDIDATE"] }
+      }
+    }
+  }
+}
