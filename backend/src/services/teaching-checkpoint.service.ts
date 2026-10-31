@@ -23,7 +23,7 @@ const scopeSchema = z.object({
   lessonId: z.string().regex(/^[0-9a-f]{24}$/i),
   activityId: z.string().regex(/^[0-9a-f]{24}$/i),
   objectiveId: z.string().regex(/^(?:bal|meb)-g01-u[1-4]-c[1-4]\.(?:0[1-9]|1[01])-o0[1-9]$/),
-  version: z.string().min(3).max(80).regex(/^[a-zA-Z0-9._-]+$/),
+  version: z.string().min(2).max(80).regex(/^[a-zA-Z0-9._-]+$/),
   approvedRevision: z.string().min(8).max(100).regex(/^approved-[a-zA-Z0-9._-]+$/),
 }).strict().superRefine((scope, ctx) => {
   const bal = scope.trackId === 'ENGLISH_MEDIUM'
