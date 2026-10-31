@@ -1,40 +1,52 @@
 import 'dotenv/config'
-import { AUDIO_MANIFEST } from '../kg/alphabet-content'
-import { LEVEL2_NARRATION } from '../kg/level2-content'
-import { LEVEL3_NARRATION } from '../kg/level3-content'
-import { LEVEL4_NARRATION } from '../kg/level4-content'
-import { LEVEL5_NARRATION } from '../kg/level5-content'
 import { getKGAzureNarrationAudio } from '../services/kg-azure-narration.service'
+import { assertKGPrewarmApplyApproval, getKGPrewarmPlan } from './kg-azure-prewarm-plan'
 
-type FixedLine = { level: number; id: string; text: string }
-const rows: FixedLine[] = [
-  ...AUDIO_MANIFEST
-    .filter((line) => line.kind === 'curriculum_static')
-    .map((line) => ({ level: 1, id: line.id, text: line.text })),
-  ...Object.entries(LEVEL2_NARRATION).map(([id, text]) => ({ level: 2, id, text })),
-  ...Object.entries(LEVEL3_NARRATION).map(([id, text]) => ({ level: 3, id, text })),
-  ...Object.entries(LEVEL4_NARRATION).map(([id, text]) => ({ level: 4, id, text })),
-  ...Object.entries(LEVEL5_NARRATION).map(([id, text]) => ({ level: 5, id, text })),
-]
-
+/**
+ * Default is a zero-cost planning report. The former command immediately
+ * incurred Azure/S3 operations whenever keys were configured, contrary to the
+ * mandatory school approval gate. --apply is an explicit reviewed operator step.
+ */
 async function main() {
-  const required = ['AZURE_SPEECH_KEY', 'AWS_REGION', 'AWS_S3_BUCKET', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY']
-  const missing = required.filter((name) => !process.env[name]?.trim())
-  if (missing.length) throw new Error(`KG Azure/S3 prewarm requires: ${missing.join(', ')}`)
+  const arguments_ = process.argv.slice(2)
+  if (arguments_.some(value => !['--dry-run', '--apply'].includes(value)) ||
+      (arguments_.includes('--dry-run') && arguments_.includes('--apply'))) {
+    throw new Error('Usage: pnpm run kg:azure:warm [-- --dry-run | -- --apply]')
+  }
 
+  const plan = getKGPrewarmPlan()
+  const levels = Object.fromEntries(
+    [1, 2, 3, 4, 5].map(level => [level, plan.lines.filter(line => line.level === level).length]),
+  )
+  const apply = arguments_.includes('--apply')
+  // Never print secrets or the actual child-facing lines into CI logs.
+  console.log(JSON.stringify({
+    mode: apply ? 'approved-apply' : 'DRY_RUN_NO_PROVIDER_CALLS',
+    contentSha256: plan.manifestSha256,
+    fixedLineCount: plan.lines.length,
+    levels,
+    profile: plan.voiceProfile,
+  }))
+  if (!apply) {
+    console.log('DRY RUN: no Azure synthesis, S3 reads/writes or credential access.')
+    console.log('Teacher/rights review and an exact manifest/profile digest are required before --apply.')
+    return
+  }
+
+  // Failure to satisfy any gate happens BEFORE the first provider operation.
+  assertKGPrewarmApplyApproval(plan.manifestSha256)
   let succeeded = 0
   let failed = 0
-  console.log(`Prewarming ${rows.length} server-reviewed KG Level 1-5 Azure lines into S3`)
-  // Avoid a burst of simultaneous Azure syntheses or S3 operations.
-  for (let i = 0; i < rows.length; i += 3) {
-    await Promise.all(rows.slice(i, i + 3).map(async (line) => {
+  for (let i = 0; i < plan.lines.length; i += 3) {
+    await Promise.all(plan.lines.slice(i, i + 3).map(async line => {
       try {
         const result = await getKGAzureNarrationAudio(line)
-        if (!result.storedInS3) throw new Error('Azure audio played but S3 persistence failed')
+        if (!result.storedInS3) throw new Error('S3 persistence unavailable')
         console.log(`KG${line.level} ${line.id}: ${result.source} (${result.audio.length} bytes)`)
         succeeded++
       } catch (error) {
-        console.error(`KG${line.level} ${line.id}: FAILED`, error instanceof Error ? error.message : 'unknown error')
+        console.error(`KG${line.level} ${line.id}: FAILED`,
+          error instanceof Error ? error.message : 'unknown error')
         failed++
       }
     }))
@@ -43,7 +55,7 @@ async function main() {
   if (failed) process.exitCode = 1
 }
 
-void main().catch((error) => {
+void main().catch(error => {
   console.error(error instanceof Error ? error.message : 'KG warmup failed')
   process.exitCode = 1
 })
