@@ -107,3 +107,18 @@ Each chapter was mapped to Miss Julie's teaching design. Full per-chapter detail
 3. **Schema contract sign-off:** `curriculum.schema.json` v1.0.0 needs PM approval before Codex builds consumers against it.
 4. **Human teacher review:** who reviews the pedagogy fields and the 133 examples? Until then they are draft-only and must not drive production dialogue verbatim.
 5. **Scope of next sprint:** Units Two–Four extraction (titles verified already), or deepening Unit One (audio word banks, visual assets, teacher handbook cross-check)?
+
+## 10. Addendum (Checkpoint 1, 2026-10-31): a second official Std 1 English book exists
+
+Checkpoint research verified a **second official Grade One English textbook for the same academic year, approved the same day** as English Balbharati: ***My English Book — Grade One (Non-English Medium)***, [official PDF](https://ebooks.ebalbharati.in/pdfs/103050035.pdf), 87 pages, same SCERT/Coordination-Committee approval statement (April 16, 2025, AY 2025-26 onwards). This is the English-learning book for **Marathi/Hindi/Urdu-medium schools** — the majority population in Maharashtra.
+
+**Verified My English Book Unit One contents (11 chapters, read directly from the PDF):**
+1.1 Body Body Pop Pop · 1.2 What is your name? · 1.3 My Home · 1.4 Clap your hands. · 1.5 Chit Chat · 1.6 Fun with Sounds (b-c-p-t-a) · 1.7 What can you do? · 1.8 My Classroom · 1.9 Fun with Sounds (d-f-m-n-e) · 1.10 Tip-Tap, Tip-Tap · 1.11 We want rain.
+
+Key character of the book (verified from its pages): **oral-first** ("Listen / Speak / Act" activity icons; explicit "Instructions for Teachers and Parents" legend), a structured phonics strand (**Fun with Sounds** letter sets: b-c-p-t-a → d-f-m-n-e → h-l-r-s-i → g-j-k-q-o, with word families like cap/tap/bat/pat and pet/bed/pen/den), greetings-by-time-of-day, a "My Day" routine sequence, school-assembly instruction vocabulary, classroom objects, action verbs with can/can't, "Queen Says" style TPR games, and a rain picture-story finale.
+
+**Overlap with English Balbharati Unit One:** thematic (body actions, name introduction, classroom, daily routine, early phonics) but with different texts — notably both books contain a chapter titled "Clap your hands." and they are **different rhymes** (English Balbharati p.2 vs My English Book p.4). Talkora's implemented poem lesson ("My First Day") exists only in English Balbharati.
+
+**Why this matters:** Sprint 1's map covers *English Balbharati* (the repo's implicit basis, i.e., English-medium schools). If Talkora targets Maharashtra schools generally, *My English Book* is the higher-volume textbook, and its oral-first design is arguably an even closer fit for Miss Julie's speaking pedagogy. **This is a PM decision** (checkpoint question 1) with a direct schema consequence: the schema currently has no book discriminator, and `curriculumId` (`bal-g01-u1-c1.NN`) would need a book segment (e.g., `bal-g01-eb-…` / `bal-g01-meb-…`) if dual-track support is chosen. The schema remains v1.0.0 **draft** pending this decision.
+
+**Also corrected during checkpoint research:** Common Voice Hindi/Marathi per-release validated hours are ~15–19 hrs each (release snapshots on Mozilla Data Collective), not "hundreds" as an earlier draft of `dataset-sources.md` stated. The file now carries the verified figures with a correction note.

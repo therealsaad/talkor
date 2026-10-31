@@ -12,13 +12,13 @@
 | Item | Detail |
 |---|---|
 | Official URL | https://ebooks.ebalbharati.in/ (eBook library: textbooks, teachers handbooks, workbooks; filters by class 1–12, 10 mediums, syllabus years 2006–2026) |
-| Verified asset | *English Balbharati — Grade One* (2025): https://ebooks.ebalbharati.in/pdfs/103050001.pdf — read directly on 2026-10-31 |
+| Verified assets | **Two official Std 1 English textbooks for AY 2025-26, both approved 2025-04-16** — (a) *English Balbharati — Grade One* (English medium), https://ebooks.ebalbharati.in/pdfs/103050001.pdf — Sprint 1's basis; (b) *My English Book — Grade One (Non-English Medium)*, https://ebooks.ebalbharati.in/pdfs/103050035.pdf — discovered and verified during checkpoint research; see curriculum-research.md §10 |
 | License | **All rights reserved** by Balbharati (Pune). Copyright page prohibits reproduction without written permission. Third-party poems are credited in-book. |
-| Size/scope | Std 1 English: 4 units / 44 chapters / 92 PDF pages. Library total: 903 books listed for syllabus year 2026. |
-| Languages | English edition; Marathi/Hindi/Urdu/Gujarati/Kannada/Sindhi/Telugu/Tamil/Bengali editions exist for cross-language support design |
-| Educational suitability | **Excellent** — this IS the syllabus; QR codes in-book point to official audio/visual complements |
+| Size/scope | English Balbharati: 4 units / 44 chapters / 92 PDF pages (Unit One = pp. 1–17, 10 chapters). My English Book: 87 PDF pages, Unit One = 11 chapters incl. an explicit "Fun with Sounds" phonics strand. Library total: 903 books listed for syllabus year 2026. |
+| Languages | English editions; Marathi/Hindi/Urdu/Gujarati/Kannada/Sindhi/Telugu/Tamil/Bengali editions exist for cross-language support design |
+| Educational suitability | **Excellent** — these ARE the syllabus; QR codes in-book point to official audio/visual complements |
 | Age suitability | Exactly on-target (Grade One) |
-| Quality limitations | PDF text extraction loses picture-dependent content; official audio is rights-reserved |
+| Quality limitations | PDF text extraction loses picture-dependent content; official audio is rights-reserved; no Std 1 English teacher-handbook PDF located (workbooks/handbooks sit in a separate library section; teacher material may route via DIKSHA) |
 | Recommended usage | **Retrieval** (syllabus map, word banks, page references) and evaluation alignment. **Not** for corpus fine-tuning. Any reuse beyond referencing needs Balbharati authorization (open PM question). |
 
 ## 2. Mozilla Common Voice
@@ -27,7 +27,7 @@
 |---|---|
 | Official URL | https://commonvoice.mozilla.org/ · per-language stats: https://commonvoice.mozilla.org/en/languages and Mozilla Data Collective (mozilladatacollective.com) |
 | License | **CC0-1.0** (public domain dedication) — confirmed via Mozilla's Digital Public Goods profile |
-| Size (verified) | Common Voice 19.0 release: **32,584 hours** total across 120+ languages; per-language validated-hour counts for **Hindi** and **Marathi** are published on the languages page (each in the hundreds-of-hours range; pull exact current numbers at integration time) |
+| Size (verified) | Common Voice 19.0 release: **32,584 hours** total across 120+ languages. Per-language release snapshots (Mozilla Data Collective, checked 2026-10-31): **Hindi** v26.0 = 19,029 clips, **26.67 hrs recorded / 15.6 hrs validated**, 480 speakers; **Marathi** v27.0 = 16,099 clips, **27.72 hrs recorded / 18.94 hrs validated**, 107 speakers. *(Correction, checkpoint 1: an earlier draft of this file said "hundreds of validated hours" for Hindi/Marathi — the verified per-release figures are ~15–19 validated hrs each. Treat Hindi/Marathi Common Voice as small, not bulk, data.)* |
 | Languages | 120+, incl. Hindi and Marathi (Marathi added in CV 8, 2022) |
 | Educational suitability | Good for **ASR robustness testing** on Indian-accented English and for Hindi/Marathi speech models |
 | Age suitability | **Caution:** contributor base is predominantly **adult and teen volunteers**; there is no child-speech subset and no child-consent framework. Do **not** treat as child pronunciation data. |
@@ -100,3 +100,7 @@
 - [AI4Bharat IndicVoices on Hugging Face](https://huggingface.co/datasets/ai4bharat/IndicVoices) · [IndicVoices-R](https://huggingface.co/datasets/AI4Bharat/IndicVoices-R) · [GitHub repo](https://github.com/AI4Bharat/IndicVoices)
 - [LDC catalog — CMU Kids LDC97S63](https://catalog.ldc.upenn.edu/LDC97S63)
 - [Cambridge Language Sciences resources (EFCAMDAT subcorpus)](https://www.languagesciences.cam.ac.uk/resources) · [EFCAMDAT LDK 2023 paper](https://aclanthology.org/2023.ldk-1.27.pdf)
+
+### Sources consulted (checkpoint update, 2026-10-31)
+- [My English Book — Grade One PDF (official)](https://ebooks.ebalbharati.in/pdfs/103050035.pdf)
+- [Mozilla Data Collective — Hindi v26.0 snapshot](https://mozilladatacollective.com/datasets/cmqiod71900zgnr07uiyw57br) · [Marathi v27.0 snapshot](https://mozilladatacollective.com/datasets/cmu5vlwjk009xo107s7i4qmzm)
