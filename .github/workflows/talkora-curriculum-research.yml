@@ -24,3 +24,5 @@ jobs:
         run: node --test curriculum-research/tools/dualtrack-contract.test.mjs
       - name: Verify 84 objective addresses, source integrity and mandatory teacher review
         run: node --test curriculum-research/tools/objective-registry.test.mjs
+      - name: Audit draft-only release readiness and textbook chapter ordering without approval
+        run: node --test curriculum-research/tools/objective-release-audit.test.mjs
