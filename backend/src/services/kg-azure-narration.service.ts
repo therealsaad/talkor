@@ -1,5 +1,7 @@
 import { createHash } from 'node:crypto'
 import { AzureVoiceProvider } from '../providers/voice/AzureVoiceProvider'
+import { chooseTalkoraBilingualVoice } from '../providers/voice/class1-voice-language'
+import { ApiError } from '../utils/ApiError'
 import { logger } from '../utils/logger'
 import { S3Service } from './S3Service'
 
@@ -40,7 +42,7 @@ function cacheIdentity(level: number, id: string, text: string) {
   const format = process.env.AZURE_SPEECH_OUTPUT_FORMAT?.trim() || 'audio-24khz-48kbitrate-mono-mp3'
   const profile = {
     text,
-    voice: process.env.AZURE_SPEECH_VOICE?.trim() || 'en-IN-NeerjaNeural',
+    ...chooseTalkoraBilingualVoice(text, process.env.AZURE_SPEECH_VOICE?.trim() || 'en-IN-NeerjaNeural', true),
     rate: process.env.KG_AZURE_SPEECH_RATE?.trim() || '+5%',
     pitch: process.env.KG_AZURE_SPEECH_PITCH?.trim() || '+6%',
     bilingualRouting: process.env.TALKORA_CLASS1_BILINGUAL_TTS === 'true',
@@ -95,6 +97,14 @@ export async function getKGAzureNarrationAudio(input: {
           return { ...value, source: 's3' }
         }
       } catch (error) {
+        // Preserve the existing KG1 storage access-denial boundary. A bad
+        // bucket policy must not be disguised as a cache miss.
+        const status = (error as { $metadata?: { httpStatusCode?: number } })?.$metadata?.httpStatusCode
+        const code = (error as { name?: string })?.name
+        if (status === 403 || ['AccessDenied', 'AllAccessDisabled', 'Forbidden'].includes(code || '')) {
+          throw new ApiError(502, 'KG_AUDIO_STORAGE_ACCESS_DENIED',
+            'Approved curriculum audio storage access was denied.', { retryable: false })
+        }
         logger.warn('KG Azure narration S3 read failed; synthesizing live', {
           level, id, reason: error instanceof Error ? error.name : 'UnknownS3Error',
         })
