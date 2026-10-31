@@ -118,6 +118,13 @@ async function fixture({ outcome = 'correct', denied = false, lostResponse = fal
         if (feedbackFailure && url.pathname.endsWith('/great')) return await request.respond({ status: 404, headers: { ...headers, 'Cache-Control': 'no-store' }, contentType: 'application/json', body: JSON.stringify({ success: false, error: { message: 'Test missing feedback clip' } }) })
         return await request.respond({ status: 200, headers, contentType: 'audio/wav', body: wave() })
       }
+      if (url.pathname.endsWith('/feedback-audio')) {
+        if (feedbackFailure) return await request.respond({ status: 404, headers: { ...headers, 'Cache-Control': 'no-store' }, contentType: 'application/json', body: JSON.stringify({ success: false, error: { code: 'KG_AUDIO_MISSING', message: 'Test missing feedback clip' } }) })
+        return await request.respond({ status: 200, headers, contentType: 'audio/wav', body: wave() })
+      }
+      if (url.pathname.endsWith('/feedback-played')) {
+        return await json({ state: state() })
+      }
       if (url.pathname.endsWith('/kg-alphabet/intro/start')) return await json({ playbackId: 'a'.repeat(64) })
       if (url.pathname.endsWith('/kg-alphabet/intro-seen')) return await json({ introSeen: true })
       if (url.pathname.endsWith('/kg-alphabet/state')) return await json(state())
@@ -131,13 +138,13 @@ async function fixture({ outcome = 'correct', denied = false, lostResponse = fal
         }
         assert.ok(body.audioBase64.length > 128)
         if (lostResponse && ids.length === 1) {
-          index = 1; saved = { outcome: 'correct', state: state(), feedbackAudioId: 'great' }
+          index = 1; saved = { outcome: 'correct', submissionId: body.submissionId, state: state(), feedbackAudioId: 'great' }
           return await request.abort('failed')
         }
         if (lostResponse) return await json(saved)
         await gate
         if (outcome === 'correct') index = 1
-        return await json({ outcome, state: state(), feedbackAudioId: outcome === 'correct' ? 'great' : outcome === 'incorrect' ? 'try-again' : 'repeat' })
+        return await json({ outcome, submissionId: body.submissionId, state: state(), feedbackAudioId: outcome === 'correct' ? 'great' : outcome === 'incorrect' ? 'try-again' : 'repeat' })
       }
       if (url.pathname.startsWith('/api/') || url.origin !== new URL(base).origin) return await request.abort()
       return await request.continue()
@@ -272,7 +279,7 @@ test('real browser retries missing praise without resubmitting the saved correct
     try {
       await page.waitForFunction(() => document.querySelector('h1')?.textContent.includes('ball'), { timeout: 20000 })
     } catch (error) {
-      console.error('Missing praise retry diagnostic:', JSON.stringify({ requests: await page.evaluate(() => window.__kgMedia), requestLog: fixtureData.requests, attempts: ids, text: await page.$eval('body', (element) => element.innerText) }))
+      console.error('Missing praise retry diagnostic:', JSON.stringify({ requests: await page.evaluate(() => window.__kgMedia), requestLog: fixtureData.requests, attempts: ids, text: await page.$eval('body', (element) => element.innerText), diagnostics: fixtureData.diagnostics }))
       throw error
     }
     assert.equal(ids.length, 1)

@@ -229,4 +229,9 @@ export const kgAlphabetService = {
     for (const entry of clipCache.values()) if (entry.url) URL.revokeObjectURL(entry.url)
     clipCache.clear()
   },
+  invalidateAudioUrl(key: string) {
+    const entry = clipCache.get(key)
+    if (entry?.url) URL.revokeObjectURL(entry.url)
+    clipCache.delete(key)
+  },
 }

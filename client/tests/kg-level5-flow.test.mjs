@@ -86,8 +86,16 @@ test('Level 05 keeps its supplied background and contains responsive animated im
 test('KG preview Level 05 link resolves to the matching Next.js route', () => {
   const preview = fs.readFileSync(new URL('../app/school/kg-preview/page.tsx', import.meta.url), 'utf8')
   const map = fs.readFileSync(new URL('../features/lessons/grades/kg/level-01/components/LevelMap.tsx', import.meta.url), 'utf8')
+  const levelPage = fs.readFileSync(new URL('../app/school/kg-preview/level-5/page.tsx', import.meta.url), 'utf8')
+  const letterPage = new URL('../app/school/kg-preview/level-5/[letter]/page.tsx', import.meta.url)
+  const layout = fs.readFileSync(new URL('../app/school/layout.tsx', import.meta.url), 'utf8')
 
   assert.match(preview, /level\.level === 4/)
   assert.match(preview, /Not available in this preview/)
   assert.match(map, /5: '\/school\/kg-preview\/level-5'/)
+  assert.match(levelPage, /Staff-only alphabet preview\. Not available to students/)
+  assert.match(levelPage, /<Level5Experience preview previewStartLevel5Letter="W" \/>/)
+  assert.ok(fs.existsSync(letterPage))
+  assert.match(layout, /role === 'SCHOOL_ADMIN' \|\| role === 'TEACHER'/)
+  assert.match(layout, /role === 'STUDENT'.*\/student\/home/)
 })

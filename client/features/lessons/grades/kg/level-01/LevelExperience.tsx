@@ -612,7 +612,10 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     catch {
       if (generation.current !== token) return
       audioRef.current = null
-      kgAlphabetService.clearAudioCache()
+      const submissionId = pendingResultRef.current?.result.submissionId
+      if (submissionId) {
+        kgAlphabetService.invalidateAudioUrl(`/kg-alphabet/attempt/${encodeURIComponent(submissionId)}/feedback-audio`)
+      }
       setFeedback('Miss Julie’s reply needs another try. Tap Try again to hear it before continuing.')
       setPhase('error')
       return
