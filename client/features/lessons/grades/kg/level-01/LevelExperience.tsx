@@ -611,6 +611,8 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     }
     catch {
       if (generation.current !== token) return
+      audioRef.current = null
+      kgAlphabetService.clearAudioCache()
       setFeedback('Miss Julie’s reply needs another try. Tap Try again to hear it before continuing.')
       setPhase('error')
       return

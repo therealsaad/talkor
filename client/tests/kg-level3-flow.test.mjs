@@ -15,8 +15,10 @@ const level1Route = await readFile(new URL('../app/school/kg-preview/level-1/pag
 const schoolLayout = await readFile(new URL('../app/school/layout.tsx', import.meta.url), 'utf8')
 
 test('KG Preview opens the garden with distinct routes for the available levels', () => {
-  assert.match(route, /<KGAlphabetMap preview previewDashboard \/>/)
-  assert.match(route, /workspaceClassName="educator-workspace--kg-map"/)
+  assert.match(route, /main className="kg-preview-garden"/)
+  assert.match(route, /Pick a garden path/)
+  assert.match(route, /Staff preview only/)
+  assert.match(route, /Open staff preview/)
   assert.match(level1Route, /<KGLevel1Experience preview \/>/)
 })
 

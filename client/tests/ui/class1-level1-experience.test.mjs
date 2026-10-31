@@ -38,14 +38,14 @@ test('Class 1 Level 1 retains seven tiny-word foundations then adds three Balbha
   assert.match(backendFastRoute, /experienceId: isClass1Demo/)
 })
 
-test('first visit requires the real 90-second story; no fake audio or in-app skip', () => {
+test('first visit requires the reviewed story with a minimum 85-second watch; no fake audio or in-app skip', () => {
   assert.match(studentRoute, /lesson\.completedActivityIds\.length === 0/)
   assert.match(studentRoute, /class1-g01-l01/)
   assert.match(lessonEngine, /<Class1LessonIntro/)
   assert.match(intro, /miss-julie-first-day-intro\.mp4/)
   assert.match(intro, /MIN_DURATION_SECONDS = 87/)
   assert.match(intro, /REQUIRED_WATCH_SECONDS = 85/)
-  assert.match(intro, /requestFullscreen/)
+  assert.match(intro, /requestClass1Fullscreen/)
   assert.match(intro, /muted = false/)
   assert.match(intro, /Fullscreen is an enhancement/)
   assert.match(intro, /pauseWhenHidden/)

@@ -13,7 +13,7 @@ const stage = await read('../../components/student/lesson/immersive-lesson-stage
 test('the existing shared activity engine remains canonical; immersion is Class 1-only', () => {
   assert.match(route, /const experience = <ActivityEngine/)
   assert.match(route, /lesson\.experienceId === 'g01-l01'/)
-  assert.match(route, /<Class1Immersion voiceOnly=\{firstDayV3\}>\{experience\}<\/Class1Immersion>/)
+  assert.match(route, /<Class1Immersion voiceOnly=\{firstDayReady\}>\{experience\}<\/Class1Immersion>/)
   assert.match(route, /: experience/)
 })
 
@@ -23,7 +23,8 @@ test('fullscreen is user-initiated and persists from the introductory story into
   assert.match(utility, /requestFullscreen\(\{ navigationUI: 'hide' \}\)/)
   assert.match(utility, /orientation\?\.lock\?\.\('landscape'\)/)
   assert.match(intro, /closest<HTMLElement>\('\[data-class1-immersion\]'\)/)
-  assert.match(intro, /fullscreenActive\.current = await requestClass1Fullscreen\(fullscreenTarget\)/)
+  assert.match(intro, /const fullscreen = requestClass1Fullscreen\(fullscreenTarget\)/)
+  assert.match(intro, /fullscreenActive\.current = await fullscreen/)
   assert.match(intro, /if \(document\.fullscreenElement === frame\.current\)/)
   assert.doesNotMatch(shell, /requestFullscreen\(\)/) // no autoplay/effect fullscreen
 })
