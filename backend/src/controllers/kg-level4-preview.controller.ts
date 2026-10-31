@@ -40,7 +40,7 @@ export const KGLevel4PreviewController = {
     }
     res.setHeader('Content-Type', contentType)
     res.setHeader('Content-Length', String(audio.length))
-    if ('source' in narration) res.setHeader('X-Talkora-Cache', narration.source.toUpperCase())
+    if ('source' in narration && typeof narration.source === 'string') res.setHeader('X-Talkora-Cache', narration.source.toUpperCase())
     res.setHeader('Cache-Control', 'private, no-store')
     res.setHeader('X-Content-Type-Options', 'nosniff')
     res.send(audio)
