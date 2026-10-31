@@ -33,6 +33,16 @@ test('KG narration: Azure on S3 miss, upload once, memory hit, S3 hit after rese
   const counters = { azure: 0, get: 0, put: 0 }
   const svc = loadService({
     'node:crypto': crypto,
+    '../providers/voice/class1-voice-language': {
+      chooseTalkoraBilingualVoice: (_text, voice) => ({ voice, locale: 'en-IN' }),
+    },
+    '../utils/ApiError': {
+      ApiError: class ApiError extends Error {
+        constructor(status, code, message, details) {
+          super(message); Object.assign(this, { status, code, details })
+        }
+      },
+    },
     '../providers/voice/AzureVoiceProvider': {
       AzureVoiceProvider: class {
         async synthesizeUncached(text) {
@@ -97,6 +107,16 @@ test('KG narration: S3 outage never blocks live Azure audio', async () => {
   let syntheses = 0
   const svc = loadService({
     'node:crypto': crypto,
+    '../providers/voice/class1-voice-language': {
+      chooseTalkoraBilingualVoice: (_text, voice) => ({ voice, locale: 'en-IN' }),
+    },
+    '../utils/ApiError': {
+      ApiError: class ApiError extends Error {
+        constructor(status, code, message, details) {
+          super(message); Object.assign(this, { status, code, details })
+        }
+      },
+    },
     '../providers/voice/AzureVoiceProvider': {
       AzureVoiceProvider: class {
         async synthesizeUncached() {
@@ -125,6 +145,50 @@ test('KG narration: S3 outage never blocks live Azure audio', async () => {
       svc.getKGAzureNarrationAudio({ level: 1, id: '../unsafe', text: 'a' }),
       /Invalid server-owned KG narration identity/,
     )
+  } finally {
+    for (const key of keys) {
+      if (previous[key] === undefined) delete process.env[key]
+      else process.env[key] = previous[key]
+    }
+  }
+})
+
+
+test('KG narration: S3 authorization failure is never disguised as a cache miss', async () => {
+  const keys = ['AWS_REGION', 'AWS_S3_BUCKET', 'AWS_ACCESS_KEY_ID', 'AWS_SECRET_ACCESS_KEY']
+  const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]))
+  Object.assign(process.env, {
+    AWS_REGION: 'ap-south-1', AWS_S3_BUCKET: 'unit-test-bucket',
+    AWS_ACCESS_KEY_ID: 'unit-test-only', AWS_SECRET_ACCESS_KEY: 'unit-test-only',
+  })
+  let syntheses = 0
+  const svc = loadService({
+    'node:crypto': crypto,
+    '../providers/voice/class1-voice-language': {
+      chooseTalkoraBilingualVoice: (_text, voice) => ({ voice, locale: 'en-IN' }),
+    },
+    '../utils/ApiError': {
+      ApiError: class ApiError extends Error {
+        constructor(status, code, message, details) {
+          super(message); Object.assign(this, { status, code, details })
+        }
+      },
+    },
+    '../providers/voice/AzureVoiceProvider': {
+      AzureVoiceProvider: class { async synthesizeUncached() { syntheses++; throw Error('must not run') } },
+    },
+    '../utils/logger': { logger: { warn() {} } },
+    './S3Service': {
+      S3Service: {
+        async getAudio() { throw Object.assign(new Error('denied'), { name: 'AccessDenied', $metadata: { httpStatusCode: 403 } }) },
+        async putAudio() { throw Error('must not run') },
+      },
+    },
+  })
+  try {
+    await assert.rejects(svc.getKGAzureNarrationAudio({ level: 1, id: 'letter-a', text: 'A for apple' }),
+      (error) => error.code === 'KG_AUDIO_STORAGE_ACCESS_DENIED' && error.status === 502)
+    assert.equal(syntheses, 0)
   } finally {
     for (const key of keys) {
       if (previous[key] === undefined) delete process.env[key]
