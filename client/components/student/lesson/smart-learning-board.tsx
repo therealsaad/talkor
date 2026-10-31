@@ -53,11 +53,20 @@ export interface SmartLearningBoardProps {
   selectedChoiceId?: string
   onSelectChoice?: (choiceId: string) => void
   disabled?: boolean
-  /** Confirmed XP awarded by server-authoritative progress update. Only rendered as +XP when confirmed. */
+  /**
+   * Authoritative earned XP awarded to the student.
+   * PRESENTATION CONTRACT: SmartLearningBoard strictly formats the presentation of this value.
+   * It does NOT perform cryptographic or server-side evidence verification itself.
+   * The caller / lesson orchestrator is strictly responsible for providing earned XP ONLY
+   * when verified by authoritative server responses (e.g. /api/lessons/complete or backend progress sync),
+   * never from speculative client assumptions.
+   */
+  earnedXp?: number
+  /** Alias for `earnedXp` for backward compatibility. */
   confirmedXp?: number
-  /** Potential XP available upon completion. Rendered as "Goal: X XP", never "+XP". */
+  /** Potential target XP available upon successful completion. Rendered as "Goal: X XP", never with "+". */
   potentialXp?: number
-  /** @deprecated Use potentialXp or confirmedXp */
+  /** @deprecated Use potentialXp for target rewards or earnedXp for server-verified earned awards. */
   xpReward?: number
   step?: { current: number; total: number }
   className?: string
@@ -113,6 +122,7 @@ export function SmartLearningBoard({
   selectedChoiceId,
   onSelectChoice,
   disabled = false,
+  earnedXp,
   confirmedXp,
   potentialXp,
   xpReward,
@@ -120,7 +130,8 @@ export function SmartLearningBoard({
   className = '',
 }: SmartLearningBoardProps) {
   const reduceMotion = useReducedMotion()
-  const displayGoalXp = potentialXp ?? (confirmedXp ? undefined : xpReward)
+  const effectiveEarnedXp = earnedXp ?? confirmedXp
+  const displayGoalXp = potentialXp ?? (effectiveEarnedXp ? undefined : xpReward)
 
   return (
     <section
@@ -142,14 +153,14 @@ export function SmartLearningBoard({
         </div>
 
         <div className="flex items-center gap-3">
-          {/* XP Guard: Only show +XP when confirmed by backend. Otherwise show unearned goal or nothing. */}
-          {confirmedXp && confirmedXp > 0 ? (
+          {/* XP Guard: Only show +XP when earned/confirmed by backend. Otherwise show unearned goal or nothing. */}
+          {effectiveEarnedXp && effectiveEarnedXp > 0 ? (
             <span
               className="text-xs font-black text-amber-300 flex items-center gap-1 bg-amber-400/15 px-2 py-0.5 rounded-md border border-amber-400/30"
               role="status"
-              aria-label={`${confirmedXp} XP confirmed`}
+              aria-label={`${effectiveEarnedXp} XP earned`}
             >
-              <Trophy size={13} /> +{confirmedXp} XP (Earned)
+              <Trophy size={13} /> +{effectiveEarnedXp} XP (Earned)
             </span>
           ) : displayGoalXp && displayGoalXp > 0 ? (
             <span

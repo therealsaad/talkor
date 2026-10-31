@@ -1,8 +1,9 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
-import { Sparkles, ArrowLeft, RefreshCw, ShieldAlert, GraduationCap, Home } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { Sparkles, ArrowLeft, RefreshCw, ShieldAlert, GraduationCap, Home, Lock } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { MissJulieTeachingStage } from '@/components/student/lesson/miss-julie-teaching-stage'
 import { VoiceInteractionBeacon } from '@/components/student/lesson/voice-interaction-beacon'
@@ -15,6 +16,10 @@ import {
   type SmartBoardMode,
 } from '@/components/student/lesson/smart-learning-board'
 import type { JulieVisualState } from '@/components/student/lesson/miss-julie-character'
+import {
+  checkClassroomPreviewAccess,
+  type ClassroomPreviewAccessResult,
+} from '@/lib/classroom-preview-guard'
 
 /**
  * Isolated Preview Showcase for Sprint 1 Presentation Components:
@@ -22,15 +27,29 @@ import type { JulieVisualState } from '@/components/student/lesson/miss-julie-ch
  * - SmartLearningBoard
  * - VoiceInteractionBeacon
  * 
- * SAFETY GUARDS:
- * 1. Protected from production student flows (not linked in student navigation).
- * 2. Clearly distinguishes simulated actions from actual learning.
- * 3. Never awards or displays unconfirmed XP as earned.
- * 4. Does NOT alter production lesson orchestration or touch student progress.
+ * STRICT SAFETY CONTRACT:
+ * 1. Protected with server-verified educator authorization in production.
+ * 2. Developer-only in local dev; students are strictly blocked from mounting or interacting.
+ * 3. Clearly distinguishes simulated actions from actual learning (0 real XP).
+ * 4. Never awards or displays unearned XP as earned.
+ * 5. Does NOT alter production lesson orchestration or touch student progress.
  */
 export default function ClassroomPreviewPage() {
+  const router = useRouter()
   const { status, role } = useAuth()
-  const isStudentSession = status === 'authenticated' && role === 'STUDENT'
+  const isProduction = process.env.NODE_ENV === 'production'
+
+  const access = checkClassroomPreviewAccess({
+    status,
+    role,
+    isProduction,
+  })
+
+  useEffect(() => {
+    if (access.redirectUrl) {
+      router.replace(access.redirectUrl)
+    }
+  }, [access.redirectUrl, router])
 
   const [julieState, setJulieState] = useState<JulieVisualState>('teaching')
   const [isSpeaking, setIsSpeaking] = useState(false)
@@ -101,9 +120,57 @@ export default function ClassroomPreviewPage() {
     setTeacherText('Look at the picture on the board! Can you say: "I skip to school"?')
   }
 
+  // 1. Loading state: Never render or mount sandbox controls during auth verification
+  if (access.reason === 'loading') {
+    return (
+      <div
+        className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center text-slate-300"
+        role="status"
+        aria-live="polite"
+        aria-busy="true"
+      >
+        <div className="w-10 h-10 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-sm font-semibold tracking-wide text-slate-300">
+          Verifying educator and developer authorization...
+        </p>
+      </div>
+    )
+  }
+
+  // 2. Disallowed Access: Strictly block anonymous visitors and students
+  if (!access.allowed) {
+    const isStudent = access.reason === 'student_blocked'
+    return (
+      <div
+        className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-6 text-center text-slate-100"
+        role="alert"
+        aria-live="assertive"
+      >
+        <div className="max-w-md w-full p-8 rounded-3xl bg-slate-900 border border-slate-800 shadow-2xl flex flex-col items-center text-center">
+          <div className="p-4 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 mb-4 shadow-inner">
+            {isStudent ? <GraduationCap size={36} aria-hidden="true" /> : <Lock size={36} aria-hidden="true" />}
+          </div>
+          <h1 className="text-lg font-extrabold text-white mb-2">Access Restricted</h1>
+          <p className="text-xs text-slate-400 mb-6 leading-relaxed">
+            {isStudent
+              ? 'This preview sandbox is strictly restricted to staff and developers. Student sessions are not permitted. Redirecting you to your active learning portal...'
+              : 'The classroom preview sandbox requires verified educator or developer authorization. Anonymous and unauthorized access in production is blocked.'}
+          </p>
+          <Link
+            href={access.redirectUrl || '/'}
+            className="w-full py-3 px-5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2"
+          >
+            {isStudent ? 'Return to My Lessons' : 'Go to Educator Login'}
+          </Link>
+        </div>
+      </div>
+    )
+  }
+
+  // 3. Authorized View: Only mounted for verified educators or developers
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 p-4 md:p-8 antialiased">
-      {/* 1. TOP SAFETY BANNER: Explicit Staff Sandbox Disclaimer */}
+      {/* TOP SAFETY BANNER: Explicit Staff Sandbox Disclaimer */}
       <div className="max-w-6xl mx-auto mb-4 p-3.5 rounded-2xl bg-amber-500/15 border-2 border-amber-500/40 text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg">
         <div className="flex items-center gap-3">
           <ShieldAlert className="text-amber-400 flex-none" size={22} aria-hidden="true" />
@@ -113,6 +180,13 @@ export default function ClassroomPreviewPage() {
             </strong>
             <span>
               Simulated presentation demo. No student voice recordings, attempts, or XP are saved to the database.
+              {access.reason === 'authorized_staff' ? (
+                <span className="ml-1 text-emerald-400 font-bold">
+                  (Verified Staff: {role === 'SCHOOL_ADMIN' ? 'School Admin' : 'Teacher'})
+                </span>
+              ) : (
+                <span className="ml-1 text-sky-400 font-bold">(Local Developer Mode)</span>
+              )}
             </span>
           </div>
         </div>
@@ -125,25 +199,6 @@ export default function ClassroomPreviewPage() {
           </Link>
         </div>
       </div>
-
-      {/* 2. STUDENT WARNING GUARD: If an authenticated student lands here */}
-      {isStudentSession ? (
-        <div className="max-w-6xl mx-auto mb-4 p-4 rounded-2xl bg-rose-500/20 border-2 border-rose-500/50 text-rose-200 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <GraduationCap className="text-rose-400 flex-none" size={24} />
-            <div className="text-xs md:text-sm">
-              <strong className="block text-rose-300 font-bold">You are signed in as a student!</strong>
-              <span>This sandbox does not count toward your class lessons or stars. Click below to resume your real lesson.</span>
-            </div>
-          </div>
-          <Link
-            href="/student/continue"
-            className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs shadow-md transition-all flex-none"
-          >
-            Resume My Lesson
-          </Link>
-        </div>
-      ) : null}
 
       {/* Header bar */}
       <header className="max-w-6xl mx-auto mb-6 flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900 border border-slate-800 shadow-md">
