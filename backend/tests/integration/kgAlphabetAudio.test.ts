@@ -10,6 +10,7 @@ import { Student } from '../../src/models/Student'
 import { S3Service } from '../../src/services/S3Service'
 import { KGSpeechService } from '../../src/services/kg-speech.service'
 import { clearKGStaticAudioCache } from '../../src/services/kg-static-audio-cache'
+import * as KGAzureNarration from '../../src/services/kg-azure-narration.service'
 import { PythonVoiceProvider } from '../../src/providers/voice/PythonVoiceProvider'
 import { AzureVoiceProvider } from '../../src/providers/voice/AzureVoiceProvider'
 import { KGQwenFeedbackService } from '../../src/services/kg-qwen-feedback.service'
@@ -666,4 +667,61 @@ it('preserves Sarvam Hindi detection on KG1 attempt for native-language Azure au
   expect(azure).toHaveBeenCalledWith(answer.body.data.feedbackText,{language:'hi-IN'})
   const progress=await KGAlphabetProgress.findOne({studentId:student._id})
   expect(progress?.currentIndex).toBe(0)
+})
+
+
+it('opt-in KG fixed narration uses only the canonical manifest and never changes student progress', async () => {
+  const previous = process.env.TALKORA_KG_FIXED_NARRATION_CACHE
+  process.env.TALKORA_KG_FIXED_NARRATION_CACHE = 'true'
+  try {
+    const { student, authorization } = await makePilot()
+    const bytes = Buffer.concat([Buffer.from('ID3'), Buffer.alloc(370)])
+    const cached = jest.spyOn(KGAzureNarration, 'getKGAzureNarrationAudio').mockResolvedValue({
+      audio: bytes, contentType: 'audio/mpeg', source: 's3', storedInS3: true,
+    })
+    const oldS3 = jest.spyOn(S3Service, 'getAudio')
+    const oldAzure = jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached')
+    const response = await request(app).get('/api/kg-alphabet/audio/v1/letter-a')
+      .set('Authorization', authorization).expect(200)
+    expect(response.headers['x-talkora-cache']).toBe('S3')
+    expect(response.headers['cache-control']).toBe('private, no-store')
+    expect(response.headers['content-type']).toMatch(/audio\/mpeg/)
+    expect(response.headers.etag).toMatch(/^"[a-f0-9]{64}"$/)
+    expect(cached).toHaveBeenCalledWith({
+      level: 1, id: 'letter-a', text: 'This is the letter A. Say A with me!',
+    })
+    expect(oldS3).not.toHaveBeenCalled()
+    expect(oldAzure).not.toHaveBeenCalled()
+
+    await request(app).get('/api/kg-alphabet/audio/v1/letter-a')
+      .set('Authorization', authorization)
+      .set('If-None-Match', response.headers.etag).expect(304)
+    // Streaming a fixed cue cannot mark the full video watched, award XP or
+    // acknowledge a child's dynamic reply.
+    expect(await KGAlphabetProgress.countDocuments({ studentId: student._id })).toBe(0)
+    expect(await KGAlphabetAttempt.countDocuments({ studentId: student._id })).toBe(0)
+    expect(cached).toHaveBeenCalledTimes(2)
+  } finally {
+    if (previous === undefined) delete process.env.TALKORA_KG_FIXED_NARRATION_CACHE
+    else process.env.TALKORA_KG_FIXED_NARRATION_CACHE = previous
+  }
+})
+
+it('opt-in KG fixed narration fails closed on bad cached bytes and never calls dynamic voice', async () => {
+  const previous = process.env.TALKORA_KG_FIXED_NARRATION_CACHE
+  process.env.TALKORA_KG_FIXED_NARRATION_CACHE = 'true'
+  try {
+    const { authorization } = await makePilot()
+    jest.spyOn(KGAzureNarration, 'getKGAzureNarrationAudio').mockResolvedValue({
+      audio: Buffer.alloc(370, 0x41), contentType: 'audio/mpeg', source: 's3', storedInS3: true,
+    })
+    const oldAzure = jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached')
+    const response = await request(app).get('/api/kg-alphabet/audio/v1/letter-a')
+      .set('Authorization', authorization).expect(502)
+    expect(response.body.error?.code).toBe('PROVIDER_ERROR')
+    expect(oldAzure).not.toHaveBeenCalled()
+  } finally {
+    if (previous === undefined) delete process.env.TALKORA_KG_FIXED_NARRATION_CACHE
+    else process.env.TALKORA_KG_FIXED_NARRATION_CACHE = previous
+  }
 })

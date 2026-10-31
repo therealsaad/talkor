@@ -13,6 +13,7 @@ import { KGIntroPlayback } from '../models/KGIntroPlayback'
 import { AUDIO_IDS, AUDIO_LINES, AUDIO_MANIFEST, LETTERS, activityAt, audioKey, evaluateKGSpeech, KG_ALPHABET_VERSION, KG_AUDIO_VERSION, type AudioId } from '../kg/alphabet-content'
 import { isAuthorizedKGAlphabetStudent } from '../services/kg-pilot-access'
 import { getKGStaticAudio } from '../services/kg-static-audio-cache'
+import { getKGAzureNarrationAudio } from '../services/kg-azure-narration.service'
 import { PythonVoiceProvider } from '../providers/voice/PythonVoiceProvider'
 import { AzureVoiceProvider } from '../providers/voice/AzureVoiceProvider'
 import { KGQwenFeedbackService } from '../services/kg-qwen-feedback.service'
@@ -263,6 +264,29 @@ async function sendManifestAudio(res: Response, id: AudioId, options: { preview?
   const line = AUDIO_MANIFEST.find((clip) => clip.id === id)
   if (!line) throw ApiError.notFound('Audio clip not found')
   if (line.kind === 'dynamic_tts') return sendKGVoice(res, line.text)
+
+  // Opt-in, SERVER-OWNED fixed lesson narration only. Existing KG S3 and
+  // fallback behavior remains identical unless explicitly enabled.
+  // No student transcript, Qwen response or feedback audio enters this cache.
+  if (process.env.TALKORA_KG_FIXED_NARRATION_CACHE === 'true') {
+    const result = await getKGAzureNarrationAudio({ level: 1, id, text: line.text })
+    if (result.audio.length > 2 * 1024 * 1024 ||
+        !hasExpectedAudioHeader(result.audio, result.contentType)) {
+      throw ApiError.provider('KG_STATIC_TTS_INVALID')
+    }
+    const etag = `"${createHash('sha256').update(result.audio).digest('hex')}"`
+    res.setHeader('Content-Type', result.contentType)
+    res.setHeader('Content-Length', String(result.audio.length))
+    res.setHeader('Cache-Control', 'private, no-store')
+    res.setHeader('Vary', 'Authorization')
+    res.setHeader('ETag', etag)
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('X-Talkora-Cache', result.source.toUpperCase())
+    // Only the actual full-video ticket endpoint can record intro completion.
+    // An audio 304 is a transport optimization, never a progress write.
+    if (!options.preview && options.ifNoneMatch === etag) return res.status(304).end()
+    return res.send(result.audio)
+  }
 
   let audio: Buffer
   try {

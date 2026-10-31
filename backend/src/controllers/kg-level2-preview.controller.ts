@@ -1,5 +1,7 @@
 import type { Request, Response } from 'express'
 import { AzureVoiceProvider } from '../providers/voice/AzureVoiceProvider'
+import { getKGAzureNarrationAudio } from '../services/kg-azure-narration.service'
+import { hasExpectedAudioHeader } from '../services/voice-audio-format'
 import { KGSpeechService } from '../services/kg-speech.service'
 import { isSupportedVoiceAudioMimeType } from '../schemas/voice.schema'
 import { ApiError } from '../utils/ApiError'
@@ -26,9 +28,19 @@ export const KGLevel2PreviewController = {
       throw ApiError.notFound('Level 2 narration not found')
     }
 
-    const { audio, contentType } = await new AzureVoiceProvider().synthesizeUncached(LEVEL2_NARRATION[narrationId])
+    // Staff preview, fixed server-authored narration. No persistence of student
+    // recordings or generated feedback; default behavior is unchanged.
+    const cacheEnabled = process.env.TALKORA_KG_FIXED_NARRATION_CACHE === 'true'
+    const narration = cacheEnabled
+      ? await getKGAzureNarrationAudio({ level: 2, id: narrationId, text: LEVEL2_NARRATION[narrationId] })
+      : await new AzureVoiceProvider().synthesizeUncached(LEVEL2_NARRATION[narrationId])
+    const { audio, contentType } = narration
+    if (cacheEnabled && (audio.length > 2 * 1024 * 1024 || !hasExpectedAudioHeader(audio, contentType))) {
+      throw ApiError.provider('KG_STATIC_TTS_INVALID')
+    }
     res.setHeader('Content-Type', contentType)
     res.setHeader('Content-Length', String(audio.length))
+    if ('source' in narration && typeof narration.source === 'string') res.setHeader('X-Talkora-Cache', narration.source.toUpperCase())
     res.setHeader('Cache-Control', 'private, no-store')
     res.setHeader('X-Content-Type-Options', 'nosniff')
     res.send(audio)
