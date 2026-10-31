@@ -104,6 +104,9 @@ jobs:
       - name: Verify optional KG Azure S3 cache offline without credentials
         run: pnpm run test:kg-azure-audio
         working-directory: backend
+      - name: Guard opt-in KG fixed narration controller and student progress
+        run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'opt-in KG fixed narration'
+        working-directory: backend
       - name: Refuse invalid placeholder Class 1 intro URL before media staging
         run: pnpm exec jest --runInBand tests/unit/class1IntroUrl.test.ts
         working-directory: backend
