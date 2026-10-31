@@ -37,3 +37,14 @@ test('concurrent KG intro ticket cannot be adopted by a different student login'
   assert.match(service, /pendingIntroStudentToken === token && getStoredToken\(\) === token/)
   assert.match(service, /pendingIntroStudentToken = null/)
 })
+
+
+test('completed KG intro ticket is accepted only for the owning student login', () => {
+  assert.match(service, /let playbackStudentToken: string \| null = null/)
+  assert.match(service, /playbackStudentToken = token/)
+  assert.match(service, /playbackStudentToken = null/)
+  assert.match(service, /hasIntroTicket: \(\) => Boolean\(playbackId && playbackStudentToken && getStoredToken\(\) === playbackStudentToken\)/)
+  assert.match(service, /if \(!playbackId \|\| !playbackStudentToken \|\| getStoredToken\(\) !== playbackStudentToken\)/)
+  assert.match(service, /'X-KG-Intro-Playback': playbackId/)
+  assert.match(backend, /await assertIntroTicket\(req, student\._id, student\.schoolId\)/)
+})
