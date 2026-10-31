@@ -1,0 +1,24 @@
+name: Talkora Curriculum Research Validation
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'curriculum-research/**'
+      - '.github/workflows/talkora-curriculum-research.yml'
+  workflow_dispatch:
+
+jobs:
+  curriculum-draft:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify both draft textbook maps, references and teacher-review gates
+        run: node curriculum-research/tools/validate-curriculum.mjs
+      - name: Guard dual-track ID separation and bilingual checkpoint examples
+        run: node --test curriculum-research/tools/dualtrack-contract.test.mjs
