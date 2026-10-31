@@ -22,7 +22,7 @@ test('one in-flight intro watch is shared across React Strict Mode mounts', () =
   assert.match(service, /let pendingIntroStart: Promise<\{ playbackId: string \}> \| null = null/)
   assert.match(service, /if \(pendingIntroStart && pendingIntroStudentToken === token\) return pendingIntroStart/)
   assert.match(service, /pendingIntroStart = pending/)
-  assert.match(service, /if \(pendingIntroStart === pending\) pendingIntroStart = null/)
+  assert.match(service, /if \(pendingIntroStart === pending\) \{\s*pendingIntroStart = null\s*pendingIntroStudentToken = null\s*\}/)
 })
 
 test('ticket checks stay mandatory; no intro bypass, no fake completed playback', () => {
