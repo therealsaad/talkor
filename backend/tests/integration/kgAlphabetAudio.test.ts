@@ -510,8 +510,8 @@ it('KG1 caches each Qwen teacher reply once and synthesizes the identical Azure 
   await audio()
   expect(qwen).toHaveBeenCalledTimes(1)
   expect(synthesize).toHaveBeenCalledTimes(2)
-  expect(synthesize).toHaveBeenNthCalledWith(1, result.body.data.feedbackText)
-  expect(synthesize).toHaveBeenNthCalledWith(2, result.body.data.feedbackText)
+  expect(synthesize).toHaveBeenNthCalledWith(1, result.body.data.feedbackText, { language: 'en-IN' })
+  expect(synthesize).toHaveBeenNthCalledWith(2, result.body.data.feedbackText, { language: 'en-IN' })
 
   const recovered = await request(app).post('/api/kg-alphabet/attempt')
     .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
@@ -724,4 +724,47 @@ it('opt-in KG fixed narration fails closed on bad cached bytes and never calls d
     if (previous === undefined) delete process.env.TALKORA_KG_FIXED_NARRATION_CACHE
     else process.env.TALKORA_KG_FIXED_NARRATION_CACHE = previous
   }
+})
+
+
+it('keeps the saved voice locale stable across conflicting Sarvam results and audio replay', async () => {
+  const { student, authorization } = await makePilot()
+  await approveIntro(authorization)
+  const stt = jest.spyOn(KGSpeechService, 'transcribe')
+    .mockResolvedValueOnce({ transcript: 'dog', available: true, provider: 'sarvam', languageCode: 'hi-IN' } as never)
+    .mockResolvedValueOnce({ transcript: 'dog', available: true, provider: 'sarvam', languageCode: 'hi-IN' } as never)
+    .mockResolvedValueOnce({ transcript: 'apple', available: true, provider: 'sarvam', languageCode: 'en-IN' } as never)
+  const qwen = jest.spyOn(KGQwenFeedbackService, 'compose').mockImplementation(async (input) => ({
+    text: input.languageCode === 'hi-IN'
+      ? 'अच्छी कोशिश! अंग्रेज़ी में बोलो। Say apple.'
+      : 'Nice try! Say apple.',
+    source: 'guided' as const,
+  }))
+  const speak = (submissionId: string) => request(app).post('/api/kg-alphabet/attempt')
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
+    .send({ activityId: 'say-a', submissionId, audioBase64: 'Y'.repeat(160),
+      mimeType: 'audio/webm', durationMs: 1000 })
+  await speak('kg-lang-hindi-1-1234').expect(200)
+  await speak('kg-lang-hindi-2-1234').expect(200)
+  const thirdId = 'kg-lang-english-3-1234'
+  const third = await speak(thirdId).expect(200)
+  expect(third.body.data.outcome).toBe('correct')
+  expect(stt).toHaveBeenCalledTimes(3)
+  expect(qwen).toHaveBeenCalledTimes(3)
+  expect(qwen).toHaveBeenLastCalledWith(expect.objectContaining({ languageCode: 'hi-IN' }))
+  const recorded = await KGAlphabetAttempt.findOne({ studentId: student._id, submissionId: thirdId }).lean()
+  expect(recorded?.languageCode).toBe('en-IN')
+  expect(recorded?.feedbackLanguageCode).toBe('hi-IN')
+
+  const azure = jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached')
+    .mockResolvedValue({ audio: Buffer.alloc(500, 65), contentType: 'audio/mpeg' })
+  await request(app).get('/api/kg-alphabet/attempt/' + thirdId + '/feedback-audio')
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
+    .expect(200)
+  expect(azure).toHaveBeenCalledWith(third.body.data.feedbackText, { language: 'hi-IN' })
+  const replay = await speak(thirdId).expect(200)
+  expect(replay.body.data.duplicate).toBe(true)
+  expect(replay.body.data.feedbackText).toBe(third.body.data.feedbackText)
+  expect(stt).toHaveBeenCalledTimes(3)
+  expect(qwen).toHaveBeenCalledTimes(3)
 })

@@ -9,6 +9,8 @@ export interface IKGAlphabetAttempt {
   outcome: 'correct' | 'incorrect' | 'unclear' | 'supported'
   transcript?: string
   languageCode?: 'en-IN' | 'hi-IN' | 'mr-IN'
+  /** Stable voice locale derived from recent authenticated speech, not browser input. */
+  feedbackLanguageCode?: 'en-IN' | 'hi-IN' | 'mr-IN'
   /** Final server-owned teacher words chosen once for an idempotent attempt. */
   feedbackText?: string
   selected?: string
@@ -30,6 +32,7 @@ const schema = new Schema<IKGAlphabetAttempt>({
   outcome: { type: String, enum: ['correct', 'incorrect', 'unclear', 'supported'], required: true },
   transcript: { type: String, maxlength: 240 },
   languageCode: { type: String, enum: ['en-IN', 'hi-IN', 'mr-IN'] },
+  feedbackLanguageCode: { type: String, enum: ['en-IN', 'hi-IN', 'mr-IN'] },
   feedbackText: { type: String, maxlength: 280 },
   selected: { type: String, maxlength: 20 },
   timeSpentMs: { type: Number, min: 0, max: 300000, default: 0 },

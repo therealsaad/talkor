@@ -45,7 +45,18 @@ export class AzureVoiceProvider implements VoiceProvider {
     const url = `https://${s.region}.tts.speech.microsoft.com/cognitiveservices/v1`
     const rate = kindergarten ? (process.env.KG_AZURE_SPEECH_RATE?.trim() || "+5%") : s.rate
     const pitch = kindergarten ? (process.env.KG_AZURE_SPEECH_PITCH?.trim() || "+6%") : s.pitch
-    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${selected.locale}"><voice name="${selected.voice}"><prosody rate="${rate}" pitch="${pitch}">${escapeXml(text)}</prosody></voice></speak>`
+    // A Hindi/Marathi explanation and its English target need two distinct
+    // voice segments, not one Hindi/Marathi voice reading the whole sentence.
+    // Azure accepts multiple voice nodes inside ONE synthesis request.
+    const practice = kindergarten && (selected.locale === 'hi-IN' || selected.locale === 'mr-IN')
+      ? /^(.*?)(\s+Say (?:apple|ball|cat|dog)[.!?]?)$/is.exec(text)
+      : null
+    const voiceNode = (voice: string, words: string) =>
+      `<voice name="${voice}"><prosody rate="${rate}" pitch="${pitch}">${escapeXml(words)}</prosody></voice>`
+    const content = practice && practice[1].trim()
+      ? voiceNode(selected.voice, practice[1].trim()) + voiceNode('en-IN-NeerjaNeural', practice[2].trim())
+      : voiceNode(selected.voice, text)
+    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${selected.locale}">${content}</speak>`
 
     let response: Response
     try {

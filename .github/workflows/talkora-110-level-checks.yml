@@ -135,6 +135,12 @@ jobs:
       - name: Verify KG1 live Azure Hindi/Marathi language selection
         run: pnpm exec jest --runInBand tests/unit/kgAzureBilingualLocale.test.ts
         working-directory: backend
+      - name: Verify rule-first KG Qwen fallback and session-stable Sarvam language
+        run: pnpm exec jest --runInBand tests/unit/kgFeedbackRouting.test.ts tests/unit/kgTeachingLanguage.test.ts
+        working-directory: backend
+      - name: Verify persisted KG feedback locale and idempotent voice replay
+        run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'keeps the saved voice locale stable'
+        working-directory: backend
       - name: Verify KG1 Sarvam locale survives Qwen and Azure feedback
         run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'preserves Sarvam Hindi detection'
         working-directory: backend
