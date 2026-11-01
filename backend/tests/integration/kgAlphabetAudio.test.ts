@@ -946,3 +946,84 @@ it('never overwrites a recovered fallback when the original Qwen request finishe
   expect((await KGAlphabetAttempt.findOne({ studentId: student._id, submissionId }).lean())?.feedbackText).toBe(frozen)
   expect(qwen).toHaveBeenCalledTimes(1)
 })
+
+
+it('resumes only the current unacknowledged KG answer after a fresh completed intro, without another STT call', async () => {
+  const { student, authorization } = await makePilot()
+  await approveIntro(authorization)
+  const stt = jest.spyOn(KGSpeechService, 'transcribe').mockResolvedValue({
+    transcript: 'apple', available: true, provider: 'sarvam', languageCode: 'en-IN',
+  } as never)
+  const qwen = jest.spyOn(KGQwenFeedbackService, 'compose')
+  const submissionId = 'kg-refresh-recover-123456'
+  const submitted = await request(app).post('/api/kg-alphabet/attempt')
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
+    .send({ activityId: 'say-a', submissionId,
+      audioBase64: 'Y'.repeat(160), mimeType: 'audio/webm', durationMs: 900 }).expect(200)
+  expect(submitted.body.data.outcome).toBe('correct')
+  expect(submitted.body.data.state.currentIndex).toBe(0)
+  expect((await KGAlphabetAttempt.findOne({ studentId: student._id, submissionId }).lean())?.awaitingFeedbackPlayback).toBe(true)
+
+  // A reload requires the full story again; old ticket cannot be reused.
+  await approveIntro(authorization)
+  await request(app).get('/api/kg-alphabet/pending-feedback')
+    .set('Authorization', authorization).expect(409)
+  const recovered = await request(app).get('/api/kg-alphabet/pending-feedback')
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId).expect(200)
+  expect(recovered.body.data.pending).toMatchObject({
+    submissionId, outcome: 'correct', feedbackText: submitted.body.data.feedbackText,
+    state: { currentIndex: 0 },
+  })
+  expect(stt).toHaveBeenCalledTimes(1)
+  expect(qwen).toHaveBeenCalledTimes(1)
+
+  jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached')
+    .mockResolvedValue({ audio: Buffer.alloc(500, 65), contentType: 'audio/mpeg' })
+  const voice = await request(app).get('/api/kg-alphabet/attempt/' + submissionId + '/feedback-audio')
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId).expect(200)
+  const receipt = String(voice.headers['x-kg-feedback-receipt'] || '')
+  expect(receipt).toMatch(/^v1\./)
+  const heard = await request(app).post('/api/kg-alphabet/attempt/' + submissionId + '/feedback-played')
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
+    .send({ feedbackReceipt: receipt }).expect(200)
+  expect(heard.body.data.state.currentIndex).toBe(1)
+  const saved = await KGAlphabetAttempt.findOne({ studentId: student._id, submissionId }).lean()
+  expect(saved?.awaitingFeedbackPlayback).toBe(false)
+  expect(saved?.feedbackAcknowledgedAt).toBeInstanceOf(Date)
+  const empty = await request(app).get('/api/kg-alphabet/pending-feedback')
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId).expect(200)
+  expect(empty.body.data.pending).toBeNull()
+  expect(stt).toHaveBeenCalledTimes(1)
+  expect(qwen).toHaveBeenCalledTimes(1)
+})
+
+it('does not resume stale, historic or previously heard attempts from the current activity', async () => {
+  const { student, authorization } = await makePilot()
+  await approveIntro(authorization)
+  const getPending = () => request(app).get('/api/kg-alphabet/pending-feedback')
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId).expect(200)
+  // A historic attempt has no explicit recovery protocol marker.
+  await KGAlphabetAttempt.create({
+    studentId: student._id, schoolId: student.schoolId, activityId: 'say-a',
+    submissionId: 'kg-historic-answer-1234', letter: 'A', mode: 'speak', replay: false,
+    outcome: 'incorrect', feedbackText: 'Try apple.',
+  })
+  expect((await getPending()).body.data.pending).toBeNull()
+
+  // Newer acknowledged attempt means an older unanswered turn is not resumed.
+  await KGAlphabetAttempt.create({
+    studentId: student._id, schoolId: student.schoolId, activityId: 'say-a',
+    submissionId: 'kg-older-unheard-123456', letter: 'A', mode: 'speak', replay: false,
+    outcome: 'incorrect', awaitingFeedbackPlayback: true,
+    feedbackText: 'Try apple once more.', createdAt: new Date(Date.now() - 90_000),
+  })
+  await KGAlphabetAttempt.create({
+    studentId: student._id, schoolId: student.schoolId, activityId: 'say-a',
+    submissionId: 'kg-newer-heard-123456', letter: 'A', mode: 'speak', replay: false,
+    outcome: 'incorrect', awaitingFeedbackPlayback: false,
+    feedbackText: 'Good try. Say apple.', feedbackAcknowledgedAt: new Date(),
+  })
+  expect((await getPending()).body.data.pending).toBeNull()
+  // No old English evidence is promoted to mastery.
+  expect((await KGAlphabetProgress.findOne({ studentId: student._id }))?.currentIndex).toBe(0)
+})
