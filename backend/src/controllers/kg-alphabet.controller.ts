@@ -646,6 +646,9 @@ export const KGAlphabetController = {
       const feedbackLanguage = resolveFeedbackLanguage(languageCode, (await lastLanguageLookup)?.languageCode)
       const voice = await kgDynamicFeedback({ letter: activity.letter, mode: assistedPicture ? 'touch' : activity.mode, outcome,
         transcript, languageCode: feedbackLanguage, selected, noSpeech: recognitionReason === 'silence' })
+      // Start voicing a reviewed line now so synthesis overlaps this response; the browser's audio request finds it ready.
+      KGFeedbackAudioService.warm(voice.feedbackText, { letter: activity.letter, mode: assistedPicture ? 'touch' : activity.mode, outcome,
+        noSpeech: recognitionReason === 'silence', languageCode: feedbackLanguage })
       // Persist only the guarded teacher sentence, never audio, after the
       // speech attempt is recorded. Duplicate submissions and replay-audio
       // endpoints must use the exact same line, not regenerate Qwen text.

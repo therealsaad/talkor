@@ -107,7 +107,7 @@ test('staff preview routes audio through STT and returns manifest-selected Priya
     '../services/kg-azure-narration.service': { getKGAzureNarrationAudio: async () => null },
     '../providers/voice/AzureVoiceProvider': { AzureVoiceProvider: class { async synthesizeUncached() { throw new Error('Preview must not synthesize live audio') } } },
     '../services/kg-qwen-feedback.service': { KGQwenFeedbackService: { compose: async () => ({ text: 'Good try! Listen and say apple.', source: 'guided' }) } },
-    '../services/kg-feedback-audio.service': { KGFeedbackAudioService: { synthesize: async () => null } },
+    '../services/kg-feedback-audio.service': { KGFeedbackAudioService: { synthesize: async () => null, warm: () => {} } },
     '../kg/kg-bilingual-feedback': { resolveFeedbackLanguage: (current, lastKnown) => current ?? lastKnown },
     '../services/voice-audio-format': { hasExpectedAudioHeader: () => true },
     '../providers/voice/PythonVoiceProvider': { PythonVoiceProvider: class { async synthesize() { calls.priya++; return { audioBase64: 'CQgH', contentType: 'audio/mpeg', available: true } } } },

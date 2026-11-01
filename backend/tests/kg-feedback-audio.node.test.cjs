@@ -101,6 +101,28 @@ test('when Azure fails the service returns null so the controller can use Priya,
   assert.equal(KGFeedbackAudioService.cacheSize(), 0)
 })
 
+test('warm starts a reviewed line without waiting, so the later audio request is a hit or shares the in-flight call', async () => {
+  const provider = fakeProvider({ delayMs: 40 })
+  const startedAt = Date.now()
+  KGFeedbackAudioService.warm(billiText(), billiTurn, provider)
+  assert.ok(Date.now() - startedAt < 10, 'warm must not wait for Azure')
+  // The browser asks for the audio while synthesis is still running.
+  const result = await KGFeedbackAudioService.synthesize(billiText(), billiTurn, provider)
+  assert.ok(result.audio.length > 0)
+  assert.equal(provider.calls.multi.length, 1, 'warm + request must share one Azure call')
+  const later = await KGFeedbackAudioService.synthesize(billiText(), billiTurn, provider)
+  assert.equal(later.source, 'cache')
+})
+
+test('warm ignores personalised Qwen text and never throws on provider failure', async () => {
+  const provider = fakeProvider({ failSegments: true })
+  KGFeedbackAudioService.warm('Nice try! Cats say meow. Can you say cat?', billiTurn, provider)
+  KGFeedbackAudioService.warm(billiText(), billiTurn, provider)
+  await new Promise((resolve) => setTimeout(resolve, 20))
+  assert.equal(provider.calls.single.length, 0, 'a Qwen sentence must not be synthesized by warm')
+  assert.equal(KGFeedbackAudioService.cacheSize(), 0)
+})
+
 test('prewarm covers every reviewed line, then every first turn is a cache hit', async () => {
   const provider = fakeProvider()
   const lines = KGFeedbackAudioService.guidedLines()

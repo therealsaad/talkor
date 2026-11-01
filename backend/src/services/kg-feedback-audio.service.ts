@@ -105,6 +105,17 @@ export const KGFeedbackAudioService = {
     return created ? { ...created, source: 'azure', multiVoice: segments.length > 1 } : null
   },
 
+  /**
+   * Starts voicing a reviewed line right now, without waiting for it. Called the moment an attempt is graded so
+   * synthesis overlaps the response trip to the browser; the browser's follow-up audio request then finds the
+   * audio finished or in flight (concurrent requests share one Azure call). Anything that is not a reviewed
+   * line (a Qwen sentence) is ignored, so personalised text is never synthesized twice or kept.
+   */
+  warm(text: string, turn: KGFeedbackAudioTurn, provider?: SegmentProvider): void {
+    if (!matchGuidedSegments(text, turn)) return
+    void this.synthesize(text, turn, provider).catch(() => undefined)
+  },
+
   /** Every reviewed line a KG child can hear, de-duplicated by what is actually spoken. */
   guidedLines(): KGFeedbackSegment[][] {
     const letters: KGFeedbackLetter[] = ['A', 'B', 'C', 'D']
