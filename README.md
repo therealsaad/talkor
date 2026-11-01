@@ -13,6 +13,8 @@
 
 > **Sprint 3.4 (November 1, 2026):** KG voice responses are frozen atomically before any audio receipt can be issued. A browser reload after a graded but unplayed attempt now resumes the latest saved current-activity feedback only after a new, fully completed introduction, without a duplicate STT/LLM turn. See [Sprint 3.4 verification and school rollout gates](docs/sprint3-4-kg-interrupted-turn-recovery.md). This does **not** certify live cloud voice or school-lab deployment.
 
+> **Sprint 3.5 (November 1, 2026):** Added a disposable Mongo/HTTP **PIN-to-homework KG regression** exercising mandatory intro enforcement, S3/Priya teaching boundaries, 8 server-graded turns, signed audio receipts, idempotent homework, cross-student privacy and logout intro-ticket revocation. Synthetic STT/TTS cannot certify microphone or speaker behavior: see the [Sprint 3.5 classroom acceptance checklist](docs/sprint3-5-kg-pin-to-homework-pilot.md). Do not mark school deployment ready without the supervised live trial.
+
 ## Table of contents
 
 1. [Quick start: run the app](#1-quick-start-run-the-app)

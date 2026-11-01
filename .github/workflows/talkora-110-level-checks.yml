@@ -156,6 +156,9 @@ jobs:
       - name: Verify KG1 frozen Qwen feedback survives retries, process crashes, and resumed lab sessions
         run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'blocks duplicate submission|recovers an orphaned|never overwrites a recovered|resumes only the current unacknowledged|does not resume stale'
         working-directory: backend
+      - name: Verify disposable KG PIN-to-homework HTTP/Mongo pilot journey and logout ticket revocation
+        run: pnpm exec jest --runInBand tests/integration/kgFullPilotJourney.test.ts
+        working-directory: backend
       - name: Verify KG1 Sarvam locale survives Qwen and Azure feedback
         run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'preserves Sarvam Hindi detection'
         working-directory: backend
