@@ -51,7 +51,7 @@ describe('KG signed feedback-audio receipt', () => {
 
   it('rejects tampering without throwing or granting progress', () => {
     const original = issueKGFeedbackReceipt(scope, now)
-    const altered = original.slice(0, -1) + (original.at(-1) === 'a' ? 'b' : 'a')
+    const altered = original.slice(0, -1) + (original.slice(-1) === 'a' ? 'b' : 'a')
     expect(verifyKGFeedbackReceipt(altered, scope, now)).toBe(false)
   })
 })
