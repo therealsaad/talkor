@@ -8,6 +8,8 @@ import { KGIntroPlayback } from '../../src/models/KGIntroPlayback'
 import { School } from '../../src/models/School'
 import { Student } from '../../src/models/Student'
 import { AzureVoiceProvider } from '../../src/providers/voice/AzureVoiceProvider'
+import { PythonVoiceProvider } from '../../src/providers/voice/PythonVoiceProvider'
+import { S3Service } from '../../src/services/S3Service'
 import { KGSpeechService } from '../../src/services/kg-speech.service'
 import { VoiceWarmupService } from '../../src/services/voice-warmup.service'
 import { hashPassword } from '../../src/utils/password'
@@ -137,6 +139,21 @@ it('uses real 5-digit PIN, intro, 8 saved turns, receipt ACK, homework and safe 
   const ticketB = await watchCompletedIntro(tokenB)
   const a = asStudent(tokenA, ticketA)
   const b = asStudent(tokenB, ticketB)
+
+  // Serve reviewed fixed pronunciation narration from synthetic S3 data,
+  // then the lesson's live opening instruction from synthetic Priya bytes.
+  // Neither provider is contacted from this disposable integration suite.
+  const s3 = jest.spyOn(S3Service, 'getAudio')
+    .mockResolvedValue(Buffer.concat([Buffer.from([73, 68, 51, 4, 0, 0]), Buffer.alloc(350)]))
+  const local = jest.spyOn(PythonVoiceProvider.prototype, 'synthesize')
+    .mockResolvedValue({ audioUrl: null, audioBase64: Buffer.alloc(400, 65).toString('base64'),
+      contentType: 'audio/wav', available: true, provider: 'synthetic-priya' })
+  const fixedPrompt = await a.protected('/api/kg-alphabet/audio/v1/letter-a').expect(200)
+  expect(fixedPrompt.headers['content-type']).toMatch(/audio\/mpeg/)
+  expect(s3).toHaveBeenCalledWith('kg/level-1/miss-julie/v1/letter-a.mp3')
+  const livePrompt = await a.protected('/api/kg-alphabet/audio/v1/say-a').expect(200)
+  expect(livePrompt.headers['x-voice-provider']).toBe('python-priya')
+  expect(local).toHaveBeenCalledWith('A! A for apple! Can you say apple?')
 
   const fakeVoice = jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached')
     .mockResolvedValue({ audio: Buffer.alloc(512, 65), contentType: 'audio/mpeg' })
