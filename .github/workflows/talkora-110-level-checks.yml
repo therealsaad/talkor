@@ -141,6 +141,12 @@ jobs:
       - name: Verify persisted KG feedback locale and idempotent voice replay
         run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'keeps the saved voice locale stable'
         working-directory: backend
+      - name: Verify KG signed audio feedback receipt against session switching and expiration
+        run: pnpm exec jest --runInBand tests/unit/kgFeedbackReceipt.test.ts
+        working-directory: backend
+      - name: Verify KG1 audio receipt is required before correct-answer progress
+        run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'requires generated voice receipt'
+        working-directory: backend
       - name: Verify KG1 Sarvam locale survives Qwen and Azure feedback
         run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'preserves Sarvam Hindi detection'
         working-directory: backend
