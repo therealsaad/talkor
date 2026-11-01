@@ -17,7 +17,27 @@ const WORDS: Record<Letter, string> = { A: 'apple', B: 'ball', C: 'cat', D: 'dog
 
 export function safeKGFeedback(input: KGFeedbackInput): string {
   const word = WORDS[input.letter]
-  if (input.outcome === 'supported') return `Great! You found the word! In English we say ${word}. Let’s keep learning!`
+  // Feedback language follows server-verified Sarvam metadata. Only an
+  // independent English attempt may pass; these lines never award progress.
+  if (input.languageCode === 'hi-IN') {
+    const prompt = ' Say ' + word + '.'
+    if (input.outcome === 'correct') return 'शाबाश! बहुत अच्छा!' + prompt
+    if (input.outcome === 'supported') return 'अच्छी कोशिश! अंग्रेज़ी में इसे ' + word + ' कहते हैं।' + prompt
+    if (input.noSpeech) return 'मैं सुन रही हूँ। आराम से बोलो।' + prompt
+    if (input.outcome === 'unclear') return 'कोई बात नहीं! फिर से कोशिश करो।' + prompt
+    return 'अच्छी कोशिश! फिर से बोलो।' + prompt
+  }
+  if (input.languageCode === 'mr-IN') {
+    const prompt = ' Say ' + word + '.'
+    if (input.outcome === 'correct') return 'खूप छान! शाब्बास!' + prompt
+    if (input.outcome === 'supported') return 'छान प्रयत्न! इंग्रजीत याला ' + word + ' म्हणतात।' + prompt
+    if (input.noSpeech) return 'मी ऐकते आहे। हळू बोल।' + prompt
+    if (input.outcome === 'unclear') return 'काही हरकत नाही! पुन्हा प्रयत्न कर।' + prompt
+    return 'छान प्रयत्न! पुन्हा बोल।' + prompt
+  }
+  if (input.outcome === 'supported') return input.mode === 'touch'
+    ? 'Great! You found the picture! In English we say ' + word + '.'
+    : 'Nice try! In English, we say ' + word + '. Say ' + word + '.'
   if (input.outcome === 'correct') return `Yay! You did it! ${input.letter} is for ${word}. Wonderful!`
   if (input.noSpeech) return `I'm listening, superstar. Take your time! Say ${word} when you're ready.`
   if (input.outcome === 'unclear') return `Let's say ${word} together. Take your time. Koi baat nahi!`
