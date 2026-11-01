@@ -510,8 +510,8 @@ it('KG1 caches each Qwen teacher reply once and synthesizes the identical Azure 
   await audio()
   expect(qwen).toHaveBeenCalledTimes(1)
   expect(synthesize).toHaveBeenCalledTimes(2)
-  expect(synthesize).toHaveBeenNthCalledWith(1, result.body.data.feedbackText)
-  expect(synthesize).toHaveBeenNthCalledWith(2, result.body.data.feedbackText)
+  expect(synthesize).toHaveBeenNthCalledWith(1, result.body.data.feedbackText, { language: 'en-IN' })
+  expect(synthesize).toHaveBeenNthCalledWith(2, result.body.data.feedbackText, { language: 'en-IN' })
 
   const recovered = await request(app).post('/api/kg-alphabet/attempt')
     .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
