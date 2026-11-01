@@ -40,7 +40,7 @@ export interface KGAttemptResponse {
 }
 export type KGPreparedAttempt = { body: string }
 
-type ClipCacheEntry = { promise: Promise<string>; settled: boolean; url: string | null; expiresAt: number }
+type ClipCacheEntry = { promise: Promise<string>; settled: boolean; url: string | null; expiresAt: number; ownerToken: string | null; ownerTicket: string | null; receipt?: string }
 const clipCache = new Map<string, ClipCacheEntry>()
 const MAX_CLIPS = 20
 const MISSING_CLIP_TTL_MS = 60_000
@@ -53,6 +53,8 @@ let playbackStudentToken: string | null = null
 // Never issue two requests that invalidate one another's watch tickets.
 let pendingIntroStart: Promise<{ playbackId: string }> | null = null
 let pendingIntroStudentToken: string | null = null
+// Never acknowledge audio before playback.onended, or from another login/watch.
+const completedFeedbackReceipts = new Map<string, { receipt: string; studentToken: string; ticket: string }>()
 
 function introTicketHeaders(): Record<string, string> {
   if (!playbackId || !playbackStudentToken || getStoredToken() !== playbackStudentToken) throw new Error('Miss Julie intro ticket missing or belongs to another login. Please restart the story.')
@@ -80,25 +82,47 @@ function trimClipCache() {
 }
 
 async function loadAudioUrl(key: string, signal?: AbortSignal, kind: KGAudioKind = 'curriculum_static',
-  headers?: Record<string, string>): Promise<string> {
+  headers?: Record<string, string>, onReceipt?: (receipt: string) => void): Promise<string> {
+  const ownerToken = getStoredToken()
+  const ownerTicket = headers?.['X-KG-Intro-Playback'] || null
   const existing = clipCache.get(key)
-  if (existing && (!existing.expiresAt || existing.expiresAt > Date.now())) {
+  if (existing && existing.ownerToken === ownerToken && existing.ownerTicket === ownerTicket &&
+      (!existing.expiresAt || existing.expiresAt > Date.now())) {
     clipCache.delete(key)
     clipCache.set(key, existing)
-    return existing.promise
+    return existing.promise.then((url) => {
+      if (onReceipt) {
+        if (!existing.receipt) throw new Error('Feedback audio receipt missing. Please replay Miss Julie.')
+        onReceipt(existing.receipt)
+      }
+      return url
+    })
   }
-  if (existing) clipCache.delete(key)
+  if (existing) {
+    clipCache.delete(key)
+    if (existing.url) URL.revokeObjectURL(existing.url)
+  }
 
-  const entry: ClipCacheEntry = { promise: Promise.resolve(''), settled: false, url: null, expiresAt: 0 }
+  const entry: ClipCacheEntry = { promise: Promise.resolve(''), settled: false, url: null, expiresAt: 0, ownerToken, ownerTicket }
   entry.promise = kgRequest(
-    (requestSignal) => apiClientBlob(key, { cache: 'no-store', signal: requestSignal, headers }),
+    (requestSignal) => apiClientBlob(key, { cache: 'no-store', signal: requestSignal, headers }, onReceipt
+      ? (responseHeaders) => {
+          const receipt = responseHeaders.get('X-KG-Feedback-Receipt') || ''
+          if (!/^v1\.[0-9]+\.[a-f0-9]{32}\.[a-f0-9]{64}$/.test(receipt)) {
+            throw new Error('Feedback receipt unavailable. Please replay Miss Julie.')
+          }
+          entry.receipt = receipt
+        }
+      : undefined),
     signal,
     { retries: 1, timeoutMs: kind === 'dynamic_tts' ? 35000 : 30000, delayMs: 300 },
   ).then((blob) => {
     if (clipCache.get(key) !== entry) throw new DOMException('Audio request is no longer active', 'AbortError')
     entry.url = URL.createObjectURL(blob)
     entry.settled = true
+    if (entry.receipt) entry.expiresAt = Date.now() + 5 * 60 * 1000
     trimClipCache()
+    if (onReceipt) onReceipt(entry.receipt || '')
     return entry.url
   }, (error) => {
     entry.settled = true
@@ -147,6 +171,7 @@ export const kgAlphabetService = {
     if (pendingIntroStart && pendingIntroStudentToken === token) return pendingIntroStart
     playbackId = null
     playbackStudentToken = null
+    completedFeedbackReceipts.clear()
     let pending: Promise<{ playbackId: string }>
     pending = apiClient<{ playbackId: string }>('/kg-alphabet/intro/start', {
       method: 'POST', cache: 'no-store',
@@ -219,18 +244,32 @@ export const kgAlphabetService = {
       }) }
   },
   async playAttemptFeedback(submissionId: string, audio: HTMLAudioElement, signal?: AbortSignal) {
-    // The KG intro gate is required for AUDIO and ACK too, not just submit.
-    // Omitting it produced 409 on every reply, independent of Azure health.
+    // One audio receipt may be sent only after this particular playback ends.
+    const headers = introTicketHeaders()
+    const ownerToken = getStoredToken()
+    const ownerTicket = playbackId
+    completedFeedbackReceipts.delete(submissionId)
+    let receipt = ''
     const url = await loadAudioUrl(
       `/kg-alphabet/attempt/${encodeURIComponent(submissionId)}/feedback-audio`,
-      signal, 'dynamic_tts', introTicketHeaders(),
+      signal, 'dynamic_tts', headers, (value) => { receipt = value },
     )
+    if (!receipt) throw new Error('Miss Julie audio receipt missing; please replay the feedback.')
     await playAudioUrl(url, audio, signal)
+    if (!ownerToken || !ownerTicket || getStoredToken() !== ownerToken || playbackId !== ownerTicket) {
+      throw new Error('Student session changed during playback. Restart Miss Julie.')
+    }
+    completedFeedbackReceipts.set(submissionId, { receipt, studentToken: ownerToken, ticket: ownerTicket })
   },
   acknowledgeFeedback(submissionId: string, signal?: AbortSignal) {
+    const headers = introTicketHeaders()
+    const saved = completedFeedbackReceipts.get(submissionId)
+    if (!saved || saved.studentToken !== getStoredToken() || saved.ticket !== playbackId) {
+      throw new Error('Listen to Miss Julie feedback before continuing.')
+    }
     return apiClient<{ state: KGAlphabetState }>(
       `/kg-alphabet/attempt/${encodeURIComponent(submissionId)}/feedback-played`,
-      { method: 'POST', signal, headers: introTicketHeaders() },
+      { method: 'POST', signal, headers, body: JSON.stringify({ feedbackReceipt: saved.receipt }) },
     )
   },
   submitPrepared(prepared: KGPreparedAttempt, signal?: AbortSignal): Promise<KGAttemptResponse> {
@@ -244,6 +283,7 @@ export const kgAlphabetService = {
     return this.submitPrepared(await this.prepare(input))
   },
   clearAudioCache() {
+    completedFeedbackReceipts.clear()
     for (const entry of clipCache.values()) if (entry.url) URL.revokeObjectURL(entry.url)
     clipCache.clear()
   },
