@@ -31,7 +31,7 @@ describe('KG signed feedback-audio receipt', () => {
     ['another submission', { submissionId: 'word-dog-attempt-001' }],
     ['intro restart', { introTicketHash: 'a'.repeat(64) }],
     ['changed teacher reply', { feedbackText: 'The word is dog.' }],
-  ])('rejects %s without guessing the student's progress', (_label, mutation) => {
+  ])("rejects %s without guessing the student's progress", (_label, mutation) => {
     const receipt = issueKGFeedbackReceipt(scope, now)
     expect(verifyKGFeedbackReceipt(receipt, { ...scope, ...mutation }, now)).toBe(false)
   })
