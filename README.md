@@ -17,6 +17,8 @@
 
 > **Sprint 3.6 (November 1, 2026):** Student PIN sign-in uses independent failure-only source-IP (80/15 min) and keyed PIN-candidate (5/15 min) buckets. Successful student sign-ins sharing a school IP no longer exhaust the old 20/15-minute quota. Teacher/school login throttles remain unchanged. [Sprint 3.6 security and rollout gates](docs/sprint3-6-school-lab-pin-rate-limits.md). **Process-local limiter storage is not multi-replica safe**: an atomic shared-store limit and real school lab load tests are required before scaled deployment.
 
+> **Sprint 3.7 (November 1, 2026):** Production rate limiting uses [atomic Mongo-backed shared counters](docs/sprint3-7-mongo-distributed-rate-limits.md) across backend replicas, with a mandatory TTL index readiness check before listening and no silent memory fallback. Student general API quotas now follow verified student JWT identity instead of a shared school NAT/IP; forged tokens remain in the IP bucket. Two-node synthetic concurrency tests cover cross-replica 429s and PIN failure-only handling. **Real multi-replica staging capacity, ingress proxy trust and 10,000-student lab-load validation remain mandatory.**
+
 ## Table of contents
 
 1. [Quick start: run the app](#1-quick-start-run-the-app)
