@@ -73,10 +73,3 @@ test('language falls back to the last known one only when this attempt has none'
   assert.equal(fb.resolveFeedbackLanguage(undefined, 'hi-IN'), 'hi-IN')
   assert.equal(fb.resolveFeedbackLanguage(undefined, undefined), undefined)
 })
-
-test('the slow-Qwen fallback uses the right article and the child\'s language', () => {
-  assert.match(text(fb.modelWordSegments('A')), /an apple/)
-  assert.match(text(fb.modelWordSegments('C')), /a cat/)
-  assert.doesNotMatch(text(fb.modelWordSegments('C')), /an cat/)
-  assert.deepEqual(fb.modelWordSegments('D', 'hi-IN').map((s) => s.locale), ['hi-IN', 'en-IN', 'hi-IN', 'en-IN'])
-})

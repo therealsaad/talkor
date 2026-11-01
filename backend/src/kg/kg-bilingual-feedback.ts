@@ -28,7 +28,6 @@ export type KGFeedbackSegmentInput = {
 }
 
 const ENGLISH_WORD: Record<KGFeedbackLetter, string> = { A: 'apple', B: 'ball', C: 'cat', D: 'dog' }
-const ARTICLE: Record<KGFeedbackLetter, string> = { A: 'an', B: 'a', C: 'a', D: 'a' }
 const HINDI_WORD: Record<KGFeedbackLetter, string> = { A: 'सेब', B: 'गेंद', C: 'बिल्ली', D: 'कुत्ता' }
 const MARATHI_WORD: Record<KGFeedbackLetter, string> = { A: 'सफरचंद', B: 'चेंडू', C: 'मांजर', D: 'कुत्रा' }
 /** Roman spelling for the English-voice Hinglish line when no language was detected. */
@@ -119,14 +118,6 @@ export function guidedFeedbackSegments(input: KGFeedbackSegmentInput): KGFeedbac
   }
 
   return mergeAdjacentSegments(segments)
-}
-
-/** Safe "nice try" line when Qwen answered a wrong or unclear spoken attempt too slowly. */
-export function modelWordSegments(letter: KGFeedbackLetter, languageCode?: KGLocale): KGFeedbackSegment[] {
-  const word = ENGLISH_WORD[letter]
-  if (languageCode === 'hi-IN') return mergeAdjacentSegments([{ text: 'अच्छी कोशिश बेटा! सुनो,', locale: 'hi-IN' }, { text: `${word}.`, locale: 'en-IN' }, { text: 'अब तुम बोलो,', locale: 'hi-IN' }, { text: `${word}!`, locale: 'en-IN' }])
-  if (languageCode === 'mr-IN') return mergeAdjacentSegments([{ text: 'छान प्रयत्न बेटा! ऐका,', locale: 'mr-IN' }, { text: `${word}.`, locale: 'en-IN' }, { text: 'आता तुम्ही म्हणा,', locale: 'mr-IN' }, { text: `${word}!`, locale: 'en-IN' }])
-  return [{ text: `Nice try! In English, we call that ${ARTICLE[letter]} ${word}. Listen: ${word}. Can you say ${word}?`, locale: 'en-IN' }]
 }
 
 function capitalize(value: string): string {
