@@ -62,17 +62,19 @@ test('Azure KG synthesis is transient: no AudioCacheService read/write, and XML 
     calls.fetch++
     assert.match(options.body, /&lt;there&gt;/)
     assert.match(options.body, /prosody rate="\+5%" pitch="\+6%"/)
-    return { ok: true, arrayBuffer: async () => Uint8Array.from([1,2,3]).buffer }
+    return { ok: true, arrayBuffer: async () => new Uint8Array(512).fill(1).buffer }
   }
   process.env.AZURE_SPEECH_KEY = 'unit-test-only'
   const { AzureVoiceProvider } = loadTS('providers/voice/AzureVoiceProvider.ts', {
     '../../utils/ApiError': { ApiError: { badRequest: (m) => new Error(m), provider: (m) => new Error(m) } },
     '../../utils/logger': { logger: { warn() {} } },
+    './class1-voice-language': { chooseTalkoraBilingualVoice: () => ({ voice: 'en-IN-NeerjaNeural', locale: 'en-IN' }) },
+    './multi-voice-ssml': loadTS('providers/voice/multi-voice-ssml.ts'),
     '../../services/AudioCacheService': { AudioCacheService: { get: async () => { calls.get++; throw Error('should not read persistent cache') }, put: async () => { calls.put++; throw Error('should not write persistent cache') } } },
   })
   try {
     const value = await new AzureVoiceProvider().synthesizeUncached('Hi <there>!')
-    assert.equal(value.audio.length, 3)
+    assert.equal(value.audio.length, 512)
     assert.equal(value.contentType, 'audio/mpeg')
     assert.deepEqual(calls, { get: 0, put: 0, fetch: 1 })
   } finally { globalThis.fetch = original; delete process.env.AZURE_SPEECH_KEY }
