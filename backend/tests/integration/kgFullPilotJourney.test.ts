@@ -93,7 +93,7 @@ function asStudent(authorization: string, ticket: string) {
     ticket,
     protected: (path: string) => request(app).get(path)
       .set('Authorization', authorization).set('X-KG-Intro-Playback', ticket),
-    post: (path: string, body: unknown) => request(app).post(path)
+    post: (path: string, body: Record<string, unknown>) => request(app).post(path)
       .set('Authorization', authorization).set('X-KG-Intro-Playback', ticket).send(body),
   }
 }
