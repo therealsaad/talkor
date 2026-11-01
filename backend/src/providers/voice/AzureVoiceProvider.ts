@@ -49,7 +49,7 @@ export class AzureVoiceProvider implements VoiceProvider {
     // voice segments, not one Hindi/Marathi voice reading the whole sentence.
     // Azure accepts multiple voice nodes inside ONE synthesis request.
     const practice = kindergarten && (selected.locale === 'hi-IN' || selected.locale === 'mr-IN')
-      ? /^(.*?)(\\s+Say (?:apple|ball|cat|dog)[.!?]?)$/is.exec(text)
+      ? /^(.*?)(\s+Say (?:apple|ball|cat|dog)[.!?]?)$/is.exec(text)
       : null
     const voiceNode = (voice: string, words: string) =>
       `<voice name="${voice}"><prosody rate="${rate}" pitch="${pitch}">${escapeXml(words)}</prosody></voice>`
