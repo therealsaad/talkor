@@ -104,6 +104,10 @@ test('staff preview routes audio through STT and returns manifest-selected Priya
     '../kg/kg-child-grading': { gradeKGTranscription: ({ transcript }) => transcript === 'apple' ? 'correct' : 'incorrect' },
     '../services/kg-pilot-access': { isAuthorizedKGAlphabetStudent: () => true },
     '../services/kg-static-audio-cache': { getKGStaticAudio: async () => null },
+    '../services/kg-azure-narration.service': { getKGAzureNarrationAudio: async () => null },
+    '../providers/voice/AzureVoiceProvider': { AzureVoiceProvider: class { async synthesizeUncached() { throw new Error('Preview must not synthesize live audio') } } },
+    '../services/kg-qwen-feedback.service': { KGQwenFeedbackService: { compose: async () => ({ text: 'Good try! Listen and say apple.', source: 'guided' }) } },
+    '../services/voice-audio-format': { hasExpectedAudioHeader: () => true },
     '../providers/voice/PythonVoiceProvider': { PythonVoiceProvider: class { async synthesize() { calls.priya++; return { audioBase64: 'CQgH', contentType: 'audio/mpeg', available: true } } } },
     '../services/kg-speech.service': { KGSpeechService: { transcribe: async () => { calls.stt++; return { available: true, transcript: 'banana', provider: 'groq' } } } },
     '../services/kg-teaching-hint': { kgTeachingHint: () => 'Say apple!' },
@@ -115,7 +119,7 @@ test('staff preview routes audio through STT and returns manifest-selected Priya
   await KGAlphabetController.previewAttempt(req, res)
   assert.equal(res.payload.outcome, 'incorrect')
   assert.equal(res.payload.transcript, 'banana')
-  assert.equal(res.payload.feedbackVoice, 'dynamic_tts')
+  assert.equal(res.payload.feedbackVoice, 'azure')
   assert.equal(res.payload.feedbackAudioId, 'model-a')
   assert.equal(res.payload.feedbackAudioBase64, null)
   assert.equal(res.payload.advance, false)
