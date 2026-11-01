@@ -334,10 +334,26 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       } else if ((updated?.currentIndex ?? 0) >= STEP_COUNT) {
         setPhase('finished')
       } else {
-        await beginStep(updated?.currentIndex ?? 0)
+        // A page refresh may have lost the tab-memory submission ID after STT
+        // recorded an answer but BEFORE its voice/ACK. Following the full
+        // intro, recover the latest unacknowledged turn from the server:
+        // never re-grade the saved recording or skip Miss Julie feedback.
+        const recovery = await kgAlphabetService.pendingFeedback()
+        const pending = recovery.pending
+        if (pending?.submissionId && pending.state?.currentIndex === updated?.currentIndex) {
+          const stepIndex = updated!.currentIndex
+          pendingSubmissionRef.current = null
+          pendingResultRef.current = { result: pending, stepIndex }
+          cursorRef.current = stepIndex
+          setIndex(stepIndex)
+          setFeedback('Your last answer was saved! Tap Try again to hear Miss Julie before continuing.')
+          setPhase('error')
+        } else {
+          await beginStep(updated?.currentIndex ?? 0)
+        }
       }
     } catch {
-      setVideoError('The story finished, but your progress did not save yet. Tap Continue to try again.')
+      setVideoError('Miss Julie could not finish checking your saved turn. Tap Continue to retry safely.')
       setPhase('intro-error')
     } finally {
       introSavingRef.current = false

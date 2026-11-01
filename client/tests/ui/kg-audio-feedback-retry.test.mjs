@@ -23,7 +23,7 @@ test('KG voice request reuses original model text and never repeats Qwen for pla
   const audioRoute = controller.split('  feedbackAudio: catchAsync(')[1]?.split('  previewAttempt:')[0]
   assert.ok(audioRoute)
   assert.doesNotMatch(audioRoute, /kgDynamicFeedback\(/)
-  assert.match(audioRoute, /attempt\.feedbackText/)
+  assert.match(audioRoute, /await frozenKGFeedback\(attempt\)/)
   assert.match(audioRoute, /sendKGAzure\(res, words, attempt\.feedbackLanguageCode \|\| attempt\.languageCode, \(\) => \{/)
   assert.match(attempt, /feedbackText: \{ type: String, maxlength: 280 \}/)
 })

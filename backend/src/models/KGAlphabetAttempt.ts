@@ -13,6 +13,9 @@ export interface IKGAlphabetAttempt {
   feedbackLanguageCode?: 'en-IN' | 'hi-IN' | 'mr-IN'
   /** Final server-owned teacher words chosen once for an idempotent attempt. */
   feedbackText?: string
+  /** New-protocol unacknowledged reply; old rows remain unaffected. */
+  awaitingFeedbackPlayback?: boolean
+  feedbackAcknowledgedAt?: Date
   selected?: string
   timeSpentMs?: number
   requestHash?: string
@@ -34,6 +37,8 @@ const schema = new Schema<IKGAlphabetAttempt>({
   languageCode: { type: String, enum: ['en-IN', 'hi-IN', 'mr-IN'] },
   feedbackLanguageCode: { type: String, enum: ['en-IN', 'hi-IN', 'mr-IN'] },
   feedbackText: { type: String, maxlength: 280 },
+  awaitingFeedbackPlayback: { type: Boolean },
+  feedbackAcknowledgedAt: { type: Date },
   selected: { type: String, maxlength: 20 },
   timeSpentMs: { type: Number, min: 0, max: 300000, default: 0 },
   requestHash: { type: String },
