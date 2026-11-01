@@ -39,8 +39,8 @@ export const KGQwenFeedbackService = {
           conversationHistory: [],
           preferredExplanationLanguage: input.languageCode === 'hi-IN' ? 'Hindi'
             : input.languageCode === 'mr-IN' ? 'Marathi' : 'English',
-          waitingForRetry: input.outcome !== 'correct',
-          hintLevel: input.outcome === 'correct' ? 0 : 1,
+          waitingForRetry: true,
+          hintLevel: 1,
           studentMessage: spoken,
         }),
       })
