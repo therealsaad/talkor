@@ -820,3 +820,129 @@ it('requires generated voice receipt before ACK; never progresses on unplayed or
   const again = await protectedAck(receipt).expect(200)
   expect(again.body.data.state.currentIndex).toBe(1)
 })
+
+
+it('blocks duplicate submission, feedback audio and ACK until the original Qwen sentence is frozen', async () => {
+  const { student, authorization } = await makePilot()
+  await approveIntro(authorization)
+  const submissionId = 'pending-qwen-kg-turn-123456'
+  let entered!: () => void
+  let release!: () => void
+  const started = new Promise<void>((resolve) => { entered = resolve })
+  const gate = new Promise<void>((resolve) => { release = resolve })
+  const qwen = jest.spyOn(KGQwenFeedbackService, 'compose').mockImplementation(async () => {
+    entered()
+    await gate
+    return { text: 'I heard you. Now say apple once more.', source: 'qwen-8002' }
+  })
+  const stt = jest.spyOn(KGSpeechService, 'transcribe').mockResolvedValue({
+    transcript: 'dog', available: true, provider: 'sarvam', languageCode: 'en-IN',
+  } as never)
+  const body = { activityId: 'say-a', submissionId, audioBase64: 'Y'.repeat(160),
+    mimeType: 'audio/webm', durationMs: 900 }
+  const submit = () => request(app).post('/api/kg-alphabet/attempt')
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId).send(body)
+
+  const first = submit().then((result) => result)
+  await started
+  const unready = await KGAlphabetAttempt.findOne({ studentId: student._id, submissionId }).lean()
+  expect(unready?.outcome).toBe('incorrect')
+  expect(unready?.feedbackText).toBeUndefined()
+
+  const duplicate = await submit().expect(409)
+  expect(duplicate.body.error.details.retryable).toBe(true)
+  await request(app).get('/api/kg-alphabet/attempt/' + submissionId + '/feedback-audio')
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
+    .expect(409)
+  await request(app).post('/api/kg-alphabet/attempt/' + submissionId + '/feedback-played')
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
+    .send({ feedbackReceipt: 'not-valid' }).expect(409)
+
+  release()
+  const firstResult = await first
+  expect(firstResult.status).toBe(200)
+  expect(firstResult.body.data.feedbackText).toBe('I heard you. Now say apple once more.')
+  const persisted = await KGAlphabetAttempt.findOne({ studentId: student._id, submissionId }).lean()
+  expect(persisted?.feedbackText).toBe(firstResult.body.data.feedbackText)
+  const replay = await submit().expect(200)
+  expect(replay.body.data.duplicate).toBe(true)
+  expect(replay.body.data.feedbackText).toBe(firstResult.body.data.feedbackText)
+  expect(stt).toHaveBeenCalledTimes(1)
+  expect(qwen).toHaveBeenCalledTimes(1)
+  expect((await KGAlphabetProgress.findOne({ studentId: student._id }))?.currentIndex).toBe(0)
+})
+
+it('recovers an orphaned graded KG attempt without repeating STT or Qwen', async () => {
+  const { student, authorization } = await makePilot()
+  await approveIntro(authorization)
+  const submissionId = 'orphan-after-restart-12345'
+  await KGAlphabetAttempt.create({
+    studentId: student._id, schoolId: student.schoolId,
+    submissionId, activityId: 'say-a', letter: 'A', mode: 'speak',
+    outcome: 'incorrect', replay: false, transcript: 'dog', feedbackLanguageCode: 'hi-IN',
+  })
+  const stt = jest.spyOn(KGSpeechService, 'transcribe')
+  const qwen = jest.spyOn(KGQwenFeedbackService, 'compose')
+  const azure = jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached')
+    .mockResolvedValue({ audio: Buffer.alloc(500, 65), contentType: 'audio/mpeg' })
+  const audioUrl = '/api/kg-alphabet/attempt/' + submissionId + '/feedback-audio'
+  const requestAudio = () => request(app).get(audioUrl).set('Authorization', authorization)
+    .set('X-KG-Intro-Playback', activePlaybackId).expect(200)
+
+  const firstAudio = await requestAudio()
+  expect(firstAudio.headers['x-kg-feedback-receipt']).toMatch(/^v1\./)
+  const recorded = await KGAlphabetAttempt.findOne({ studentId: student._id, submissionId }).lean()
+  expect(recorded?.feedbackText).toContain('apple')
+  expect(recorded?.feedbackText).toMatch(/[\u0900-\u097f]/)
+  await requestAudio()
+  expect(azure).toHaveBeenCalledTimes(2)
+  expect(azure).toHaveBeenCalledWith(recorded?.feedbackText, { language: 'hi-IN' })
+
+  const duplicate = await request(app).post('/api/kg-alphabet/attempt')
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
+    .send({ activityId: 'say-a', submissionId }).expect(200)
+  expect(duplicate.body.data.duplicate).toBe(true)
+  expect(duplicate.body.data.feedbackText).toBe(recorded?.feedbackText)
+  expect(stt).not.toHaveBeenCalled()
+  expect(qwen).not.toHaveBeenCalled()
+  expect((await KGAlphabetProgress.findOne({ studentId: student._id }))?.currentIndex).toBe(0)
+})
+
+it('never overwrites a recovered fallback when the original Qwen request finishes after its lease expires', async () => {
+  const { student, authorization } = await makePilot()
+  await approveIntro(authorization)
+  const submissionId = 'late-qwen-recovery-123456'
+  let entered!: () => void
+  let release!: () => void
+  const started = new Promise<void>((resolve) => { entered = resolve })
+  const gate = new Promise<void>((resolve) => { release = resolve })
+  jest.spyOn(KGSpeechService, 'transcribe').mockResolvedValue({
+    transcript: 'dog', available: true, provider: 'sarvam', languageCode: 'en-IN',
+  } as never)
+  const qwen = jest.spyOn(KGQwenFeedbackService, 'compose').mockImplementation(async () => {
+    entered()
+    await gate
+    return { text: 'A different late Qwen response. Say apple.', source: 'qwen-8002' }
+  })
+  const body = { activityId: 'say-a', submissionId, audioBase64: 'Y'.repeat(160),
+    mimeType: 'audio/webm', durationMs: 1000 }
+  const original = request(app).post('/api/kg-alphabet/attempt').set('Authorization', authorization)
+    .set('X-KG-Intro-Playback', activePlaybackId).send(body).then((res) => res)
+  await started
+  await KGAlphabetSubmission.updateOne({ studentId: student._id, submissionId },
+    { $set: { expiresAt: new Date(Date.now() - 2000) } })
+  jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached')
+    .mockResolvedValue({ audio: Buffer.alloc(500, 65), contentType: 'audio/mpeg' })
+  const audio = await request(app).get('/api/kg-alphabet/attempt/' + submissionId + '/feedback-audio')
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId).expect(200)
+  const frozen = (await KGAlphabetAttempt.findOne({ studentId: student._id, submissionId }).lean())?.feedbackText
+  expect(frozen).toBeTruthy()
+  expect(frozen).not.toContain('different late Qwen')
+  expect(audio.headers['x-kg-feedback-receipt']).toMatch(/^v1\./)
+  release()
+  const result = await original
+  expect(result.status).toBe(200)
+  expect(result.body.data.feedbackText).toBe(frozen)
+  expect((await KGAlphabetAttempt.findOne({ studentId: student._id, submissionId }).lean())?.feedbackText).toBe(frozen)
+  expect(qwen).toHaveBeenCalledTimes(1)
+})
