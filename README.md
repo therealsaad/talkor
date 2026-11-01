@@ -11,6 +11,8 @@
 
 > **Sprint 3.3 (November 1, 2026):** KG Level 1 feedback ACK is now gated on a signed, short-lived receipt issued only after the server generates feedback audio, and the client sends it after playback completes. This prevents accidental progression when a TTS request never succeeded; it **cannot prove physical hearing**. See [Sprint 3.3 release checks](docs/sprint3-3-kg-feedback-receipt.md). Review branch/CI and real-device audio acceptance before school use.
 
+> **Sprint 3.4 (November 1, 2026):** KG voice responses are frozen atomically before any audio receipt can be issued. A browser reload after a graded but unplayed attempt now resumes the latest saved current-activity feedback only after a new, fully completed introduction, without a duplicate STT/LLM turn. See [Sprint 3.4 verification and school rollout gates](docs/sprint3-4-kg-interrupted-turn-recovery.md). This does **not** certify live cloud voice or school-lab deployment.
+
 ## Table of contents
 
 1. [Quick start: run the app](#1-quick-start-run-the-app)
