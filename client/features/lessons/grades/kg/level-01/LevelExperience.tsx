@@ -267,6 +267,20 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     } finally { releaseDucking() }
   }, [preview, beginVoice])
 
+  // Fetch clips the child is about to need while they are busy answering, so the next prompt starts instantly.
+  // Called only after the current prompt has finished, so it never competes with the clip that is playing.
+  const prefetchStepAudio = useCallback((stepIndex: number, includeAssist = false) => {
+    if (preview || stepIndex < 0 || stepIndex >= STEP_COUNT) return
+    const step = stepAt(stepIndex)
+    const ids = [...audioForStep(stepIndex), ...(includeAssist && step.mode === 'speak' ? [`find-${step.letter.toLowerCase()}`] : [])]
+    // The last step ends the lesson, so line up the closing clips as well.
+    if (stepIndex === STEP_COUNT - 1) ids.push('level-complete', 'celebrate', 'homework-abcd')
+    for (const id of ids) {
+      const line = stateRef.current?.audio[id]
+      kgAlphabetService.prefetch(id, line?.url, line?.kind)
+    }
+  }, [preview])
+
   const returnToMap = async () => {
     if (preview) { generation.current++; window.speechSynthesis?.cancel(); onPreviewBack?.(); return }
     generation.current++
@@ -303,6 +317,9 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
         await playClip(id)
         if (generation.current !== token) return
       }
+      // The child is about to answer: use that time to fetch the picture-help clip and the next step's prompt.
+      prefetchStepAudio(stepIndex, true)
+      prefetchStepAudio(stepIndex + 1)
       if (stepAt(stepIndex).mode === 'speak' && ((!replayRef.current && stateRef.current?.fallbackAvailable) || (preview && previewErrorsRef.current >= 2))) {
         await playClip(`find-${stepAt(stepIndex).letter.toLowerCase()}`)
         if (generation.current === token) setPhase('assist')
