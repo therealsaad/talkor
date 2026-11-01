@@ -27,6 +27,7 @@ export interface KGAlphabetState {
 }
 export interface KGAttemptResponse {
   outcome: KGOutcome
+  advance?: boolean
   replay: boolean
   duplicate?: boolean
   state: KGAlphabetState
@@ -159,6 +160,10 @@ async function playAudioUrl(url: string, audio: HTMLAudioElement, signal?: Abort
 
 export const kgAlphabetService = {
   state: () => apiClient<KGAlphabetState>('/kg-alphabet/state', { cache: 'no-store' }),
+  /** Resumes only the most recent current-activity attempt without another STT pass. */
+  pendingFeedback: () => apiClient<{ pending: KGAttemptResponse | null }>('/kg-alphabet/pending-feedback', {
+    cache: 'no-store', headers: introTicketHeaders(),
+  }),
 
   hasIntroTicket: () => Boolean(playbackId && playbackStudentToken && getStoredToken() === playbackStudentToken),
 
