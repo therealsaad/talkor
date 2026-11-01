@@ -12,6 +12,7 @@ router.get('/audio/:version/:id', requireRole('STUDENT'), KGAlphabetController.a
 router.get('/preview/audio/:version/:id', requireRole('TEACHER', 'SCHOOL_ADMIN'), KGAlphabetController.previewAudio)
 router.post('/preview/attempt', requireRole('TEACHER', 'SCHOOL_ADMIN'), KGAlphabetController.previewAttempt)
 router.post('/attempt', requireRole('STUDENT'), KGAlphabetController.attempt)
+router.get('/pending-feedback', requireRole('STUDENT'), KGAlphabetController.pendingFeedback)
 router.get('/attempt/:submissionId/feedback-audio', requireRole('STUDENT'), KGAlphabetController.feedbackAudio)
 router.post('/attempt/:submissionId/feedback-played', requireRole('STUDENT'), KGAlphabetController.acknowledgeFeedback)
 router.post('/homework/complete', requireRole('STUDENT'), KGAlphabetController.completeHomework)
