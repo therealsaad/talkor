@@ -520,6 +520,11 @@ export const KGAlphabetController = {
     })
     if (!validReceipt) throw ApiError.conflict('Play Miss Julie feedback fully before continuing this activity.')
     await applyRecordedProgress(attempt)
+    // New-protocol attempts are pending only until the authenticated audio
+    // receipt is accepted. A duplicate ACK is safe and never grants XP again.
+    await KGAlphabetAttempt.updateOne({ studentId: student._id, schoolId: student.schoolId,
+      submissionId, awaitingFeedbackPlayback: true },
+      { $set: { awaitingFeedbackPlayback: false, feedbackAcknowledgedAt: new Date() } })
     const latest = await KGAlphabetProgress.findOne({ studentId: student._id, schoolId: student.schoolId })
     if (!latest) throw ApiError.internal('KG progress unavailable')
     ok(res, { state: { ...presentState(latest), fallbackAvailable: await canUsePictureSupport(student._id, student.schoolId, latest.currentIndex) } })
@@ -546,6 +551,40 @@ export const KGAlphabetController = {
       })
       res.setHeader('X-KG-Feedback-Receipt', receipt)
     })
+  }),
+  /** A refreshed lab tab must be able to replay its last graded, unplayed
+   * turn without sending the child's recording to STT a second time. Only
+   * attempts from this explicit protocol are candidates; historic rows
+   * cannot accidentally resume as unheard. */
+  pendingFeedback: catchAsync(async (req: Request, res: Response) => {
+    const { student, state } = await ensureState(req)
+    await assertIntroTicket(req, student._id, student.schoolId)
+    const activity = activityAt(state.currentIndex)
+    if (!activity) {
+      res.setHeader('Cache-Control', 'private, no-store')
+      return ok(res, { pending: null })
+    }
+    const recent = await KGAlphabetAttempt.findOne({
+      studentId: student._id, schoolId: student.schoolId,
+      activityId: activity.id, replay: false,
+      createdAt: { $gte: new Date(Date.now() - 30 * 60_000) },
+    }).sort({ createdAt: -1, _id: -1 })
+    if (!recent || recent.awaitingFeedbackPlayback !== true) {
+      res.setHeader('Cache-Control', 'private, no-store')
+      return ok(res, { pending: null })
+    }
+    const words = await frozenKGFeedback(recent)
+    res.setHeader('Cache-Control', 'private, no-store')
+    return ok(res, { pending: {
+      submissionId: recent.submissionId, outcome: recent.outcome,
+      replay: recent.replay,
+      advance: recent.outcome === 'correct' || (recent.outcome === 'supported' && recent.mode === 'touch'),
+      state: { ...presentState(state), fallbackAvailable: await canUsePictureSupport(student._id, student.schoolId, state.currentIndex) },
+      feedbackAudioId: feedbackFor(recent.outcome, recent.recognitionReason,
+        recent.letter as typeof LETTERS[number]['letter'], recent.mode),
+      teachingHint: kgTeachingHint(recent.letter as typeof LETTERS[number]['letter'], recent.mode, recent.outcome),
+      feedbackText: words, feedbackAudioBase64: null, feedbackVoice: 'azure' as const,
+    } })
   }),
   previewAttempt: catchAsync(async (req: Request, res: Response) => {
     // Staff preview uses the KG-selected STT and reviewed feedback without progress writes.
@@ -675,7 +714,7 @@ export const KGAlphabetController = {
 
       try {
         await KGAlphabetAttempt.create({ studentId: student._id, schoolId: student.schoolId, activityId, letter: activity.letter,
-          mode: assistedPicture ? 'touch' : activity.mode, outcome, transcript, languageCode, feedbackLanguageCode, selected, replay, timeSpentMs: Math.round(reportedTimeMs), submissionId, requestHash, sttProvider, sttConfidence, recognitionReason })
+          mode: assistedPicture ? 'touch' : activity.mode, outcome, transcript, languageCode, feedbackLanguageCode, selected, replay, awaitingFeedbackPlayback: !replay, timeSpentMs: Math.round(reportedTimeMs), submissionId, requestHash, sttProvider, sttConfidence, recognitionReason })
         // The attempt is recorded, but progression waits for audible feedback acknowledgment.
       } catch (error) {
         if ((error as { code?: number }).code !== 11000) throw error
