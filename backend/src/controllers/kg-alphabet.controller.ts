@@ -17,6 +17,8 @@ import { getKGAzureNarrationAudio } from '../services/kg-azure-narration.service
 import { PythonVoiceProvider } from '../providers/voice/PythonVoiceProvider'
 import { AzureVoiceProvider } from '../providers/voice/AzureVoiceProvider'
 import { KGQwenFeedbackService } from '../services/kg-qwen-feedback.service'
+import { KGFeedbackAudioService, type KGFeedbackAudioTurn } from '../services/kg-feedback-audio.service'
+import { resolveFeedbackLanguage } from '../kg/kg-bilingual-feedback'
 import { KGSpeechService } from '../services/kg-speech.service'
 import { kgTeachingHint } from '../services/kg-teaching-hint'
 import { env } from '../config/env'
@@ -187,16 +189,16 @@ async function kgDynamicFeedback(input: { letter: typeof LETTERS[number]['letter
   return { feedbackText: coached.text, feedbackAudioBase64: null, feedbackVoice: 'azure' as const }
 }
 
-async function sendKGAzure(res: Response, text: string, languageCode?: 'en-IN' | 'hi-IN' | 'mr-IN') {
+async function sendKGAzure(res: Response, text: string, turn: KGFeedbackAudioTurn) {
   // Live Azure is the preferred voice. If its audio generation fails, use
   // local Priya 8001 for this *same, server-owned* feedback sentence. Never
   // let a failed provider mark the attempt heard or silently progress.
-  let azure: Awaited<ReturnType<AzureVoiceProvider['synthesizeUncached']>> | null = null
+  // Reviewed lines are spoken with one multi-voice request (Hindi/Marathi coaching +
+  // English target word) and served from memory after the first child needs them.
+  const startedAt = Date.now()
+  let azure: Awaited<ReturnType<typeof KGFeedbackAudioService.synthesize>> = null
   try {
-    const provider = new AzureVoiceProvider()
-    azure = languageCode
-      ? await provider.synthesizeUncached(text, { language: languageCode })
-      : await provider.synthesizeUncached(text)
+    azure = await KGFeedbackAudioService.synthesize(text, turn)
   } catch (error) {
     console.warn('KG1_FEEDBACK_AZURE_FAILED', {
       reason: error instanceof Error ? error.name : 'upstream-error',
@@ -207,6 +209,8 @@ async function sendKGAzure(res: Response, text: string, languageCode?: 'en-IN' |
     res.setHeader('Content-Length', String(azure.audio.length))
     res.setHeader('Cache-Control', 'private, no-store')
     res.setHeader('X-Voice-Provider', 'azure')
+    // Lets the browser's network panel (and load tests) see how long the voice took and where it came from.
+    res.setHeader('Server-Timing', `tts;dur=${Date.now() - startedAt};desc="${azure.source}${azure.multiVoice ? '+multivoice' : ''}"`)
     return res.send(azure.audio)
   }
 
@@ -492,7 +496,13 @@ export const KGAlphabetController = {
       (await spokenFeedback({ letter: attempt.letter as typeof LETTERS[number]['letter'],
         mode: attempt.mode, outcome: attempt.outcome,
         noSpeech: attempt.recognitionReason === 'silence' })).feedbackText
-    await sendKGAzure(res, words, attempt.languageCode)
+    await sendKGAzure(res, words, {
+      letter: attempt.letter as typeof LETTERS[number]['letter'],
+      mode: attempt.mode,
+      outcome: attempt.outcome,
+      noSpeech: attempt.recognitionReason === 'silence',
+      languageCode: attempt.languageCode,
+    })
   }),
   previewAttempt: catchAsync(async (req: Request, res: Response) => {
     // Staff preview uses the KG-selected STT and reviewed feedback without progress writes.
@@ -571,6 +581,12 @@ export const KGAlphabetController = {
       let recognitionReason: 'silence' | 'uncertain' | undefined
 
       const assistedPicture = activity.mode === 'speak' && req.body?.assistedPicture === true
+      // The child's last known language, looked up while Sarvam is still transcribing so it adds no wait.
+      // It only fills in when this attempt has no detection (silence, noisy audio); a fresh detection always wins.
+      const lastLanguageLookup = activity.mode === 'speak' && !assistedPicture
+        ? KGAlphabetAttempt.findOne({ studentId: student._id, schoolId: student.schoolId, languageCode: { $exists: true } })
+            .sort({ _id: -1 }).select('languageCode').lean().exec().catch(() => null)
+        : null
       if (assistedPicture) {
         if (replay || !(await canUsePictureSupport(student._id, student.schoolId, index))) {
           throw ApiError.forbidden('Complete two speech attempts before the picture helper')
@@ -625,8 +641,11 @@ export const KGAlphabetController = {
       }
 
       const latest = await KGAlphabetProgress.findOne({ studentId: student._id, schoolId: student.schoolId })
+      // The attempt stores what Sarvam detected; the spoken reply may use the child's last known language instead.
+      // The audio route re-derives the reviewed line from the saved sentence, so replay stays consistent.
+      const feedbackLanguage = resolveFeedbackLanguage(languageCode, (await lastLanguageLookup)?.languageCode)
       const voice = await kgDynamicFeedback({ letter: activity.letter, mode: assistedPicture ? 'touch' : activity.mode, outcome,
-        transcript, languageCode, selected, noSpeech: recognitionReason === 'silence' })
+        transcript, languageCode: feedbackLanguage, selected, noSpeech: recognitionReason === 'silence' })
       // Persist only the guarded teacher sentence, never audio, after the
       // speech attempt is recorded. Duplicate submissions and replay-audio
       // endpoints must use the exact same line, not regenerate Qwen text.
