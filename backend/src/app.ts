@@ -16,6 +16,7 @@ export function createApp() {
     cors({
       origin: Array.from(new Set([env.clientUrl, ...(process.env.CLIENT_URLS || '').split(',').map((url) => url.trim()).filter(Boolean), ...(env.isProd ? [] : ['http://localhost:3000'])])),
       credentials: true,
+      exposedHeaders: ['X-KG-Feedback-Receipt'],
     }),
   )
   // Base64 audio is bounded at the voice route; allow its encoded payload through Express.
