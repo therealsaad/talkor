@@ -127,7 +127,7 @@ export async function apiClient<T = any>(
 }
 
 /** Binary-file requests (PDF reports, recordings). Never JSON-decode a Blob. */
-export async function apiClientBlob(endpoint: string, options: RequestInit = {}): Promise<Blob> {
+export async function apiClientBlob(endpoint: string, options: RequestInit = {}, onHeaders?: (headers: Headers) => void): Promise<Blob> {
   const token = getStoredToken()
   const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData
   const headers = new Headers(options.headers)
@@ -144,5 +144,8 @@ export async function apiClientBlob(endpoint: string, options: RequestInit = {})
     const error = type.includes('application/json') ? await response.json().catch(() => null) : null
     throw new ApiError(error?.error?.message || `File request failed (${response.status})`, error?.error?.code || 'FILE_REQUEST_FAILED', response.status, error?.error?.details)
   }
+  // The KG voice service can read a signed response receipt without exposing
+  // private headers to unrelated file consumers or changing the Blob API.
+  onHeaders?.(response.headers)
   return response.blob()
 }
