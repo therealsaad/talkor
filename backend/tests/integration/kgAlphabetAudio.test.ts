@@ -507,7 +507,9 @@ it('KG1 caches each Qwen teacher reply once and synthesizes the identical Azure 
     .expect(200)
 
   await audio()
-  await audio()
+  const lastAudio = await audio()
+  const feedbackReceipt = lastAudio.headers['x-kg-feedback-receipt']
+  expect(feedbackReceipt).toMatch(/^v1\./)
   expect(qwen).toHaveBeenCalledTimes(1)
   expect(synthesize).toHaveBeenCalledTimes(2)
   expect(synthesize).toHaveBeenNthCalledWith(1, result.body.data.feedbackText, { language: 'en-IN' })
@@ -522,7 +524,7 @@ it('KG1 caches each Qwen teacher reply once and synthesizes the identical Azure 
   // A resumed client can still acknowledge the specific saved turn.
   await request(app).post(`/api/kg-alphabet/attempt/${submissionId}/feedback-played`)
     .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
-    .expect(200)
+    .send({ feedbackReceipt }).expect(200)
 })
 
 
@@ -588,11 +590,14 @@ it('KG1 409 only when the intro ticket is absent; both audio and completion ACK 
     .set('X-KG-Intro-Playback', activePlaybackId).expect(200)
   expect(response.headers['x-voice-provider']).toBe('azure')
   expect(azure).toHaveBeenCalledWith('Good effort! A is for apple. Say apple!')
+  const feedbackReceipt = response.headers['x-kg-feedback-receipt']
+  expect(feedbackReceipt).toMatch(/^v1\./)
 
   // The server moves forward ONLY when the same authenticated ticket is
   // presented after the client has heard the returned audio.
   const completed = await request(app).post(ack).set('Authorization', authorization)
-    .set('X-KG-Intro-Playback', activePlaybackId).expect(200)
+    .set('X-KG-Intro-Playback', activePlaybackId)
+    .send({ feedbackReceipt }).expect(200)
   expect(completed.body.data.state.currentIndex).toBe(1)
 })
 
