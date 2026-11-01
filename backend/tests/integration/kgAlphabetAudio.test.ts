@@ -507,7 +507,9 @@ it('KG1 caches each Qwen teacher reply once and synthesizes the identical Azure 
     .expect(200)
 
   await audio()
-  await audio()
+  const lastAudio = await audio()
+  const feedbackReceipt = lastAudio.headers['x-kg-feedback-receipt']
+  expect(feedbackReceipt).toMatch(/^v1\./)
   expect(qwen).toHaveBeenCalledTimes(1)
   expect(synthesize).toHaveBeenCalledTimes(2)
   expect(synthesize).toHaveBeenNthCalledWith(1, result.body.data.feedbackText, { language: 'en-IN' })
@@ -522,7 +524,7 @@ it('KG1 caches each Qwen teacher reply once and synthesizes the identical Azure 
   // A resumed client can still acknowledge the specific saved turn.
   await request(app).post(`/api/kg-alphabet/attempt/${submissionId}/feedback-played`)
     .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
-    .expect(200)
+    .send({ feedbackReceipt }).expect(200)
 })
 
 
@@ -588,11 +590,14 @@ it('KG1 409 only when the intro ticket is absent; both audio and completion ACK 
     .set('X-KG-Intro-Playback', activePlaybackId).expect(200)
   expect(response.headers['x-voice-provider']).toBe('azure')
   expect(azure).toHaveBeenCalledWith('Good effort! A is for apple. Say apple!')
+  const feedbackReceipt = response.headers['x-kg-feedback-receipt']
+  expect(feedbackReceipt).toMatch(/^v1\./)
 
   // The server moves forward ONLY when the same authenticated ticket is
   // presented after the client has heard the returned audio.
   const completed = await request(app).post(ack).set('Authorization', authorization)
-    .set('X-KG-Intro-Playback', activePlaybackId).expect(200)
+    .set('X-KG-Intro-Playback', activePlaybackId)
+    .send({ feedbackReceipt }).expect(200)
   expect(completed.body.data.state.currentIndex).toBe(1)
 })
 
@@ -767,4 +772,51 @@ it('keeps the saved voice locale stable across conflicting Sarvam results and au
   expect(replay.body.data.feedbackText).toBe(third.body.data.feedbackText)
   expect(stt).toHaveBeenCalledTimes(3)
   expect(qwen).toHaveBeenCalledTimes(3)
+})
+
+
+it('requires generated voice receipt before ACK; never progresses on unplayed or failed audio', async () => {
+  const { student, authorization } = await makePilot()
+  await approveIntro(authorization)
+  const submissionId = 'kg-receipt-required-001'
+  await KGAlphabetAttempt.create({
+    studentId: student._id, schoolId: student.schoolId, submissionId,
+    activityId: 'say-a', letter: 'A', mode: 'speak', replay: false,
+    outcome: 'correct', feedbackText: 'Great effort! Say apple.',
+  })
+  const url = '/api/kg-alphabet/attempt/' + submissionId + '/feedback-audio'
+  const ack = '/api/kg-alphabet/attempt/' + submissionId + '/feedback-played'
+  const protectedAck = (feedbackReceipt?: string) => request(app).post(ack)
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
+    .send(feedbackReceipt ? { feedbackReceipt } : {})
+
+  // A real correct transcript does not by itself authorize an activity unlock.
+  await protectedAck().expect(409)
+  await protectedAck('not-a-receipt').expect(409)
+  expect((await KGAlphabetProgress.findOne({ studentId: student._id }))?.currentIndex).toBe(0)
+
+  const tts = jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached')
+    .mockRejectedValueOnce(new Error('Azure offline'))
+  const local = jest.spyOn(PythonVoiceProvider.prototype, 'synthesize')
+    .mockRejectedValueOnce(new Error('Priya offline'))
+  await request(app).get(url).set('Authorization', authorization)
+    .set('X-KG-Intro-Playback', activePlaybackId).expect(500)
+  expect(tts).toHaveBeenCalledTimes(1)
+  expect(local).toHaveBeenCalledTimes(1)
+  await protectedAck().expect(409)
+  expect((await KGAlphabetProgress.findOne({ studentId: student._id }))?.currentIndex).toBe(0)
+
+  tts.mockResolvedValue({ audio: Buffer.alloc(500, 65), contentType: 'audio/mpeg' })
+  const voice = await request(app).get(url).set('Authorization', authorization)
+    .set('X-KG-Intro-Playback', activePlaybackId).expect(200)
+  const receipt = String(voice.headers['x-kg-feedback-receipt'] || '')
+  expect(receipt).toMatch(/^v1\./)
+  await protectedAck(receipt.slice(0, -1) + (receipt.endsWith('a') ? 'b' : 'a')).expect(409)
+  expect((await KGAlphabetProgress.findOne({ studentId: student._id }))?.currentIndex).toBe(0)
+
+  const complete = await protectedAck(receipt).expect(200)
+  expect(complete.body.data.state.currentIndex).toBe(1)
+  // Network retry of the same ACK is idempotent, never another unlock.
+  const again = await protectedAck(receipt).expect(200)
+  expect(again.body.data.state.currentIndex).toBe(1)
 })

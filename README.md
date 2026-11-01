@@ -9,6 +9,8 @@
 
 > **Sprint 3.2 (November 1, 2026):** KG Level 1 now has a rule-first bilingual voice reliability patch on a separate review branch. It stabilizes Sarvam explanation language per completed intro session, uses bounded Qwen only for unexpected speech, and emits an English practice segment after Hindi/Marathi feedback in one Azure synthesis call. **This is not a certified live school end-to-end release.** See [Sprint 3.2 checks and safety gates](docs/sprint3-2-kg-voice-reliability.md).
 
+> **Sprint 3.3 (November 1, 2026):** KG Level 1 feedback ACK is now gated on a signed, short-lived receipt issued only after the server generates feedback audio, and the client sends it after playback completes. This prevents accidental progression when a TTS request never succeeded; it **cannot prove physical hearing**. See [Sprint 3.3 release checks](docs/sprint3-3-kg-feedback-receipt.md). Review branch/CI and real-device audio acceptance before school use.
+
 ## Table of contents
 
 1. [Quick start: run the app](#1-quick-start-run-the-app)

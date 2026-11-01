@@ -24,7 +24,7 @@ test('KG voice request reuses original model text and never repeats Qwen for pla
   assert.ok(audioRoute)
   assert.doesNotMatch(audioRoute, /kgDynamicFeedback\(/)
   assert.match(audioRoute, /attempt\.feedbackText/)
-  assert.match(audioRoute, /sendKGAzure\(res, words, attempt\.feedbackLanguageCode \|\| attempt\.languageCode\)/)
+  assert.match(audioRoute, /sendKGAzure\(res, words, attempt\.feedbackLanguageCode \|\| attempt\.languageCode, \(\) => \{/)
   assert.match(attempt, /feedbackText: \{ type: String, maxlength: 280 \}/)
 })
 
