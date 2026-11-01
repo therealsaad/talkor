@@ -64,6 +64,9 @@ jobs:
       - name: Guard KG1 replayable Azure coaching and a single retry CTA
         run: node --test tests/ui/kg-audio-feedback-retry.test.mjs
         working-directory: client
+      - name: Verify KG playback receipt only follows audio ended and isolates lab sessions
+        run: node --test tests/ui/kg-feedback-receipt.test.mjs
+        working-directory: client
       - name: Verify Class 1 hands-free audio and landscape contracts
         run: node --test tests/ui/class1-voice-runtime-contract.test.mjs
         working-directory: client
