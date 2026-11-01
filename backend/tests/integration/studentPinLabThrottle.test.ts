@@ -60,7 +60,9 @@ it('limits brute-force PIN guessing per candidate and across the shared source I
   // Even after a handful of failed attempts, a different valid student's
   // PIN should still be usable from the same NAT.
   for (let i = 0; i < 5; i++) {
-    const bad = await postPin('11111').expect(401)
+    const bad = await (i === 4
+      ? request(app).post('/api/v1/auth/student/pin-login').send({ pin: '11111' })
+      : postPin('11111')).expect(401)
     expect(bad.body.error.message).toBe('Invalid PIN')
   }
   const limitedPin = await postPin('11111').expect(429)
@@ -73,9 +75,10 @@ it('limits brute-force PIN guessing per candidate and across the shared source I
   // The source bucket counts the five 401s and the one 429 above.
   for (let i = 0; i < 74; i++) {
     const pin = String(20000 + i).padStart(5, '0')
-    await postPin(pin).expect(401)
+    // An untrusted X-Forwarded-For header must NOT reset the source limit.
+    await postPin(pin).set('X-Forwarded-For', '198.51.100.' + ((i % 250) + 1)).expect(401)
   }
-  const blocked = await postPin('99999').expect(429)
+  const blocked = await postPin('99999').set('X-Forwarded-For', '203.0.113.99').expect(429)
   expect(blocked.body.error.code).toBe('RATE_LIMITED')
   expect(JSON.stringify(blocked.body)).not.toContain('99999')
 })
