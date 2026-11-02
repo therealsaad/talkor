@@ -1,30 +1,986 @@
-/* Original child-friendly textbook spread for Balbharati 1.1; not a scanned reproduction. */
-.poem-classroom{box-sizing:border-box;display:flex;flex-direction:column;height:100%;min-height:0;width:100%;overflow:hidden;background:radial-gradient(circle at 15% 20%,#fff5b9,#dff7ee 62%,#d4ebef);color:#225243;font-family:inherit}
-.poem-classroom *{box-sizing:border-box}.poem-classroom button{cursor:pointer;font:inherit}
-.poem-classroom button:focus-visible{outline:3px solid #e59b35;outline-offset:3px}
-.poem-header{flex:none;min-height:68px;background:#fff9e6ef;border-bottom:3px solid #a6cda6;padding:12px 25px;display:flex;align-items:center;justify-content:space-between;gap:16px}
-.poem-header__title{display:flex;align-items:center;gap:12px}.poem-header__title strong{display:block;font-size:clamp(19px,2vw,30px);letter-spacing:.05em}.poem-header__title span{display:block;font-size:10px;color:#47715f;font-weight:850}
-.poem-header__steps{width:185px;font-size:12px;text-align:right;font-weight:850}.poem-header__steps>div{height:9px;margin-top:5px;background:#cee0c9;border-radius:12px;overflow:hidden}.poem-header__steps i{display:block;height:100%;background:linear-gradient(90deg,#43ab86,#ffc45c)}
-.poem-main{display:grid;grid-template-columns:minmax(150px,.29fr) minmax(0,.71fr);gap:15px;padding:12px 18px;min-height:0;flex:1}
-.poem-julie{position:relative;display:flex;flex-direction:column;min-height:0;border:4px solid #fff4cd;border-radius:23px;overflow:hidden;background:linear-gradient(160deg,#cdf5f7,#f4ffd9)}
-.poem-julie__name{font-size:clamp(10px,1.2vw,15px);font-weight:900;margin:11px;background:#fffff3;border-radius:99px;padding:9px 12px;text-align:center;z-index:1}
-.poem-julie__portrait{position:relative;flex:1;min-height:0}.poem-julie__portrait video,.poem-julie__portrait img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;object-position:center bottom}
-.poem-julie__status{font-size:clamp(11px,1.2vw,15px);font-weight:900;background:#fffdf5;border-top:1px solid #dceecb;padding:12px;display:flex;gap:7px;align-items:center;justify-content:center}
-.poem-book{min-height:0;display:flex;flex-direction:column;border:6px solid #fffdf3;border-radius:23px;overflow:hidden;box-shadow:0 8px 22px #4b7e6133;background:#fffef4}
-.poem-book__ribbon{flex:none;display:flex;justify-content:space-between;gap:10px;background:#5eae71;color:#fff;padding:8px 15px;font-size:12px;font-weight:900}
-.poem-book__pages{min-height:0;flex:1;display:grid;grid-template-columns:31% 69%;overflow:auto}
-.poem-book__art{position:relative;min-height:170px;background:linear-gradient(#dcf8ff,#f6f2b8);overflow:hidden;text-align:center}
-.poem-sun{position:absolute;left:10%;top:8%;font-size:48px}.poem-school{position:absolute;left:30%;bottom:36%;font-size:clamp(60px,7vw,108px)}.poem-road{position:absolute;bottom:6%;left:36%;font-size:45px;color:#a68151}.poem-child{position:absolute;right:12%;bottom:8%;font-size:clamp(40px,5vw,77px)}
-.poem-sky-label{position:absolute;top:5%;right:5%;background:#fff9d7;border-radius:50px;padding:6px;font-size:11px;font-weight:850}
-.poem-book__lyrics{padding:10px clamp(10px,2vw,27px);min-width:0;background:repeating-linear-gradient(#fffefa,#fffefa 30px,#ebf4ea 31px);overflow:auto}
-.poem-book__chapter{font-size:12px;font-weight:900;color:#2b7b5b;margin-bottom:6px}.poem-verse{padding:0 0 4px;margin:3px 0 8px;border-bottom:1px dashed #d2e5bc}
-.poem-line{display:flex;align-items:center;gap:8px;margin:3px 0;padding:4px 8px;border-radius:9px;font-family:Georgia,'Times New Roman',serif;color:#52675d;font-size:clamp(15px,1.5vw,21px);line-height:1.18}.poem-line.is-active{background:#fff1ad;color:#214a37;font-weight:900;box-shadow:inset 4px 0 #e9ab52}.poem-line__number{font:800 10px/1 system-ui;color:#8eaa93;min-width:13px}
-.poem-book__wordbank{font-size:11px;color:#557c62}.poem-book__wordbank>div{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}.poem-book__wordbank span{padding:3px 6px;background:#fce2bc;border-radius:6px;color:#7f573c;font-size:11px;font-weight:750}
-.poem-focus{flex:none;background:#fff4cd;border-top:2px solid #ead8a3;padding:8px 14px;display:flex;gap:15px;align-items:center;justify-content:center;text-align:center}.poem-focus span{font-size:11px;font-weight:900;white-space:nowrap}.poem-focus strong{font-size:clamp(14px,1.5vw,19px)}
-.poem-hints{flex:none;display:flex;gap:12px;padding:6px 12px;font-size:11px;background:#fff0dd;justify-content:center;flex-wrap:wrap}
-.poem-feedback{flex:none;display:flex;align-items:center;justify-content:space-between;gap:15px;margin:0 18px 12px;border-radius:18px;border:2px solid #e8d6a2;background:#fffff3;box-shadow:0 8px 22px #38715320;padding:10px 14px}
-.poem-feedback__message{min-width:0;flex:1}.poem-feedback__message strong{font-size:10px;color:#48745d;letter-spacing:.1em}.poem-feedback__message p{font-size:clamp(12px,1.2vw,16px);font-weight:800;line-height:1.35;margin:3px 0;max-height:78px;overflow:auto}.poem-feedback__message small{display:block;font-size:11px;color:#8d6a35;margin-top:4px}
-.poem-actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}.poem-actions button{display:flex;align-items:center;gap:5px;padding:10px;border-radius:12px;border:1px solid #a4cbb4;background:#f0faf1;color:#285842;font-size:12px;font-weight:850;min-height:44px}.poem-actions__mic{background:#247d5a!important;color:#fff!important}
-@media(max-height:750px){.poem-header{min-height:52px;padding:5px 14px}.poem-main{padding:5px 10px;gap:7px}.poem-book__lyrics{padding:5px 12px}.poem-line{font-size:15px;padding:2px 6px}.poem-feedback{margin:0 10px 6px;padding:6px 9px}}
-@media(max-width:760px){.poem-main{grid-template-columns:27% 73%;padding:5px;gap:5px}.poem-book__pages{grid-template-columns:1fr}.poem-book__art{display:none}.poem-feedback{flex-wrap:wrap}.poem-header__steps{width:130px}.poem-actions{width:100%}}
-@media(prefers-reduced-motion:reduce){.poem-classroom *, .poem-classroom *:before,.poem-classroom *:after{animation:none!important;transition:none!important}}
+/* ==========================================================================
+   TALKORA CLASS 1 · BALBHARATI 1.1 "MY FIRST DAY" POEM CLASSROOM
+   Cinematic 3D Storybook Aesthetic, Voice-First Children's Learning Stage
+   ========================================================================== */
+
+.poem-classroom {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  width: 100%;
+  overflow: hidden;
+  color: #1e4d3e;
+  font-family: inherit;
+  background: radial-gradient(circle at 12% 16%, #fffbe6 0%, #e1f5eb 50%, #d5eef5 100%);
+  user-select: none;
+}
+
+.poem-classroom * {
+  box-sizing: border-box;
+}
+
+.poem-classroom button {
+  cursor: pointer;
+  font: inherit;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.poem-classroom button:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.poem-classroom button:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.poem-classroom button:focus-visible {
+  outline: 4px solid #f5a623;
+  outline-offset: 3px;
+}
+
+/* --------------------------------------------------------------------------
+   ENVIRONMENTAL DRIFT (Clouds, soft sunshine, classroom atmosphere)
+   -------------------------------------------------------------------------- */
+.poem-env-drift {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.poem-env-sun {
+  position: absolute;
+  top: 14px;
+  left: 20%;
+  color: #ffd86b;
+  opacity: 0.45;
+  filter: drop-shadow(0 0 25px rgba(255, 216, 107, 0.7));
+  animation: poemSunGleam 6s ease-in-out infinite alternate;
+}
+
+.poem-env-cloud {
+  position: absolute;
+  color: #ffffff;
+  opacity: 0.6;
+  filter: drop-shadow(0 4px 12px rgba(180, 220, 210, 0.35));
+}
+
+.poem-env-cloud--1 {
+  top: 22px;
+  left: 60%;
+  animation: poemCloudDrift 28s linear infinite;
+}
+
+.poem-env-cloud--2 {
+  top: 55px;
+  left: 85%;
+  animation: poemCloudDrift 38s linear infinite reverse;
+}
+
+@keyframes poemSunGleam {
+  0% { transform: scale(1); opacity: 0.35; }
+  100% { transform: scale(1.12); opacity: 0.55; }
+}
+
+@keyframes poemCloudDrift {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(35px); }
+  100% { transform: translateX(0); }
+}
+
+/* --------------------------------------------------------------------------
+   PRIMARY TOP BAR
+   -------------------------------------------------------------------------- */
+.poem-header {
+  position: relative;
+  z-index: 2;
+  flex: none;
+  min-height: clamp(52px, 7.5vh, 64px);
+  background: rgba(255, 255, 250, 0.92);
+  backdrop-filter: blur(8px);
+  border-bottom: 2px solid #cae3ce;
+  box-shadow: 0 4px 16px rgba(35, 75, 55, 0.05);
+  padding: 8px clamp(16px, 2.5vw, 36px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.poem-header__title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.poem-header__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2b8061, #1e644b);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(35, 105, 80, 0.28);
+}
+
+.poem-header__title strong {
+  display: block;
+  font-size: clamp(17px, 1.8vw, 24px);
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  color: #174d3d;
+  line-height: 1.15;
+}
+
+.poem-header__title span {
+  display: block;
+  font-size: clamp(10px, 0.95vw, 12px);
+  color: #4b7a66;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+}
+
+.poem-header__steps {
+  min-width: 170px;
+  max-width: 240px;
+  text-align: right;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.poem-header__step-label {
+  font-size: clamp(11px, 1vw, 13px);
+  font-weight: 900;
+  color: #27624c;
+}
+
+.poem-header__progress-bar {
+  height: 9px;
+  background: #d1e5d3;
+  border-radius: 99px;
+  overflow: hidden;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.poem-header__progress-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #3bb58b, #ffba42);
+  box-shadow: 0 0 8px rgba(255, 186, 66, 0.5);
+  transition: width 0.35s ease;
+}
+
+/* --------------------------------------------------------------------------
+   MAIN CLASSROOM LAYOUT
+   -------------------------------------------------------------------------- */
+.poem-main {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(220px, 0.32fr) minmax(0, 0.68fr);
+  gap: clamp(12px, 1.8vw, 24px);
+  padding: clamp(8px, 1.4vh, 16px) clamp(14px, 2vw, 30px);
+  min-height: 0;
+  flex: 1;
+}
+
+/* --------------------------------------------------------------------------
+   MISS JULIE TEACHER STAGE
+   -------------------------------------------------------------------------- */
+.poem-julie {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  border: 4px solid #fffbed;
+  border-radius: 26px;
+  overflow: hidden;
+  background: radial-gradient(ellipse at 50% 20%, #ffffff 0%, #d8f5ef 65%, #edf9e2 100%);
+  box-shadow: 0 12px 32px rgba(35, 84, 58, 0.14), inset 0 0 20px rgba(255, 255, 255, 0.6);
+}
+
+.poem-julie__aura {
+  position: absolute;
+  top: 15%;
+  left: 10%;
+  width: 80%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 245, 180, 0.7) 0%, rgba(255, 255, 255, 0) 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.poem-julie__name {
+  position: relative;
+  z-index: 3;
+  margin: 10px 12px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid #ffffff;
+  box-shadow: 0 4px 14px rgba(35, 75, 55, 0.1);
+  font-size: clamp(11px, 1.1vw, 14px);
+  font-weight: 950;
+  color: #1a5642;
+}
+
+.poem-julie__live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #3ac07d;
+  box-shadow: 0 0 0 3px rgba(58, 192, 125, 0.25);
+  animation: poemLivePulse 2s infinite;
+}
+
+@keyframes poemLivePulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.2); opacity: 0.75; }
+}
+
+.poem-julie__portrait {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 1;
+}
+
+.poem-julie__portrait video,
+.poem-julie__portrait img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  filter: drop-shadow(0 8px 14px rgba(25, 60, 45, 0.15));
+}
+
+.poem-julie__video {
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.24s ease-in-out;
+}
+
+.poem-julie__video.is-ready {
+  opacity: 1;
+}
+
+.poem-julie__still {
+  z-index: 1;
+  transition: opacity 0.24s ease-in-out;
+}
+
+.poem-julie__still.is-loading {
+  opacity: 1;
+}
+
+.poem-julie__status {
+  position: relative;
+  z-index: 3;
+  font-size: clamp(11px, 1.1vw, 14px);
+  font-weight: 900;
+  background: rgba(255, 255, 250, 0.95);
+  border-top: 1px solid #dceecb;
+  padding: 10px 14px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  color: #1e523f;
+  box-shadow: 0 -3px 12px rgba(35, 80, 55, 0.06);
+}
+
+.poem-julie__status[data-phase="listening"] {
+  color: #c42b40;
+}
+
+.poem-julie__status[data-phase="listening"] .poem-julie__status-pulse {
+  background: #e23b52;
+  animation: poemStatusBeat 1s infinite;
+}
+
+.poem-julie__status-pulse {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #3ec485;
+}
+
+@keyframes poemStatusBeat {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(226, 59, 82, 0.5); }
+  50% { transform: scale(1.25); box-shadow: 0 0 0 6px rgba(226, 59, 82, 0); }
+}
+
+/* --------------------------------------------------------------------------
+   SMART LEARNING STORYBOOK BOARD
+   -------------------------------------------------------------------------- */
+.poem-book {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 5px solid #fffdf5;
+  border-radius: 26px;
+  overflow: hidden;
+  box-shadow: 0 14px 38px rgba(35, 80, 55, 0.17);
+  background: #fffef7;
+}
+
+.poem-book__ribbon {
+  flex: none;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(90deg, #288062, #39a37e);
+  color: #ffffff;
+  padding: 8px 18px;
+  font-size: clamp(11px, 1vw, 13px);
+  font-weight: 900;
+  letter-spacing: 0.05em;
+  box-shadow: 0 2px 8px rgba(30, 85, 60, 0.2);
+}
+
+.poem-book__ribbon-left {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.poem-book__ribbon-right span {
+  background: rgba(255, 255, 255, 0.22);
+  padding: 3px 9px;
+  border-radius: 99px;
+  font-size: 11px;
+}
+
+.poem-book__pages {
+  min-height: 0;
+  flex: 1;
+  display: grid;
+  grid-template-columns: 44% 56%;
+  overflow: hidden;
+  background: #ffffff;
+}
+
+/* --------------------------------------------------------------------------
+   STORYBOOK LEFT PANEL: 3D Artwork Showcase
+   -------------------------------------------------------------------------- */
+.poem-book__art {
+  position: relative;
+  min-height: 180px;
+  background: radial-gradient(circle at 50% 30%, #e8f9fd, #fcfbe7);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  padding: 10px;
+  border-right: 2px solid #ebf4eb;
+}
+
+.poem-book__art-wrapper {
+  position: relative;
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: inset 0 0 16px rgba(0, 0, 0, 0.08), 0 8px 20px rgba(35, 75, 55, 0.12);
+  border: 3px solid #ffffff;
+}
+
+.poem-book__art-image {
+  object-fit: cover;
+  object-position: center;
+  transition: transform 0.4s ease;
+}
+
+/* Purpose-built visual movement matching the lesson vocabulary */
+.poem-anim-hop {
+  animation: poemHop 2.4s ease-in-out infinite;
+}
+
+.poem-anim-sway {
+  animation: poemSway 3.2s ease-in-out infinite;
+}
+
+.poem-anim-bell {
+  animation: poemBell 2s ease-in-out infinite;
+}
+
+.poem-anim-bounce {
+  animation: poemBounce 2.2s ease-in-out infinite;
+}
+
+.poem-anim-celebrate {
+  animation: poemCelebrate 3s ease-in-out infinite;
+}
+
+@keyframes poemHop {
+  0%, 100% { transform: scale(1) translateY(0); }
+  35% { transform: scale(1.02, 0.98) translateY(-5px); }
+  55% { transform: scale(0.99, 1.01) translateY(-2px); }
+}
+
+@keyframes poemSway {
+  0%, 100% { transform: scale(1.01) rotate(0deg); }
+  50% { transform: scale(1.02) rotate(1deg) translateY(-3px); }
+}
+
+@keyframes poemBell {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  25% { transform: scale(1.02) rotate(-2deg); }
+  75% { transform: scale(1.02) rotate(2deg); }
+}
+
+@keyframes poemBounce {
+  0%, 100% { transform: scale(1) translateY(0); }
+  45% { transform: scale(1.025) translateY(-7px); }
+  70% { transform: scale(0.99) translateY(1px); }
+}
+
+@keyframes poemCelebrate {
+  0%, 100% { transform: scale(1) translateY(0); }
+  50% { transform: scale(1.03) translateY(-6px); }
+}
+
+.poem-book__art-badge {
+  position: absolute;
+  bottom: 9px;
+  left: 9px;
+  right: 9px;
+  z-index: 2;
+  display: flex;
+  justify-content: center;
+}
+
+.poem-book__art-pill {
+  display: inline-block;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(4px);
+  color: #1b5641;
+  font-size: clamp(10px, 1vw, 13px);
+  font-weight: 900;
+  padding: 5px 12px;
+  border-radius: 99px;
+  border: 1px solid #ffffff;
+  box-shadow: 0 4px 12px rgba(20, 60, 45, 0.2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 95%;
+}
+
+.poem-sky-label {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  z-index: 3;
+  background: rgba(255, 250, 220, 0.94);
+  border: 1px solid #f2db88;
+  border-radius: 50px;
+  padding: 5px 11px;
+  font-size: 11px;
+  font-weight: 900;
+  color: #79561b;
+  box-shadow: 0 3px 10px rgba(120, 90, 30, 0.15);
+}
+
+/* --------------------------------------------------------------------------
+   STORYBOOK RIGHT PANEL: Lyrics & Word Bank
+   -------------------------------------------------------------------------- */
+.poem-book__lyrics {
+  padding: clamp(8px, 1.4vh, 16px) clamp(12px, 1.8vw, 24px);
+  min-width: 0;
+  background: repeating-linear-gradient(#ffffff, #ffffff 32px, #f4fbf5 33px);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.poem-book__chapter {
+  font-size: clamp(11px, 1vw, 13px);
+  font-weight: 950;
+  color: #267c5b;
+  margin-bottom: 6px;
+  letter-spacing: 0.03em;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.poem-book__verses-list {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.poem-verse {
+  padding: 0 0 3px;
+  margin: 1px 0 5px;
+  border-bottom: 1px dashed #d7ebd9;
+}
+
+.poem-verse.is-stanza-active {
+  border-bottom-color: #ffd67a;
+}
+
+.poem-line {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 2px 0;
+  padding: 3px 8px;
+  border-radius: 10px;
+  font-family: Georgia, 'Times New Roman', serif;
+  color: #4b6659;
+  font-size: clamp(14px, 1.5vw, 19px);
+  line-height: 1.25;
+  transition: all 0.2s ease;
+}
+
+.poem-line.is-active {
+  background: #fff3b3;
+  color: #174f37;
+  font-weight: 900;
+  box-shadow: inset 5px 0 #f5a623, 0 3px 10px rgba(245, 166, 35, 0.16);
+  transform: translateX(3px);
+}
+
+.poem-line__number {
+  font: 850 11px/1 system-ui, sans-serif;
+  color: #8fae98;
+  min-width: 14px;
+}
+
+.poem-line.is-active .poem-line__number {
+  color: #e58b12;
+}
+
+.poem-line__content {
+  flex: 1;
+}
+
+.poem-word-highlight {
+  display: inline-block;
+  padding: 1px 5px;
+  margin: 0 2px;
+  border-radius: 6px;
+  background: #ffdf79;
+  color: #8c4c0b;
+  font-weight: 950;
+  box-shadow: 0 1px 4px rgba(180, 100, 20, 0.2);
+  animation: poemKeywordPulse 1.8s ease-in-out infinite;
+}
+
+@keyframes poemKeywordPulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); background: #ffd24d; }
+}
+
+.poem-line__spark {
+  color: #f5a623;
+  font-size: 13px;
+  font-weight: 900;
+  animation: poemSparkle 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes poemSparkle {
+  0% { transform: scale(0.9) rotate(0deg); opacity: 0.6; }
+  100% { transform: scale(1.2) rotate(45deg); opacity: 1; }
+}
+
+/* --------------------------------------------------------------------------
+   WORD BANK (Look and say)
+   -------------------------------------------------------------------------- */
+.poem-book__wordbank {
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid #e1efe3;
+}
+
+.poem-book__wordbank-title strong {
+  font-size: clamp(10px, 0.95vw, 12px);
+  color: #3b765b;
+}
+
+.poem-book__wordbank-chips {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.poem-word-chip {
+  padding: 3px 7px;
+  background: #eef8f0;
+  border: 1px solid #cbe6d2;
+  border-radius: 7px;
+  color: #276249;
+  font-size: clamp(10px, 0.95vw, 12px);
+  font-weight: 800;
+  transition: all 0.2s ease;
+}
+
+.poem-word-chip.is-target {
+  background: #ffeac2;
+  border-color: #f8cf86;
+  color: #8c5218;
+  font-weight: 950;
+  box-shadow: 0 2px 6px rgba(180, 110, 30, 0.16);
+  transform: translateY(-1px);
+}
+
+/* --------------------------------------------------------------------------
+   ACTIVE FOCUS BAR & HINTS
+   -------------------------------------------------------------------------- */
+.poem-focus {
+  flex: none;
+  background: #fff5cb;
+  border-top: 2px solid #ecdc9f;
+  padding: 8px 16px;
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  box-shadow: 0 -2px 10px rgba(180, 140, 40, 0.08);
+}
+
+.poem-focus__badge span {
+  font-size: 11px;
+  font-weight: 950;
+  white-space: nowrap;
+  background: #ffffff;
+  padding: 4px 10px;
+  border-radius: 99px;
+  color: #795213;
+  border: 1px solid #ebd494;
+}
+
+.poem-focus__text {
+  font-size: clamp(15px, 1.6vw, 21px);
+  font-weight: 950;
+  color: #174e37;
+  letter-spacing: 0.02em;
+}
+
+.poem-hints {
+  flex: none;
+  display: flex;
+  gap: 8px 14px;
+  padding: 6px 14px;
+  font-size: clamp(11px, 0.95vw, 13px);
+  background: #fff0d8;
+  border-top: 1px solid #fedfae;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.poem-hints__title {
+  font-weight: 950;
+  color: #92581c;
+}
+
+.poem-hints__divider {
+  color: #e0aa64;
+  font-weight: bold;
+}
+
+.poem-hints span[lang] {
+  color: #704419;
+  font-weight: 850;
+}
+
+/* --------------------------------------------------------------------------
+   BOTTOM LIVE TEACHER FEEDBACK & VOICE DOCK
+   -------------------------------------------------------------------------- */
+.poem-feedback {
+  position: relative;
+  z-index: 2;
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin: 0 clamp(14px, 2vw, 30px) clamp(8px, 1.4vh, 16px);
+  border-radius: 20px;
+  border: 2px solid #ecdca8;
+  background: rgba(255, 255, 250, 0.98);
+  box-shadow: 0 10px 28px rgba(35, 75, 55, 0.15);
+  padding: 10px 18px;
+}
+
+.poem-feedback__message {
+  min-width: 0;
+  flex: 1;
+}
+
+.poem-feedback__header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.poem-feedback__header strong {
+  font-size: 10px;
+  color: #3b7458;
+  letter-spacing: 0.12em;
+}
+
+.poem-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 99px;
+  text-transform: uppercase;
+}
+
+.poem-status-pill--speaking {
+  background: #def6ec;
+  color: #1a6f4c;
+}
+
+.poem-status-pill--listening {
+  background: #fde6ea;
+  color: #c7293e;
+}
+
+.poem-status-pill--processing {
+  background: #fef1d6;
+  color: #8c5717;
+}
+
+.poem-feedback__teacher-text {
+  font-size: clamp(13px, 1.35vw, 17px);
+  font-weight: 850;
+  line-height: 1.35;
+  margin: 4px 0 2px;
+  color: #174a38;
+  max-height: 72px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+}
+
+.poem-feedback__model,
+.poem-feedback__transcript,
+.poem-feedback__alert {
+  display: block;
+  font-size: clamp(11px, 1vw, 13px);
+  margin-top: 3px;
+  line-height: 1.3;
+}
+
+.poem-feedback__model {
+  color: #1d6e4d;
+  background: #eaf8ee;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.poem-feedback__transcript {
+  color: #634f2d;
+}
+
+.poem-feedback__alert {
+  color: #b23a2b;
+  font-weight: 850;
+}
+
+/* --------------------------------------------------------------------------
+   INTERACTION BUTTONS & DOCK
+   -------------------------------------------------------------------------- */
+.poem-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  flex: none;
+}
+
+.poem-actions__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 48px;
+  padding: 8px 14px;
+  border-radius: 14px;
+  border: 1px solid #a8d4b9;
+  background: #f0faf3;
+  color: #216045;
+  font-size: 13px;
+  font-weight: 900;
+  box-shadow: 0 3px 10px rgba(35, 75, 55, 0.08);
+  white-space: nowrap;
+}
+
+.poem-actions__button:hover:not(:disabled) {
+  background: #e3f5ea;
+  border-color: #8bc2a0;
+}
+
+.poem-actions__button--music.is-active {
+  background: #def6e9;
+  border-color: #55b682;
+  color: #145938;
+}
+
+.poem-actions__button--enable {
+  background: #fff0d8;
+  border-color: #f7cd85;
+  color: #895116;
+}
+
+.poem-actions__mic {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 52px;
+  padding: 10px 22px;
+  border-radius: 16px;
+  border: none;
+  background: linear-gradient(135deg, #1f855e, #146947) !important;
+  color: #ffffff !important;
+  font-size: clamp(14px, 1.2vw, 17px);
+  font-weight: 950;
+  box-shadow: 0 6px 20px rgba(22, 107, 73, 0.38);
+  letter-spacing: 0.02em;
+}
+
+.poem-actions__mic:hover {
+  background: linear-gradient(135deg, #24996d, #177852) !important;
+  box-shadow: 0 8px 24px rgba(22, 107, 73, 0.45);
+}
+
+.poem-actions__mic.is-listening {
+  background: linear-gradient(135deg, #de3a4f, #be2236) !important;
+  box-shadow: 0 6px 22px rgba(222, 58, 79, 0.42);
+  animation: poemMicRecordingBeat 1.2s infinite;
+}
+
+.poem-recording-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ffffff;
+  animation: poemDotFlash 0.8s infinite alternate;
+}
+
+@keyframes poemMicRecordingBeat {
+  0%, 100% { transform: scale(1); box-shadow: 0 6px 20px rgba(222, 58, 79, 0.38); }
+  50% { transform: scale(1.03); box-shadow: 0 0 0 8px rgba(222, 58, 79, 0.2); }
+}
+
+@keyframes poemDotFlash {
+  0% { opacity: 0.3; }
+  100% { opacity: 1; }
+}
+
+/* --------------------------------------------------------------------------
+   RESPONSIVE DESIGN (School Computer Lab: 1366x768, 1280x720, Tablets)
+   -------------------------------------------------------------------------- */
+@media (max-height: 760px) {
+  .poem-header {
+    min-height: 48px;
+    padding-top: 5px;
+    padding-bottom: 5px;
+  }
+  .poem-main {
+    padding-top: 6px;
+    padding-bottom: 6px;
+    gap: 12px;
+  }
+  .poem-julie__name {
+    margin-top: 6px;
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  .poem-julie__status {
+    padding: 7px 10px;
+    font-size: 11px;
+  }
+  .poem-book__lyrics {
+    padding: 6px 12px;
+  }
+  .poem-line {
+    font-size: 14px;
+    padding: 2px 6px;
+  }
+  .poem-focus {
+    padding: 5px 12px;
+  }
+  .poem-focus__text {
+    font-size: 15px;
+  }
+  .poem-feedback {
+    margin-bottom: 6px;
+    padding: 6px 12px;
+  }
+  .poem-feedback__teacher-text {
+    max-height: 52px;
+    font-size: 13px;
+  }
+  .poem-actions__button,
+  .poem-actions__mic {
+    min-height: 44px;
+    padding: 6px 14px;
+  }
+}
+
+@media (max-width: 860px) {
+  .poem-main {
+    grid-template-columns: 28% 72%;
+    padding: 6px;
+    gap: 8px;
+  }
+  .poem-book__pages {
+    grid-template-columns: 1fr;
+  }
+  .poem-book__art {
+    display: none;
+  }
+  .poem-feedback {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .poem-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   ACCESSIBILITY: PREFERS REDUCED MOTION
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .poem-classroom *,
+  .poem-classroom *::before,
+  .poem-classroom *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
