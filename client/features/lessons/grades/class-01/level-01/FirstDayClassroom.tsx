@@ -32,6 +32,20 @@ type Props = {
 }
 
 type Scene = { icon: string; name: string; action: string; meaning: string; hintHi: string; hintMr: string; colour: string; visual: 'gate' | 'skip' | 'run' | 'walk' | 'grin' | 'bell' | 'jump' | 'play' | 'door' | 'celebrate' }
+
+const SCENE_ILLUSTRATIONS: Record<string, string> = {
+  gate: '/lessons/class-01/level-01/illustrations/first-day-school.webp',
+  skip: '/lessons/class-01/level-01/illustrations/skip-run.webp',
+  run: '/lessons/class-01/level-01/illustrations/skip-run.webp',
+  walk: '/lessons/class-01/level-01/illustrations/walk-school.webp',
+  grin: '/lessons/class-01/level-01/illustrations/smile-bell.webp',
+  bell: '/lessons/class-01/level-01/illustrations/smile-bell.webp',
+  jump: '/lessons/class-01/level-01/illustrations/jump-play.webp',
+  play: '/lessons/class-01/level-01/illustrations/jump-play.webp',
+  door: '/lessons/class-01/level-01/illustrations/first-day-school.webp',
+  celebrate: '/lessons/class-01/level-01/illustrations/grade-one-celebration.webp',
+}
+
 const SCENES: Record<string, Scene> = {
   'hello-school': { icon:'🏫', name:'Our first school day', action:'Wave hello!', meaning:'This is my school.', hintHi:'School = स्कूल', hintMr:'School = शाळा', colour:'#84d7c5', visual:'gate' },
   'skip-bunny': { icon:'🐇', name:'Skip, skip!', action:'Show skipping fingers!', meaning:'Skip = little jumping steps', hintHi:'Skip = उछलकर चलना', hintMr:'Skip = उड्या मारत जाणे', colour:'#f6cb76', visual:'skip' },
@@ -85,6 +99,8 @@ export function FirstDayClassroom({
     : 'Your turn to speak'
   const phase = isListening ? 'listening' : isProcessing ? 'thinking' : isSpeaking ? 'speaking' : isCompleted ? 'celebrating' : isRetry ? 'encouraging' : 'ready'
 
+  const sceneIllustration = SCENE_ILLUSTRATIONS[scene.visual] || '/lessons/class-01/level-01/illustrations/first-day-school.webp'
+
   return <section className="firstday-stage" data-firstday-scene={sceneId} data-phase={phase} data-testid="class1-firstday-adventure" aria-label="Balbharati My First Day speaking classroom">
     <header className="firstday-topline">
       <div className="firstday-topline__identity"><span className="firstday-topline__book"><BookOpen size={19} aria-hidden="true" /></span>
@@ -124,6 +140,14 @@ export function FirstDayClassroom({
           <div className="firstday-book__top"><span>✦ LOOK · LISTEN · SAY</span><small>{scene.name}</small></div>
           <div className="firstday-book__art">
             <div className="firstday-board-scene" data-action={scene.visual} style={{ '--scene-accent':scene.colour } as CSSProperties}>
+              <Image
+                src={sceneIllustration}
+                alt={scene.name}
+                fill
+                priority
+                sizes="(max-width: 750px) 45vw, 38vw"
+                className="firstday-board-illustration"
+              />
               <svg className="firstday-school" viewBox="0 0 600 205" role="img" aria-label="Original illustrated school with garden and a path" preserveAspectRatio="xMidYMid meet">
                 <defs><linearGradient id="talkoraSchoolSky" x1="0" y1="0" x2="0" y2="1"><stop stopColor="#c7eeff"/><stop offset="1" stopColor="#f0fbd8"/></linearGradient></defs>
                 <rect width="600" height="205" rx="22" fill="url(#talkoraSchoolSky)" />
