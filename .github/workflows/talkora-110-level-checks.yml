@@ -70,6 +70,9 @@ jobs:
       - name: Verify KG refresh recovery waits for full intro and never resubmits a stored recording
         run: node --test tests/ui/kg-pending-feedback-recovery.test.mjs
         working-directory: client
+      - name: Verify KG Level 2 stone, PIN auto-resume, full intro, and signed played-audio safeguards
+        run: node --test tests/ui/kg-level2-auto-resume.test.mjs
+        working-directory: client
       - name: Verify Class 1 hands-free audio and landscape contracts
         run: node --test tests/ui/class1-voice-runtime-contract.test.mjs
         working-directory: client
@@ -161,6 +164,9 @@ jobs:
         working-directory: backend
       - name: Verify disposable KG PIN-to-homework HTTP/Mongo pilot journey and logout ticket revocation
         run: pnpm exec jest --runInBand tests/integration/kgFullPilotJourney.test.ts
+        working-directory: backend
+      - name: Verify KG Level 1 to Level 2 student unlock, intro, saved speech, next-login resume and audio receipts
+        run: pnpm exec jest --runInBand tests/integration/kgLevel2StudentJourney.test.ts
         working-directory: backend
       - name: Verify shared-school-IP student PIN success and layered brute-force throttles
         run: pnpm exec jest --runInBand tests/integration/studentPinLabThrottle.test.ts

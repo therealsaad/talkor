@@ -30,7 +30,7 @@ it('repairs old completed KG1 records once and persists homework check-in across
     submissionId: 'old-final-success-abc123' })
   const first = await request(app).get('/api/kg-alphabet/state').set('Authorization', auth).expect(200)
   expect(first.body.data).toMatchObject({ completed: true, xp: 100, stars: 3,
-    homework: { status: 'pending' }, level2Available: false })
+    homework: { status: 'pending' }, level2Available: true })
   const checked = await request(app).post('/api/kg-alphabet/homework/complete')
     .set('Authorization', auth).send({ homeworkId: 'kg-abcd-picture-homework-v1' }).expect(200)
   expect(checked.body.data.homework.status).toBe('completed')

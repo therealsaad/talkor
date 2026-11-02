@@ -683,6 +683,9 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       pendingResultRef.current = null; setPhase('finished')
       try { await playClip('homework-abcd') } catch { /* printed homework remains visible */ }
       if (preview) router.replace('/school/kg-preview')
+      // The next published pilot begins immediately AFTER the spoken homework.
+      // Do not force the child back to the ten-level map or replay Level 1.
+      else if (stateRef.current?.level2Available) router.replace('/student/kg/level-2')
       return
     }
     await beginStep(nextIndex)

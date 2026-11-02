@@ -4,6 +4,8 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { curriculumService } from '@/services/curriculum-service'
+import { kgAlphabetService } from '@/features/lessons/grades/kg/level-01/services/kg-alphabet-service'
+import { kgLevel2StudentService } from '@/features/lessons/grades/kg/level-02/services/kg-level2-student-service'
 import { useAuth } from '@/components/auth/auth-provider'
 import { TalkoraLoader } from '@/components/student/talkora-loader'
 
@@ -14,15 +16,21 @@ export default function ResumeMyLesson() {
   const [error, setError] = useState('')
   useEffect(() => {
     if (status !== 'authenticated') return
-    // KG's approved alphabet experience owns its own saved progress/resume.
-    // Never send a newly signed-in child to the optional garden map.
-    if (student?.grade === 0) { router.replace('/student/kg'); return }
     let cancelled = false
-    curriculumService.getNextLesson()
-      .then((current) => {
+    // Always derive the next KG level from authenticated MongoDB progress.
+    // A new tab/PIN login must not inherit yesterday's client-side selection.
+    const nextLesson = student?.grade === 0
+      ? kgAlphabetService.state().then(async (level1) => {
+          if (!level1.completed || !level1.level2Available) return '/student/kg'
+          const level2 = await kgLevel2StudentService.state()
+          return level2.completed ? '/student/kg/map' : '/student/kg/level-2'
+        })
+      : curriculumService.getNextLesson().then((current) => current.lessonId
+          ? `/student/lesson/${encodeURIComponent(current.lessonId)}` : '/student/home')
+    nextLesson
+      .then((next) => {
         if (cancelled) return
-        const next = current.lessonId
-        router.replace(next ? `/student/lesson/${encodeURIComponent(next)}` : '/student/home')
+        router.replace(next)
       })
       .catch((cause) => {
         if (!cancelled) {
