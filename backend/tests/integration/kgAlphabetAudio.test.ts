@@ -1086,9 +1086,10 @@ it.each([
       studentId: student._id, submissionId: submittedId,
     }).lean()
     expect(saved).toMatchObject({
-      outcome: 'supported', transcript, languageCode: detected,
+      outcome: 'supported', transcript,
       feedbackLanguageCode: teaching, feedbackText: supported.body.data.feedbackText,
     })
+    expect(saved?.languageCode).toBe(detected)
 
     const azure = jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached')
       .mockResolvedValue({ audio: Buffer.alloc(500, 65), contentType: 'audio/mpeg' })
