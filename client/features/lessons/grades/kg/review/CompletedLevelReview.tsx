@@ -1,6 +1,6 @@
 'use client'
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { BookOpen, ChevronLeft, ChevronRight, Headphones, LoaderCircle, Map, Volume2 } from 'lucide-react'
 import { useReducedMotion } from 'framer-motion'
