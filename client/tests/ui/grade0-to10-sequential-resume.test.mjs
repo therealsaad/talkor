@@ -65,6 +65,7 @@ test('all Class 1–10 levels strictly need verified published preceding level',
   assert.match(resume, /if \(current\.blocked\) throw new Error/)
   assert.doesNotMatch(fastService, /levelProgress\.status = 'unlocked'/)
   assert.match(lessonExperience, /if \(voicePlayed && experienceId !== 'g01-l01'\) router\.replace\('\/student\/continue'\)/)
+  assert.match(lessonExperience, /For your speaking homework, \$\{homeworkMessage\.replace/)
   assert.match(lessonExperience, /if \(experienceId !== 'g01-l01' \|\| !homeworkSaved \|\| experience !== 'lesson_complete'\) return/)
   assert.match(curriculum, /status: recorded \|\| 'locked'/)
   assert.match(curriculum, /ProgressService\.assertLevelAccessible\(/)
