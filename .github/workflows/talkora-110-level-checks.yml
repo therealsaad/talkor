@@ -173,6 +173,9 @@ jobs:
       - name: Verify KG1 Sarvam locale survives Qwen and Azure feedback
         run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'preserves Sarvam Hindi detection'
         working-directory: backend
+      - name: Verify KG child saying billi or manjar gets the right Azure coaching voice, never English mastery
+        run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'verifies KG bilingual cat bridge'
+        working-directory: backend
       - name: Guard KG1 S3 static sample against live Priya opening
         run: pnpm exec jest --runInBand tests/unit/kgFixedAudioSample.test.ts
         working-directory: backend
