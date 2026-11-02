@@ -131,7 +131,7 @@ it.each([2, 6])(
       })
     await submit(first.activity._id.toString(), 'published-first-' + grade)
     await submit(second.activity._id.toString(), 'published-second-' + grade)
-    expect((await StudentLessonFastService.next(studentId)).blocked).toBe(true)
+    expect(await StudentLessonFastService.next(studentId)).toMatchObject({ blocked: true })
 
     // An educator publishing a complete, real lesson is an external change;
     // previously saved completions must not be discarded.
