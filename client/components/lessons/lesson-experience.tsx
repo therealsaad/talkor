@@ -1023,7 +1023,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         id: `teacher-${activity?.id || index}-complete`,
         text: activity?.activityKey === 'class1-l01-v4-poem-full'
           ? `${celebration} Let us hear the whole poem one last time with our happy rhythm. ${FIRST_DAY_POEM_COMPLETE} For your speaking homework, recite it with actions at home!`
-          : experienceId === 'g01-l01' && homeworkMessage
+          : homeworkMessage
             ? `${celebration} For your speaking homework, ${homeworkMessage.replace(/^Homework:\s*/i, '')}`
             : celebration,
         emotion: 'celebrating',
