@@ -2,9 +2,13 @@ import { createApp } from './app'
 import { connectDatabase, gracefulShutdown } from './config/db'
 import { env } from './config/env'
 import { logger } from './utils/logger'
+import { prepareSharedRateLimitStore } from './middleware/mongo-rate-limit-store'
 
 async function main() {
   await connectDatabase()
+  // Production must not serve requests with local/uninitialized limiter data.
+  // This also fails startup if MongoDB cannot create/read the shared TTL index.
+  await prepareSharedRateLimitStore()
 
   const app = createApp()
   const server = app.listen(env.port, () => {
