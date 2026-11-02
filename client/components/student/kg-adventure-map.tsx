@@ -28,6 +28,7 @@ type GardenStatus = 'CURRENT' | 'COMPLETED' | 'LOCKED'
 function lessonHref(levelNumber: number, status: GardenStatus) {
   if (status === 'LOCKED') return undefined
   if (levelNumber === 1) return status === 'COMPLETED' ? '/student/kg?replay=all' : '/student/kg'
+  if (levelNumber >= 2 && levelNumber <= 5 && status === 'COMPLETED') return '/student/kg/review/' + levelNumber
   if (levelNumber === 2 && status === 'CURRENT') return '/student/kg/level-2'
   if (levelNumber >= 3 && levelNumber <= 5 && status === 'CURRENT') return '/student/kg/level-' + levelNumber
   return undefined
@@ -105,7 +106,7 @@ export function KGAdventureMap({
               : allLevelsComplete
                 ? 'You finished every garden level. Hooray!'
                 : completedLevelCount > 0
-                  ? `You finished ${completedLevelCount} level${completedLevelCount === 1 ? '' : 's'}! More garden paths are getting ready.`
+                  ? `You finished ${completedLevelCount} level${completedLevelCount === 1 ? '' : 's'}! Tap a completed stone to practise again.`
                 : error
                   ? 'Your garden is taking a little rest. Try loading it again.'
                   : 'Choose a garden stone to see your next adventure.'}
@@ -174,7 +175,7 @@ export function KGAdventureMap({
               const ringStyle = {
                 background: `conic-gradient(#48a66c ${level.progress}%, rgba(255, 255, 255, .88) 0)`,
               } satisfies CSSProperties
-              const label = `Level ${level.number}${level.title ? `, ${level.title}` : ', not available yet'}; ${status}${level.number === 1 && kgLevel1State ? `, ${level.progress}% complete` : ''}`
+              const label = `Level ${level.number}${level.title ? `, ${level.title}` : ', not available yet'}; ${status}${level.status === 'COMPLETED' ? ', tap to revise' : ''}${level.number === 1 && kgLevel1State ? `, ${level.progress}% complete` : ''}`
 
               return (
                 <li
@@ -204,7 +205,7 @@ export function KGAdventureMap({
       </figure>
 
       <footer className={styles.footer}>
-        <span><Sprout size={15} aria-hidden="true" /> Tap a stone to explore</span>
+        <span><Sprout size={15} aria-hidden="true" /> Green check = revise · Glowing stone = continue</span>
         {kgLevel1State ? <span>{completedLevelCount} of {LEVEL_POSITIONS.length} levels complete</span> : null}
       </footer>
     </main>

@@ -168,6 +168,22 @@ export const KGLevel2StudentController = {
     if (!Object.prototype.hasOwnProperty.call(LEVEL2_NARRATION, id)) throw ApiError.notFound('Unknown Level 2 narration')
     await speak(res, LEVEL2_NARRATION[id as keyof typeof LEVEL2_NARRATION])
   }),
+  /** Authenticated read-only revision of a saved completed level.
+   * No intro replay ticket, microphone, attempts, XP or Mongo mutations.
+   * Only teacher-authored fixed narration, never arbitrary client text.
+   */
+  reviewNarration: catchAsync(async (req: Request, res: Response) => {
+    const { studentId, schoolId } = await authorized(req)
+    const completed = await KGLevel2Progress.exists({
+      studentId, schoolId, currentIndex: LEVEL2_LETTERS.length, completedAt: { $exists: true },
+    })
+    if (!completed) throw ApiError.forbidden('Finish Level 2 before revising it')
+    const id = req.params.id
+    if (!Object.prototype.hasOwnProperty.call(LEVEL2_NARRATION, id)) {
+      throw ApiError.notFound('Unknown reviewed Level 2 narration')
+    }
+    await speak(res, LEVEL2_NARRATION[id as keyof typeof LEVEL2_NARRATION])
+  }),
   attempt: catchAsync(async (req: Request, res: Response) => {
     const { studentId, schoolId } = await authorized(req)
     const row = await levelState(studentId, schoolId)

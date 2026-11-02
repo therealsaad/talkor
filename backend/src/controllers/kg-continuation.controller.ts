@@ -209,6 +209,37 @@ export const KGContinuationController = {
     }
     await voice(res, narration)
   }),
+  /** Only fully completed, authorized KG pilot levels have read-only revision.
+   * No progress row upsert, intro ticket, STT, feedback receipt or award.
+   */
+  reviewNarration: catchAsync(async (req: Request, res: Response) => {
+    const { studentId, schoolId, level } = await access(req)
+    const completed = await KGContinuationProgress.exists({
+      studentId, schoolId, level,
+      currentIndex: continuationLesson(level).letters.length,
+      completedAt: { $exists: true },
+    })
+    if (!completed) throw ApiError.forbidden('Finish this level before revising it')
+    const narration = getKGContinuationNarration(level, req.params.id)
+    if (!narration) throw ApiError.notFound('Unknown reviewed narration')
+    // Same provider policy as the regular narration, but never let a
+    // replay trigger the grading/ACK endpoints or change the saved cursor.
+    if (process.env.TALKORA_KG_FIXED_NARRATION_CACHE === 'true') {
+      const audio = await getKGAzureNarrationAudio({ level, id: req.params.id, text: narration })
+      if (audio.audio.length < 256 || audio.audio.length > 8 * 1024 * 1024 ||
+          !/^audio\/[a-z0-9.+-]+(?:\s*;.*)?$/i.test(audio.contentType)) {
+        throw ApiError.provider('KG_CONTINUATION_AUDIO_INVALID')
+      }
+      res.setHeader('Content-Type', audio.contentType)
+      res.setHeader('Content-Length', String(audio.audio.length))
+      res.setHeader('Cache-Control', 'private, no-store')
+      res.setHeader('X-Content-Type-Options', 'nosniff')
+      res.setHeader('X-Voice-Provider', 'azure-' + audio.source)
+      res.send(audio.audio)
+      return
+    }
+    await voice(res, narration)
+  }),
   attempt: catchAsync(async (req: Request, res: Response) => {
     const { studentId, schoolId, level } = await access(req)
     const progress = await row(studentId, schoolId, level)
