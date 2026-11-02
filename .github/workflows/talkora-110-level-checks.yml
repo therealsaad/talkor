@@ -162,6 +162,11 @@ jobs:
       - name: Verify shared-school-IP student PIN success and layered brute-force throttles
         run: pnpm exec jest --runInBand tests/integration/studentPinLabThrottle.test.ts
         working-directory: backend
+      - name: Verify MongoDB-backed cross-replica atomic limits and signed student budgets
+        run: pnpm exec jest --runInBand tests/integration/mongoRateLimits.test.ts
+        working-directory: backend
+        env:
+          TALKORA_SHARED_RATE_LIMITS: 'true'
       - name: Verify KG1 Sarvam locale survives Qwen and Azure feedback
         run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'preserves Sarvam Hindi detection'
         working-directory: backend
