@@ -27,13 +27,16 @@ const level3Routes=await read('../../../backend/src/routes/kg-level3-preview.rou
 const level3Content=await read('../../../backend/src/kg/level3-content.ts')
 const level3Integration=await read('../../../backend/tests/integration/kgLevel3Preview.test.ts')
 
-test('KG PIN login automatically enters Level 1; the ten-level garden remains optional review',()=>{
+test('KG PIN login resumes the next saved playable level; the ten-level garden remains optional review',()=>{
  assert.match(login,/await loginStudentByPin\(pin\)/)
  assert.match(loginLayout,/router\.replace\(homeForRole\(role\)\)/)
  assert.doesNotMatch(login,/router\.replace/)
  assert.doesNotMatch(login,/router\.replace\('\/student\/kg\/map'\)/)
  assert.match(loginRedirect,/role === 'STUDENT' \? '\/student\/continue'/)
- assert.match(resume,/student\?\.grade === 0\) \{ router\.replace\('\/student\/kg'\)/)
+ assert.match(resume,/student\?\.grade === 0/)
+ assert.match(resume,/kgAlphabetService\.state\(\)/)
+ assert.match(resume,/kgLevel2StudentService\.state\(\)/)
+ assert.match(resume,/\/student\/kg\/level-2/)
  assert.match(layout,/showKGGardenHub/)
  assert.match(gardenPage,/kgAlphabetService\.state\(\)/)
  assert.doesNotMatch(gardenPage,/curriculumService\.getMyCurriculum/)
