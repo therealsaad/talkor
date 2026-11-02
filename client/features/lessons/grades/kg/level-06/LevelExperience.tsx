@@ -1,9 +1,8 @@
 'use client'
-import { LevelDraftPreview } from '../../../LevelDraftPreview'
-import { config } from './config'
-import { activities, suggestedActivities } from './activities'
-import { interactions } from './interactions'
-/** Staff-only design preview; do not route students to unfinished lessons. */
+
+import Level6VowelGarden from './Level6VowelGarden'
+
+/** Staff-only preview: the approved intro video is followed by the vowel lesson. */
 export default function LevelExperience() {
-  return <LevelDraftPreview config={config} activities={activities} suggestedActivities={suggestedActivities} interactions={interactions} />
+  return <Level6VowelGarden />
 }

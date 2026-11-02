@@ -48,7 +48,7 @@ export function homeForRole(role: AuthSession['role']): string {
 export function AuthProvider({ children }: { children: ReactNode }) {
   // The server cannot read local/sessionStorage. Both SSR and the first
   // browser render must start from the same snapshot to hydrate safely.
-  // Rehydrate the cached login AFTER hydration, then verify it via /auth/me.
+  // Restore the cached login after hydration, then verify it through /auth/me.
   const [status, setStatus] = useState<AuthStatus>('loading')
   const [session, setSession] = useState<AuthSession | null>(null)
   const sessionRef = useRef<AuthSession | null>(session)

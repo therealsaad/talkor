@@ -7020,6 +7020,8 @@ import {
   useState,
 } from 'react'
 
+import { ApiError } from '@/lib/api-client'
+
 import {
   AnimatePresence,
   motion,
@@ -7366,15 +7368,20 @@ export default function AdventureMapPage() {
           return
         }
 
-        console.error(
-          '[TALKORA ADVENTURE]',
-          cause,
-        )
+        const missingPublishedClass1 = student?.grade === 1 &&
+          cause instanceof ApiError &&
+          cause.message === 'Published curriculum is not available for Class 1'
+
+        if (!missingPublishedClass1) {
+          console.error('[TALKORA ADVENTURE]', cause)
+        }
 
         setError(
-          cause instanceof Error
-            ? cause.message
-            : 'Failed to load your adventure.',
+          missingPublishedClass1
+            ? 'Your Class 1 lessons are not published yet. Please ask your school administrator to publish the Class 1 curriculum, then retry.'
+            : cause instanceof Error
+              ? cause.message
+              : 'Failed to load your adventure.',
         )
 
         setLoading(false)
@@ -7798,7 +7805,7 @@ export default function AdventureMapPage() {
     setSelected(world.number)
 
     if (error && student?.grade === 1 && world.number === 1) {
-      const message = 'Class 1 Level 1 could not load. Check that the Class 1 demo curriculum is seeded, then retry.'
+      const message = 'Your Class 1 lessons are not published yet. Please ask your school administrator to publish the Class 1 curriculum, then retry.'
       setJulieMessage(message)
       void speakJulie(message)
       return
@@ -8018,8 +8025,8 @@ export default function AdventureMapPage() {
       >
         {error && student?.grade === 1 ? (
           <aside className="tk-class1-map-notice" role="status">
-            <strong>Class 1 map is ready</strong>
-            <span>The Class 1 curriculum could not be loaded. Check that the Level 1 demo curriculum is seeded in the backend, then retry.</span>
+            <strong>Class 1 lessons are not published yet</strong>
+            <span>Please ask your school administrator to publish the Class 1 curriculum, then retry.</span>
             <button type="button" onClick={() => window.location.reload()}>Retry</button>
           </aside>
         ) : null}

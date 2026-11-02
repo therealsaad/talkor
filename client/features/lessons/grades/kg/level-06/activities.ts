@@ -6,18 +6,18 @@ export const activities: LevelActivity[] = []
 /** Editorial ideas only; not exposed to students or grading. */
 export const suggestedActivities: SuggestedActivity[] = [
   {
-    "label": "Listen and explore: Family Words",
+    "label": "Listen and explore: Vowel Sounds",
     "mode": "tap-picture",
-    "educatorNote": "Teacher defines visual scene and sound cues here."
+    "educatorNote": "Teacher explains vowels as open speech sounds."
   },
   {
-    "label": "Speak about Family Words",
+    "label": "Practice the vowel sounds",
     "mode": "repeat-after-julie",
-    "educatorNote": "Teacher supplies sample answer, corrective hints and language support."
+    "educatorNote": "Learner listens to and repeats isolated vowel sounds."
   },
   {
-    "label": "Show what you know about Family Words",
+    "label": "Show what you know about vowel sounds",
     "mode": "listen-and-find",
-    "educatorNote": "Teacher sets scoring rubric, touch choices and mastery threshold."
+    "educatorNote": "Review short vowel sound practice."
   }
 ]

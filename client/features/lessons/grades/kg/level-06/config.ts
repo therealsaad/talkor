@@ -6,18 +6,18 @@ export const config = {
   "grade": 0,
   "level": 6,
   "gradeLabel": "Kindergarten",
-  "title": "Family Words",
+  "title": "Vowel Sounds",
   "editorialStatus": "draft",
   "studentPlayable": false,
-  "description": "Family Words — a distinct rainbow valley adventure for KG learners.",
+  "description": "Learn what vowel sounds are, then listen to and practice A, E, I, O, and U.",
   "syllabus": {
     "objectives": [
-      "Recognize, hear, and speak language connected to family words."
+      "Recognize the five vowel letters and practice their short sounds."
     ],
     "skills": [
       "listening",
       "speaking",
-      "picture-recognition"
+      "phonemic-awareness"
     ],
     "boardReviewRequired": true,
     "sourceBook": null,
@@ -25,7 +25,7 @@ export const config = {
     "syllabusVerified": false
   },
   "experience": {
-    "themeId": "kg-06-family-words",
+    "themeId": "kg-06-vowel-sounds",
     "world": "Rainbow Valley",
     "sceneDescription": "sky bridges, color ribbons and clouds",
     "layout": "big-board",

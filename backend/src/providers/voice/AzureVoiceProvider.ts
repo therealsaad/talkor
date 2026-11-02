@@ -37,26 +37,39 @@ export class AzureVoiceProvider implements VoiceProvider {
     }
   }
 
-  private async generate(text: string, kindergarten = false, class1Lesson = false, language?: string): Promise<Buffer> {
+  private async generate(text: string, kindergarten = false, class1Lesson = false, language?: string, vowelPhonemes?: Record<string, string>): Promise<Buffer> {
     const s = this.settings()
     if (!s.key) throw ApiError.provider('Azure Speech is not configured')
-    const selected = chooseTalkoraBilingualVoice(text, s.voice, class1Lesson, language)
+    const plainText = text.replace(/\[\[([AEIOU])\]\]/g, '$1')
+    const selected = chooseTalkoraBilingualVoice(plainText, s.voice, class1Lesson, language)
 
     const url = `https://${s.region}.tts.speech.microsoft.com/cognitiveservices/v1`
-    const rate = kindergarten ? (process.env.KG_AZURE_SPEECH_RATE?.trim() || "+5%") : s.rate
+    const rate = vowelPhonemes ? (process.env.KG_VOWEL_AZURE_SPEECH_RATE?.trim() || "-8%") : kindergarten ? (process.env.KG_AZURE_SPEECH_RATE?.trim() || "+5%") : s.rate
     const pitch = kindergarten ? (process.env.KG_AZURE_SPEECH_PITCH?.trim() || "+6%") : s.pitch
-    // A Hindi/Marathi explanation and its English target need two distinct
-    // voice segments, not one Hindi/Marathi voice reading the whole sentence.
-    // Azure accepts multiple voice nodes inside ONE synthesis request.
-    const practice = kindergarten && (selected.locale === 'hi-IN' || selected.locale === 'mr-IN')
+    const speechMarkup = vowelPhonemes
+      ? text.split(/(\[\[[AEIOU]\]\])/g).map((part) => {
+          const match = /^\[\[([AEIOU])\]\]$/.exec(part)
+          if (!match) return escapeXml(part)
+          const letter = match[1]
+          const phoneme = vowelPhonemes[letter]
+          if (!phoneme) throw ApiError.badRequest('Unsupported vowel phoneme')
+          return '<phoneme alphabet="ipa" ph="' + phoneme + '">' + letter + '</phoneme>'
+        }).join('')
+      : escapeXml(text)
+
+    // For multilingual practice, keep the original language handoff while the
+    // Level 6 vowel path supplies its own Azure IPA phoneme markup.
+    const practice = !vowelPhonemes && kindergarten && (selected.locale === 'hi-IN' || selected.locale === 'mr-IN')
       ? /^(.*?)(\s+Say (?:apple|ball|cat|dog)[.!?]?)$/is.exec(text)
       : null
-    const voiceNode = (voice: string, words: string) =>
-      `<voice name="${voice}"><prosody rate="${rate}" pitch="${pitch}">${escapeXml(words)}</prosody></voice>`
-    const content = practice && practice[1].trim()
-      ? voiceNode(selected.voice, practice[1].trim()) + voiceNode('en-IN-NeerjaNeural', practice[2].trim())
-      : voiceNode(selected.voice, text)
-    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${selected.locale}">${content}</speak>`
+    const voiceNode = (voice: string, words: string, isMarkup = false) =>
+      '<voice name="' + voice + '"><prosody rate="' + rate + '" pitch="' + pitch + '">' + (isMarkup ? words : escapeXml(words)) + '</prosody></voice>'
+    const content = vowelPhonemes
+      ? voiceNode(selected.voice, speechMarkup, true)
+      : practice && practice[1].trim()
+        ? voiceNode(selected.voice, practice[1].trim()) + voiceNode('en-IN-NeerjaNeural', practice[2].trim())
+        : voiceNode(selected.voice, text)
+    const ssml = '<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="' + selected.locale + '">' + content + '</speak>'
 
     let response: Response
     try {
@@ -104,6 +117,17 @@ export class AzureVoiceProvider implements VoiceProvider {
     const normalized = text.replace(/\s+/g, ' ').trim()
     if (!normalized || normalized.length > 320) throw ApiError.badRequest('KG voice text must be 1–320 characters')
     return { audio: await this.generate(normalized, true, true, options?.language), contentType: this.contentType() }
+  }
+
+  /** Vowel Garden phoneme teaching uses Azure IPA SSML, never browser-local speech. */
+  async synthesizeKGVowelUncached(text: string): Promise<{ audio: Buffer; contentType: string }> {
+    const normalized = text.replace(/\s+/g, ' ').trim()
+    if (!normalized || normalized.length > 320 || !/\[\[[AEIOU]\]\]/.test(normalized) || /\[\[(?![AEIOU]\]\])/.test(normalized)) {
+      throw ApiError.badRequest('A supported vowel sound is required')
+    }
+    const ipa: Record<string, string> = { A: 'æ', E: 'ɛ', I: 'ɪ', O: 'ɒ', U: 'ʌ' }
+    const audio = await this.generate(normalized, true, true, undefined, ipa)
+    return { audio, contentType: this.contentType() }
   }
 
   async synthesize(text: string): Promise<VoiceSynthesisResult> {

@@ -1,8 +1,8 @@
 {
   "levelId": "g00-l06",
-  "status": "authored-assets-pending",
+  "status": "staff-preview-vowel-sound-practice",
   "assetsRoot": "/lessons/kg/level-06/",
-  "introVideo": null,
+  "introVideo": "/lessons/kg/level-06/vowels.MOV",
   "images": [],
   "animations": [],
   "audio": [],
@@ -10,7 +10,7 @@
   "recommended": {
     "julieAnimations": "/miss-julie-animations",
     "dynamicFeedback": "azure-uncached",
-    "preauthoredTTS": "S3 CDN"
+    "preauthoredTTS": "none"
   },
-  "note": "Do not add placeholders pointing at missing assets. Upload approved optimized media here."
+  "note": "Vowel Garden teaches the five short vowel sounds after the intro video. Letter cards are rendered in the lesson UI; no word-picture cards or distractors are used."
 }
