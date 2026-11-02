@@ -20,6 +20,8 @@
 
 > **Project checkpoint — 1 November 2026:** Sprints 3.1–3.6 are merged into `main`, with stronger KG voice safety, recoverable feedback, synthetic PIN-to-homework coverage and shared-lab PIN protection. **Talkora is still in a controlled-pilot phase, not a school-wide production release.** Automated tests are not proof that a real child heard the teacher, that live Sarvam/Qwen/Azure stayed responsive, or that 10,000 students can be served. Read the [current status](#13-talkora-project-status--1-november-2026), [delivered engineering work](#14-what-has-shipped-in-the-codebase), [active work](#15-what-we-are-working-on-now), [roadmap](#16-product-roadmap-and-next-milestones), and [release gates](#17-definition-of-done-and-release-evidence).
 
+> **KG next-level student pilot (November 2, 2026):** Completing KG Level 1 now unlocks a protected [Level 2 E–J student lesson](docs/kg-level2-student-resume-2026-11-02.md) without a separate teacher action or homework wait. The five-digit PIN auto-resume flow loads authoritative Level 1/Level 2 progress from the backend, the map shows Level 2 status, and a secure student-only E–J voice engine saves progress across school-lab visits. The staff-only draft preview and its unverified syllabus publication flags remain unchanged; verify live audio, intro length, and academic approval before broad release.
+
 ## Table of contents
 
 1. [Quick start: run the app](#1-quick-start-run-the-app)
