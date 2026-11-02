@@ -1037,3 +1037,86 @@ it('does not resume stale, historic or previously heard attempts from the curren
   // No old English evidence is promoted to mastery.
   expect((await KGAlphabetProgress.findOne({ studentId: student._id }))?.currentIndex).toBe(0)
 })
+
+/**
+ * End-to-end synthetic KG C test against real disposable Mongo + Express.
+ * Speech and Azure are mocked, but route logic, language, persistence, receipt
+ * gating and the progress rules are real. A short Romanized Hindi word may
+ * be mislabelled en-IN by STT; do not give English-only feedback or pass it.
+ */
+it.each([
+  { transcript: 'billi', detected: 'en-IN', teaching: 'hi-IN', hint: 'अंग्रेज़ी' },
+  { transcript: 'बिल्ली', detected: undefined, teaching: 'hi-IN', hint: 'अंग्रेज़ी' },
+  { transcript: 'manjar', detected: 'en-IN', teaching: 'mr-IN', hint: 'इंग्रजीत' },
+  { transcript: 'मांजर', detected: 'hi-IN', teaching: 'mr-IN', hint: 'इंग्रजीत' },
+] as const)(
+  'verifies KG bilingual cat bridge from $transcript with STT locale $detected',
+  async ({ transcript, detected, teaching, hint }) => {
+    const { student, authorization } = await makePilot()
+    await approveIntro(authorization)
+    // Start this disposable test on C; do not bypass the intro/auth/ACK gates.
+    await KGAlphabetProgress.updateOne(
+      { studentId: student._id, schoolId: student.schoolId },
+      { $set: { currentIndex: 2 } },
+    )
+    const stt = jest.spyOn(KGSpeechService, 'transcribe')
+      .mockResolvedValueOnce({
+        transcript, languageCode: detected, available: true,
+        provider: 'sarvam', confidence: 0.95,
+      } as never)
+      .mockResolvedValueOnce({
+        transcript: 'cat', languageCode: 'en-IN', available: true,
+        provider: 'sarvam', confidence: 0.95,
+      } as never)
+    const qwenFetch = jest.spyOn(globalThis, 'fetch')
+    const post = (submissionId: string) => request(app).post('/api/kg-alphabet/attempt')
+      .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
+      .send({ activityId: 'say-c', submissionId, audioBase64: 'Y'.repeat(160),
+        mimeType: 'audio/webm', durationMs: 1100 })
+    const submittedId = 'kg-bridge-cat-123456'
+    const supported = await post(submittedId).expect(200)
+    expect(supported.body.data).toMatchObject({
+      outcome: 'supported', advance: false, state: { currentIndex: 2 },
+    })
+    expect(supported.body.data.feedbackText).toContain(hint)
+    expect(supported.body.data.feedbackText).toContain('Say cat.')
+    expect(qwenFetch).not.toHaveBeenCalled()
+
+    const saved = await KGAlphabetAttempt.findOne({
+      studentId: student._id, submissionId: submittedId,
+    }).lean()
+    expect(saved).toMatchObject({
+      outcome: 'supported', transcript,
+      feedbackLanguageCode: teaching, feedbackText: supported.body.data.feedbackText,
+    })
+    expect(saved?.languageCode).toBe(detected)
+
+    const azure = jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached')
+      .mockResolvedValue({ audio: Buffer.alloc(500, 65), contentType: 'audio/mpeg' })
+    const play = async (id: string) => {
+      const response = await request(app)
+        .get('/api/kg-alphabet/attempt/' + id + '/feedback-audio')
+        .set('Authorization', authorization)
+        .set('X-KG-Intro-Playback', activePlaybackId).expect(200)
+      const receipt = response.headers['x-kg-feedback-receipt']
+      expect(receipt).toMatch(/^v1\./)
+      return request(app).post('/api/kg-alphabet/attempt/' + id + '/feedback-played')
+        .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
+        .send({ feedbackReceipt: receipt }).expect(200)
+    }
+    // Ensure teacher audio is synthesized in the child's native language.
+    const heard = await play(submittedId)
+    expect(azure).toHaveBeenCalledWith(supported.body.data.feedbackText, { language: teaching })
+    expect(heard.body.data.state.currentIndex).toBe(2)
+    expect(heard.body.data.state.xp).toBe(0)
+    // Only an independent later English "cat" advances the learning step,
+    // and only after its own signed audio receipt was played.
+    const englishId = 'kg-english-cat-123456'
+    const english = await post(englishId).expect(200)
+    expect(english.body.data.outcome).toBe('correct')
+    expect((await KGAlphabetProgress.findOne({ studentId: student._id }))?.currentIndex).toBe(2)
+    const completed = await play(englishId)
+    expect(completed.body.data.state.currentIndex).toBe(3)
+    expect(stt).toHaveBeenCalledTimes(2)
+  },
+)

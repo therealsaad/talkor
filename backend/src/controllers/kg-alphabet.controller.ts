@@ -10,7 +10,7 @@ import { KGAlphabetProgress } from '../models/KGAlphabetProgress'
 import { KGAlphabetAttempt, type IKGAlphabetAttempt } from '../models/KGAlphabetAttempt'
 import { KGAlphabetSubmission } from '../models/KGAlphabetSubmission'
 import { KGIntroPlayback } from '../models/KGIntroPlayback'
-import { AUDIO_IDS, AUDIO_LINES, AUDIO_MANIFEST, LETTERS, activityAt, audioKey, evaluateKGSpeech, KG_ALPHABET_VERSION, KG_AUDIO_VERSION, type AudioId } from '../kg/alphabet-content'
+import { AUDIO_IDS, AUDIO_LINES, AUDIO_MANIFEST, LETTERS, activityAt, audioKey, evaluateKGSpeech, kgBilingualBridgeLanguage, KG_ALPHABET_VERSION, KG_AUDIO_VERSION, type AudioId } from '../kg/alphabet-content'
 import { isAuthorizedKGAlphabetStudent } from '../services/kg-pilot-access'
 import { getKGStaticAudio } from '../services/kg-static-audio-cache'
 import { getKGAzureNarrationAudio } from '../services/kg-azure-narration.service'
@@ -719,7 +719,14 @@ export const KGAlphabetController = {
         createdAt: { $gte: introTicket.startedAt },
         languageCode: { $in: ['en-IN', 'hi-IN', 'mr-IN'] },
       }).sort({ createdAt: -1 }).limit(2).select('languageCode').lean()
-      const feedbackLanguageCode = stableKGTeachingLanguage(languageCode, recentLocales.map((prior) => prior.languageCode))
+      // A verified "billi"/"बिल्ली" (or Marathi "manjar"/"मांजर")
+      // deserves native-language teaching even if STT labels the short word
+      // as English or omits its locale. Never change the grading verdict.
+      // The translation is transcribed server-side, never client-provided.
+      const bridgeLanguage = outcome === 'supported' && activity.mode === 'speak' && !assistedPicture
+        ? kgBilingualBridgeLanguage(transcript || '', activity.letter) : undefined
+      const feedbackLanguageCode = bridgeLanguage ||
+        stableKGTeachingLanguage(languageCode, recentLocales.map((prior) => prior.languageCode))
 
       try {
         await KGAlphabetAttempt.create({ studentId: student._id, schoolId: student.schoolId, activityId, letter: activity.letter,

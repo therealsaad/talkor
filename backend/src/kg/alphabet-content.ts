@@ -202,6 +202,24 @@ export function isKGBilingualBridge(raw: string, letter: Letter): boolean {
   return tokens.every((token) => target.includes(token) || ['i', 'said', 'say', 'it', 'is', 'a', 'the', 'this'].includes(token))
 }
 
+/**
+ * A verified translation is stronger evidence for the explanation language
+ * than a generic STT locale guess. Sarvam and other STT providers sometimes
+ * label short Romanized Hindi/Marathi words as en-IN (or return no locale).
+ *
+ * This only returns a language for an exact, permitted bilingual bridge for
+ * this lesson word; never turn a partial/uncertain guess into English mastery.
+ * The language is for voice/feedback only, not grading or student identity.
+ */
+export function kgBilingualBridgeLanguage(raw: string, letter: Letter): 'hi-IN' | 'mr-IN' | undefined {
+  if (!isKGBilingualBridge(raw, letter)) return undefined
+  const tokens = normalizeKGWords(raw)
+  const recognized = BILINGUAL_BRIDGES[letter].find((word) => tokens.includes(word))
+  if (!recognized) return undefined
+  return ['safarchand', 'chendu', 'manjar', 'maanjar', 'kutra', 'kutraa'].includes(recognized)
+    ? 'mr-IN' : 'hi-IN'
+}
+
 export function evaluateKGSpeech(raw: string, letter: Letter, target: 'word' | 'letter' | 'either' = 'either'): 'correct' | 'incorrect' | 'unclear' {
   const tokens = normalizeKGWords(raw)
   if (!tokens.length) return 'unclear'
