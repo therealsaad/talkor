@@ -69,7 +69,6 @@ test('Azure KG synthesis is transient: no AudioCacheService read/write, and XML 
     '../../utils/ApiError': { ApiError: { badRequest: (m) => new Error(m), provider: (m) => new Error(m) } },
     '../../utils/logger': { logger: { warn() {} } },
     './class1-voice-language': { chooseTalkoraBilingualVoice: () => ({ voice: 'en-IN-NeerjaNeural', locale: 'en-IN' }) },
-    './multi-voice-ssml': loadTS('providers/voice/multi-voice-ssml.ts'),
     '../../services/AudioCacheService': { AudioCacheService: { get: async () => { calls.get++; throw Error('should not read persistent cache') }, put: async () => { calls.put++; throw Error('should not write persistent cache') } } },
   })
   try {
@@ -108,7 +107,9 @@ test('staff preview routes audio through STT and returns manifest-selected Priya
     '../providers/voice/AzureVoiceProvider': { AzureVoiceProvider: class { async synthesizeUncached() { throw new Error('Preview must not synthesize live audio') } } },
     '../services/kg-qwen-feedback.service': { KGQwenFeedbackService: { compose: async () => ({ text: 'Good try! Listen and say apple.', source: 'guided' }) } },
     '../services/kg-feedback-audio.service': { KGFeedbackAudioService: { synthesize: async () => null, warm: () => {} } },
-    '../kg/kg-bilingual-feedback': { resolveFeedbackLanguage: (current, lastKnown) => current ?? lastKnown },
+    '../services/kg-teaching-language': { stableKGTeachingLanguage: (detected) => detected || 'en-IN' },
+    '../services/kg-feedback.service': { safeKGFeedback: () => 'Say apple!' },
+    '../services/kg-feedback-receipt': { issueKGFeedbackReceipt: () => 'receipt', verifyKGFeedbackReceipt: () => true },
     '../services/voice-audio-format': { hasExpectedAudioHeader: () => true },
     '../providers/voice/PythonVoiceProvider': { PythonVoiceProvider: class { async synthesize() { calls.priya++; return { audioBase64: 'CQgH', contentType: 'audio/mpeg', available: true } } } },
     '../services/kg-speech.service': { KGSpeechService: { transcribe: async () => { calls.stt++; return { available: true, transcript: 'banana', provider: 'groq' } } } },

@@ -12,8 +12,8 @@ const backend=read('../../../backend/src/controllers/kg-alphabet.controller.ts')
 test('KG1 passes the same completed intro ticket on all protected requests', () => {
   assert.match(service, /function introTicketHeaders\(\): Record<string, string>/)
   assert.match(service, /'X-KG-Intro-Playback': playbackId/)
-  assert.match(service, /feedback-audio`,\s*signal, 'dynamic_tts', introTicketHeaders\(\)/)
-  assert.match(service, /feedback-played`,\s*\{ method: 'POST', signal, headers: introTicketHeaders\(\) \}/)
+  assert.match(service, /feedback-audio`,\s*signal, 'dynamic_tts', headers, \(value\) => \{ receipt = value \}/)
+  assert.match(service, /feedback-played`,\s*\{ method: 'POST', signal, headers, body: JSON\.stringify\(\{ feedbackReceipt: saved\.receipt \}\) \}/)
   assert.match(service, /headers: introTicketHeaders\(\)/)
   assert.match(backend, /await assertIntroTicket\(req, student\._id, student\.schoolId\)/)
 })
@@ -28,6 +28,8 @@ test('one in-flight intro watch is shared across React Strict Mode mounts', () =
 test('ticket checks stay mandatory; no intro bypass, no fake completed playback', () => {
   assert.match(backend, /completedAt: \{ \$exists: true \}, expiresAt: \{ \$gt: new Date\(\) \}/)
   assert.match(service, /audio\.onended = \(\) => \{ clean\(\); resolve\(\) \}/)
+  assert.match(backend, /if \(!validReceipt\) throw ApiError\.conflict\(/)
+  assert.match(service, /completedFeedbackReceipts\.set\(submissionId/)
   assert.match(backend, /await applyRecordedProgress\(attempt\)/)
 })
 

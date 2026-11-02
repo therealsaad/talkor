@@ -1,6 +1,5 @@
 import { ApiError } from '../../utils/ApiError'
 import { chooseTalkoraBilingualVoice } from './class1-voice-language'
-import { buildMultiVoiceSsml, resolveSsmlVoices, type SsmlSegment } from './multi-voice-ssml'
 import { logger } from '../../utils/logger'
 import type { VoiceProvider, VoiceStreamResult, VoiceSynthesisResult } from './VoiceProvider'
 
@@ -43,17 +42,21 @@ export class AzureVoiceProvider implements VoiceProvider {
     if (!s.key) throw ApiError.provider('Azure Speech is not configured')
     const selected = chooseTalkoraBilingualVoice(text, s.voice, class1Lesson, language)
 
+    const url = `https://${s.region}.tts.speech.microsoft.com/cognitiveservices/v1`
     const rate = kindergarten ? (process.env.KG_AZURE_SPEECH_RATE?.trim() || "+5%") : s.rate
     const pitch = kindergarten ? (process.env.KG_AZURE_SPEECH_PITCH?.trim() || "+6%") : s.pitch
-    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${selected.locale}"><voice name="${selected.voice}"><prosody rate="${rate}" pitch="${pitch}">${escapeXml(text)}</prosody></voice></speak>`
-    return this.post(ssml, kindergarten ? Math.max(5000, Math.min(45000, Number(process.env.KG_AZURE_TTS_TIMEOUT_MS || 25000))) : s.timeoutMs)
-  }
-
-  /** One Azure request for any SSML document. Shared so every path has the same error and empty-audio handling. */
-  private async post(ssml: string, timeoutMs: number): Promise<Buffer> {
-    const s = this.settings()
-    if (!s.key) throw ApiError.provider('Azure Speech is not configured')
-    const url = `https://${s.region}.tts.speech.microsoft.com/cognitiveservices/v1`
+    // A Hindi/Marathi explanation and its English target need two distinct
+    // voice segments, not one Hindi/Marathi voice reading the whole sentence.
+    // Azure accepts multiple voice nodes inside ONE synthesis request.
+    const practice = kindergarten && (selected.locale === 'hi-IN' || selected.locale === 'mr-IN')
+      ? /^(.*?)(\s+Say (?:apple|ball|cat|dog)[.!?]?)$/is.exec(text)
+      : null
+    const voiceNode = (voice: string, words: string) =>
+      `<voice name="${voice}"><prosody rate="${rate}" pitch="${pitch}">${escapeXml(words)}</prosody></voice>`
+    const content = practice && practice[1].trim()
+      ? voiceNode(selected.voice, practice[1].trim()) + voiceNode('en-IN-NeerjaNeural', practice[2].trim())
+      : voiceNode(selected.voice, text)
+    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${selected.locale}">${content}</speak>`
 
     let response: Response
     try {
@@ -66,7 +69,7 @@ export class AzureVoiceProvider implements VoiceProvider {
           'User-Agent': 'Talkora',
         },
         body: ssml,
-        signal: AbortSignal.timeout(timeoutMs),
+        signal: AbortSignal.timeout(kindergarten ? Math.max(5000, Math.min(45000, Number(process.env.KG_AZURE_TTS_TIMEOUT_MS || 25000))) : s.timeoutMs),
       })
     } catch (error) {
       logger.warn('Azure TTS request failed', { error })
@@ -101,24 +104,6 @@ export class AzureVoiceProvider implements VoiceProvider {
     const normalized = text.replace(/\s+/g, ' ').trim()
     if (!normalized || normalized.length > 320) throw ApiError.badRequest('KG voice text must be 1–320 characters')
     return { audio: await this.generate(normalized, true, true, options?.language), contentType: this.contentType() }
-  }
-
-  /** KG feedback with a per-language voice (Hindi/Marathi coaching + English target word) in ONE request.
-   * Transient like synthesizeUncached: nothing is stored here. Callers decide what may be cached.
-   */
-  async synthesizeSegmentsUncached(segments: SsmlSegment[]): Promise<{ audio: Buffer; contentType: string }> {
-    let ssml: string
-    try {
-      ssml = buildMultiVoiceSsml(segments, {
-        voices: resolveSsmlVoices(process.env),
-        rate: process.env.KG_AZURE_SPEECH_RATE?.trim() || '+5%',
-        pitch: process.env.KG_AZURE_SPEECH_PITCH?.trim() || '+6%',
-      })
-    } catch (error) {
-      throw ApiError.badRequest(error instanceof Error ? error.message : 'Invalid voice segments')
-    }
-    const timeoutMs = Math.max(5000, Math.min(45000, Number(process.env.KG_AZURE_TTS_TIMEOUT_MS || 25000)))
-    return { audio: await this.post(ssml, timeoutMs), contentType: this.contentType() }
   }
 
   async synthesize(text: string): Promise<VoiceSynthesisResult> {

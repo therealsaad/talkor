@@ -3,145 +3,138 @@ const { test, beforeEach } = require('node:test')
 const assert = require('node:assert/strict')
 const { loadTS } = require('./helpers/load-ts.cjs')
 
-const feedbackModule = loadTS('kg/kg-bilingual-feedback.ts')
-const { KGFeedbackAudioService, matchGuidedSegments, segmentsCacheKey } = loadTS('services/kg-feedback-audio.service.ts', {
+const feedbackModule = loadTS('services/kg-feedback.service.ts', {
+  '../config/env': { env: { groqApiKey: '', conversationGroqModel: 'test' } },
+  './kg-teaching-hint': loadTS('services/kg-teaching-hint.ts'),
+})
+const { safeKGFeedback } = feedbackModule
+const { KGFeedbackAudioService, isFixedFeedbackLine, feedbackCacheKey } = loadTS('services/kg-feedback-audio.service.ts', {
   '../providers/voice/AzureVoiceProvider': { AzureVoiceProvider: class {} },
   './fixed-line-cache': loadTS('services/fixed-line-cache.ts'),
-  '../kg/kg-bilingual-feedback': feedbackModule,
+  './kg-feedback.service': feedbackModule,
 })
-const { guidedFeedbackSegments, segmentsToText } = feedbackModule
 
 const AUDIO = Buffer.alloc(512, 7)
 
-function fakeProvider({ delayMs = 0, failSegments = false } = {}) {
-  const calls = { single: [], multi: [] }
+function fakeProvider({ delayMs = 0, fail = false } = {}) {
+  const calls = []
   return {
     calls,
     async synthesizeUncached(text, options) {
-      calls.single.push({ text, options })
+      calls.push({ text, options })
       if (delayMs) await new Promise((resolve) => setTimeout(resolve, delayMs))
-      return { audio: AUDIO, contentType: 'audio/mpeg' }
-    },
-    async synthesizeSegmentsUncached(segments) {
-      calls.multi.push(segments)
-      if (delayMs) await new Promise((resolve) => setTimeout(resolve, delayMs))
-      if (failSegments) throw new Error('azure down')
+      if (fail) throw new Error('azure down')
       return { audio: AUDIO, contentType: 'audio/mpeg' }
     },
   }
 }
 
+// A child answered "billi" (a Hindi translation) to the cat card.
 const billiTurn = { letter: 'C', mode: 'speak', outcome: 'supported', languageCode: 'hi-IN' }
-const billiText = () => segmentsToText(guidedFeedbackSegments(billiTurn))
+const billiText = () => safeKGFeedback(billiTurn)
 
 beforeEach(() => KGFeedbackAudioService.clearCacheForTests())
 
-test('the "billi" reply is recognised as a reviewed line and spoken with one multi-voice request', async () => {
-  const provider = fakeProvider()
-  const result = await KGFeedbackAudioService.synthesize(billiText(), billiTurn, provider)
-  assert.equal(result.multiVoice, true)
-  assert.equal(result.source, 'azure')
-  assert.equal(provider.calls.multi.length, 1)
-  assert.equal(provider.calls.single.length, 0)
-  const locales = provider.calls.multi[0].map((segment) => segment.locale)
-  assert.ok(locales.includes('hi-IN') && locales.includes('en-IN'), `expected both voices, got ${locales}`)
+test('the saved "billi" sentence is recognised as a fixed line, Qwen text is not', () => {
+  assert.equal(isFixedFeedbackLine(billiText(), billiTurn), true)
+  assert.equal(isFixedFeedbackLine('Nice try! Cats say meow. Can you say cat for me?', billiTurn), false)
+  // A sentence for a different outcome or language is not this turn's fixed line.
+  assert.equal(isFixedFeedbackLine(safeKGFeedback({ ...billiTurn, outcome: 'correct' }), billiTurn), false)
+  assert.equal(isFixedFeedbackLine(safeKGFeedback({ ...billiTurn, languageCode: 'mr-IN' }), billiTurn), false)
 })
 
-test('the second child who needs the same line gets audio from memory with no Azure call', async () => {
+test('the first request speaks the line with the same call shape as before, then it is cached', async () => {
   const provider = fakeProvider()
-  await KGFeedbackAudioService.synthesize(billiText(), billiTurn, provider)
+  const first = await KGFeedbackAudioService.synthesize(billiText(), billiTurn, provider)
+  assert.equal(first.source, 'azure')
+  assert.equal(provider.calls.length, 1)
+  assert.deepEqual(provider.calls[0], { text: billiText(), options: { language: 'hi-IN' } })
+
   const startedAt = Date.now()
-  const again = await KGFeedbackAudioService.synthesize(billiText(), billiTurn, provider)
-  assert.equal(again.source, 'cache')
-  assert.equal(provider.calls.multi.length, 1)
+  const second = await KGFeedbackAudioService.synthesize(billiText(), billiTurn, provider)
+  assert.equal(second.source, 'cache')
+  assert.equal(provider.calls.length, 1, 'a cache hit must not call Azure')
   assert.ok(Date.now() - startedAt < 20, 'a cache hit must be effectively instant')
 })
 
-test('a Qwen sentence is spoken once, never cached and never treated as a reviewed line', async () => {
+test('an English line is spoken without a language option, exactly like the old route', async () => {
+  const provider = fakeProvider()
+  const turn = { letter: 'A', mode: 'speak', outcome: 'correct' }
+  await KGFeedbackAudioService.synthesize(safeKGFeedback(turn), turn, provider)
+  assert.equal(provider.calls[0].options, undefined)
+})
+
+test('a Qwen sentence is spoken each time and never cached', async () => {
   const provider = fakeProvider()
   const qwen = 'Nice try! Cats say meow. Can you say cat for me?'
-  assert.equal(matchGuidedSegments(qwen, billiTurn), null)
   await KGFeedbackAudioService.synthesize(qwen, billiTurn, provider)
   await KGFeedbackAudioService.synthesize(qwen, billiTurn, provider)
-  assert.equal(provider.calls.single.length, 2, 'personalised text must be synthesized each time')
-  assert.deepEqual(provider.calls.single[0].options, { language: 'hi-IN' })
+  assert.equal(provider.calls.length, 2)
   assert.equal(KGFeedbackAudioService.cacheSize(), 0)
 })
 
-test('replay finds the reviewed line even when smoothing chose another language than the attempt detected', () => {
-  // The attempt stored languageCode undefined (nothing detected), but the child's last
-  // detection was Marathi, so the saved sentence is the Marathi one.
-  const saved = segmentsToText(guidedFeedbackSegments({ letter: 'D', mode: 'speak', outcome: 'unclear', noSpeech: true, languageCode: 'mr-IN' }))
-  const matched = matchGuidedSegments(saved, { letter: 'D', mode: 'speak', outcome: 'unclear', noSpeech: true, languageCode: undefined })
-  assert.ok(matched, 'saved Marathi silence line must be re-derived')
-  assert.ok(matched.some((segment) => segment.locale === 'mr-IN'))
-})
-
-test('a single-language English line uses the plain single-voice path', async () => {
+test('the language hint is part of the cache key, so Hindi and Marathi audio never mix', async () => {
+  assert.notEqual(feedbackCacheKey('x', 'hi-IN'), feedbackCacheKey('x', 'mr-IN'))
+  assert.notEqual(feedbackCacheKey('x', undefined), feedbackCacheKey('x', 'en-IN'))
   const provider = fakeProvider()
-  const turn = { letter: 'A', mode: 'speak', outcome: 'correct' }
-  const text = segmentsToText(guidedFeedbackSegments(turn))
-  const result = await KGFeedbackAudioService.synthesize(text, turn, provider)
-  assert.equal(result.multiVoice, false)
-  assert.equal(provider.calls.single.length, 1)
-  assert.equal(provider.calls.single[0].options, undefined)
-  assert.equal(provider.calls.multi.length, 0)
+  const hi = { letter: 'D', mode: 'speak', outcome: 'correct', languageCode: 'hi-IN' }
+  const mr = { letter: 'D', mode: 'speak', outcome: 'correct', languageCode: 'mr-IN' }
+  await KGFeedbackAudioService.synthesize(safeKGFeedback(hi), hi, provider)
+  await KGFeedbackAudioService.synthesize(safeKGFeedback(mr), mr, provider)
+  assert.equal(provider.calls.length, 2)
 })
 
 test('concurrent children asking for one new line share a single Azure request', async () => {
   const provider = fakeProvider({ delayMs: 25 })
   await Promise.all(Array.from({ length: 6 }, () => KGFeedbackAudioService.synthesize(billiText(), billiTurn, provider)))
-  assert.equal(provider.calls.multi.length, 1)
+  assert.equal(provider.calls.length, 1)
 })
 
 test('when Azure fails the service returns null so the controller can use Priya, and nothing is cached', async () => {
-  const provider = fakeProvider({ failSegments: true })
-  const result = await KGFeedbackAudioService.synthesize(billiText(), billiTurn, provider)
-  assert.equal(result, null)
+  const provider = fakeProvider({ fail: true })
+  assert.equal(await KGFeedbackAudioService.synthesize(billiText(), billiTurn, provider), null)
+  assert.equal(await KGFeedbackAudioService.synthesize('Some Qwen sentence about a cat.', billiTurn, provider), null)
   assert.equal(KGFeedbackAudioService.cacheSize(), 0)
 })
 
-test('warm starts a reviewed line without waiting, so the later audio request is a hit or shares the in-flight call', async () => {
+test('warm starts a fixed line without waiting, and the later audio request shares that call', async () => {
   const provider = fakeProvider({ delayMs: 40 })
   const startedAt = Date.now()
   KGFeedbackAudioService.warm(billiText(), billiTurn, provider)
   assert.ok(Date.now() - startedAt < 10, 'warm must not wait for Azure')
-  // The browser asks for the audio while synthesis is still running.
   const result = await KGFeedbackAudioService.synthesize(billiText(), billiTurn, provider)
   assert.ok(result.audio.length > 0)
-  assert.equal(provider.calls.multi.length, 1, 'warm + request must share one Azure call')
-  const later = await KGFeedbackAudioService.synthesize(billiText(), billiTurn, provider)
-  assert.equal(later.source, 'cache')
+  assert.equal(provider.calls.length, 1, 'warm + request must share one Azure call')
+  assert.equal((await KGFeedbackAudioService.synthesize(billiText(), billiTurn, provider)).source, 'cache')
 })
 
-test('warm ignores personalised Qwen text and never throws on provider failure', async () => {
-  const provider = fakeProvider({ failSegments: true })
+test('warm ignores Qwen text and never throws when the provider fails', async () => {
+  const provider = fakeProvider({ fail: true })
   KGFeedbackAudioService.warm('Nice try! Cats say meow. Can you say cat?', billiTurn, provider)
   KGFeedbackAudioService.warm(billiText(), billiTurn, provider)
   await new Promise((resolve) => setTimeout(resolve, 20))
-  assert.equal(provider.calls.single.length, 0, 'a Qwen sentence must not be synthesized by warm')
+  assert.equal(provider.calls.length, 1, 'only the fixed line may be synthesized by warm')
   assert.equal(KGFeedbackAudioService.cacheSize(), 0)
 })
 
-test('prewarm covers every reviewed line, then every first turn is a cache hit', async () => {
+test('every fixed line matches its own turn, is de-duplicated, and prewarm turns first requests into hits', async () => {
+  const lines = KGFeedbackAudioService.fixedLines()
+  assert.ok(lines.length > 20 && lines.length < 200, `unexpected number of fixed lines: ${lines.length}`)
+  for (const line of lines) assert.equal(isFixedFeedbackLine(line.text, line.turn), true, line.text)
+  const keys = lines.map((line) => feedbackCacheKey(line.text, line.turn.languageCode))
+  assert.equal(new Set(keys).size, lines.length)
+
   const provider = fakeProvider()
-  const lines = KGFeedbackAudioService.guidedLines()
-  assert.ok(lines.length > 40 && lines.length < 160, `unexpected number of reviewed lines: ${lines.length}`)
-  assert.equal(new Set(lines.map(segmentsCacheKey)).size, lines.length, 'lines must be de-duplicated')
-
   const { warmed, failed } = await KGFeedbackAudioService.prewarm({ concurrency: 3, provider })
-  assert.equal(failed, 0)
-  assert.equal(warmed, lines.length)
-
-  const before = provider.calls.single.length + provider.calls.multi.length
-  const result = await KGFeedbackAudioService.synthesize(billiText(), billiTurn, provider)
-  assert.equal(result.source, 'cache')
-  assert.equal(provider.calls.single.length + provider.calls.multi.length, before)
+  assert.deepEqual({ warmed, failed }, { warmed: lines.length, failed: 0 })
+  const before = provider.calls.length
+  assert.equal((await KGFeedbackAudioService.synthesize(billiText(), billiTurn, provider)).source, 'cache')
+  assert.equal(provider.calls.length, before)
 })
 
-test('prewarm reports failures instead of throwing and leaves the line uncached for a later retry', async () => {
-  const provider = fakeProvider({ failSegments: true })
-  const { warmed, failed } = await KGFeedbackAudioService.prewarm({ concurrency: 2, provider })
+test('prewarm reports failures instead of throwing and leaves lines uncached for a later retry', async () => {
+  const { warmed, failed } = await KGFeedbackAudioService.prewarm({ concurrency: 2, provider: fakeProvider({ fail: true }) })
+  assert.equal(warmed, 0)
   assert.ok(failed > 0)
-  assert.ok(warmed > 0, 'single-language English lines do not need the multi-voice path')
+  assert.equal(KGFeedbackAudioService.cacheSize(), 0)
 })

@@ -7,6 +7,7 @@ import { Teacher } from '../models/Teacher'
 import { Student } from '../models/Student'
 import { ApiError } from '../utils/ApiError'
 import { LearningEvent } from '../models/LearningEvent'
+import { KGIntroPlayback } from '../models/KGIntroPlayback'
 import { VoiceWarmupService } from '../services/voice-warmup.service'
 
 export const AuthController = {
@@ -71,6 +72,13 @@ export const AuthController = {
     // Student sessions are revoked at the database as well as cleared in the browser.
     if (req.auth?.role === 'STUDENT') {
       await Student.updateOne({ _id: req.auth.id, schoolId: req.auth.schoolId }, { $inc: { authVersion: 1 } })
+      // A new PIN login must never inherit the prior session's completed KG
+      // intro ticket, even if the learner signs in on the same lab device.
+      // Revocation is scoped to exactly this authenticated student/school.
+      await KGIntroPlayback.updateMany(
+        { studentId: req.auth.id, schoolId: req.auth.schoolId, expiresAt: { $gt: new Date() } },
+        { $set: { expiresAt: new Date() } },
+      )
       await LearningEvent.create({ studentId: req.auth.id, type: 'logout' })
     }
     ok(res, { loggedOut: true })

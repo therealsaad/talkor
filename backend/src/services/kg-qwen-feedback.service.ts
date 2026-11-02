@@ -1,30 +1,23 @@
 import { env } from '../config/env'
-import { logger } from '../utils/logger'
-import { guidedFeedbackSegments, needsQwenCoaching, segmentsToText, type KGFeedbackSegment } from '../kg/kg-bilingual-feedback'
-import { resolveDeadlineMs, withDeadline } from './turn-deadline'
-import type { KGFeedbackInput } from './kg-feedback.service'
+import { safeKGFeedback, type KGFeedbackInput } from './kg-feedback.service'
 
 /** The backend grades KG speech. Qwen may choose *wording*, never the verdict,
- * the next activity, a child's level, or pronunciation mastery.
- *
- * Speed policy: correct answers, translations ("billi"), silence and picture taps
- * already have a reviewed bilingual line, so they never wait on a model. Qwen is
- * only asked about a spoken attempt the backend could not accept, and it gets a
- * hard deadline (KG_QWEN_TIMEOUT_MS, default 1500 ms). On timeout or any failure
- * the child hears the reviewed line instead of silence.
- */
+ * the next activity, a child's level, or pronunciation mastery. */
 export const KGQwenFeedbackService = {
-  async compose(input: KGFeedbackInput): Promise<{ text: string; source: 'qwen-8002' | 'guided'; segments?: KGFeedbackSegment[] }> {
+  async compose(input: KGFeedbackInput): Promise<{ text: string; source: 'qwen-8002' | 'guided' }> {
     const target = { A: 'apple', B: 'ball', C: 'cat', D: 'dog' }[input.letter]
-    const segments = guidedFeedbackSegments(input)
-    const guided = { text: segmentsToText(segments), source: 'guided' as const, segments }
-    if (!needsQwenCoaching(input)) return guided
-
+    const guided = safeKGFeedback(input)
+    // No LLM may turn a translation, silence or a supported-picture answer
+    // into independent English evidence. Keep those short, concrete and safe.
+    // Correct answers, known translations, silence, unclear audio and picture
+    // taps are deterministic. Qwen is reserved for genuine unexpected speech.
+    if (input.outcome !== 'incorrect' || input.mode !== 'speak' ||
+        input.noSpeech || !input.transcript?.trim()) return { text: guided, source: 'guided' }
     const key = env.talkoraServiceKey.trim()
-    if (env.isProd && key.length < 32) return guided
-
-    const deadlineMs = resolveDeadlineMs(process.env.KG_QWEN_TIMEOUT_MS)
-    const outcome = await withDeadline<string | null>(async (signal) => {
+    if (env.isProd && key.length < 32) return { text: guided, source: 'guided' }
+    try {
+      const configuredTimeout = Number(process.env.TALKORA_KG_QWEN_TIMEOUT_MS || 1800)
+      const timeoutMs = Number.isFinite(configuredTimeout) ? Math.min(2500, Math.max(500, configuredTimeout)) : 1800
       const baseUrl = (process.env.TALKORA_KG1_AI_URL || 'http://127.0.0.1:8002').replace(/\/$/, '')
       const spoken = input.transcript?.slice(0, 160).trim() || (input.selected ? `I selected ${input.selected.slice(0, 16)}` : 'I am trying.')
       const response = await fetch(`${baseUrl}/v1/brain/respond`, {
@@ -33,7 +26,7 @@ export const KGQwenFeedbackService = {
           'Content-Type': 'application/json',
           ...(key ? { 'X-Talkora-Service-Key': key } : {}),
         },
-        signal,
+        signal: AbortSignal.timeout(timeoutMs),
         body: JSON.stringify({
           grade: 0,
           levelId: 'g00-l01',
@@ -46,12 +39,12 @@ export const KGQwenFeedbackService = {
           conversationHistory: [],
           preferredExplanationLanguage: input.languageCode === 'hi-IN' ? 'Hindi'
             : input.languageCode === 'mr-IN' ? 'Marathi' : 'English',
-          waitingForRetry: input.outcome !== 'correct',
-          hintLevel: input.outcome === 'correct' ? 0 : 1,
+          waitingForRetry: true,
+          hintLevel: 1,
           studentMessage: spoken,
         }),
       })
-      if (!response.ok) return null
+      if (!response.ok) return { text: guided, source: 'guided' }
       const payload = await response.json() as { message?: unknown; followUpQuestion?: unknown }
       const message = typeof payload.message === 'string' ? payload.message.replace(/\s+/g, ' ').trim() : ''
       const question = typeof payload.followUpQuestion === 'string' ? payload.followUpQuestion.replace(/\s+/g, ' ').trim() : ''
@@ -60,17 +53,15 @@ export const KGQwenFeedbackService = {
       // correct, skip the word, or introduce arbitrary lessons/identifying asks.
       if (text.length < 12 || text.length > 240 || !new RegExp(`\\b${target}\\b`, 'i').test(text) ||
           /[<>\\[\\]{}]|https?:|www\.|password|phone number|your address/i.test(text) ||
-          (input.outcome !== 'correct' && /you got it|exactly right|correct answer|perfect|well done/i.test(text))) {
-        return null
+          /you got it|exactly right|correct answer|perfect|well done/i.test(text) ||
+          ((input.languageCode === 'hi-IN' || input.languageCode === 'mr-IN') && !/[\u0900-\u097f]/.test(text))) {
+        return { text: guided, source: 'guided' }
       }
-      return text
-    }, deadlineMs, () => null)
-
-    if (outcome.source !== 'work') {
-      // Qwen is a coaching enhancement, not a license to make a child wait or fake success.
-      logger.warn('KG Qwen coaching fell back to the reviewed line', { reason: outcome.source, elapsedMs: outcome.elapsedMs, deadlineMs })
+      return { text, source: 'qwen-8002' }
+    } catch {
+      // Qwen is a coaching enhancement, not a license to fake success.
+      // The guarded local teacher line still teaches the correct target.
+      return { text: guided, source: 'guided' }
     }
-    if (!outcome.value) return guided
-    return { text: outcome.value, source: 'qwen-8002' }
   },
 }

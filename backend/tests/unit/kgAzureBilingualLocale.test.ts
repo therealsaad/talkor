@@ -53,3 +53,23 @@ it('KG Qwen coaching forwards Sarvam language, not any browser-supplied voice pr
   const body = JSON.parse(String(f.mock.calls[0]?.[1]?.body))
   expect(body.preferredExplanationLanguage).toBe('Hindi')
 })
+
+
+it.each([
+  ['hi-IN', 'hi-IN-SwaraNeural', 'अच्छी कोशिश! अंग्रेज़ी में इसे cat कहते हैं। Say cat.'],
+  ['mr-IN', 'mr-IN-AarohiNeural', 'छान प्रयत्न! इंग्रजीत याला cat म्हणतात। Say cat.'],
+] as const)('speaks %s explanation and English practice as two Azure voices in one request', async (locale, localVoice, sentence) => {
+  process.env.AZURE_SPEECH_KEY = 'test-only-key'
+  const bodies: string[] = []
+  const fetch = jest.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+    bodies.push(String(init?.body))
+    return new Response(Buffer.alloc(500, 65), { status: 200 })
+  })
+  const audio = await new AzureVoiceProvider().synthesizeUncached(sentence, { language: locale })
+  expect(audio.audio.length).toBe(500)
+  expect(fetch).toHaveBeenCalledTimes(1)
+  expect(bodies[0]).toContain('<voice name="' + localVoice + '">')
+  expect(bodies[0]).toContain('<voice name="en-IN-NeerjaNeural">')
+  expect(bodies[0]).toContain('Say cat.')
+  expect(bodies[0]).not.toContain('undefined')
+})

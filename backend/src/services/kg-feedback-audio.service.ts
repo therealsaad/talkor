@@ -1,125 +1,93 @@
 import { AzureVoiceProvider } from '../providers/voice/AzureVoiceProvider'
 import { createFixedLineCache } from './fixed-line-cache'
-import {
-  guidedFeedbackSegments,
-  segmentsToText,
-  type KGFeedbackLetter,
-  type KGFeedbackOutcome,
-  type KGFeedbackSegment,
-  type KGLocale,
-} from '../kg/kg-bilingual-feedback'
+import { safeKGFeedback, type KGFeedbackInput } from './kg-feedback.service'
 
 /**
- * Turns a persisted KG feedback sentence into audio as fast as possible.
+ * Turns a persisted KG feedback sentence into audio with as little waiting as possible.
  *
- * - A reviewed, server-written line (praise, "say cat", the "billi" reply, silence
- *   prompts) is re-derived into per-language segments, spoken by one Azure request
- *   that switches voice per segment, and kept in a small in-memory cache. The
- *   second child who needs the same line gets audio without waiting on Azure.
- * - Anything else (a Qwen coaching sentence) is spoken once, uncached, exactly as
- *   before. Personalised text is never stored.
+ * The wording and the voice are NOT decided here. safeKGFeedback() writes the sentence and
+ * AzureVoiceProvider.synthesizeUncached() voices it exactly as before (including its Hindi/Marathi
+ * explanation + English practice voice split). This module only adds speed:
  *
- * Nothing here decides a verdict or progress; it only voices text the backend
- * already chose and persisted.
+ * - A sentence that safeKGFeedback() itself would write for this turn is a fixed, reviewed line.
+ *   Its audio is kept in a small in-memory cache, so the second child who needs "great job, say cat"
+ *   gets it without waiting on Azure. Concurrent requests for one line share a single Azure call.
+ * - Anything else (a Qwen sentence, which can quote the child's words) is spoken once and never kept.
+ *
+ * It never decides a verdict, a receipt or progress.
  */
 
-export type KGFeedbackAudioTurn = {
-  letter: KGFeedbackLetter
-  mode: 'speak' | 'touch'
-  outcome: KGFeedbackOutcome
-  noSpeech?: boolean
-  languageCode?: KGLocale
+export type KGFeedbackLocale = 'en-IN' | 'hi-IN' | 'mr-IN'
+export type KGFeedbackAudioTurn = Pick<KGFeedbackInput, 'letter' | 'mode' | 'outcome' | 'noSpeech'> & {
+  /** The language the stored sentence was written for (the attempt's stable feedback language). */
+  languageCode?: KGFeedbackLocale
 }
 
-export type KGFeedbackAudio = {
-  audio: Buffer
-  contentType: string
-  source: 'cache' | 'azure'
-  multiVoice: boolean
-}
+export type KGFeedbackAudio = { audio: Buffer; contentType: string; source: 'cache' | 'azure' }
 
-type SegmentProvider = {
-  synthesizeUncached(text: string, options?: { language?: KGLocale }): Promise<{ audio: Buffer; contentType: string }>
-  synthesizeSegmentsUncached(segments: KGFeedbackSegment[]): Promise<{ audio: Buffer; contentType: string }>
+type SpeechProvider = {
+  synthesizeUncached(text: string, options?: { language?: KGFeedbackLocale }): Promise<{ audio: Buffer; contentType: string }>
 }
 
 const normalize = (text: string) => text.replace(/\s+/g, ' ').trim()
+const MIN_CACHEABLE_BYTES = 256
 
-/** Smoothing may have chosen a different language than this attempt's own detection, so try each. */
-const LANGUAGE_FALLBACKS: Array<KGLocale | undefined> = [undefined, 'hi-IN', 'mr-IN']
-
-/**
- * Finds the reviewed segments whose joined text equals the stored sentence.
- * Returns null when the sentence is not one of the reviewed lines (i.e. it came from Qwen).
- */
-export function matchGuidedSegments(text: string, turn: KGFeedbackAudioTurn): KGFeedbackSegment[] | null {
+/** True only when `text` is exactly a sentence safeKGFeedback() writes for this turn. Qwen text never matches. */
+export function isFixedFeedbackLine(text: string, turn: KGFeedbackAudioTurn): boolean {
   const wanted = normalize(text)
-  if (!wanted) return null
-  for (const languageCode of [turn.languageCode, ...LANGUAGE_FALLBACKS]) {
-    const segments = guidedFeedbackSegments({ ...turn, languageCode })
-    if (normalize(segmentsToText(segments)) === wanted) return segments
-  }
-  return null
+  if (!wanted) return false
+  return normalize(safeKGFeedback({ ...turn })) === wanted
 }
 
-export function segmentsCacheKey(segments: KGFeedbackSegment[]): string {
-  return JSON.stringify(segments.map((segment) => [segment.locale, segment.text]))
+/** The language hint is part of the key because it changes which voices Azure uses. */
+export function feedbackCacheKey(text: string, language: KGFeedbackLocale | undefined): string {
+  return `${language ?? 'default'}\u0000${normalize(text)}`
 }
 
 const audioCache = createFixedLineCache<{ audio: Buffer; contentType: string }>({ maxItems: 160 })
 
-async function synthesizeSegments(segments: KGFeedbackSegment[], provider: SegmentProvider) {
-  if (segments.length === 1) {
-    const only = segments[0]
-    return only.locale === 'en-IN'
-      ? provider.synthesizeUncached(only.text)
-      : provider.synthesizeUncached(only.text, { language: only.locale })
-  }
-  return provider.synthesizeSegmentsUncached(segments)
-}
+const defaultProvider = (): SpeechProvider => new AzureVoiceProvider()
 
-const defaultProvider = (): SegmentProvider => new AzureVoiceProvider() as unknown as SegmentProvider
+function speak(provider: SpeechProvider, text: string, language: KGFeedbackLocale | undefined) {
+  // Same call shape the route used before, so voice selection is unchanged.
+  return language ? provider.synthesizeUncached(text, { language }) : provider.synthesizeUncached(text)
+}
 
 export const KGFeedbackAudioService = {
   /** Resolves to null when Azure fails, so the caller can use its Priya fallback. */
-  async synthesize(text: string, turn: KGFeedbackAudioTurn, provider: SegmentProvider = defaultProvider()): Promise<KGFeedbackAudio | null> {
-    const segments = matchGuidedSegments(text, turn)
-    if (!segments) {
+  async synthesize(text: string, turn: KGFeedbackAudioTurn, provider: SpeechProvider = defaultProvider()): Promise<KGFeedbackAudio | null> {
+    if (!isFixedFeedbackLine(text, turn)) {
       try {
-        const spoken = turn.languageCode && turn.languageCode !== 'en-IN'
-          ? await provider.synthesizeUncached(text, { language: turn.languageCode })
-          : await provider.synthesizeUncached(text)
-        return { ...spoken, source: 'azure', multiVoice: false }
+        return { ...(await speak(provider, text, turn.languageCode)), source: 'azure' }
       } catch {
         return null
       }
     }
-
-    const key = segmentsCacheKey(segments)
+    const key = feedbackCacheKey(text, turn.languageCode)
     const hit = audioCache.peek(key)
-    if (hit) return { ...hit, source: 'cache', multiVoice: segments.length > 1 }
+    if (hit) return { ...hit, source: 'cache' }
     const created = await audioCache.getOrCreate(key, async () => {
-      const spoken = await synthesizeSegments(segments, provider)
-      return spoken.audio.length >= 256 ? spoken : null
+      const spoken = await speak(provider, text, turn.languageCode)
+      return spoken.audio.length >= MIN_CACHEABLE_BYTES ? spoken : null
     })
-    return created ? { ...created, source: 'azure', multiVoice: segments.length > 1 } : null
+    return created ? { ...created, source: 'azure' } : null
   },
 
   /**
-   * Starts voicing a reviewed line right now, without waiting for it. Called the moment an attempt is graded so
+   * Starts voicing a fixed line right now, without waiting for it. Called as soon as an attempt is graded so
    * synthesis overlaps the response trip to the browser; the browser's follow-up audio request then finds the
-   * audio finished or in flight (concurrent requests share one Azure call). Anything that is not a reviewed
-   * line (a Qwen sentence) is ignored, so personalised text is never synthesized twice or kept.
+   * audio ready or shares the in-flight Azure call. A Qwen sentence is ignored, so personalised text is never
+   * synthesized twice or kept.
    */
-  warm(text: string, turn: KGFeedbackAudioTurn, provider?: SegmentProvider): void {
-    if (!matchGuidedSegments(text, turn)) return
+  warm(text: string, turn: KGFeedbackAudioTurn, provider?: SpeechProvider): void {
+    if (!isFixedFeedbackLine(text, turn)) return
     void this.synthesize(text, turn, provider).catch(() => undefined)
   },
 
-  /** Every reviewed line a KG child can hear, de-duplicated by what is actually spoken. */
-  guidedLines(): KGFeedbackSegment[][] {
-    const letters: KGFeedbackLetter[] = ['A', 'B', 'C', 'D']
-    const turns: Array<Omit<KGFeedbackAudioTurn, 'letter' | 'languageCode'>> = [
+  /** Every fixed line a KG child can hear, de-duplicated by what is actually spoken. */
+  fixedLines(): Array<{ text: string; turn: KGFeedbackAudioTurn }> {
+    const letters: KGFeedbackAudioTurn['letter'][] = ['A', 'B', 'C', 'D']
+    const turns: Array<Pick<KGFeedbackAudioTurn, 'mode' | 'outcome' | 'noSpeech'>> = [
       { mode: 'speak', outcome: 'correct' },
       { mode: 'speak', outcome: 'supported' },
       { mode: 'speak', outcome: 'unclear' },
@@ -129,34 +97,32 @@ export const KGFeedbackAudioService = {
       { mode: 'touch', outcome: 'supported' },
       { mode: 'touch', outcome: 'incorrect' },
     ]
-    const languages: Array<KGLocale | undefined> = [undefined, 'hi-IN', 'mr-IN']
-    const seen = new Map<string, KGFeedbackSegment[]>()
+    const languages: Array<KGFeedbackLocale | undefined> = [undefined, 'hi-IN', 'mr-IN']
+    const seen = new Map<string, { text: string; turn: KGFeedbackAudioTurn }>()
     for (const letter of letters) {
       for (const turn of turns) {
         for (const languageCode of languages) {
-          const segments = guidedFeedbackSegments({ ...turn, letter, languageCode })
-          seen.set(segmentsCacheKey(segments), segments)
+          const full: KGFeedbackAudioTurn = { ...turn, letter, languageCode }
+          const text = normalize(safeKGFeedback({ ...full }))
+          seen.set(feedbackCacheKey(text, languageCode), { text, turn: full })
         }
       }
     }
     return [...seen.values()]
   },
 
-  /** Warms the cache in the background so a child's first turn is already a cache hit. Never throws. */
-  async prewarm(options: { concurrency?: number; provider?: SegmentProvider } = {}): Promise<{ warmed: number; failed: number }> {
+  /** Warms the cache in the background so a child's first turn is already a hit. Never throws. */
+  async prewarm(options: { concurrency?: number; provider?: SpeechProvider } = {}): Promise<{ warmed: number; failed: number }> {
     const provider = options.provider ?? defaultProvider()
-    const lines = this.guidedLines().filter((segments) => !audioCache.peek(segmentsCacheKey(segments)))
+    const lines = this.fixedLines().filter((line) => !audioCache.peek(feedbackCacheKey(line.text, line.turn.languageCode)))
     const workers = Math.max(1, Math.min(6, options.concurrency ?? 3))
     let warmed = 0
     let failed = 0
     let next = 0
     await Promise.all(Array.from({ length: workers }, async () => {
       while (next < lines.length) {
-        const segments = lines[next++]
-        const result = await audioCache.getOrCreate(segmentsCacheKey(segments), async () => {
-          const spoken = await synthesizeSegments(segments, provider)
-          return spoken.audio.length >= 256 ? spoken : null
-        })
+        const line = lines[next++]
+        const result = await this.synthesize(line.text, line.turn, provider)
         if (result) warmed += 1
         else failed += 1
       }
