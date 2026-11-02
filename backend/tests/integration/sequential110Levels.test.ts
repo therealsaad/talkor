@@ -71,9 +71,9 @@ it.each([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])(
     expect(next.body.data).toMatchObject({ lessonId: first.lesson._id.toString(), complete: false })
 
     await request(app).get('/api/students/me/lessons/' + second.lesson._id)
-      .set('Authorization', authorization).expect(400)
+      .set('Authorization', authorization).expect(422)
     await request(app).get('/api/students/me/lessons/' + fourth.lesson._id)
-      .set('Authorization', authorization).expect(400)
+      .set('Authorization', authorization).expect(422)
 
     // Neither a forged deep-link nor direct answer submission unlocks future levels.
     await expect(ProgressService.submitAttempt({
@@ -104,7 +104,7 @@ it.each([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])(
     const waiting = await StudentLessonFastService.next(id)
     expect(waiting).toMatchObject({ lessonId: null, complete: false, blocked: true })
     await request(app).get('/api/students/me/lessons/' + fourth.lesson._id)
-      .set('Authorization', authorization).expect(400)
+      .set('Authorization', authorization).expect(422)
     expect((await Progress.findOne({ studentId: student._id, classId: klass._id }))?.levels
       .find((p) => p.levelId.equals(fourth.level._id))?.status).toBe('locked')
   },
