@@ -38,7 +38,7 @@ export const StudentLessonFastService = {
             ? { curriculumVersion: CLASS1_DEMO_VERSION, number: 1, status: 'draft', availability: 'UPCOMING' }
             : { status: 'active', availability: 'PUBLISHED' }),
       })
-        .select('_id order title').sort('order').lean(),
+        .select('_id number order title').sort('order').lean(),
     ])
 
     for (const unit of units) {
@@ -85,7 +85,7 @@ export const StudentLessonFastService = {
     const blocked = units.some((unit) => {
       const saved = progress.levels.find((item) => item.levelId.toString() === unit._id.toString())
       return saved?.status !== 'completed'
-    })
+    }) || (!isKGPilot && !isClass1Demo && (units[units.length - 1]?.number ?? 0) < 10)
     return { grade: student.grade, lessonId: null, activityId: null, unitTitle: null,
       complete: !blocked, blocked,
       ...(blocked ? { blockedMessage: 'Miss Julie is preparing your next published lesson. Your progress is saved.' } : {}) }
