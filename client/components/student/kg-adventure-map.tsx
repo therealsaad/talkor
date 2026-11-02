@@ -28,6 +28,7 @@ type GardenStatus = 'CURRENT' | 'COMPLETED' | 'LOCKED'
 function lessonHref(levelNumber: number, status: GardenStatus) {
   if (status === 'LOCKED') return undefined
   if (levelNumber === 1) return status === 'COMPLETED' ? '/student/kg?replay=all' : '/student/kg'
+  if (levelNumber >= 2 && levelNumber <= 5 && status === 'COMPLETED') return '/student/kg/review/' + levelNumber
   if (levelNumber === 2 && status === 'CURRENT') return '/student/kg/level-2'
   if (levelNumber >= 3 && levelNumber <= 5 && status === 'CURRENT') return '/student/kg/level-' + levelNumber
   return undefined
