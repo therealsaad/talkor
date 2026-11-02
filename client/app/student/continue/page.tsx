@@ -28,8 +28,11 @@ export default function ResumeMyLesson() {
           const continuation = await kgContinuationStudentService.overview()
           return continuation.nextLevel ? '/student/kg/level-' + continuation.nextLevel : '/student/kg/map'
         })
-      : curriculumService.getNextLesson().then((current) => current.lessonId
-          ? `/student/lesson/${encodeURIComponent(current.lessonId)}` : '/student/home')
+      : curriculumService.getNextLesson().then((current) => {
+          if (current.blocked) throw new Error(current.blockedMessage ||
+            'Miss Julie is preparing your next published lesson. Your progress is saved.')
+          return current.lessonId ? `/student/lesson/${encodeURIComponent(current.lessonId)}` : '/student/home'
+        })
     nextLesson
       .then((next) => {
         if (cancelled) return
