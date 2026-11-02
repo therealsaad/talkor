@@ -174,7 +174,7 @@ export function KGContinuationStudentExperience({ initial }: { initial: KGContin
     }
   }
   const busy = phase === 'narrating' || phase === 'requesting' || phase === 'checking'
-  const display = state.completed ? 'Wonderful! You finished Level 2!'
+  const display = state.completed ? 'Wonderful! You finished Level ' + state.level + '!'
     : phase === 'listening' ? 'Your turn! Say ' + letter + '!'
     : phase === 'narrating' ? 'Listen to Miss Julie first.'
     : phase === 'checking' ? 'Miss Julie is checking your answer.'
@@ -198,7 +198,7 @@ export function KGContinuationStudentExperience({ initial }: { initial: KGContin
             reducedMotion={Boolean(reduceMotion)} />
           <div className="kg-level2-play__speech" role={phase === 'error' ? 'alert' : 'status'} aria-live="polite">{display}</div>
         </aside>
-        <section className="kg-level2-play__board" aria-label="Miss Julie's Level 2 teaching board">
+        <section className="kg-level2-play__board" aria-label={"Miss Julie's Level " + state.level + ' teaching board'}>
           <span className="kg-level2-play__eyebrow"><Sparkles size={17} /> LISTEN · LEARN · SPEAK</span>
           {state.completed ? (
             <div className="kg-level2-play__finished">
