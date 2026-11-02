@@ -162,6 +162,14 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
   const [introAvailable, setIntroAvailable] = useState(false)
   const [introReplayRequest, setIntroReplayRequest] = useState(0)
   const [homeworkSaved, setHomeworkSaved] = useState(false)
+  useEffect(() => {
+    // The Class 1 final homework is mandatory: never route before its
+    // server-persisted spoken submission, or before Julie's closing voice.
+    if (experienceId !== 'g01-l01' || !homeworkSaved || experience !== 'lesson_complete') return
+    const timer = window.setTimeout(() => router.replace('/student/continue'), 700)
+    return () => window.clearTimeout(timer)
+  }, [experienceId, homeworkSaved, experience, router])
+
   const [poemRecitalChunk, setPoemRecitalChunk] = useState(0)
   const poemRecitalParts = useRef<string[]>([])
 
@@ -1027,7 +1035,13 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         // The finale's complete poem is a live Azure reading, never a v3 S3 word clip.
         voicePriority: activity?.activityKey === 'class1-l01-v4-poem-full' ? 'CONVERSATION' : 'LESSON',
         staticAudioActivityId: activity?.activityKey === 'class1-l01-v4-poem-full' ? activity.id : undefined,
-      }, 'lesson_complete')
+      }, 'lesson_complete').then((voicePlayed) => {
+        // Server progress was persisted by the individual answer endpoint.
+        // Only after the final Miss Julie audio resolves from onended may we
+        // request the next server-authorized published lesson. Class 1 waits
+        // until its separate spoken homework is saved too.
+        if (voicePlayed && experienceId !== 'g01-l01') router.replace('/student/continue')
+      })
       return
     }
     setExperience('transitioning')
