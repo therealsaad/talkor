@@ -7,7 +7,7 @@ import { Teacher } from '../models/Teacher'
 import { Student } from '../models/Student'
 import { ApiError } from '../utils/ApiError'
 import { LearningEvent } from '../models/LearningEvent'
-import { KGIntroPlayback } from '../models/KGIntroPlayback'
+import { revokeKGIntroTicketsForStudent } from '../services/kg-student-visit.service'
 import { VoiceWarmupService } from '../services/voice-warmup.service'
 
 export const AuthController = {
@@ -31,6 +31,9 @@ export const AuthController = {
 
   studentPinLogin: catchAsync(async (req: Request, res: Response) => {
     const result = await AuthService.loginStudentByPin(req.body.pin)
+    if (result.student.grade === 0) {
+      await revokeKGIntroTicketsForStudent(result.student.id, result.school.id)
+    }
     ok(res, result)
     void LearningEvent.create({ studentId: result.student.id, type: 'login' }).catch(() => undefined)
     VoiceWarmupService.schedule(result.student.id)
@@ -39,6 +42,9 @@ export const AuthController = {
   studentLogin: catchAsync(async (req: Request, res: Response) => {
     const { schoolCode, studentId, studentCode } = req.body
     const result = await AuthService.loginStudent(schoolCode, studentId, studentCode)
+    if (result.student.grade === 0) {
+      await revokeKGIntroTicketsForStudent(result.student.id, result.school.id)
+    }
     ok(res, result)
     void LearningEvent.create({ studentId: result.student.id, type: 'login' }).catch(() => undefined)
     // Warm likely-next audio after the login response is already sent. Login never waits for TTS.
@@ -72,13 +78,9 @@ export const AuthController = {
     // Student sessions are revoked at the database as well as cleared in the browser.
     if (req.auth?.role === 'STUDENT') {
       await Student.updateOne({ _id: req.auth.id, schoolId: req.auth.schoolId }, { $inc: { authVersion: 1 } })
-      // A new PIN login must never inherit the prior session's completed KG
-      // intro ticket, even if the learner signs in on the same lab device.
-      // Revocation is scoped to exactly this authenticated student/school.
-      await KGIntroPlayback.updateMany(
-        { studentId: req.auth.id, schoolId: req.auth.schoolId, expiresAt: { $gt: new Date() } },
-        { $set: { expiresAt: new Date() } },
-      )
+      // All KG levels require a fresh introduction on the next visit,
+      // including Level 2 and the student-only Levels 3–5 pilot.
+      await revokeKGIntroTicketsForStudent(req.auth.id, req.auth.schoolId)
       await LearningEvent.create({ studentId: req.auth.id, type: 'logout' })
     }
     ok(res, { loggedOut: true })

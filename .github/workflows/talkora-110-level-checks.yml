@@ -73,7 +73,7 @@ jobs:
       - name: Verify KG Level 2 stone, PIN auto-resume, full intro, and signed played-audio safeguards
         run: node --test tests/ui/kg-level2-auto-resume.test.mjs
         working-directory: client
-      - name: Guard all 110 levels: next KG letter journey, published-grade locking and session resume
+      - name: "Guard all 110 levels: next KG letter journey, published-grade locking and session resume"
         run: node --test tests/ui/grade0-to10-sequential-resume.test.mjs
         working-directory: client
       - name: Verify Class 1 hands-free audio and landscape contracts
@@ -122,6 +122,9 @@ jobs:
       - run: pnpm install --frozen-lockfile
         working-directory: backend
       - run: pnpm build
+        working-directory: backend
+      - name: Verify real school-lab KG PIN acceptance report resolves exact server progress
+        run: node --test tests/kg-live-session-acceptance.node.test.mjs
         working-directory: backend
       - name: Verify optional KG Azure S3 cache offline without credentials
         run: pnpm run test:kg-azure-audio
@@ -173,6 +176,9 @@ jobs:
         working-directory: backend
       - name: Verify KG2→3→4→5 student continuation, school-level authorization and audio receipts
         run: pnpm exec jest --runInBand tests/integration/kgContinuationSequence.test.ts
+        working-directory: backend
+      - name: Verify fresh PIN visits revoke KG2-5 intro without losing signed-ACK progress
+        run: pnpm exec jest --runInBand tests/integration/kgNextVisitPinResume.test.ts
         working-directory: backend
       - name: Verify all Class 1–10 published levels unlock strictly in order without URL bypass
         run: pnpm exec jest --runInBand tests/integration/sequential110Levels.test.ts
