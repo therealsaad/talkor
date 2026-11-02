@@ -266,9 +266,12 @@ export const KGContinuationController = {
       studentId: studentId.toString(), schoolId: schoolId.toString(),
       submissionId: level + ':' + id, introTicketHash: ticketHash, feedbackText: saved.feedbackText,
     })) throw ApiError.conflict('Listen to Miss Julie before moving forward')
-    const ack = await KGContinuationAttempt.updateOne({ studentId, schoolId, level, submissionId: id,
+    await KGContinuationAttempt.updateOne({ studentId, schoolId, level, submissionId: id,
       feedbackAcknowledgedAt: { $exists: false } }, { $set: { feedbackAcknowledgedAt: new Date() } })
-    if (saved.outcome === 'correct' && ack.modifiedCount > 0) {
+    // Crash recovery: an ACK may persist before the cursor update. Replaying
+    // that signed ACK may finish this exact index once, but CAS prevents
+    // additional credit after the cursor has advanced.
+    if (saved.outcome === 'correct') {
       const final = saved.index + 1 === continuationLesson(level).letters.length
       await KGContinuationProgress.updateOne({ studentId, schoolId, level, currentIndex: saved.index },
         { $inc: { currentIndex: 1 }, ...(final ? { $set: { completedAt: new Date() } } : {}) })
