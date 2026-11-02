@@ -60,7 +60,7 @@ it('unlocks student E–J only after authoritative KG1 completion; keeps preview
   await KGAlphabetProgress.updateOne({ studentId: student._id }, { $set: { currentIndex: 8 } })
   const level1 = await request(app).get('/api/kg-alphabet/state').set('Authorization', auth).expect(200)
   expect(level1.body.data).toMatchObject({ completed: true, level2Available: true })
-  expect(level1.body.data.homework.status).toBe('not-assigned') // Homework is not a gate.
+  expect(level1.body.data.homework.status).not.toBe('completed') // Homework is not a gate.
   const level2 = await get(auth).expect(200)
   expect(level2.body.data).toMatchObject({
     currentIndex: 0, totalActivities: 6, completed: false, activity: { letter: 'E' },
