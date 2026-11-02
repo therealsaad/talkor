@@ -41,6 +41,8 @@ export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State 
 
   useEffect(() => {
     if (state.completed || !letter) { setPhase('finished'); return }
+    // Capture the guarded letter before nested async recording callbacks.
+    const currentLetter: Level2Letter = letter
     const controller = new AbortController()
     let live = true
     let stream: MediaStream | undefined
@@ -106,7 +108,7 @@ export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State 
         if (!live || controller.signal.aborted) return
         setPhase('checking')
         void kgLevel2StudentService.submit({
-          letter, submissionId: window.crypto.randomUUID(), audio: blob, durationMs,
+          letter: currentLetter, submissionId: window.crypto.randomUUID(), audio: blob, durationMs,
           noSpeech: (vadAvailable && !heardSpeech) || blob.size < 800,
           signal: controller.signal,
         }).then((result) => deliverFeedback(result.submissionId, result.feedbackText)).catch(fail)
@@ -129,7 +131,7 @@ export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State 
       } else {
         setPhase('narrating')
         setMessage('Listen, then say the letter ' + letter + '!')
-        await kgLevel2StudentService.playNarration(letter, audio, controller.signal)
+        await kgLevel2StudentService.playNarration(currentLetter, audio, controller.signal)
         if (!live || controller.signal.aborted) return
         await beginListening()
       }
