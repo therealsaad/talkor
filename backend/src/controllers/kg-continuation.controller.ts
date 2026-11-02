@@ -9,6 +9,7 @@ import { KGContinuationAttempt, type IKGContinuationAttempt } from '../models/KG
 import { isAuthorizedKGAlphabetStudent } from '../services/kg-pilot-access'
 import { KGSpeechService } from '../services/kg-speech.service'
 import { AzureVoiceProvider } from '../providers/voice/AzureVoiceProvider'
+import { getKGAzureNarrationAudio } from '../services/kg-azure-narration.service'
 import { PythonVoiceProvider } from '../providers/voice/PythonVoiceProvider'
 import { issueKGFeedbackReceipt, verifyKGFeedbackReceipt } from '../services/kg-feedback-receipt'
 import { isSupportedVoiceAudioMimeType } from '../schemas/voice.schema'
@@ -190,6 +191,22 @@ export const KGContinuationController = {
     ticket(req, await row(studentId, schoolId, level))
     const narration = getKGContinuationNarration(level, req.params.id)
     if (!narration) throw ApiError.notFound('Unapproved narration')
+    // Only checked-in, server-owned fixed narration may use the optional
+    // content-addressed Azure/S3 cache. Feedback remains uncached and signed.
+    if (process.env.TALKORA_KG_FIXED_NARRATION_CACHE === 'true') {
+      const audio = await getKGAzureNarrationAudio({ level, id: req.params.id, text: narration })
+      if (audio.audio.length < 256 || audio.audio.length > 8 * 1024 * 1024 ||
+          !/^audio\/[a-z0-9.+-]+(?:\s*;.*)?$/i.test(audio.contentType)) {
+        throw ApiError.provider('KG_CONTINUATION_AUDIO_INVALID')
+      }
+      res.setHeader('Content-Type', audio.contentType)
+      res.setHeader('Content-Length', String(audio.audio.length))
+      res.setHeader('Cache-Control', 'private, no-store')
+      res.setHeader('X-Content-Type-Options', 'nosniff')
+      res.setHeader('X-Voice-Provider', 'azure-' + audio.source)
+      res.send(audio.audio)
+      return
+    }
     await voice(res, narration)
   }),
   attempt: catchAsync(async (req: Request, res: Response) => {

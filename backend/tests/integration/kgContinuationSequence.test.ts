@@ -8,6 +8,8 @@ import { School } from '../../src/models/School'
 import { Student } from '../../src/models/Student'
 import { KGSpeechService } from '../../src/services/kg-speech.service'
 import { AzureVoiceProvider } from '../../src/providers/voice/AzureVoiceProvider'
+import * as KGAzureNarration from '../../src/services/kg-azure-narration.service'
+import { getKGContinuationNarration } from '../../src/kg/student-continuation-catalog'
 import { signToken } from '../../src/utils/jwt'
 import { connectTestDatabase, disconnectTestDatabase, clearTestDatabase } from './dbTestUtils'
 
@@ -136,4 +138,54 @@ it('verified final letter opens the exact next continuation level; resumes after
   expect((await overview(nextAuth).expect(200)).body.data.nextLevel).toBeNull()
   expect(await KGContinuationProgress.countDocuments({ studentId: student._id, schoolId: school._id })).toBe(3)
   expect(await KGContinuationAttempt.countDocuments({ studentId: student._id })).toBe(3)
+})
+
+it('uses reviewed fixed narration cache only after the KG3 intro and does not call live Azure', async () => {
+  const { student, auth } = await fixture()
+  await KGLevel2Progress.updateOne({ studentId: student._id },
+    { $set: { currentIndex: 6, completedAt: new Date() } })
+  const headers = await intro(3, auth, student._id)
+  const bytes = Buffer.concat([Buffer.from('ID3'), Buffer.alloc(380, 0x30)])
+  const cached = jest.spyOn(KGAzureNarration, 'getKGAzureNarrationAudio')
+    .mockResolvedValue({ audio: bytes, contentType: 'audio/mpeg', source: 's3', storedInS3: true })
+  const liveAzure = jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached')
+    .mockRejectedValue(new Error('Live Azure must not run for a cache hit'))
+  const old = process.env.TALKORA_KG_FIXED_NARRATION_CACHE
+  process.env.TALKORA_KG_FIXED_NARRATION_CACHE = 'true'
+  try {
+    const endpoint = '/api/kg-continuation/3/narration/word-k'
+    await request(app).get(endpoint).set('Authorization', auth).expect(409)
+    await request(app).get(endpoint).set(headers).expect(200)
+      .expect('Cache-Control', 'private, no-store')
+      .expect('Content-Type', /audio\/mpeg/)
+      .expect('X-Voice-Provider', 'azure-s3')
+    expect(cached).toHaveBeenCalledTimes(1)
+    expect(cached).toHaveBeenCalledWith({
+      level: 3, id: 'word-k', text: getKGContinuationNarration(3, 'word-k'),
+    })
+    expect(liveAzure).not.toHaveBeenCalled()
+    await request(app).get('/api/kg-continuation/4/narration/letter-q').set(headers).expect(403)
+    expect(cached).toHaveBeenCalledTimes(1)
+  } finally {
+    if (old === undefined) delete process.env.TALKORA_KG_FIXED_NARRATION_CACHE
+    else process.env.TALKORA_KG_FIXED_NARRATION_CACHE = old
+  }
+})
+
+it('rejects invalid cached narration bytes, with no unusable audio response', async () => {
+  const { student, auth } = await fixture()
+  await KGLevel2Progress.updateOne({ studentId: student._id },
+    { $set: { currentIndex: 6, completedAt: new Date() } })
+  const headers = await intro(3, auth, student._id)
+  const cached = jest.spyOn(KGAzureNarration, 'getKGAzureNarrationAudio')
+    .mockResolvedValue({ audio: Buffer.alloc(0), contentType: 'audio/mpeg', source: 's3', storedInS3: true })
+  const old = process.env.TALKORA_KG_FIXED_NARRATION_CACHE
+  process.env.TALKORA_KG_FIXED_NARRATION_CACHE = 'true'
+  try {
+    await request(app).get('/api/kg-continuation/3/narration/letter-k').set(headers).expect(502)
+    expect(cached).toHaveBeenCalledTimes(1)
+  } finally {
+    if (old === undefined) delete process.env.TALKORA_KG_FIXED_NARRATION_CACHE
+    else process.env.TALKORA_KG_FIXED_NARRATION_CACHE = old
+  }
 })

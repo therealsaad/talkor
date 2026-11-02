@@ -70,3 +70,16 @@ test('all Class 1–10 levels strictly need verified published preceding level',
   assert.match(curriculum, /status: recorded \|\| 'locked'/)
   assert.match(curriculum, /ProgressService\.assertLevelAccessible\(/)
 })
+
+test('KG3–5 student classroom labels use current level rather than Level 2', () => {
+  assert.match(continuation, /state\.completed \? 'Wonderful! You finished Level ' \+ state\.level/)
+  assert.match(continuation, /aria-label=\{"Miss Julie's Level " \+ state\.level/)
+  assert.doesNotMatch(continuation, /finished Level 2|Level 2 teaching board/)
+})
+
+test('KG3–5 opt-in fixed narration is behind the student intro guard, feedback receipts unchanged', () => {
+  assert.match(controller, /TALKORA_KG_FIXED_NARRATION_CACHE === 'true'/)
+  assert.match(controller, /getKGAzureNarrationAudio\(\{ level, id: req\.params\.id, text: narration \}\)/)
+  assert.match(controller, /ticket\(req, await row\(studentId, schoolId, level\)\)/)
+  assert.match(controller, /verifyKGFeedbackReceipt\(req\.body\?\.feedbackReceipt/)
+})
