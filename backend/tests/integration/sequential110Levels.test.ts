@@ -116,3 +116,39 @@ it('a published lesson with no required activities never self-completes to unloc
   const saved = await ProgressService.getForStudent(student._id.toString(), klass._id.toString())
   expect(saved.levels.find((p) => p.levelId.equals(second.level._id))?.status).toBe('locked')
 })
+
+
+it.each([2, 6])(
+  'Class %i resumes exactly Level 3 after its syllabus is published and unlocks Level 4 only after it is mastered',
+  async (grade) => {
+    const { student, klass, first, second, third, fourth } = await fixture(grade)
+    const studentId = student._id.toString()
+    const classId = klass._id.toString()
+    const submit = async (activityId: string, key: string) =>
+      ProgressService.submitAttempt({
+        studentId, activityId, answer: 'YES',
+        startedAt: new Date(Date.now() - 1000), hintsUsed: 0, idempotencyKey: key,
+      })
+    await submit(first.activity._id.toString(), 'published-first-' + grade)
+    await submit(second.activity._id.toString(), 'published-second-' + grade)
+    expect((await StudentLessonFastService.next(studentId)).blocked).toBe(true)
+
+    // An educator publishing a complete, real lesson is an external change;
+    // previously saved completions must not be discarded.
+    await Level.updateOne({ _id: third.level._id }, {
+      $set: { status: 'active', availability: 'PUBLISHED' },
+    })
+    await Lesson.updateOne({ _id: third.lesson._id }, { $set: { status: 'active' } })
+    await Activity.updateOne({ _id: third.activity._id }, { $set: { status: 'active' } })
+    const afterPublishing = await ProgressService.getForStudent(studentId, classId)
+    expect(afterPublishing.levels.find((entry) => entry.levelId.equals(third.level._id))?.status).toBe('unlocked')
+    expect(afterPublishing.levels.find((entry) => entry.levelId.equals(fourth.level._id))?.status).toBe('locked')
+    expect((await StudentLessonFastService.next(studentId)).lessonId).toBe(third.lesson._id.toString())
+
+    await submit(third.activity._id.toString(), 'published-third-' + grade)
+    const afterThird = await ProgressService.getForStudent(studentId, classId)
+    expect(afterThird.levels.find((entry) => entry.levelId.equals(third.level._id))?.status).toBe('completed')
+    expect(afterThird.levels.find((entry) => entry.levelId.equals(fourth.level._id))?.status).toBe('unlocked')
+    expect((await StudentLessonFastService.next(studentId)).lessonId).toBe(fourth.lesson._id.toString())
+  },
+)
