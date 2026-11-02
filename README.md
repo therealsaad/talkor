@@ -22,6 +22,8 @@
 
 > **KG next-level student pilot (November 2, 2026):** Completing KG Level 1 now unlocks a protected [Level 2 E–J student lesson](docs/kg-level2-student-resume-2026-11-02.md) without a separate teacher action or homework wait. The five-digit PIN auto-resume flow loads authoritative Level 1/Level 2 progress from the backend, the map shows Level 2 status, and a secure student-only E–J voice engine saves progress across school-lab visits. The staff-only draft preview and its unverified syllabus publication flags remain unchanged; verify live audio, intro length, and academic approval before broad release.
 
+> **Sequential progression KG–Class 10 (November 2, 2026):** New [server-authoritative next-level policy](docs/sequential-progression-kg-to-class10-2026-11-02.md) removes the KG Level 2 dead end by adding protected KG3 K–P / KG4 Q–V / KG5 W–Z student pilots, immediately opening the next available lesson on final voiced-feedback acknowledgement and after fresh PIN login. Classes 1–10 now strictly unlock published numbered levels in sequence and disallow deep-link bypasses. **KG6–10 and unfinished/unapproved class workspaces remain locked**, not falsely published; live school-device checks and curriculum approval remain gates for wider rollout.
+
 ## Table of contents
 
 1. [Quick start: run the app](#1-quick-start-run-the-app)

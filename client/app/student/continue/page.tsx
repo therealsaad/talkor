@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { curriculumService } from '@/services/curriculum-service'
 import { kgAlphabetService } from '@/features/lessons/grades/kg/level-01/services/kg-alphabet-service'
 import { kgLevel2StudentService } from '@/features/lessons/grades/kg/level-02/services/kg-level2-student-service'
+import { kgContinuationStudentService } from '@/features/lessons/grades/kg/continuation/continuation-service'
 import { useAuth } from '@/components/auth/auth-provider'
 import { TalkoraLoader } from '@/components/student/talkora-loader'
 
@@ -23,10 +24,15 @@ export default function ResumeMyLesson() {
       ? kgAlphabetService.state().then(async (level1) => {
           if (!level1.completed || !level1.level2Available) return '/student/kg'
           const level2 = await kgLevel2StudentService.state()
-          return level2.completed ? '/student/kg/map' : '/student/kg/level-2'
+          if (!level2.completed) return '/student/kg/level-2'
+          const continuation = await kgContinuationStudentService.overview()
+          return continuation.nextLevel ? '/student/kg/level-' + continuation.nextLevel : '/student/kg/map'
         })
-      : curriculumService.getNextLesson().then((current) => current.lessonId
-          ? `/student/lesson/${encodeURIComponent(current.lessonId)}` : '/student/home')
+      : curriculumService.getNextLesson().then((current) => {
+          if (current.blocked) throw new Error(current.blockedMessage ||
+            'Miss Julie is preparing your next published lesson. Your progress is saved.')
+          return current.lessonId ? `/student/lesson/${encodeURIComponent(current.lessonId)}` : '/student/home'
+        })
     nextLesson
       .then((next) => {
         if (cancelled) return
@@ -40,7 +46,7 @@ export default function ResumeMyLesson() {
         }
       })
     return () => { cancelled = true }
-  }, [router, status, student?.grade])
+  }, [router, status, student?.grade, student?.id])
 
   if (!error) return <TalkoraLoader message="Miss Julie is opening your next lesson..." />
   return <main style={{maxWidth: 560, margin: '12vh auto', padding: 32, textAlign:'center'}}><h1>Miss Julie is waiting!</h1><p>{error}</p><Link href="/student/home">Go to my classroom</Link></main>

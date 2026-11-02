@@ -599,7 +599,12 @@ export const ProgressService = {
     }
 
     let previousLevelsComplete = true
+    // A missing or unapproved level is a hard stop. Never skip from
+    // published Level 1 directly to Level 3 merely because Level 2 is draft.
+    let expectedLevelNumber = 1
     for (const level of levels) {
+      if (!isDraftPilot && level.number !== expectedLevelNumber) previousLevelsComplete = false
+      expectedLevelNumber = level.number + 1
       const levelProgress = progress.levels.find(
         (item) => item.levelId.toString() === level._id.toString(),
       )
@@ -632,7 +637,8 @@ export const ProgressService = {
           changed = true
         }
 
-        const lessonComplete = areRequiredActivitiesComplete(requiredIds, prunedSet)
+        // An empty placeholder lesson is not mastered merely because [].every() is true.
+        const lessonComplete = requiredIds.length > 0 && areRequiredActivitiesComplete(requiredIds, prunedSet)
         if (lessonProgress && lessonProgress.completed !== lessonComplete) {
           lessonProgress.completed = lessonComplete
           changed = true
@@ -783,31 +789,11 @@ export const ProgressService = {
       )
     }
 
-    let levelProgress =
-      progress.levels.find(
-        (
-          item,
-        ) =>
-          item.levelId.toString() ===
-          levelId,
-      )
-
-    // Priority 4: Students do not need school/teacher permission or previous level completion
-    // to access any level made available to their student account.
-    if (!levelProgress) {
-      progress.levels.push({
-        levelId: level._id,
-        status: 'unlocked',
-        lessons: [],
-        accuracy: 0,
-        totalTimeMs: 0,
-        unlockedAt: new Date(),
-      })
-      await progress.save()
-    } else if (levelProgress.status === 'locked') {
-      levelProgress.status = 'unlocked'
-      levelProgress.unlockedAt = levelProgress.unlockedAt || new Date()
-      await progress.save()
+    // The student's previous verified level must already have been completed.
+    // Never create/unlock progress from a direct lesson URL or API call.
+    const levelProgress = progress.levels.find((entry) => entry.levelId.toString() === levelId)
+    if (!levelProgress || levelProgress.status === 'locked') {
+      throw ApiError.businessRule('Finish the previous published level before starting this lesson.')
     }
 
     return progress
@@ -1606,7 +1592,7 @@ export const ProgressService = {
     const wasLessonComplete =
       lessonProgress.completed
 
-    lessonProgress.completed = areRequiredActivitiesComplete(
+    lessonProgress.completed = requiredActivityIds.length > 0 && areRequiredActivitiesComplete(
       requiredActivityIds,
       completedActivityIds,
     )
@@ -1890,6 +1876,8 @@ export const ProgressService = {
         index +
           1
       ]
+    // Skip no unpublished gaps: only the immediately next sequential level.
+    if (nextLevel && nextLevel.number !== levels[index].number + 1) return
 
     /*
      * No next published level.

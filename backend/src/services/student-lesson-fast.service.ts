@@ -38,7 +38,7 @@ export const StudentLessonFastService = {
             ? { curriculumVersion: CLASS1_DEMO_VERSION, number: 1, status: 'draft', availability: 'UPCOMING' }
             : { status: 'active', availability: 'PUBLISHED' }),
       })
-        .select('_id order title').sort('order').lean(),
+        .select('_id number order title').sort('order').lean(),
     ])
 
     for (const unit of units) {
@@ -80,7 +80,15 @@ export const StudentLessonFastService = {
     if (student.grade === 0 && !hasPlayableActivity) {
       throw ApiError.businessRule(CurriculumAccessService.unpublishedCurriculumMessage(student.grade))
     }
-    return { grade: student.grade, lessonId: null, activityId: null, unitTitle: null, complete: true }
+    // A locked or empty published level cannot be silently skipped and
+    // must not be reported as "all education complete".
+    const blocked = units.some((unit) => {
+      const saved = progress.levels.find((item) => item.levelId.toString() === unit._id.toString())
+      return saved?.status !== 'completed'
+    }) || (!isKGPilot && !isClass1Demo && (units[units.length - 1]?.number ?? 0) < 10)
+    return { grade: student.grade, lessonId: null, activityId: null, unitTitle: null,
+      complete: !blocked, blocked,
+      ...(blocked ? { blockedMessage: 'Miss Julie is preparing your next published lesson. Your progress is saved.' } : {}) }
   },
 
   async lesson(studentId: string, lessonId: string) {
@@ -88,6 +96,8 @@ export const StudentLessonFastService = {
     const { student, curriculumClass, isKGPilot, isClass1Demo } = await CurriculumAccessService.context(studentId)
     const requested = await CurriculumAccessService.assertLesson(studentId, lessonId)
     const level = requested.level
+    // A published URL is not itself permission to skip an unfinished level.
+    await ProgressService.assertLevelAccessible(studentId, curriculumClass._id.toString(), level._id.toString())
     // Existing student bookmarks may point to the old v2 ObjectId. Resolve
     // only within the SAME authenticated Class 1 level and demo curriculum.
     const firstDayCandidates = isClass1Demo
@@ -112,22 +122,9 @@ export const StudentLessonFastService = {
         .select('-answer -answerConfig')
         .sort('order').lean(),
     ])
-    let levelProgress = progress.levels.find(item => item.levelId.toString() === level._id.toString())
-    if (!levelProgress) {
-      progress.levels.push({
-        levelId: level._id,
-        status: 'unlocked',
-        lessons: [],
-        accuracy: 0,
-        totalTimeMs: 0,
-        unlockedAt: new Date(),
-      })
-      await progress.save()
-      levelProgress = progress.levels[progress.levels.length - 1]
-    } else if (levelProgress.status === 'locked') {
-      levelProgress.status = 'unlocked'
-      levelProgress.unlockedAt = levelProgress.unlockedAt || new Date()
-      await progress.save()
+    const levelProgress = progress.levels.find(item => item.levelId.toString() === level._id.toString())
+    if (!levelProgress || levelProgress.status === 'locked') {
+      throw ApiError.activityUnavailable('Finish your previous level before opening this lesson')
     }
     if (!activities.length) throw ApiError.activityUnavailable('This lesson has no published activities')
     const lessonProgress = levelProgress.lessons.find(item => item.lessonId.toString() === lesson._id.toString())

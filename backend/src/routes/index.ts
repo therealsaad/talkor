@@ -16,6 +16,7 @@ import educatorAIRoutes from './educator-ai.routes'
 import kgAlphabetRoutes from './kg-alphabet.routes'
 import kgLevel2PreviewRoutes from './kg-level2-preview.routes'
 import kgLevel2StudentRoutes from './kg-level2-student.routes'
+import kgContinuationRoutes from './kg-continuation.routes'
 import kgLevel3PreviewRoutes from './kg-level3-preview.routes'
 import kgLevel4PreviewRoutes from './kg-level4-preview.routes'
 import kgLevel5PreviewRoutes from './kg-level5-preview.routes'
@@ -39,6 +40,7 @@ router.use('/voice', voiceRoutes)
 router.use('/kg-alphabet', kgAlphabetRoutes)
 router.use('/kg-level2-preview', kgLevel2PreviewRoutes)
 router.use('/kg-level2', kgLevel2StudentRoutes)
+router.use('/kg-continuation', kgContinuationRoutes)
 router.use('/kg-level3-preview', kgLevel3PreviewRoutes)
 router.use('/kg-level4-preview', kgLevel4PreviewRoutes)
 router.use('/kg-level5-preview', kgLevel5PreviewRoutes)

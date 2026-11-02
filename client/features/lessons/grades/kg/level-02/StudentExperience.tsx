@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { CheckCircle2, LoaderCircle, Mic, RotateCw, Sparkles } from 'lucide-react'
 import { useReducedMotion } from 'framer-motion'
@@ -29,6 +30,7 @@ const PICTURES: Record<Level2Letter, string> = {
 type Phase = 'narrating' | 'requesting' | 'listening' | 'checking' | 'feedback' | 'error' | 'finished'
 
 export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State }) {
+  const router = useRouter()
   const reduceMotion = useReducedMotion()
   const [state, setState] = useState(initial)
   const [phase, setPhase] = useState<Phase>(initial.completed ? 'finished' : 'narrating')
@@ -68,6 +70,9 @@ export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State 
       const updated = await kgLevel2StudentService.acknowledge(submissionId, controller.signal)
       if (!live || controller.signal.aborted) return
       setState(updated)
+      // After the persisted final J acknowledgement, automatically resolve
+      // the next permitted lesson; never send the child back to a completed map.
+      if (updated.completed) { router.replace('/student/continue'); return }
       setCycle((n) => n + 1)
     }
     function fail(cause: unknown) {
