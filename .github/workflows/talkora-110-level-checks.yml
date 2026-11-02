@@ -123,6 +123,9 @@ jobs:
         working-directory: backend
       - run: pnpm build
         working-directory: backend
+      - name: Verify real school-lab KG PIN acceptance report resolves exact server progress
+        run: node --test tests/kg-live-session-acceptance.node.test.mjs
+        working-directory: backend
       - name: Verify optional KG Azure S3 cache offline without credentials
         run: pnpm run test:kg-azure-audio
         working-directory: backend
@@ -173,6 +176,9 @@ jobs:
         working-directory: backend
       - name: Verify KG2→3→4→5 student continuation, school-level authorization and audio receipts
         run: pnpm exec jest --runInBand tests/integration/kgContinuationSequence.test.ts
+        working-directory: backend
+      - name: Verify fresh PIN visits revoke KG2-5 intro without losing signed-ACK progress
+        run: pnpm exec jest --runInBand tests/integration/kgNextVisitPinResume.test.ts
         working-directory: backend
       - name: Verify all Class 1–10 published levels unlock strictly in order without URL bypass
         run: pnpm exec jest --runInBand tests/integration/sequential110Levels.test.ts
