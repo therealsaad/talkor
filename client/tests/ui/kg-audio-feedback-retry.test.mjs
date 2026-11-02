@@ -24,7 +24,12 @@ test('KG voice request reuses original model text and never repeats Qwen for pla
   assert.ok(audioRoute)
   assert.doesNotMatch(audioRoute, /kgDynamicFeedback\(/)
   assert.match(audioRoute, /await frozenKGFeedback\(attempt\)/)
-  assert.match(audioRoute, /sendKGAzure\(res, words, attempt\.feedbackLanguageCode \|\| attempt\.languageCode, \(\) => \{/)
+  // Voice caching now passes a server-owned turn object instead of the old locale argument.
+  // The same frozen feedback and persisted language must still feed audio and the signed receipt.
+  assert.match(audioRoute, /sendKGAzure\(res, words, \{/)
+  assert.match(audioRoute, /languageCode: attempt\.feedbackLanguageCode \|\| attempt\.languageCode,/)
+  assert.match(audioRoute, /issueKGFeedbackReceipt\(\{/)
+  assert.match(audioRoute, /feedbackText: words,/)
   assert.match(attempt, /feedbackText: \{ type: String, maxlength: 280 \}/)
 })
 

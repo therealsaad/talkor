@@ -14,6 +14,7 @@ import * as KGAzureNarration from '../../src/services/kg-azure-narration.service
 import { PythonVoiceProvider } from '../../src/providers/voice/PythonVoiceProvider'
 import { AzureVoiceProvider } from '../../src/providers/voice/AzureVoiceProvider'
 import { KGQwenFeedbackService } from '../../src/services/kg-qwen-feedback.service'
+import { KGFeedbackAudioService } from '../../src/services/kg-feedback-audio.service'
 import { ApiError } from '../../src/utils/ApiError'
 import { signToken } from '../../src/utils/jwt'
 import { clearTestDatabase, connectTestDatabase, disconnectTestDatabase } from './dbTestUtils'
@@ -33,10 +34,15 @@ async function approveIntro(authorization: string) {
 
 beforeAll(() => connectTestDatabase())
 afterAll(() => disconnectTestDatabase())
+beforeEach(() => {
+  // Background warming and the in-memory line cache would make Azure spy counts depend on test order.
+  jest.spyOn(KGFeedbackAudioService, 'warm').mockImplementation(() => undefined)
+})
 afterEach(async () => {
   activePlaybackId = ''
   jest.restoreAllMocks()
   clearKGStaticAudioCache()
+  KGFeedbackAudioService.clearCacheForTests()
   await clearTestDatabase()
 })
 
@@ -894,9 +900,13 @@ it('recovers an orphaned graded KG attempt without repeating STT or Qwen', async
   const recorded = await KGAlphabetAttempt.findOne({ studentId: student._id, submissionId }).lean()
   expect(recorded?.feedbackText).toContain('apple')
   expect(recorded?.feedbackText).toMatch(/[\u0900-\u097f]/)
-  await requestAudio()
-  expect(azure).toHaveBeenCalledTimes(2)
+  const secondAudio = await requestAudio()
+  // The frozen sentence is a fixed line, so the replay is served from the in-memory cache with the same bytes
+  // and a fresh receipt, and Azure is only asked once.
+  expect(azure).toHaveBeenCalledTimes(1)
   expect(azure).toHaveBeenCalledWith(recorded?.feedbackText, { language: 'hi-IN' })
+  expect(secondAudio.body).toEqual(firstAudio.body)
+  expect(secondAudio.headers['x-kg-feedback-receipt']).toMatch(/^v1\./)
 
   const duplicate = await request(app).post('/api/kg-alphabet/attempt')
     .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)

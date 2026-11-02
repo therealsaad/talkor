@@ -120,6 +120,9 @@ jobs:
       - name: Verify optional KG Azure S3 cache offline without credentials
         run: pnpm run test:kg-azure-audio
         working-directory: backend
+      - name: Verify KG fixed-line TTS audio cache privacy, early warm, and offline voice fallbacks
+        run: node --test tests/kg-feedback-audio.node.test.cjs tests/kg-live-voice.node.test.cjs
+        working-directory: backend
       - name: Guard KG paid warmup behind explicit reviewed content digest
         run: pnpm exec jest --runInBand tests/unit/kgAzurePrewarmApproval.test.ts
         working-directory: backend

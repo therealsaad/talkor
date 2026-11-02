@@ -11,6 +11,7 @@ import { AzureVoiceProvider } from '../../src/providers/voice/AzureVoiceProvider
 import { PythonVoiceProvider } from '../../src/providers/voice/PythonVoiceProvider'
 import { S3Service } from '../../src/services/S3Service'
 import { KGSpeechService } from '../../src/services/kg-speech.service'
+import { KGFeedbackAudioService } from '../../src/services/kg-feedback-audio.service'
 import { VoiceWarmupService } from '../../src/services/voice-warmup.service'
 import { hashPassword } from '../../src/utils/password'
 import { pinLookup } from '../../src/utils/student-pin'
@@ -33,9 +34,12 @@ beforeAll(() => connectTestDatabase())
 afterAll(() => disconnectTestDatabase())
 beforeEach(() => {
   jest.spyOn(VoiceWarmupService, 'schedule').mockImplementation(() => undefined)
+  // Background warming and the in-memory line cache would make Azure spy counts depend on test order.
+  jest.spyOn(KGFeedbackAudioService, 'warm').mockImplementation(() => undefined)
 })
 afterEach(async () => {
   jest.restoreAllMocks()
+  KGFeedbackAudioService.clearCacheForTests()
   await clearTestDatabase()
 })
 
@@ -214,7 +218,10 @@ it('uses real 5-digit PIN, intro, 8 saved turns, receipt ACK, homework and safe 
     expect(saved?.feedbackAcknowledgedAt).toBeInstanceOf(Date)
   }
   expect(fakeStt).toHaveBeenCalledTimes(4)
-  expect(fakeVoice.mock.calls.length).toBeGreaterThanOrEqual(9)
+  // Nine feedback requests, but a correct picture round says the same fixed line as its speaking round, so the
+  // in-memory cache voices each distinct line once: one silence line plus one per letter.
+  expect(fakeVoice.mock.calls.length).toBeGreaterThanOrEqual(5)
+  expect(fakeVoice.mock.calls.length).toBeLessThanOrEqual(9)
 
   const final = await a.protected('/api/kg-alphabet/state').expect(200)
   expect(final.body.data).toMatchObject({

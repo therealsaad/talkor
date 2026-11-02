@@ -62,17 +62,18 @@ test('Azure KG synthesis is transient: no AudioCacheService read/write, and XML 
     calls.fetch++
     assert.match(options.body, /&lt;there&gt;/)
     assert.match(options.body, /prosody rate="\+5%" pitch="\+6%"/)
-    return { ok: true, arrayBuffer: async () => Uint8Array.from([1,2,3]).buffer }
+    return { ok: true, arrayBuffer: async () => new Uint8Array(512).fill(1).buffer }
   }
   process.env.AZURE_SPEECH_KEY = 'unit-test-only'
   const { AzureVoiceProvider } = loadTS('providers/voice/AzureVoiceProvider.ts', {
     '../../utils/ApiError': { ApiError: { badRequest: (m) => new Error(m), provider: (m) => new Error(m) } },
     '../../utils/logger': { logger: { warn() {} } },
+    './class1-voice-language': { chooseTalkoraBilingualVoice: () => ({ voice: 'en-IN-NeerjaNeural', locale: 'en-IN' }) },
     '../../services/AudioCacheService': { AudioCacheService: { get: async () => { calls.get++; throw Error('should not read persistent cache') }, put: async () => { calls.put++; throw Error('should not write persistent cache') } } },
   })
   try {
     const value = await new AzureVoiceProvider().synthesizeUncached('Hi <there>!')
-    assert.equal(value.audio.length, 3)
+    assert.equal(value.audio.length, 512)
     assert.equal(value.contentType, 'audio/mpeg')
     assert.deepEqual(calls, { get: 0, put: 0, fetch: 1 })
   } finally { globalThis.fetch = original; delete process.env.AZURE_SPEECH_KEY }
@@ -102,6 +103,14 @@ test('staff preview routes audio through STT and returns manifest-selected Priya
     '../kg/kg-child-grading': { gradeKGTranscription: ({ transcript }) => transcript === 'apple' ? 'correct' : 'incorrect' },
     '../services/kg-pilot-access': { isAuthorizedKGAlphabetStudent: () => true },
     '../services/kg-static-audio-cache': { getKGStaticAudio: async () => null },
+    '../services/kg-azure-narration.service': { getKGAzureNarrationAudio: async () => null },
+    '../providers/voice/AzureVoiceProvider': { AzureVoiceProvider: class { async synthesizeUncached() { throw new Error('Preview must not synthesize live audio') } } },
+    '../services/kg-qwen-feedback.service': { KGQwenFeedbackService: { compose: async () => ({ text: 'Good try! Listen and say apple.', source: 'guided' }) } },
+    '../services/kg-feedback-audio.service': { KGFeedbackAudioService: { synthesize: async () => null, warm: () => {} } },
+    '../services/kg-teaching-language': { stableKGTeachingLanguage: (detected) => detected || 'en-IN' },
+    '../services/kg-feedback.service': { safeKGFeedback: () => 'Say apple!' },
+    '../services/kg-feedback-receipt': { issueKGFeedbackReceipt: () => 'receipt', verifyKGFeedbackReceipt: () => true },
+    '../services/voice-audio-format': { hasExpectedAudioHeader: () => true },
     '../providers/voice/PythonVoiceProvider': { PythonVoiceProvider: class { async synthesize() { calls.priya++; return { audioBase64: 'CQgH', contentType: 'audio/mpeg', available: true } } } },
     '../services/kg-speech.service': { KGSpeechService: { transcribe: async () => { calls.stt++; return { available: true, transcript: 'banana', provider: 'groq' } } } },
     '../services/kg-teaching-hint': { kgTeachingHint: () => 'Say apple!' },
@@ -113,7 +122,7 @@ test('staff preview routes audio through STT and returns manifest-selected Priya
   await KGAlphabetController.previewAttempt(req, res)
   assert.equal(res.payload.outcome, 'incorrect')
   assert.equal(res.payload.transcript, 'banana')
-  assert.equal(res.payload.feedbackVoice, 'dynamic_tts')
+  assert.equal(res.payload.feedbackVoice, 'azure')
   assert.equal(res.payload.feedbackAudioId, 'model-a')
   assert.equal(res.payload.feedbackAudioBase64, null)
   assert.equal(res.payload.advance, false)
