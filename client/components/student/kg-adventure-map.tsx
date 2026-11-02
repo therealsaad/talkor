@@ -7,6 +7,7 @@ import type { CSSProperties } from 'react'
 import { MissJulieCharacter } from '@/components/student/lesson/miss-julie-character'
 import type { KGAlphabetState } from '@/features/lessons/grades/kg/level-01/services/kg-alphabet-service'
 import type { KGLevel2State } from '@/features/lessons/grades/kg/level-02/services/kg-level2-student-service'
+import type { KGContinuationOverview } from '@/features/lessons/grades/kg/continuation/continuation-service'
 import styles from './kg-adventure-map.module.css'
 
 const LEVEL_POSITIONS = [
@@ -28,6 +29,7 @@ function lessonHref(levelNumber: number, status: GardenStatus) {
   if (status === 'LOCKED') return undefined
   if (levelNumber === 1) return status === 'COMPLETED' ? '/student/kg?replay=all' : '/student/kg'
   if (levelNumber === 2 && status === 'CURRENT') return '/student/kg/level-2'
+  if (levelNumber >= 3 && levelNumber <= 5 && status === 'CURRENT') return '/student/kg/level-' + levelNumber
   return undefined
 }
 
@@ -40,6 +42,7 @@ function displayStatus(status: GardenStatus) {
 export function KGAdventureMap({
   kgLevel1State,
   kgLevel2State,
+  kgContinuation,
   loading = false,
   error,
   onRetry,
@@ -49,6 +52,7 @@ export function KGAdventureMap({
 }: {
   kgLevel1State: KGAlphabetState | null
   kgLevel2State?: KGLevel2State | null
+  kgContinuation?: KGContinuationOverview | null
   loading?: boolean
   error?: string
   onRetry?: () => void
@@ -62,17 +66,21 @@ export function KGAdventureMap({
       ? kgLevel1State.completed ? 'COMPLETED' : 'CURRENT'
       : number === 2 && kgLevel1State?.completed && kgLevel1State.level2Available
         ? kgLevel2State?.completed ? 'COMPLETED' : 'CURRENT'
-        : 'LOCKED'
+        : number >= 3 && number <= 5 && kgLevel2State?.completed
+          ? kgContinuation?.levels.find((item) => item.level === number)?.status || 'LOCKED'
+          : 'LOCKED'
     const progress = number === 1 && kgLevel1State
       ? Math.min(100, Math.round((kgLevel1State.currentIndex / Math.max(1, kgLevel1State.totalActivities)) * 100))
       : number === 2 && kgLevel2State
         ? Math.min(100, Math.round((kgLevel2State.currentIndex / Math.max(1, kgLevel2State.totalActivities)) * 100))
-        : 0
+        : number >= 3 && number <= 5
+          ? (() => { const next = kgContinuation?.levels.find((item) => item.level === number); return next ? Math.round((next.currentIndex / Math.max(1, next.totalActivities)) * 100) : 0 })()
+          : 0
 
     return {
       number,
       position,
-      title: number === 1 ? kgLevel1State?.title : number === 2 && status !== 'LOCKED' ? 'Letters E to J' : undefined,
+      title: number === 1 ? kgLevel1State?.title : number === 2 && status !== 'LOCKED' ? 'Letters E to J' : number >= 3 && number <= 5 && status !== 'LOCKED' ? kgContinuation?.levels.find((item) => item.level === number)?.title : undefined,
       status,
       progress,
       href: lessonHref(number, status),
