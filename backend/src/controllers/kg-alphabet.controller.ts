@@ -711,10 +711,10 @@ export const KGAlphabetController = {
         transcript = String(transcription.transcript || '').slice(0, 240)
         sttProvider = transcription.provider
         timer.note('sttProvider', transcription.provider)
-        timer.note('language', 'languageCode' in transcription ? transcription.languageCode : undefined)
         const detected = 'languageCode' in transcription ? transcription.languageCode : undefined
         languageCode = detected === 'hi-IN' || detected === 'mr-IN' || detected === 'en-IN'
           ? detected : undefined
+        timer.note('language', languageCode)
         const confidence = 'confidence' in transcription ? transcription.confidence : undefined
         sttConfidence = typeof confidence === 'number' && Number.isFinite(confidence) && confidence >= 0 && confidence <= 1 ? confidence : undefined
         outcome = gradeKGTranscription({
