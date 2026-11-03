@@ -65,7 +65,7 @@ export function SchoolLessonRecords({ record }: { record: EditorMappedLevel }) {
             <div>
               <b>{lesson.title}</b>
               <small>
-                {lesson.status} · {lesson.activityCount} active activities
+                {lesson.status} · {lesson.activeCount ?? (lesson.status === 'active' ? lesson.activityCount : 0)} active of {lesson.activityCount} activities
                 {lesson.placeholder ? ' · empty placeholder' : ''}
               </small>
             </div>

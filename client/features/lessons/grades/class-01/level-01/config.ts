@@ -6,15 +6,15 @@ export const config = {
   "grade": 1,
   "level": 1,
   "gradeLabel": "Class 1",
-  "title": "Little Words & My First Day",
+  "title": "My First Day — School Adventure",
   "editorialStatus": "draft",
   "studentPlayable": false,
-  "description": "Watch Miss Julie's 90-second welcome story, practise tiny English words, then begin Balbharati 1.1 My First Day.",
+  "description": "Watch the reviewed First Day introduction, then practise ten original school-action conversations with Miss Julie: school, skip, run, walk, grin, bell, jump, play, entering class and Grade One. Historic two-letter-word work stays preserved in student history.",
   "syllabus": {
     "objectives": [
-      "Recognize and use the short words am, an, at, in, is, it, on, and up with generous visual support.",
-      "Listen to and say simple school and movement words from the My First Day theme.",
-      "Answer one very short question about going to school with positive Hindi or Marathi scaffolding."
+      "Hear and use the school and action words in an original companion to Balbharati 1.1 My First Day.",
+      "Practice school, skip, run, walk, smile/grin, bell, jump, play, and entering Grade One using ten short speaking turns.",
+      "Ask and answer one short school question with gentle Hindi/Marathi support; an English attempt is required for mastery."
     ],
     "skills": [
       "listening",
@@ -29,7 +29,7 @@ export const config = {
   "experience": {
     "themeId": "class-01-01-letters-and-sounds",
     "world": "First Day Word Meadow",
-    "sceneDescription": "a sunny, calm school-bound meadow; two-letter building blocks become a short path towards a cheerful school",
+    "sceneDescription": "a sunny, calm first-day school adventure with original illustrations, action words and Miss Julie responding to the learner",
     "layout": "split-story",
     "palette": {
       "background": "#fce2c2",

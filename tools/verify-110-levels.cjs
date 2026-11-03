@@ -55,13 +55,22 @@ for(let grade=0;grade<=10;grade++){
   assert.ok(config.experience.minTouchTargetPx>=44);
   assert.equal(config.experience.useReducedMotionFallback,true);
   const activities=read(`${dir}/activities.ts`);
-  if(id===liveKG||id===class1Pilot){
+  if(id===liveKG){
    const activityIds=[...activities.matchAll(/\{\s*id:\s*'([^']+)'/g)].map(match=>match[1]);
    const approvedCount=[...activities.matchAll(/\bapproved:\s*true\b/g)].length;
    assert.equal(new Set(activityIds).size,activityIds.length,`${id}: duplicate activity IDs`);
-   assert.equal(activityIds.length,approvedCount,`${id}: all activities must be approved`);
-   if(id===liveKG) assert.equal(activityIds.length,8,'The existing KG pilot has eight reviewed activities');
-   else assert.ok([7,10].includes(activityIds.length),'Class 1 pilot must have seven or ten reviewed activities');
+   assert.equal(activityIds.length,approvedCount,'The KG pilot has eight teacher-reviewed activities');
+   assert.equal(activityIds.length,8,'The existing KG pilot has eight reviewed activities');
+  }else if(id===class1Pilot){
+   // This is a truthful staff-only map of the ten backend First Day scenes.
+   // Publication happens transactionally in Mongo, not via local approved:true.
+   const ids=[...activities.matchAll(/\{\s*id:\s*'(class1-l01-v3-[^']+)'/g)].map(match=>match[1]);
+   assert.equal(ids.length,10,'Class 1 First Day has ten speaking scenes');
+   assert.equal(new Set(ids).size,10,'Class 1 First Day scene IDs must be unique');
+   assert.equal((activities.match(/\bapproved:\s*false\b/g)||[]).length,10,
+     'Staff preview scenes must not claim teacher signoff');
+   assert.doesNotMatch(activities,/\bapproved:\s*true\b/,
+     'Source metadata cannot publish a Class 1 student lesson');
   }else if(id===level2Preview){
    // E–J is an interactive staff preview, not six published student activities.
    assert.match(activities,/\['E', 'F', 'G', 'H', 'I', 'J'\]/);

@@ -647,6 +647,7 @@ function CurriculumExplorer({
                     plans={visible}
                     selected={selected.config.id}
                     reviews={reviews}
+                    records={liveData?.levels}
                     onSelect={select}
                   />
                   <div className={styles.principle}>

@@ -433,10 +433,13 @@ export const StudentCurriculumService = {
              LESSON SUMMARY
              =============================================== */
 
-          const hasPoem = isClass1Demo && unitLessons.some(
+          // The published First Day lesson retains its syllabus/map identity
+          // after the development-only demo flag is no longer in effect.
+          const isClass1Level1 = student.grade === 1 && unit.number === 1
+          const hasPoem = (isClass1Demo || isClass1Level1) && unitLessons.some(
             lesson => lesson.settings?.lessonPlanRevision === CLASS1_FIRST_DAY_POEM_REVISION,
           )
-          const hasFirstDay = isClass1Demo && unitLessons.some(
+          const hasFirstDay = (isClass1Demo || isClass1Level1) && unitLessons.some(
             lesson => [CLASS1_FIRST_DAY_PARALLEL_REVISION, CLASS1_FIRST_DAY_POEM_REVISION].includes(String(lesson.settings?.lessonPlanRevision || '')),
           )
           const lessonSummary =

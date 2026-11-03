@@ -104,6 +104,9 @@ jobs:
       - name: Verify Class 1 poem UI and existing voice loop contracts
         run: node --test tests/ui/class1-poem-recitation.test.mjs
         working-directory: client
+      - name: Verify Class 1 Level 1 curriculum/map is the real ten-scene First Day
+        run: node --test tests/ui/class1-level1-experience.test.mjs
+        working-directory: client
       - name: Verify illustrated v3 First Day speaking classroom
         run: node --test tests/ui/class1-first-day-adventure.test.mjs
         working-directory: client
@@ -265,6 +268,12 @@ jobs:
         working-directory: backend
       - name: Verify Hindi and Marathi Azure voice routing for reviewed First Day clips
         run: pnpm exec jest --runInBand tests/unit/class1FirstDayAzureLocale.test.ts
+        working-directory: backend
+      - name: Verify real Mongo Class 1 published Level 1 map, resume and Level 2 lock
+        run: pnpm exec jest --runInBand tests/integration/class1PublishedLevel1Journey.test.ts
+        working-directory: backend
+      - name: Guard Class 1 First Day release against false publishing and historical progress
+        run: pnpm exec jest --runInBand tests/unit/class1Level1Publication.test.ts
         working-directory: backend
       - name: Guard real Class 1 Sarvam to Qwen to Azure smoke route
         run: pnpm exec jest --runInBand tests/unit/class1LiveSmokeContract.test.ts
