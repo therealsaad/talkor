@@ -7,6 +7,8 @@ export interface EditorMappedLesson {
   order: number
   status: 'active' | 'draft'
   activityCount: number
+  activeCount?: number
+  draftCount?: number
   placeholder: boolean
 }
 export interface EditorMappedLevel {
