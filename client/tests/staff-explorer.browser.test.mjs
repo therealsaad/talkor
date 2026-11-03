@@ -46,7 +46,13 @@ async function fixture() {
   let role = null, blockedGrade = null, releaseGrade
   let unauthorized = false
   const delayed = new Promise(resolve => { releaseGrade = resolve })
-  page.on('pageerror', error => errors.push(error.message))
+  page.on('pageerror', error => errors.push(error.stack || error.message))
+  page.on('response', response => {
+    const uri = response.url()
+    if (/\/_next\/static\/.*\.js(?:\?|$)/.test(uri) && response.status() >= 400) {
+      errors.push(`JavaScript asset HTTP ${response.status()}: ${uri}`)
+    }
+  })
   await page.evaluateOnNewDocument(() => {
     window.__staffMicrophoneRequests = 0
     navigator.mediaDevices.getUserMedia = async () => {
@@ -131,7 +137,14 @@ async function fixture() {
 }
 async function using(run) {
   const f = await fixture()
-  try { await run(f) } finally { f.releaseGrade(); await f.context.close() }
+  try { await run(f) }
+  catch (error) {
+    const body = await f.page.$eval('body', el => el.innerText.slice(0, 1400)).catch(() => '')
+    console.error('Staff browser failure context:', JSON.stringify({
+      url: f.page.url(), body, errors: f.errors, recentReads: f.reads.slice(-12), recentWrites: f.writes.slice(-8),
+    }))
+    throw error
+  } finally { f.releaseGrade(); await f.context.close() }
 }
 const text = page => page.$eval('body', el => el.innerText)
 const waitText = (page, value) => page.waitForFunction(value => document.body.innerText.includes(value), {}, value)
@@ -209,6 +222,8 @@ test('planning notes survive reload and do not leak to another staff account', {
   await f.page.reload({ waitUntil: 'networkidle0' })
   await f.page.waitForSelector('#notes-g01-l01')
   assert.equal(await f.page.$eval('#notes-g01-l01', el => el.value), 'Check every written exercise')
+  await f.page.click('[aria-label="Log out"]')
+  await f.page.waitForFunction(() => location.pathname.startsWith('/login/'))
   await f.login('school')
   await f.explorer()
   assert.equal(await f.page.$eval('#notes-g01-l01', el => el.value), '')
