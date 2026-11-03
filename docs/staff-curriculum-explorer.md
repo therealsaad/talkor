@@ -61,6 +61,15 @@ The development-only `/classroom-preview` gate is untouched. No migrations, seed
 
 ## Validation and review
 
+Run the same dependency-free structural checks as CI from the repository root:
+
+```sh
+node --test tools/tests/staff-preview-boundaries.test.cjs
+node tools/verify-110-levels.cjs
+```
+
+The verifier follows the studio wrapper into the shared educator component and checks its live GET/response identity and read-only boundaries. All 110 server/frontend design-theme comparisons and the existing student/publication/media guards remain in the full structure check.
+
 Run from `client/`:
 
 ```sh

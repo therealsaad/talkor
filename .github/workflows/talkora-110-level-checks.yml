@@ -11,6 +11,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Guard shared staff preview structural verification against regressions
+        run: node --test tools/tests/staff-preview-boundaries.test.cjs
       - name: Validate all 110 level workspaces and mapping boundaries
         run: node tools/verify-110-levels.cjs
   frontend:
