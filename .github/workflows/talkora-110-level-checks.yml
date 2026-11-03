@@ -37,6 +37,11 @@ jobs:
       - name: Verify shared staff curriculum explorer and student boundaries
         run: node --test tests/curriculum-explorer.test.mjs tests/lesson-registry.test.mjs tests/frontend-safety-contract.test.mjs tests/ui/school-curriculum-map-page.test.mjs
         working-directory: client
+      - name: Verify staff login, filters, coverage and student restrictions in real Chromium
+        run: node --test tests/staff-explorer.browser.test.mjs
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        working-directory: client
       - name: Verify production preview endpoints are truly unavailable
         working-directory: client
         shell: bash
