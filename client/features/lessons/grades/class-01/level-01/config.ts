@@ -14,7 +14,7 @@ export const config = {
     "objectives": [
       "Hear and use the school and action words in an original companion to Balbharati 1.1 My First Day.",
       "Practice school, skip, run, walk, smile/grin, bell, jump, play, and entering Grade One using ten short speaking turns.",
-      "Ask and answer one short school question with gentle Hindi/Marathi support; an English attempt is required for mastery.",
+      "Ask and answer one short school question with gentle Hindi/Marathi support; an English attempt is required for mastery."
     ],
     "skills": [
       "listening",
