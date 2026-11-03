@@ -12,7 +12,9 @@ export const config = {
   "description": "Family Words — a distinct rainbow valley adventure for KG learners.",
   "syllabus": {
     "objectives": [
-      "Recognize, hear, and speak language connected to family words."
+      "Identify inclusive fictional family pictures using English words without asking for personal family details.",
+      "Listen to Miss Julie, attempt one word and practise a simple friendly greeting.",
+      "Review previous KG words and finish with short offline spoken homework."
     ],
     "skills": [
       "listening",
@@ -48,8 +50,8 @@ export const config = {
     "voiceFirst": true,
     "invisibleAdaptive": true,
     "autoResume": true,
-    "introRequired": false,
-    "introMustComplete": false,
+    "introRequired": true,
+    "introMustComplete": true,
     "speechLanguage": "en-IN",
     "beginnerHindiSupport": true,
     "spontaneousFeedbackTTS": "azure-uncached",

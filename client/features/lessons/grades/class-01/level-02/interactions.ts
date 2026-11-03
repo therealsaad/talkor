@@ -4,7 +4,10 @@ export const interactions: LevelInteractionConfig = {
   "allowedModes": [
     "picture-choice",
     "guided-dialogue",
-    "word-builder"
+    "word-builder",
+    "listen-and-find",
+    "repeat-after-julie",
+    "speaking-reflection"
   ],
   "requireMicrophone": true,
   "disableMusicDuringSpeech": true,
