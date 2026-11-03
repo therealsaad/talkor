@@ -11,6 +11,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Guard shared staff preview structural verification against regressions
+        run: node --test tools/tests/staff-preview-boundaries.test.cjs
       - name: Validate all 110 level workspaces and mapping boundaries
         run: node tools/verify-110-levels.cjs
   frontend:
@@ -31,6 +33,9 @@ jobs:
         working-directory: client
       - name: Guard development-only classroom preview and static asset
         run: node --test tests/ui/classroom-preview-production-gate.test.mjs
+        working-directory: client
+      - name: Verify shared staff curriculum explorer and student boundaries
+        run: node --test tests/curriculum-explorer.test.mjs tests/lesson-registry.test.mjs tests/frontend-safety-contract.test.mjs tests/ui/school-curriculum-map-page.test.mjs
         working-directory: client
       - name: Verify production preview endpoints are truly unavailable
         working-directory: client

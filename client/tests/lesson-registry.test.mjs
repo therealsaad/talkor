@@ -53,7 +53,7 @@ test('KG Level 1 resolves to the canonical playable implementation and drafts st
   await assert.rejects(registry.loadStudentWorkspace(4, 1), /not available to students/)
 })
 
-test('student lessons stay on the shared bridge while staff previews use isolated routes', async () => {
+test('student lessons keep the shared bridge while old staff URLs use the isolated explorer', async () => {
   const [route, bridge, canonical, preview, level1Preview, activityPreview, config] = await Promise.all([
     read('app/student/kg/page.tsx'),
     read('features/lessons/RegisteredLevelExperience.tsx'),
@@ -70,27 +70,30 @@ test('student lessons stay on the shared bridge while staff previews use isolate
   assert.match(bridge, /loadStudentWorkspace\(grade, level\)/)
   assert.match(canonical, /export function KGAlphabetLesson/)
   assert.doesNotMatch(canonical, /LevelDraftPreview/)
-  assert.match(preview, /kg-simple-garden\.webp/)
-  assert.match(preview, /\/school\/kg-preview\/level-1/)
-  assert.match(preview, /\/school\/kg-preview\/level-3/)
-  assert.doesNotMatch(preview, /RegisteredLevelExperience|kgLevel3PreviewService|requestKGMicrophone/)
-  assert.match(level1Preview, /KGLevel1Experience/)
-  assert.match(activityPreview, /KGLevel3Experience/)
-  assert.match(activityPreview, /workspace\.config\.staffOnlyPreview/)
-  assert.match(activityPreview, /workspace\.config\.studentPlayable/)
+  assert.match(preview, /CurriculumExplorerPage/)
+  assert.doesNotMatch(preview, /requestKGMicrophone|MediaRecorder|<Level\d?Experience/)
+  assert.match(level1Preview, /CurriculumExplorerPage/)
+  assert.doesNotMatch(level1Preview, /requestKGMicrophone|MediaRecorder|<Level\d?Experience/)
+  assert.match(level1Preview, /initialLevel=\{1\}/)
+  assert.match(activityPreview, /CurriculumExplorerPage/)
+  assert.doesNotMatch(activityPreview, /requestKGMicrophone|MediaRecorder|<Level\d?Experience/)
+  assert.match(activityPreview, /initialLevel=\{3\}/)
   assert.match(config, /"studentPlayable": true/)
   assert.match(config, /"staffOnlyPreview": false/)
 })
 
-test('KG Level 3 remains a staff-only draft behind the authenticated letter-activity route', async () => {
+test('KG Level 3 stays a student-locked draft while its legacy staff URL opens read-only rehearsal', async () => {
   const [route, intro, config] = await Promise.all([
     read('app/school/kg-preview/level-3/[letter]/page.tsx'),
     read('app/school/kg-preview/level-3/page.tsx'),
     read('features/lessons/grades/kg/level-03/config.ts'),
   ])
-  assert.match(intro, /Level3PreviewIntro/)
-  assert.match(intro, /school\/kg-preview\/level-3\/K/)
-  assert.match(route, /workspace\.config\.staffOnlyPreview/)
+  assert.match(route, /CurriculumExplorerPage/)
+  assert.match(route, /initialLevel=\{3\}/)
+  assert.doesNotMatch(route, /requestKGMicrophone|MediaRecorder|<Level\d?Experience/)
+  assert.match(intro, /CurriculumExplorerPage/)
+  assert.doesNotMatch(intro, /requestKGMicrophone|MediaRecorder|<Level\d?Experience/)
+  assert.match(intro, /initialLevel=\{3\}/)
   assert.match(config, /"studentPlayable": false/)
   assert.match(config, /"staffOnlyPreview": true/)
   assert.match(config, /"editorialStatus": "draft"/)
