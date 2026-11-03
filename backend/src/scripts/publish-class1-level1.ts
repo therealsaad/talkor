@@ -54,10 +54,26 @@ async function main() {
     const savedCompletedLevels = await Progress.countDocuments({
       classId: classroom._id, levels: { $elemMatch: { levelId: level._id, status: 'completed' } },
     })
+    // Re-running this tool must not accept a corrupted "published" badge as
+    // evidence. Check every exact scene, media key and the matching revision.
+    const firstDayAudioKeys = requiredClass1AudioKeys()
     const alreadyPublished = classroom.status === 'active' &&
       level.status === 'active' && level.availability === 'PUBLISHED' &&
-      selected.status === 'active' && activities.length === 10 &&
-      activities.every(item => item.status === 'active') && otherActiveLessons === 0
+      level.title === 'My First Day — School Adventure' &&
+      level.sourcePages.length === 1 && level.sourcePages[0] === 1 &&
+      selected.status === 'active' &&
+      selected.settings?.lessonPlanRevision === CLASS1_FIRST_DAY_PARALLEL_REVISION &&
+      selected.settings?.experienceId === 'g01-l01' &&
+      activities.length === firstDayAudioKeys.length &&
+      activities.every((item, index) =>
+        item.status === 'active' && item.type === 'CONVERSATION' &&
+        item.curriculumVersion === CLASS1_DEMO_VERSION &&
+        item.aiEnabled === true && item.allowMic === true && item.voiceEnabled === true &&
+        item.core !== false && item.required !== false &&
+        item.content?.audioKey === firstDayAudioKeys[index] &&
+        item.activityKey === 'class1-l01-v3-' +
+          firstDayAudioKeys[index].split('/').pop()?.replace(/-en\.wav$/, '')
+      ) && otherActiveLessons === 0
     const snapshot: Class1ReleaseSnapshot = {
       grade: classroom.grade, classroomStatus: classroom.status,
       level: { number: level.number, status: level.status, availability: level.availability,
@@ -156,7 +172,16 @@ async function main() {
       if (lessonWrite.modifiedCount !== 1) throw Error('First Day lesson activation failed')
       const levelWrite = await Level.updateOne({
         _id: level._id, status: 'draft', availability: 'UPCOMING', number: 1,
-      }, { $set: { status: 'active', availability: 'PUBLISHED' } }, { session })
+      }, { $set: {
+        status: 'active',
+        availability: 'PUBLISHED',
+        title: 'My First Day — School Adventure',
+        place: 'First Day Meadow',
+        sourceBook: 'English Balbharati Grade One (2025; 2026 reprint), Unit 1.1 My First Day',
+        sourcePages: [1],
+        learningObjectives: ['Listen, understand and speak the First Day school-action words'],
+        speakingGoals: ['Speak about school, skip, run, walk, grin, bell, jump, play and Grade One'],
+      } }, { session })
       if (levelWrite.modifiedCount !== 1) throw Error('First Day level activation failed')
       if (classroom.status === 'draft') {
         const klassWrite = await CurriculumClass.updateOne({ _id: classroom._id, status: 'draft' },
