@@ -141,7 +141,7 @@ export const StudentCurriculumService = {
             })
             .lean()
         : []
-    const lessons = isClass1Demo
+    const lessons = isClass1Demo || student.grade === 1
       ? preferClass1FirstDayLesson(lessonCandidates)
       : lessonCandidates
 
