@@ -156,10 +156,17 @@ async function clickText(page, label) {
   await page.waitForFunction(expected =>
     Array.from(document.querySelectorAll('button')).some(el => el.textContent.trim() === expected &&
       el.getClientRects().length && !el.disabled), { timeout: 8000 }, label)
-  for (const button of await page.$('button')) {
-    if ((await button.evaluate(el => el.textContent.trim())) === label && await button.isVisible()) return button.click()
+  const handle = await page.evaluateHandle(expected =>
+    Array.from(document.querySelectorAll('button')).find(el =>
+      el.textContent.trim() === expected && el.getClientRects().length && !el.disabled
+    ) || null, label)
+  try {
+    const button = handle.asElement()
+    if (!button) throw Error(`Visible button missing: ${label}`)
+    await button.click()
+  } finally {
+    await handle.dispose()
   }
-  throw Error(`Visible button missing: ${label}`)
 }
 
 for (const kind of ['teacher', 'school']) {
