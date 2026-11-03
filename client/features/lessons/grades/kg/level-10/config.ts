@@ -12,7 +12,9 @@ export const config = {
   "description": "Mini Story and Revision — a distinct festival square adventure for KG learners.",
   "syllabus": {
     "objectives": [
-      "Recognize, hear, and speak language connected to mini story and revision."
+      "Follow an original three-scene cartoon cat story using vocabulary learned in KG.",
+      "Identify objects by listening and attempt a supported one-word English retelling.",
+      "Review learned vocabulary, celebrate completion and receive a short spoken homework."
     ],
     "skills": [
       "listening",
@@ -48,8 +50,8 @@ export const config = {
     "voiceFirst": true,
     "invisibleAdaptive": true,
     "autoResume": true,
-    "introRequired": false,
-    "introMustComplete": false,
+    "introRequired": true,
+    "introMustComplete": true,
     "speechLanguage": "en-IN",
     "beginnerHindiSupport": true,
     "spontaneousFeedbackTTS": "azure-uncached",

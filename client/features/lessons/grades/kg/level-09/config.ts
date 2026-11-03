@@ -12,7 +12,9 @@ export const config = {
   "description": "Opposites and Directions — a distinct forest village adventure for KG learners.",
   "syllabus": {
     "objectives": [
-      "Recognize, hear, and speak language connected to opposites and directions."
+      "Recognize big/small, up/down and left/right using distinct safe picture cards.",
+      "Say one or two English words after Miss Julie without compulsory body movements.",
+      "Identify opposites after positions swap and receive gentle spoken homework."
     ],
     "skills": [
       "listening",
@@ -48,8 +50,8 @@ export const config = {
     "voiceFirst": true,
     "invisibleAdaptive": true,
     "autoResume": true,
-    "introRequired": false,
-    "introMustComplete": false,
+    "introRequired": true,
+    "introMustComplete": true,
     "speechLanguage": "en-IN",
     "beginnerHindiSupport": true,
     "spontaneousFeedbackTTS": "azure-uncached",

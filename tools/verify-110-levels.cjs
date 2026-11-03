@@ -24,6 +24,7 @@ const class1Pilot='g01-l01';
 const level2Preview='g00-l02';
 const level3Preview='g00-l03';
 const level4Preview='g00-l04';
+const futureKG = new Set(['g00-l06','g00-l07','g00-l08','g00-l09','g00-l10']);
 for(let grade=0;grade<=10;grade++){
  const slug=grade===0?'kg':`class-${String(grade).padStart(2,'0')}`;
  for(let level=1;level<=10;level++){
@@ -42,10 +43,10 @@ for(let grade=0;grade<=10;grade++){
    assert.equal(config.staffOnlyPreview,true,`${id} must remain staff-only`);
    assert.equal(config.studentPlayable,false,`${id} cannot be published by a workspace edit`);
   }
-  if(id===class1Pilot||id===level2Preview||id===level3Preview||id===level4Preview){
+  if(id===class1Pilot||id===level2Preview||id===level3Preview||id===level4Preview||futureKG.has(id)){
    // These previews may require an intro, but it cannot be skippable.
    assert.equal(config.learningPolicy.introRequired,config.learningPolicy.introMustComplete);
-   if(id===level2Preview||id===level3Preview||id===level4Preview) assert.equal(config.learningPolicy.introRequired,true);
+   if(id===level2Preview||id===level3Preview||id===level4Preview||futureKG.has(id)) assert.equal(config.learningPolicy.introRequired,true);
   }else{
    assert.equal(config.learningPolicy.introRequired,id===liveKG);
   }
@@ -64,6 +65,19 @@ for(let grade=0;grade<=10;grade++){
    assert.match(activities,/\['E', 'F', 'G', 'H', 'I', 'J'\]/);
    assert.match(activities,/approved:\s*false/);
    assert.doesNotMatch(activities,/approved:\s*true/);
+  }else if(futureKG.has(id)){
+   // Authoring is not publishing: KG6–10 now have substantial staff-only
+   // scripts and no student access. Strictly verify the shared authoring
+   // source and the per-level adapter; never accept approved:true here.
+   assert.ok(activities.includes(`kgFutureDraftActivities(${level})`),`${id}: missing authored KG draft`);
+   assert.ok(activities.includes(`kgFutureDraftSuggestions(${level})`),`${id}: missing artwork/teacher guidance`);
+   assert.doesNotMatch(activities,/approved:\s*true/,`${id}: unexpected approved draft`);
+   const source=read('client/features/lessons/grades/kg/future-level-drafts.ts');
+   assert.match(source,/approved:\s*false/);
+   assert.doesNotMatch(source,/approved:\s*true/);
+   assert.equal(config.editorialStatus,'draft');
+   assert.equal(config.syllabus.boardReviewRequired,true);
+   assert.equal(config.syllabus.syllabusVerified,false);
   }else if(grade===1 && level>=2){
    // Unapproved, original authoring drafts are allowed for Class 1 only.
    assert.ok(activities.includes(`class1DraftActivities(${level})`),`${id}: missing chapter drafts`);

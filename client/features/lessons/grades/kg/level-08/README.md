@@ -1,21 +1,25 @@
-# Kindergarten / Level 08 — Feelings and Greetings
+# Kindergarten Level 8 — staff authoring pack
 
-**Code:** `g00-l08` · **Design:** Music Meadow · **Status:** draft
+**Code:** `g00-l08` · **Status:** DRAFT / NOT STUDENT PLAYABLE · **Teacher approval:** required.
 
-- `LevelExperience.tsx` — staff-only visual design prototype. Never directly route students here.
-- `config.ts` — grade-specific objectives, theme, animation mood, audio policy, and resume behavior.
-- `activities.ts` — real approved activities (empty until authored); ideas do not count as activities.
-- `interactions.ts` — available voice/touch/corrective-feedback modes.
-- `assets.json` — references to approved media; never add dead placeholder URLs.
-- `index.ts` — exports used by the lazy-loaded 110-level registry.
+## Curriculum
 
-## Authoring workflow
+Fictional greetings and feelings, without guessing a child's mood or asking personal questions.
 
-1. Verify the official syllabus and update `config.syllabus` with school-approved outcomes; set `syllabusVerified` only after review.
-2. Build real prompts, answer rubrics, and follow-up hints in `activities.ts` using the shared activity engine. Keep activities empty until end-to-end tests exist.
-3. Store optimized per-level art/media in `client/public/lessons/kg/level-08/`; register real paths in `assets.json`.
-4. Use the existing Azure/Groq/STT backend providers; static clips may use S3, while spontaneous corrections are uncached.
-5. Preview via `/school/curriculum-studio/0/8`; test microphone, playback, reduced motion, student resume, and permission boundaries.
-6. Publish only using authorized existing DB publication workflow after approval. Do not set `studentPlayable: true` merely to make the preview look complete.
+This workspace now sources **eight original, concrete educator-review beats** from `../future-level-drafts.ts`. The pack includes a Miss Julie intro storyboard, original picture design briefs, target and review vocabulary, measurable evidence and short spoken homework. Teacher and school have not approved the content. It is neither a generated AI lesson nor a connected student progress engine yet.
 
-This is an intentionally blank level workspace. The student route must not expose it until approved.
+- `activities.ts` calls `kgFutureDraftActivities(8)`: every step is `approved:false`.
+- `config.ts` deliberately preserves `studentPlayable:false`, `syllabusVerified:false`, `boardReviewRequired:true`, and marks full intro required *before any future publication*.
+- `assets.json` contains no invented URLs; intro video, art, audio and browser playback remain uncreated and unverified.
+- `LevelExperience.tsx` is a staff-only preview, not the student route.
+- `interactions.ts` now permits the authored guided dialogue in the staff preview.
+
+## Release blockers
+
+1. Teacher validates content against the actual KG school syllabus, safeguarding and required age-level understanding.
+2. Produce and approve an original full-screen video using the approved neutral Miss Julie character. Enforce an actual no-skip intro ticket on the server, not only the design flag.
+3. Produce real optimized illustrations, accessible alt text, voices, safe retries and listening/English-mastery rubrics. Never fabricate media paths.
+4. Implement and test authenticated server-owned activity sequence, new progress persistence and **correct + fully played voice feedback** before student unlock. One login must always resume first unfinished level, not allow URL bypass.
+5. Supervised lab acceptance: real microphone, Sarvam, appropriate bounded AI, Azure/approved TTS, no double XP, and next-day PIN resume.
+
+**Staff preview:** `/school/curriculum-studio/0/8`. KG6–10 remain locked in the authoritative student catalog and map.

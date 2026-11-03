@@ -2,8 +2,8 @@
  * Publishers must separately attach syllabus-verified content/activities. */
 export interface RoadmapLevel { id: string; grade: number; level: number; title: string; status: 'IMPLEMENTED' | 'PLANNED'; objective: string; skills: string[]; teacherReviewRequired: boolean }
 const topics: Record<number, readonly string[]> = {
-  0: ["ABCD Picture Garden", "Letters E to J", "My Body and Actions", "Picture Words: Q–V", "Food and Fruits", "Family Words", "My Classroom", "Feelings and Greetings", "Opposites and Directions", "Mini Story and Revision"],
-  1: ["Little Words & My First Day", "My School", "People and Family", "Colours and Counting", "Things I Like", "Animals Around Us", "Action Words", "Simple Questions", "My Day", "Story Time"],
+  0: ["ABCD Picture Garden", "Letters E to J", "Letters K to P", "Letters Q to V", "Letters W to Z", "Family Words", "My Classroom", "Feelings and Greetings", "Opposites and Directions", "Mini Story and Revision"],
+  1: ["Little Words & My First Day", "Action Beats & Rainbow Words", "My Family & My Day", "Play, Park & Home", "Weather & Magic Words", "Around My Colourful World", "Friends, Opposites & Books", "Market, Animals & Kindness", "Nature, Music & Imagination", "Good Choices & My Happy Holidays"],
   2: ["Introduce Myself", "My Favourite Things", "Places Around Me", "Describing People", "Days and Weather", "Asking for Help", "Present Tense", "Sentence Building", "Simple Conversations", "Story Retelling"],
   3: ["Greetings with Details", "My Daily Routine", "People and Places", "Questions and Answers", "Descriptions", "Short Narratives", "Likes and Reasons", "Listening for Details", "Retell a Story", "Mini Presentation"],
   4: ["Favourite Things", "Listening and Speaking", "Family and Friends", "Daily Conversations", "Questions and Answers", "Describing Experiences", "Past and Present", "Story Conversation", "Speaking with Confidence", "End-of-Term Reflection"],
