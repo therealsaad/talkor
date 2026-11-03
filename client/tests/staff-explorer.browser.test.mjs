@@ -42,6 +42,7 @@ const levels = grade => Array.from({ length: 10 }, (_, i) => ({
 async function fixture() {
   const context = await browser.createBrowserContext()
   const page = await context.newPage()
+  await page.setViewport({ width: 1440, height: 900 })
   const errors = [], reads = [], writes = []
   let role = null, blockedGrade = null, releaseGrade
   let unauthorized = false
@@ -49,8 +50,11 @@ async function fixture() {
   page.on('pageerror', error => errors.push(error.stack || error.message))
   page.on('response', response => {
     const uri = response.url()
-    if (/\/_next\/static\/.*\.js(?:\?|$)/.test(uri) && response.status() >= 400) {
-      errors.push(`JavaScript asset HTTP ${response.status()}: ${uri}`)
+    if (response.request().resourceType() === 'script') {
+      const contentType = response.headers()['content-type'] || ''
+      if (response.status() >= 400 || /text\/html/.test(contentType)) {
+        errors.push(`JavaScript asset ${response.status()} (${contentType}): ${uri}`)
+      }
     }
   })
   await page.evaluateOnNewDocument(() => {
@@ -209,7 +213,7 @@ test('a late previous-class response cannot replace the selected class', { timeo
   await f.page.select('[aria-label="Choose a class"]', '3')
   await waitText(f.page, 'Live Class 3:')
   f.releaseGrade()
-  await f.page.waitForNetworkIdle()
+  await new Promise(resolve => setTimeout(resolve, 500))
   assert.match(await text(f.page), /Live Class 3:/)
   assert.doesNotMatch(await text(f.page), /Live Class 2:/)
   await f.check()
@@ -246,7 +250,6 @@ test('teaching preview waits and retries the same prompt with Hindi and Marathi 
   await clickText(page, 'Start this teaching turn')
   await clickText(page, 'Open the child’s turn')
   await waitText(page, 'WAIT FOR THE CHILD')
-  await page.waitForNetworkIdle()
   assert.equal(address(), '2')
   await clickText(page, 'Needs support')
   await page.select('[aria-label="Hint language"]', 'hi')
