@@ -1,10 +1,5 @@
-import { SchoolShell } from '@/components/school/school-shell'
-import Level4Experience from '@/features/lessons/grades/kg/level-04/LevelExperience'
+import { CurriculumExplorerPage } from '@/features/curriculum-explorer/CurriculumExplorer'
 
 export default function KGLevel4SchoolPreview() {
-  return (
-    <SchoolShell title="KG Level 4 · Letters Q to V" subtitle="Staff-only draft preview. Not available to students.">
-      <Level4Experience preview />
-    </SchoolShell>
-  )
+  return <CurriculumExplorerPage initialGrade={0} initialLevel={4} initialView="teaching" />
 }

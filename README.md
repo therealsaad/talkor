@@ -4,6 +4,8 @@
 >
 > Repository: **https://github.com/therealsaad/talkor**
 
+> **Staff curriculum explorer (November 3, 2026):** Teacher and school preview URLs now share reusable KG–Class 10 level-map, coverage, and Miss Julie teaching-flow components. Filters inspect all 110 existing addresses; Class 1 retains its full 44-chapter distribution. A separate Unit One exercise audit maps all 35 numbered tasks into the existing levels. Source gaps, draft ideas, and live lesson availability remain distinct. Local review notes do not publish curriculum or change student progress. See [implementation, coverage and verification limits](docs/staff-curriculum-explorer.md).
+
 
 > **Class 1 First Day v3 note (October 29, 2026):** The older Class 1 section below documents the v2 tiny-word pilot. A **draft-only** v3 replacement now maps ten original spoken scenes to Balbharati 1.1. It requires a new teacher-reviewed 90-second intro, a guarded development-only migration and supervised real audio acceptance. See [Class 1 live voice acceptance](docs/class1-first-day-voice-acceptance.md). Do **not** infer production readiness from passing CI, a generated Azure WAV/MP3 or a Python health check.
 

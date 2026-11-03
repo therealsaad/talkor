@@ -3,7 +3,7 @@ import type { FormEvent, ReactNode } from 'react'
 import { useState } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { BarChart3, BookOpen, Bot, ChevronLeft, GraduationCap, LayoutDashboard, LogOut, Menu, Search, Settings, Sparkles, Users, X, Shapes, Layers3, ShieldCheck, UserCheck } from 'lucide-react'
+import { BarChart3, BookOpen, Bot, ChevronLeft, GraduationCap, LayoutDashboard, LogOut, Menu, Search, Settings, Sparkles, Users, X, Layers3, ShieldCheck, UserCheck } from 'lucide-react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { TalkoraLogo } from '@/components/brand/talkora-logo'
 import { educatorAIService, type EducatorAIResponse } from '@/services/educator-ai-service'
@@ -20,8 +20,7 @@ const navItems: NavItem[] = [
   { href: '/school/dashboard', label: 'Overview', icon: LayoutDashboard },
   { href: '/school/students', label: 'Students', icon: Users },
   { href: '/school/classes', label: 'Classes', teacherLabel: 'My Classes', icon: GraduationCap },
-  { href: '/school/curriculum-map', label: '110-Level Map', icon: Layers3 },
-  { href: '/school/kg-preview', label: 'KG Previews', icon: Shapes },
+  { href: '/school/curriculum-map', label: 'Curriculum Explorer', icon: Layers3 },
   { href: '/school/teachers', label: 'Teachers', icon: BookOpen, adminOnly: true },
   { href: '/school/reports', label: 'Learning Progress', teacherLabel: 'Learning Progress', icon: BarChart3 },
   { href: '/school/settings', label: 'Settings', teacherLabel: 'My Account', icon: Settings },
@@ -110,7 +109,7 @@ export function SchoolShell({
           {visibleNav.map((item) => {
             const Icon = item.icon
             const label = isTeacher && 'teacherLabel' in item && item.teacherLabel ? item.teacherLabel : item.label
-            const active = path.startsWith(item.href)
+            const active = path.startsWith(item.href) || (item.href === '/school/curriculum-map' && (path.startsWith('/school/kg-preview') || path.startsWith('/school/curriculum-studio')))
             return (
               <Link
                 className={active ? 'active' : ''}
