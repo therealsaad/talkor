@@ -17,6 +17,8 @@ import { KG_CONTINUATION_LEVELS, isKGContinuationLevel, continuationLesson, getK
 import { ApiError } from '../utils/ApiError'
 import { ok } from '../utils/ApiResponse'
 import { catchAsync } from '../utils/catchAsync'
+import { logger } from '../utils/logger'
+import { createTurnTimer, logTurnTiming, parseSlowTurnMs, serverTimingHeader, type TurnTimer } from '../services/kg-turn-timing'
 
 const INTRO_MIN_MS = 10_000
 const INTRO_VALID_MS = 2 * 60 * 60_000
@@ -107,7 +109,8 @@ function feedback(letter: string, verdict: IKGContinuationAttempt['outcome']) {
   if (verdict === 'unclear') return 'I am listening. Take your time and say the letter ' + letter + '.'
   return 'Good try! Listen again and say the letter ' + letter + '.'
 }
-async function voice(res: Response, text: string, receipt?: string) {
+async function voice(res: Response, text: string, receipt?: string, timer?: TurnTimer) {
+  const voiceStartedAt = Date.now()
   let audio: Buffer, contentType: string, provider: string
   try {
     const output = await new AzureVoiceProvider().synthesizeUncached(text)
@@ -122,6 +125,11 @@ async function voice(res: Response, text: string, receipt?: string) {
   }
   if (audio.length < 256 || audio.length > 8 * 1024 * 1024 ||
       !/^audio\/[a-z0-9.+-]+(?:\s*;.*)?$/i.test(contentType)) throw ApiError.provider('KG_CONTINUATION_AUDIO_INVALID')
+  if (timer) {
+    timer.set('tts', Date.now() - voiceStartedAt)
+    timer.note('ttsSource', provider === 'azure' ? 'azure' : 'fallback')
+    res.setHeader('Server-Timing', serverTimingHeader(timer.finish().steps))
+  }
   res.setHeader('Content-Type', contentType)
   res.setHeader('Content-Length', String(audio.length))
   res.setHeader('Cache-Control', 'private, no-store')
@@ -247,6 +255,9 @@ export const KGContinuationController = {
     const lesson = continuationLesson(level)
     const index = progress.currentIndex
     if (index >= lesson.letters.length) throw ApiError.conflict('This level is already completed')
+    const timing = createTurnTimer()
+    timing.note('level', level)
+    timing.note('feedbackSource', 'guided')
     const expected = lesson.letters[index]
     const id = safeId(req.body?.submissionId)
     if (req.body?.letter !== expected) throw ApiError.conflict('Continue with Miss Julie’s current letter')
@@ -269,7 +280,7 @@ export const KGContinuationController = {
           !/^[A-Za-z0-9+/]+={0,2}$/.test(audioBase64) || audioBase64.length % 4 === 1) {
         throw ApiError.badRequest('Valid short microphone audio is required')
       }
-      const stt = await KGSpeechService.transcribe({ mimeType, audioBase64, durationMs })
+      const stt = await timing.time('stt', () => KGSpeechService.transcribe({ mimeType, audioBase64, durationMs }))
       if (!stt.available) throw ApiError.provider('Speech recognition temporarily unavailable')
       const confidence = 'confidence' in stt ? stt.confidence : undefined
       const uncertain = ('uncertain' in stt && stt.uncertain === true) ||
@@ -278,10 +289,10 @@ export const KGContinuationController = {
     }
     let saved: IKGContinuationAttempt
     try {
-      saved = await KGContinuationAttempt.create({
+      saved = await timing.time('save', () => KGContinuationAttempt.create({
         studentId, schoolId, level, index, submissionId: id, letter: expected,
         outcome: verdict, feedbackText: feedback(expected, verdict),
-      })
+      }))
     } catch (err) {
       if ((err as { code?: number }).code !== 11000) throw err
       const duplicate = await KGContinuationAttempt.findOne({ studentId, schoolId, level, submissionId: id })
@@ -289,8 +300,14 @@ export const KGContinuationController = {
       saved = duplicate
     }
     res.setHeader('Cache-Control', 'private, no-store')
+    const updated = await state(progress)
+    const measured = timing.finish()
+    res.setHeader('Server-Timing', serverTimingHeader(measured.steps))
+    logTurnTiming(logger, 'attempt', measured,
+      { submissionId: id, outcome: saved.outcome, mode: 'speak' },
+      { enabled: process.env.KG_TURN_TIMING_LOG !== 'false', slowMs: parseSlowTurnMs(process.env.KG_SLOW_TURN_MS) })
     ok(res, { outcome: saved.outcome, submissionId: id, feedbackText: saved.feedbackText,
-      state: await state(progress) })
+      state: updated })
   }),
   feedbackAudio: catchAsync(async (req: Request, res: Response) => {
     const { studentId, schoolId, level } = await access(req)
@@ -301,7 +318,12 @@ export const KGContinuationController = {
     if (!saved || saved.index !== progress.currentIndex) throw ApiError.notFound('Current feedback not found')
     const receipt = issueKGFeedbackReceipt({ studentId: studentId.toString(), schoolId: schoolId.toString(),
       submissionId: level + ':' + id, introTicketHash: ticketHash, feedbackText: saved.feedbackText })
-    await voice(res, saved.feedbackText, receipt)
+    const audioTiming = createTurnTimer()
+    audioTiming.note('level', level)
+    await voice(res, saved.feedbackText, receipt, audioTiming)
+    logTurnTiming(logger, 'audio', audioTiming.finish(),
+      { submissionId: id, outcome: saved.outcome, mode: 'speak' },
+      { enabled: process.env.KG_TURN_TIMING_LOG !== 'false', slowMs: parseSlowTurnMs(process.env.KG_SLOW_TURN_MS) })
   }),
   acknowledge: catchAsync(async (req: Request, res: Response) => {
     const { studentId, schoolId, level } = await access(req)

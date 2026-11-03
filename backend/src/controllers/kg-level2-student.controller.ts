@@ -15,6 +15,8 @@ import { LEVEL2_LETTERS, LEVEL2_NARRATION, gradeLevel2Transcription } from '../k
 import { ApiError } from '../utils/ApiError'
 import { ok } from '../utils/ApiResponse'
 import { catchAsync } from '../utils/catchAsync'
+import { logger } from '../utils/logger'
+import { createTurnTimer, logTurnTiming, parseSlowTurnMs, serverTimingHeader, type TurnTimer } from '../services/kg-turn-timing'
 
 /**
  * Student Level 2 pilot: E–J repeat-after-Julie with authoritative saved
@@ -99,7 +101,8 @@ function feedbackText(letter: string, outcome: IKGLevel2Attempt['outcome']): str
   if (outcome === 'unclear') return 'I am listening. Take your time. Say the letter ' + letter + '.'
   return 'Good try! Listen and say the letter ' + letter + ' once more.'
 }
-async function speak(res: Response, words: string, receipt?: string) {
+async function speak(res: Response, words: string, receipt?: string, timer?: TurnTimer) {
+  const startedVoiceAt = Date.now()
   let bytes: Buffer, contentType: string, provider: string
   try {
     const azure = await new AzureVoiceProvider().synthesizeUncached(words)
@@ -116,6 +119,11 @@ async function speak(res: Response, words: string, receipt?: string) {
     provider = 'python-priya-fallback'
   }
   if (!/^audio\/[a-z0-9.+-]+(?:\s*;.*)?$/i.test(contentType)) throw ApiError.provider('KG_LEVEL2_AUDIO_INVALID')
+  if (timer) {
+    timer.set('tts', Date.now() - startedVoiceAt)
+    timer.note('ttsSource', provider === 'azure' ? 'azure' : 'fallback')
+    res.setHeader('Server-Timing', serverTimingHeader(timer.finish().steps))
+  }
   res.setHeader('Cache-Control', 'private, no-store')
   res.setHeader('X-Content-Type-Options', 'nosniff')
   res.setHeader('Content-Type', contentType)
@@ -189,6 +197,9 @@ export const KGLevel2StudentController = {
     const row = await levelState(studentId, schoolId)
     await introGuard(req, row)
     if (row.currentIndex >= LEVEL2_LETTERS.length) throw ApiError.conflict('Level 2 is completed')
+    const timing = createTurnTimer()
+    timing.note('level', 2)
+    timing.note('feedbackSource', 'guided')
     const id = submissionId(req.body?.submissionId)
     const expected = LEVEL2_LETTERS[row.currentIndex]
     if (req.body?.letter !== expected) throw ApiError.conflict('Continue with Miss Julie’s current letter')
@@ -213,7 +224,7 @@ export const KGLevel2StudentController = {
         !/^[A-Za-z0-9+/]+={0,2}$/.test(audioBase64) || audioBase64.length % 4 === 1) {
         throw ApiError.badRequest('Valid short microphone audio is required')
       }
-      const recognition = await KGSpeechService.transcribe({ audioBase64, mimeType, durationMs })
+      const recognition = await timing.time('stt', () => KGSpeechService.transcribe({ audioBase64, mimeType, durationMs }))
       if (!recognition.available) throw ApiError.provider('Speech recognition is temporarily unavailable')
       const confidence = 'confidence' in recognition ? recognition.confidence : undefined
       const uncertain = ('uncertain' in recognition && recognition.uncertain === true) ||
@@ -223,10 +234,10 @@ export const KGLevel2StudentController = {
     const words = feedbackText(expected, outcome)
     let saved: IKGLevel2Attempt
     try {
-      saved = await KGLevel2Attempt.create({
+      saved = await timing.time('save', () => KGLevel2Attempt.create({
         studentId, schoolId, submissionId: id, index: row.currentIndex, letter: expected,
         outcome, feedbackText: words,
-      })
+      }))
     } catch (error) {
       if ((error as { code?: number }).code !== 11000) throw error
       const previous = await KGLevel2Attempt.findOne({ studentId, schoolId, submissionId: id })
@@ -234,7 +245,13 @@ export const KGLevel2StudentController = {
       saved = previous
     }
     res.setHeader('Cache-Control', 'private, no-store')
-    ok(res, { outcome: saved.outcome, submissionId: id, feedbackText: saved.feedbackText, state: await readState(row) })
+    const updated = await readState(row)
+    const measured = timing.finish()
+    res.setHeader('Server-Timing', serverTimingHeader(measured.steps))
+    logTurnTiming(logger, 'attempt', measured,
+      { submissionId: id, outcome: saved.outcome, mode: 'speak' },
+      { enabled: process.env.KG_TURN_TIMING_LOG !== 'false', slowMs: parseSlowTurnMs(process.env.KG_SLOW_TURN_MS) })
+    ok(res, { outcome: saved.outcome, submissionId: id, feedbackText: saved.feedbackText, state: updated })
   }),
   feedbackAudio: catchAsync(async (req: Request, res: Response) => {
     const { studentId, schoolId } = await authorized(req)
@@ -247,7 +264,12 @@ export const KGLevel2StudentController = {
       studentId: studentId.toString(), schoolId: schoolId.toString(), submissionId: id,
       introTicketHash: ticketHash, feedbackText: attempt.feedbackText,
     })
-    await speak(res, attempt.feedbackText, receipt)
+    const audioTiming = createTurnTimer()
+    audioTiming.note('level', 2)
+    await speak(res, attempt.feedbackText, receipt, audioTiming)
+    logTurnTiming(logger, 'audio', audioTiming.finish(),
+      { submissionId: id, outcome: attempt.outcome, mode: 'speak' },
+      { enabled: process.env.KG_TURN_TIMING_LOG !== 'false', slowMs: parseSlowTurnMs(process.env.KG_SLOW_TURN_MS) })
   }),
   acknowledge: catchAsync(async (req: Request, res: Response) => {
     const { studentId, schoolId } = await authorized(req)
