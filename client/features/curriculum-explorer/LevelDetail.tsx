@@ -101,7 +101,7 @@ export function LevelDetail({
         {actual ? (
           <p>
             {actual.lessons.length} lesson records ·{' '}
-            {actual.lessons.reduce((sum, l) => sum + l.activityCount, 0)} active
+            {actual.lessons.reduce((sum, l) => sum + (l.activeCount ?? (l.status === 'active' ? l.activityCount : 0)), 0)} active
             activities
           </p>
         ) : null}
