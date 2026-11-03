@@ -91,16 +91,15 @@ test('existing full-year Class 1 assignments remain 44 unique chapters across te
   assert.match(class1[1].chapters.find((c) => c.code === '1.5').prompt, /sh/)
 })
 
-test('empty grades stay empty and original configuration/activity objects remain unchanged', () => {
-  for (const plan of plans.filter((p) => p.config.grade >= 2)) {
+test('empty source workspaces stay empty and authored activity inventories are preserved as the catalog grows', () => {
+  for (const plan of plans.filter((p) => p.config.grade !== 1 && p.activities.length === 0)) {
     assert.equal(plan.chapters.length, 0)
-    assert.equal(plan.activities.length, 0)
     assert.ok(plan.suggestedActivities.length > 0)
     assert.equal(plan.config.syllabus.syllabusVerified, false)
   }
-  assert.equal(
-    plans.reduce((sum, p) => sum + p.activities.length, 0),
-    67
+  assert.deepEqual(
+    plans.map((p) => ({ id: p.config.id, activities: p.activities })),
+    workspaces.map((p) => ({ id: p.config.id, activities: p.activities }))
   )
   assert.equal(JSON.stringify(workspaces), before)
 })

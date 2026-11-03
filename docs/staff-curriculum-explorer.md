@@ -82,4 +82,6 @@ The expanded regression run also covers auth hydration, school classes, the deve
 
 The shared explorer, registry, frontend boundary, and map contracts also run in the existing frontend GitHub Actions job.
 
+The structure job also runs negative regression cases for the shared staff boundary. Its full verifier follows the new shared component rather than expecting removed page-local API calls. Activity inventory checks compare against the imported source catalog, so new KG6–10 or Class 1 Level 2 authored drafts remain visible without a stale fixed total.
+
 Browser verification of the integrated staff page remains incomplete: the available preview returned the unchanged educator loading screen and did not execute the existing login form's client interaction. Throwaway fixture/configuration files were removed, and no test sign-in mechanism is included in the change. Before merging, inspect the teacher and school portal flows in the normal app environment, including a class switch during an in-flight request, storage reload, a denied KG request for a teacher, and an ordinary student being redirected away.
