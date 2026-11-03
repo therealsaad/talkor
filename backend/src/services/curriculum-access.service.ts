@@ -106,7 +106,7 @@ export const CurriculumAccessService = {
       availability: 'UPCOMING',
     }).select('_id').lean()
     const isClass1Demo = Boolean(demoLevel)
-    if (isClass1Demo) {
+    if (demoLevel) {
       const demoLesson = await Lesson.exists({
         levelId: demoLevel._id,
         ...CLASS1_DEMO_LESSON_FILTER,
