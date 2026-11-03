@@ -84,11 +84,24 @@ test('existing full-year Class 1 assignments remain 44 unique chapters across te
     chapters.filter((c) => c.unit !== 1).every((c) => c.tasks.length === 0),
     true
   )
-  assert.match(
-    class1[1].chapters.find((c) => c.code === '1.5').issues[0],
-    /vowels/
-  )
-  assert.match(class1[1].chapters.find((c) => c.code === '1.5').prompt, /sh/)
+  const vowels = class1[1].chapters.find((c) => c.code === '1.5')
+  assert.deepEqual(vowels.issues, [])
+  assert.match(vowels.prompt, /a, e, i, o, u are vowels/i)
+  assert.doesNotMatch(vowels.prompt, /sh in ship/i)
+  assert.deepEqual(vowels.pages, [7, 7])
+  assert.equal(vowels.tasks.length, 3)
+  const level2 = class1[1]
+  const checkpoints = level2.activities.filter(a => a.id.startsWith('class1-l02-ex-'))
+  assert.equal(checkpoints.length, 19)
+  assert.equal(new Set(checkpoints.map(a => a.id)).size, 19)
+  assert.ok(checkpoints.every(a => a.approved === false))
+  for (const chapter of ['1-2', '1-3', '1-4', '1-5', '1-6']) {
+    const expected = level2.chapters.find(c => c.code === chapter.replace('-', '.')).tasks.length
+    assert.equal(checkpoints.filter(a => a.id.startsWith('class1-l02-ex-' + chapter + '-')).length, expected)
+  }
+  assert.equal(level2.config.studentPlayable, false)
+  assert.equal(level2.config.syllabus.syllabusVerified, false)
+  assert.deepEqual(level2.config.syllabus.sourcePages, [2, 3, 4, 5, 6, 7, 8, 9])
 })
 
 test('empty source workspaces stay empty and authored activity inventories are preserved as the catalog grows', () => {

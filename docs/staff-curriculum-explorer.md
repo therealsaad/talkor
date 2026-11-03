@@ -34,7 +34,7 @@ The Unit One prototype's one-chapter-per-level proposal is **not** applied to th
 
 Class 1 Units Two–Four retain their chapter titles, page references, prompts and evidence criteria; their complete numbered-exercise audits are pending. KG and Classes 2–10 retain their own metadata and drafts. Empty chapter sources or activity arrays are shown as gaps, not filled with invented or supposedly verified syllabus content.
 
-An explicit review note flags the existing Class 1 1.5 draft's `sh` model against the textbook's vowel focus. The explorer does not silently rewrite that original prompt or mark it approved.
+On the verification branch, the Class 1 1.5 *staff draft* was corrected from the unrelated `sh` sound to the textbook's vowel focus (`a/e/i/o/u`). The five Level 2 demonstrations and six review tasks are still unapproved and do not replace the full 19 numbered textbook exercises on pp. 2–9; this correction does not publish or unlock the level.
 
 ## Reusable implementation
 
@@ -84,4 +84,4 @@ The shared explorer, registry, frontend boundary, and map contracts also run in 
 
 The structure job also runs negative regression cases for the shared staff boundary. Its full verifier follows the new shared component rather than expecting removed page-local API calls. Activity inventory checks compare against the imported source catalog, so new KG6–10 or Class 1 Level 2 authored drafts remain visible without a stale fixed total.
 
-Browser verification of the integrated staff page remains incomplete: the available preview returned the unchanged educator loading screen and did not execute the existing login form's client interaction. Throwaway fixture/configuration files were removed, and no test sign-in mechanism is included in the change. Before merging, inspect the teacher and school portal flows in the normal app environment, including a class switch during an in-flight request, storage reload, a denied KG request for a teacher, and an ordinary student being redirected away.
+A separate Chromium suite now exercises **actual production Next.js pages and their existing forms** using isolated, intercepted HTTP fixtures (`client/tests/staff-explorer.browser.test.mjs`). It covers real browser login interactions for both staff roles, class/unit/search filters, coverage, teacher-only KG live-record denial, deliberately late grade requests, per-account planning notes, expired sessions, student redirects and the scripted waiting/Hindi/Marathi retry flow. These fixtures are never a production login bypass, an authenticated real-school audit, or a microphone-to-speaker demonstration. **Do not merge while CI is red.** Run `pnpm build` then `node --test tests/staff-explorer.browser.test.mjs` from `client/` with Chrome available; collect final passing run evidence in PR #105 before merge.

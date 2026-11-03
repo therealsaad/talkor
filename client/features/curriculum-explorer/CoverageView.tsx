@@ -100,7 +100,7 @@ export function CoverageView({
                       plan.config.id.includes(q))
                 )
                 .map((c) => (
-                  <article className={styles.chapter} key={c.code}>
+                  <article className={styles.chapter} key={c.code} aria-label={`${c.code} ${c.title}`}>
                     <div className={styles.chapterHead}>
                       <span className={styles.chapterCode}>{c.code}</span>
                       <div>

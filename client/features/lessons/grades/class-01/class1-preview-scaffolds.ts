@@ -8,7 +8,7 @@ export const CLASS1_DRAFT_MODELS: Readonly<Record<string, string>> = {
   '1.2': 'clap',
   '1.3': 'B',
   '1.4': 'cat',
-  '1.5': 'sh',
+  '1.5': 'a',
   '1.6': 'red',
   '1.7': 'family',
   '1.8': 'hello',

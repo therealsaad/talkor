@@ -1,13 +1,16 @@
 # Class 1 / Level 02 — Action Beats & Rainbow Words
 
-**Code:** `g01-l02` · **Status:** original teacher-review draft, NOT PUBLISHED · **Source mapping:** existing editorial English Balbharati Standard One (2025; 2026 reprint), chapters 1.2–1.6, printed pp. 2, 3, 5, 7 and 8.
+**Code:** `g01-l02` · **Status:** original teacher-review draft, NOT PUBLISHED · **Source mapping:** existing editorial English Balbharati Standard One (2025; 2026 reprint), chapters 1.2–1.6, printed pp. 2–9.
 
 ## What's actually authored
 
-- `../balbharati-curriculum.ts` anchors five original activities to chapters 1.2–1.6: clap, alphabet B, c-a-t letter building, special sh sound, and red colour identification.
+- `../balbharati-curriculum.ts` anchors five original activities to chapters 1.2–1.6: clap, alphabet B, c-a-t letter building, vowel a/e/i/o/u identification, and red colour identification.
 - `teaching-plan.ts` provides five corresponding original narrated teacher lines, optional Hindi/Marathi hints, evidence rubrics, six additional practice/review/homework activities, an original storyboard and six image briefs. These are not copied from the textbook or a publisher audio source.
-- `activities.ts` exposes eleven staff-preview draft activities, each `approved:false`; `studentPlayable:false` and `syllabusVerified:false` stay in place. No backend publication or voice-model inference was added.
+- `exercise-checkpoints.ts` adds 19 numbered original **staff-only checkpoint drafts**, one for each exercise in 1.2–1.6. Movement, writing, poem performance and workbook evidence still require separate adult inspection.
+- `activities.ts` exposes 30 staff-preview draft activities (5 introductions + 6 supplementary reviews + 19 exercise checkpoints), all `approved:false`; `studentPlayable:false` and `syllabusVerified:false` remain. No backend publication or voice-model inference was added.
 - `interactions.ts` specifies the modes used by these authored drafts. `assets.json` deliberately lists no media that doesn't exist.
+
+The 1.5 vowel teaching mismatch was corrected in the staff draft. The 19 numbered **checkpoints** now each have a draft review prompt, but this package does **not** yet deliver the full textbook exercises in a student-playable format. Tracing, the complete action rhyme, rainbow recitation, written articles and peer work require teacher-led activities, signed-off evidence rubrics, reviewed illustrations and licensed or original audio. 
 
 ## Critical release gates
 

@@ -86,12 +86,7 @@ export function buildExplorerPlan(workspace: WorkspacePlan): ExplorerPlan {
         teacherNote:
           audit?.teacher ??
           'The chapter is assigned in the existing draft. Audit every numbered textbook exercise, written task and teacher note before claiming full exercise coverage.',
-        issues:
-          e.chapter === '1.5'
-            ? [
-                'Source mismatch to review: the textbook teaches vowels a/e/i/o/u here; the existing draft prompt models “sh”. The original draft has been preserved.',
-              ]
-            : [],
+        issues: [],
       }
     }) ?? []
   return { ...workspace, chapters }

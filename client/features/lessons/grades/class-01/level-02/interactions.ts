@@ -5,6 +5,7 @@ export const interactions: LevelInteractionConfig = {
     "picture-choice",
     "guided-dialogue",
     "word-builder",
+    "sentence-builder",
     "listen-and-find",
     "repeat-after-julie",
     "speaking-reflection"

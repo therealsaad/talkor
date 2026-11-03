@@ -1,13 +1,15 @@
 import type { LevelActivity, SuggestedActivity } from '../../../types'
 import { class1DraftActivities, class1DraftSuggestions } from '../balbharati-curriculum'
 import { CLASS1_LEVEL2_REVIEW_ACTIVITIES } from './teaching-plan'
+import { CLASS1_L2_NUMBERED_EXERCISE_ACTIVITIES } from './exercise-checkpoints'
 
-/** Original lesson drafts anchored to individual English Balbharati chapters.
+/** Original lesson drafts and all 19 numbered teacher-review checkpoints anchored to Balbharati chapters.
  *  Deliberately not published: a qualified educator must sign off every prompt,
  *  bilingual scaffold, asset and evidence rubric before student deployment. */
 export const activities: LevelActivity[] = [
   ...class1DraftActivities(2),
   ...CLASS1_LEVEL2_REVIEW_ACTIVITIES,
+  ...CLASS1_L2_NUMBERED_EXERCISE_ACTIVITIES,
 ]
 
 export const suggestedActivities: SuggestedActivity[] = [
