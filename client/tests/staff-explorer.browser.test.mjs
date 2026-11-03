@@ -153,7 +153,10 @@ async function using(run) {
 const text = page => page.$eval('body', el => el.innerText)
 const waitText = (page, value) => page.waitForFunction(value => document.body.innerText.includes(value), {}, value)
 async function clickText(page, label) {
-  for (const button of await page.$$('button')) {
+  await page.waitForFunction(expected =>
+    Array.from(document.querySelectorAll('button')).some(el => el.textContent.trim() === expected &&
+      el.getClientRects().length && !el.disabled), { timeout: 8000 }, label)
+  for (const button of await page.$('button')) {
     if ((await button.evaluate(el => el.textContent.trim())) === label && await button.isVisible()) return button.click()
   }
   throw Error(`Visible button missing: ${label}`)
@@ -257,7 +260,7 @@ test('teaching preview waits and retries the same prompt with Hindi and Marathi 
   await page.select('[aria-label="Hint language"]', 'mr')
   await waitText(page, 'छान प्रयत्न')
   await clickText(page, 'Try the same prompt again')
-  await clickText(page, 'Open the child’s turn')
+  await waitText(page, 'WAIT FOR THE CHILD')
   await clickText(page, 'No response')
   await waitText(page, 'GIVE TIME & REASSURE')
   assert.equal(address(), '2')
