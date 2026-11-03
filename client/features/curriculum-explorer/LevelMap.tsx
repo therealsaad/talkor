@@ -14,6 +14,7 @@ import {
   WandSparkles,
 } from 'lucide-react'
 import type { ExplorerPlan, PlanReviews } from './model'
+import type { EditorMappedLevel } from '@/services/grade-level-map'
 import { gradeName } from './model'
 import styles from './explorer.module.css'
 
@@ -33,11 +34,13 @@ export function LevelMap({
   plans,
   selected,
   reviews,
+  records = [],
   onSelect,
 }: {
   plans: ExplorerPlan[]
   selected?: string
   reviews: PlanReviews
+  records?: EditorMappedLevel[]
   onSelect: (id: string) => void
 }) {
   const grades = [...new Set(plans.map((p) => p.config.grade))]
@@ -66,6 +69,7 @@ export function LevelMap({
               .filter((p) => p.config.grade === grade)
               .map((p) => {
                 const Icon = icons[(p.config.level - 1) % icons.length]
+                const live = records.find(record => record.address === p.config.id)
                 return (
                   <button
                     type="button"
@@ -93,6 +97,16 @@ export function LevelMap({
                           ? `${p.activities.length} authored activities`
                           : 'Activity authoring pending'}
                     </small>
+                    {live ? (
+                      <small aria-label="Live school publication status">
+                        {live.status === 'PUBLISHED'
+                          ? 'Published · active lessons'
+                          : live.status === 'INCOMPLETE'
+                            ? 'Published flag · no active lessons'
+                            : live.status === 'DRAFT' ? 'Not published · draft'
+                              : live.status === 'ARCHIVED' ? 'Archived' : 'Not mapped'}
+                      </small>
+                    ) : null}
                     {reviews[p.config.id]?.decision === 'reviewed' ? (
                       <span className={styles.reviewedMini}>
                         <Check size={11} />
