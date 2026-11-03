@@ -30,7 +30,7 @@ type Class1LevelDraft = {
  *  The ten Talkora levels group related chapters, not entire unit recitations.
  */
 export const CLASS1_BALBHARATI_DRAFTS: readonly Class1LevelDraft[] = [
-  { level: 1, title: 'Little Words & My First Day', goal: 'Use beginner school words in a first-day conversation.', scene: 'First Day Word Meadow', exercises: [
+  { level: 1, title: 'My First Day — School Adventure', goal: 'Use school-action words across ten original First Day speaking turns.', scene: 'First Day Word Meadow', exercises: [
     { chapter:'1.1', name:'My First Day', page:1, mode:'guided-dialogue', prompt:'Miss Julie is at school. Say one English word about your school.', evidence:'Learner tries a relevant English school word or requests a model.' },
   ] },
   { level: 2, title: 'Action Beats & Rainbow Words', goal: 'Listen, act and connect letters with familiar words.', scene: 'Rainbow Sound Garden', exercises: [
