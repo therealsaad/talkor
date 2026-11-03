@@ -1,19 +1,20 @@
 /** Dependency-free structural verification, not a production acceptance test. */
 const fs=require('node:fs');const path=require('node:path');const assert=require('node:assert/strict');
+const { verifyStaffPreviewBoundaries } = require('./staff-preview-boundaries.cjs');
 const root=path.resolve(__dirname,'..');
 const read=(p)=>fs.readFileSync(path.join(root,p),'utf8');
 const catalog=JSON.parse(read('backend/src/curriculum/level-design-manifest.json'));
 assert.equal(catalog.length,110);assert.equal(new Set(catalog.map(x=>x.id)).size,110);
 const registry=read('client/features/lessons/registry.ts');
 const roadmap=read('backend/src/curriculum/roadmap.ts');
-const studio=read('client/app/school/curriculum-studio/[grade]/[level]/page.tsx');
 const controller=read('backend/src/controllers/level-map.controller.ts');
 const routes=read('backend/src/routes/level-map.routes.ts');
 const schoolLayout=read('client/app/school/layout.tsx');
 assert.match(routes,/authenticate.*requireRole\('SCHOOL_ADMIN', 'TEACHER'\)/);
 assert.match(routes,/LevelMapController\.studio/);
 assert.match(controller,/checkKGTeacher\(req, grade\)/);
-assert.match(schoolLayout,/isEducator/);assert.match(studio,/gradeLevelMapService\.level\(grade,level\)/);assert.match(studio,/gradeLevelMapService\.studio\(grade,level\)/);
+assert.match(schoolLayout,/isEducator/);
+verifyStaffPreviewBoundaries(read);
 assert.match(roadmap,/GRADE_ROADMAP\.length !== 110/);
 const configRegex=/export const config = (\{[\s\S]*\}) as const satisfies LevelDesignConfig\s*$/;
 const uniqueThemes=new Set(); const uniquePalettes=new Set(); let count=0;
