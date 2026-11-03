@@ -9,7 +9,7 @@ export const config = {
   "title": "Action Beats & Rainbow Words",
   "editorialStatus": "draft",
   "studentPlayable": false,
-  "description": "Original Balbharati 1.2–1.6 teaching: clap, alphabet, cat word-building, vowel sounds and colours. Eleven staff-review draft tasks, no unapproved student publication.",
+  "description": "Original Balbharati 1.2–1.6 teaching: clap, alphabet, cat word-building, vowel sounds and colours. Thirty staff-review draft activities (including 19 exercise checkpoints), no unapproved student publication.",
   "syllabus": {
     "objectives": [
       "Listen, act and connect letters with familiar words.",
