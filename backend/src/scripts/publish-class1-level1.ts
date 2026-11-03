@@ -111,17 +111,27 @@ async function main() {
     // Transaction is intentionally mandatory: partial releases must not make
     // a staff map look published while student activities are still drafts.
     await mongoose.connection.transaction(async session => {
-      const [liveLevel, liveLesson, liveActivities, liveOther, liveCompleted] = await Promise.all([
-        Level.findById(level._id).session(session).lean(),
-        Lesson.findById(selected._id).session(session).lean(),
-        Activity.find({ lessonId: selected._id }).sort({ order: 1 }).session(session).lean(),
-        Lesson.countDocuments({ levelId: level._id, status: 'active', _id: { $ne: selected._id } }).session(session),
-        Progress.countDocuments({ classId: classroom._id,
-          levels: { $elemMatch: { levelId: level._id, status: 'completed' } } }).session(session),
-      ])
+      // Mongoose forbids parallel operations within one MongoDB transaction.
+      // Re-check the currently committed records sequentially under the session.
+      const liveClassroom = await CurriculumClass.findById(classroom._id).session(session).lean()
+      const liveLevel = await Level.findById(level._id).session(session).lean()
+      const liveLesson = await Lesson.findById(selected._id).session(session).lean()
+      const liveActivities = await Activity.find({ lessonId: selected._id })
+        .sort({ order: 1 }).session(session).lean()
+      const liveOther = await Lesson.countDocuments({
+        levelId: level._id, status: 'active', _id: { $ne: selected._id },
+      }).session(session)
+      const liveCompleted = await Progress.countDocuments({
+        classId: classroom._id,
+        levels: { $elemMatch: { levelId: level._id, status: 'completed' } },
+      }).session(session)
+      if (!liveClassroom || !['active', 'draft'].includes(liveClassroom.status)) {
+        throw Error('Class 1 curriculum ownership changed before release')
+      }
       if (!liveLevel || !liveLesson) throw Error('First Day records changed before release')
       const recheck = class1Level1ReleaseBlockers({
         ...snapshot,
+        classroomStatus: liveClassroom.status,
         level: { number: liveLevel.number, status: liveLevel.status,
           availability: liveLevel.availability, curriculumVersion: liveLevel.curriculumVersion },
         lesson: { status: liveLesson.status, settings: liveLesson.settings },
