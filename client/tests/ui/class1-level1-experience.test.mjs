@@ -19,23 +19,32 @@ const backendFastRoute = await read('../../../backend/src/services/student-lesso
 const backendVoice = await read('../../../backend/src/services/voice.service.ts')
 const backendDemoAccess = await read('../../../backend/src/services/class1-demo-access.ts')
 
-test('Class 1 Level 1 retains seven tiny-word foundations then adds three Balbharati bridge activities', () => {
-  const keys = activities.match(/id: 'class1-l01-[^']+'/g) || []
-  assert.equal(keys.length, 10)
-  assert.match(activities, /class1-l01-review-little-words/)
-  for (const word of ['am', 'an', 'at', 'in', 'is', 'it', 'on', 'up']) assert.match(draftSeed, new RegExp(`'${word}'`))
-  assert.deepEqual(keys.slice(-3), [
-    "id: 'class1-l01-say-walk'",
-    "id: 'class1-l01-find-school'",
-    "id: 'class1-l01-school-talk'",
+test('Class 1 Level 1 staff syllabus follows the ten published-ready First Day scenes without erasing old foundation work', () => {
+  const keys = [...activities.matchAll(/id: '(class1-l01-v3-[^']+)'/g)].map(match => match[1])
+  assert.deepEqual(keys, [
+    'class1-l01-v3-hello-school',
+    'class1-l01-v3-skip-bunny',
+    'class1-l01-v3-run-race',
+    'class1-l01-v3-walk-school',
+    'class1-l01-v3-big-grin',
+    'class1-l01-v3-school-bell',
+    'class1-l01-v3-jump-frog',
+    'class1-l01-v3-play-friends',
+    'class1-l01-v3-enter-class',
+    'class1-l01-v3-grade-one',
   ])
+  assert.equal((activities.match(/approved: false/g) || []).length, 10)
+  for (const word of ['am', 'an', 'at', 'in', 'is', 'it', 'on', 'up']) {
+    assert.match(draftSeed, new RegExp(`'${word}'`))
+  }
+  assert.match(config, /My First Day — School Adventure/)
   assert.match(config, /2025, reprint 2026/)
   assert.match(config, /"sourcePages": \[1\]/)
   assert.match(draftSeed, /class1-l01-legacy-/)
   assert.match(draftSeed, /savedAttemptsPreserved: true/)
   assert.match(backendFastRoute, /CLASS1_DEMO_ACTIVITY_FILTER/)
   assert.match(backendDemoAccess, /activityKey: \/\^class1-l01-\//)
-  assert.match(backendFastRoute, /experienceId: isClass1Demo/)
+  assert.match(backendFastRoute, /experienceId: \(isClass1Demo \|\| firstDay\)/)
 })
 
 test('first visit requires the reviewed story with a minimum 85-second watch; no fake audio or in-app skip', () => {
@@ -81,7 +90,8 @@ test('the Class 1 map keeps ten overlays and opens the backend lesson id through
   await access(class1Map)
   assert.ok((await stat(class1Map)).size > 1_000_000)
   assert.match(mapPage, /targetLesson\?\.id/)
-  assert.match(mapPage, /`\/student\/lesson\/\$\{targetLesson\.id\}`/)
+  assert.match(mapPage, /router\.push\('\/student\/continue'\)/)
+  assert.match(mapPage, /encodeURIComponent\(targetLesson\.id\)/)
   assert.match(registry, /'g01-l01': \(\) => import\('\.\/grades\/class-01\/level-01'\)/)
   await access(new URL('../../public/talkora/adventure/talkora-world-map.png', import.meta.url))
   assert.match(immersiveStage, /miss-julie-animations\/transparent\//)
