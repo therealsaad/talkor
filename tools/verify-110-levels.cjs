@@ -24,6 +24,7 @@ const class1Pilot='g01-l01';
 const level2Preview='g00-l02';
 const level3Preview='g00-l03';
 const level4Preview='g00-l04';
+const class1Level2Draft='g01-l02';
 const futureKG = new Set(['g00-l06','g00-l07','g00-l08','g00-l09','g00-l10']);
 for(let grade=0;grade<=10;grade++){
  const slug=grade===0?'kg':`class-${String(grade).padStart(2,'0')}`;
@@ -43,10 +44,10 @@ for(let grade=0;grade<=10;grade++){
    assert.equal(config.staffOnlyPreview,true,`${id} must remain staff-only`);
    assert.equal(config.studentPlayable,false,`${id} cannot be published by a workspace edit`);
   }
-  if(id===class1Pilot||id===level2Preview||id===level3Preview||id===level4Preview||futureKG.has(id)){
+  if(id===class1Pilot||id===class1Level2Draft||id===level2Preview||id===level3Preview||id===level4Preview||futureKG.has(id)){
    // These previews may require an intro, but it cannot be skippable.
    assert.equal(config.learningPolicy.introRequired,config.learningPolicy.introMustComplete);
-   if(id===level2Preview||id===level3Preview||id===level4Preview||futureKG.has(id)) assert.equal(config.learningPolicy.introRequired,true);
+   if(id===class1Level2Draft||id===level2Preview||id===level3Preview||id===level4Preview||futureKG.has(id)) assert.equal(config.learningPolicy.introRequired,true);
   }else{
    assert.equal(config.learningPolicy.introRequired,id===liveKG);
   }
