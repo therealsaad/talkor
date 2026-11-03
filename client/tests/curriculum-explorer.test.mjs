@@ -88,7 +88,7 @@ test('existing full-year Class 1 assignments remain 44 unique chapters across te
   assert.deepEqual(vowels.issues, [])
   assert.match(vowels.prompt, /a, e, i, o, u are vowels/i)
   assert.doesNotMatch(vowels.prompt, /sh in ship/i)
-  assert.deepEqual(vowels.pages, [7])
+  assert.deepEqual(vowels.pages, [7, 7])
   assert.equal(vowels.tasks.length, 3)
   const level2 = class1[1]
   assert.equal(level2.config.studentPlayable, false)
