@@ -14,6 +14,7 @@ import { PythonVoiceProvider } from '../providers/voice/PythonVoiceProvider'
 import { issueKGFeedbackReceipt, verifyKGFeedbackReceipt } from '../services/kg-feedback-receipt'
 import { isSupportedVoiceAudioMimeType } from '../schemas/voice.schema'
 import { KG_CONTINUATION_LEVELS, isKGContinuationLevel, continuationLesson, getKGContinuationNarration, type KGContinuationLevel } from '../kg/student-continuation-catalog'
+import { composeKGTeachingTurn, type KGTeachingLocale } from '../teaching/kg-teaching-turn'
 import { ApiError } from '../utils/ApiError'
 import { ok } from '../utils/ApiResponse'
 import { catchAsync } from '../utils/catchAsync'
@@ -109,11 +110,11 @@ function feedback(letter: string, verdict: IKGContinuationAttempt['outcome']) {
   if (verdict === 'unclear') return 'I am listening. Take your time and say the letter ' + letter + '.'
   return 'Good try! Listen again and say the letter ' + letter + '.'
 }
-async function voice(res: Response, text: string, receipt?: string, timer?: TurnTimer) {
+async function voice(res: Response, text: string, receipt?: string, timer?: TurnTimer, language?: KGTeachingLocale) {
   const voiceStartedAt = Date.now()
   let audio: Buffer, contentType: string, provider: string
   try {
-    const output = await new AzureVoiceProvider().synthesizeUncached(text)
+    const output = await new AzureVoiceProvider().synthesizeUncached(text, { language })
     audio = output.audio; contentType = output.contentType; provider = 'azure'
     if (audio.length < 256 || audio.length > 8 * 1024 * 1024) throw Error('Azure response invalid')
   } catch {
@@ -272,6 +273,8 @@ export const KGContinuationController = {
     const durationMs = Number(req.body?.durationMs)
     if (!Number.isFinite(durationMs) || durationMs < 250 || durationMs > 12_000) throw ApiError.badRequest('Invalid recording duration')
     let verdict: IKGContinuationAttempt['outcome'] = 'unclear'
+    let transcript = ''
+    let detectedLanguage: KGTeachingLocale | undefined
     if (req.body?.noSpeech !== true) {
       const mimeType = req.body?.mimeType
       const audioBase64 = req.body?.audioBase64
@@ -285,13 +288,20 @@ export const KGContinuationController = {
       const confidence = 'confidence' in stt ? stt.confidence : undefined
       const uncertain = ('uncertain' in stt && stt.uncertain === true) ||
         (typeof confidence === 'number' && (!Number.isFinite(confidence) || confidence < 0.5))
-      verdict = lesson.grade(String(stt.transcript || ''), expected, uncertain)
+      transcript = String(stt.transcript || '').slice(0, 240)
+      const locale = 'languageCode' in stt ? stt.languageCode : undefined
+      if (locale === 'en-IN' || locale === 'hi-IN' || locale === 'mr-IN') detectedLanguage = locale
+      verdict = lesson.grade(transcript, expected, uncertain)
     }
+    const teaching = await composeKGTeachingTurn({ level, letter: expected,
+      transcript, outcome: verdict, detectedLanguage, noSpeech: req.body?.noSpeech === true,
+      uncertain: verdict === 'unclear', existingFeedbackText: feedback(expected, verdict) })
+    timing.note('feedbackSource', teaching.source)
     let saved: IKGContinuationAttempt
     try {
       saved = await timing.time('save', () => KGContinuationAttempt.create({
         studentId, schoolId, level, index, submissionId: id, letter: expected,
-        outcome: verdict, feedbackText: feedback(expected, verdict),
+        outcome: verdict, feedbackText: teaching.feedbackText, feedbackLanguageCode: teaching.languageCode,
       }))
     } catch (err) {
       if ((err as { code?: number }).code !== 11000) throw err
@@ -320,7 +330,7 @@ export const KGContinuationController = {
       submissionId: level + ':' + id, introTicketHash: ticketHash, feedbackText: saved.feedbackText })
     const audioTiming = createTurnTimer()
     audioTiming.note('level', level)
-    await voice(res, saved.feedbackText, receipt, audioTiming)
+    await voice(res, saved.feedbackText, receipt, audioTiming, saved.feedbackLanguageCode)
     logTurnTiming(logger, 'audio', audioTiming.finish(),
       { submissionId: id, outcome: saved.outcome, mode: 'speak' },
       { enabled: process.env.KG_TURN_TIMING_LOG !== 'false', slowMs: parseSlowTurnMs(process.env.KG_SLOW_TURN_MS) })
