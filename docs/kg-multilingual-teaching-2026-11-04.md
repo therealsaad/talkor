@@ -30,6 +30,29 @@ pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts tests/integ
 ```
 CI must also guard KG1 `billi`/Marathi, KG3 `sher`, KG4 `khargosh`, delayed/failed Qwen, mixed-language transcript, silence, wrong word, real progress not advancing on a translation, cross-school access, crash reload, and previously graded audio.
 
+## Separate Python Qwen bridge (required for KG2–5 questions)
+
+The Node app's question adapter is **not sufficient by itself**: the independent
+`therealsaad/talkora-ai-private` AI service originally returned HTTP 422 for
+all KG2–5 level IDs. The compatible, protected pilot handler is proposed in
+[AI PR #18](https://github.com/therealsaad/talkora-ai-private/pull/18).
+Both codebases must be reviewed, merged and deployed together.
+
+When approved for a controlled test, run the updated authenticated
+`talkora-ai-starter/server/main.py` service on port 8002 and set
+`TALKORA_KG2_5_QWEN_PILOT=true` **on the Python service** (not in the browser).
+Maintain a shared strong `TALKORA_SERVICE_KEY` between Node and Python;
+production requests without it are intentionally rejected. Qwen/Ollama
+still needs to run locally. With this flag absent or the model unavailable,
+the Node server gives deterministic safe coaching; **do not claim live Qwen**.
+KG1 and Class 1 have their own existing model gates.
+
+Python offline tests:
+```sh
+cd talkora-ai-starter
+python -m pytest -q tests/test_kg_continuation_qwen.py tests/test_compat.py tests/test_class1_compat.py
+```
+
 ## Mandatory before production
 - Independent qualified educator review of *every* grade-level word, Romanized and Devanagari Hindi/Marathi variant and resulting speech line; do not accept generated lexicons as approved translations.
 - Explicit review and licensing of all intro videos, artwork and fixed audio. No broad release of KG6–10 or changed KG2 vocabulary until student lessons really exist.
