@@ -93,6 +93,8 @@ export function kgDraftTeachingWord(level: number, targetEn: string): KGTeaching
 const REJECTED = /\b(no|not|never|dont|don't|isn't|wrong)\b|नहीं|नाही/i
 const QUESTION = /[?？]|\b(what|why|how|who|where|meaning|mean|explain|tell|matlab|kya|kaise|kay|kaay|samjha|samjhao|help)\b|क्या|क्यों|कैसे|मतलब|काय|कसे|समज|समझ/i
 const NOISE = /^(?:uh+|um+|hmm+|hm+|ah+|erm+|\.\.\.)$/i
+const SUPPORT_REQUEST = /\b(please repeat|once again|one more time|i don't understand|i dont understand|i want|i need|can you|mujhe|mala|samajh nahi|samjat nahi|help me)\b|मुझे समझ|मला समज|समजत नाही|समझ नहीं/i
+const PRIVATE_SPEECH = /\b(phone|mobile number|password|address|roll number|my name is|i live at|my school is|number is)\b|\b\d{3,}\b|@/i
 const FILLER = new Set(['ye', 'yeh', 'ye', 'hai', 'he', 'ha', 'h', 'to', 'isko', 'ise', 'usko',
   'ka', 'ki', 'ko', 'a', 'the', 'is', 'it', 'this', 'that', 'i', 'said', 'say', 'bol', 'bolo',
   'अरे', 'ये', 'यह', 'है', 'को', 'इसको', 'इसे', 'का', 'की', 'तो', 'हा', 'आहे', 'हे'])
@@ -127,7 +129,8 @@ export function classifyKGTeachingTurn(input: {
     return { kind: input.level === 1 ? 'correct_english' : 'correct_letter', language: detected, word }
   const translation = word ? localeOfWord(text, word) : undefined
   if (translation) return { kind: 'translation_hi_mr', language: translation, word }
-  if (QUESTION.test(text)) return { kind: 'question_or_offtopic', language: detected, word }
+  if (QUESTION.test(text) || SUPPORT_REQUEST.test(text) || tokens(text).length >= 4)
+    return { kind: 'question_or_offtopic', language: detected, word }
   if (word && tokens(text).includes(word.targetEn.toLowerCase()))
     return { kind: 'correct_english', language: detected, word }
   return { kind: 'wrong_word', language: detected, word }
@@ -169,6 +172,9 @@ function fallbackText(input: KGTeachingClassification, letter: string): string {
 
 /** Untrusted model may only supply lesson-bounded wording, never progress/mastery. */
 async function boundedQuestion(input: KGTeachingClassification, letter: string, spoken: string): Promise<string | null> {
+  // Never forward likely identifying details to the AI bridge; stay with a
+  // short fixed teacher reply and invite a safe return to the lesson.
+  if (PRIVATE_SPEECH.test(spoken)) return null
   const key = env.talkoraServiceKey.trim()
   if (env.isProd && key.length < 32) return null
   const word = input.word?.targetEn
