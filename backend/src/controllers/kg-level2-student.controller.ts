@@ -13,6 +13,8 @@ import { issueKGFeedbackReceipt, verifyKGFeedbackReceipt } from '../services/kg-
 import { isSupportedVoiceAudioMimeType } from '../schemas/voice.schema'
 import { LEVEL2_LETTERS, LEVEL2_NARRATION, gradeLevel2Transcription } from '../kg/level2-content'
 import { composeKGTeachingTurn, type KGTeachingLocale } from '../teaching/kg-teaching-turn'
+import { stableKGTeachingLanguage } from '../services/kg-teaching-language'
+import { stableKGTeachingLanguage } from '../services/kg-teaching-language'
 import { ApiError } from '../utils/ApiError'
 import { ok } from '../utils/ApiResponse'
 import { catchAsync } from '../utils/catchAsync'
