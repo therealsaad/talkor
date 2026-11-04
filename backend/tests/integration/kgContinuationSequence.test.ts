@@ -199,6 +199,7 @@ it('KG3 sher teaches lion in Hindi, saves replay locale and never advances befor
   const headers = await intro(3, auth, student._id)
   const speech = jest.spyOn(KGSpeechService, 'transcribe')
     .mockResolvedValueOnce({ transcript: 'sher', available: true, provider: 'sarvam', languageCode: 'en-IN' } as never)
+    .mockResolvedValueOnce({ transcript: 'lion', available: true, provider: 'sarvam', languageCode: 'en-IN' } as never)
     .mockResolvedValueOnce({ transcript: 'el', available: true, provider: 'sarvam', languageCode: 'en-IN' } as never)
   const azure = jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached')
     .mockResolvedValue({ audio: Buffer.alloc(512, 65), contentType: 'audio/mpeg' })
@@ -223,6 +224,18 @@ it('KG3 sher teaches lion in Hindi, saves replay locale and never advances befor
     .set(headers).send({ feedbackReceipt: audio.headers['x-kg-feedback-receipt'] }).expect(200)
   // A Hindi translation is understanding evidence, NOT English letter mastery.
   expect((await get(3, auth).expect(200)).body.data.currentIndex).toBe(1)
+  // The child now repeats the NEW English picture word; it is praised and
+  // then the original, separately assessed letter task is shown.
+  const repeatId = 'kg3-repeat-lion-12345'
+  const repeated = await submit(repeatId).expect(200)
+  expect(repeated.body.data.outcome).toBe('incorrect') // Word is not letter mastery.
+  expect(repeated.body.data.feedbackText).toContain('lion')
+  expect(repeated.body.data.feedbackText).toContain('letter L')
+  const repeatedAudio = await request(app).get('/api/kg-continuation/3/attempt/' + repeatId + '/feedback-audio')
+    .set(headers).expect(200)
+  await request(app).post('/api/kg-continuation/3/attempt/' + repeatId + '/feedback-played')
+    .set(headers).send({ feedbackReceipt: repeatedAudio.headers['x-kg-feedback-receipt'] }).expect(200)
+  expect((await get(3, auth).expect(200)).body.data.currentIndex).toBe(1)
   const englishId = 'kg3-letter-l-123456'
   const correct = await submit(englishId).expect(200)
   expect(correct.body.data.outcome).toBe('correct')
@@ -231,7 +244,7 @@ it('KG3 sher teaches lion in Hindi, saves replay locale and never advances befor
   await request(app).post('/api/kg-continuation/3/attempt/' + englishId + '/feedback-played')
     .set(headers).send({ feedbackReceipt: englishAudio.headers['x-kg-feedback-receipt'] }).expect(200)
   expect((await get(3, auth).expect(200)).body.data.currentIndex).toBe(2)
-  expect(speech).toHaveBeenCalledTimes(2)
+  expect(speech).toHaveBeenCalledTimes(3)
   persisted = await KGContinuationAttempt.findOne({ studentId: student._id, level: 3, submissionId: translationId }).lean()
   expect(persisted?.feedbackAcknowledgedAt).toBeTruthy()
 })
