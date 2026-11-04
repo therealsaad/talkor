@@ -14,7 +14,6 @@ import { isSupportedVoiceAudioMimeType } from '../schemas/voice.schema'
 import { LEVEL2_LETTERS, LEVEL2_NARRATION, gradeLevel2Transcription } from '../kg/level2-content'
 import { composeKGTeachingTurn, type KGTeachingLocale } from '../teaching/kg-teaching-turn'
 import { stableKGTeachingLanguage } from '../services/kg-teaching-language'
-import { stableKGTeachingLanguage } from '../services/kg-teaching-language'
 import { ApiError } from '../utils/ApiError'
 import { ok } from '../utils/ApiResponse'
 import { catchAsync } from '../utils/catchAsync'
@@ -239,8 +238,13 @@ export const KGLevel2StudentController = {
       if (locale === 'en-IN' || locale === 'hi-IN' || locale === 'mr-IN') detectedLanguage = locale
       outcome = gradeLevel2Transcription(transcript, expected, uncertain)
     }
+    const recentLocales = await KGLevel2Attempt.find({ studentId, schoolId,
+      createdAt: { $gte: row.introStartedAt || new Date() },
+    }).sort({ createdAt: -1 }).limit(2).select('feedbackLanguageCode').lean()
+    const coachingLanguage = stableKGTeachingLanguage(detectedLanguage,
+      recentLocales.map((attempt) => attempt.feedbackLanguageCode))
     const teaching = await composeKGTeachingTurn({ level: 2, letter: expected,
-      outcome, transcript, detectedLanguage, noSpeech: req.body?.noSpeech === true,
+      outcome, transcript, detectedLanguage: coachingLanguage, noSpeech: req.body?.noSpeech === true,
       uncertain: outcome === 'unclear', existingFeedbackText: feedbackText(expected, outcome) })
     timing.note('feedbackSource', teaching.source)
     const words = teaching.feedbackText
