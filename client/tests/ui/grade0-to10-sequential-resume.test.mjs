@@ -43,7 +43,7 @@ test('one reusable student engine, protected voice intro and receipts, no previe
   assert.match(controller, /completedPrerequisite/)
   assert.match(controller, /verifyKGFeedbackReceipt/)
   assert.match(controller, /isKGContinuationLevel/)
-  assert.match(controller, /grade\(String\(stt\.transcript/)
+  assert.match(controller, /grade\(transcript/)
   assert.match(page, /beginIntro\(level\)/)
   assert.match(page, /completeIntro\(level\)/)
   assert.match(intro, /videoSrc = INTRO_VIDEO/)
