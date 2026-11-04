@@ -189,3 +189,49 @@ it('rejects invalid cached narration bytes, with no unusable audio response', as
     else process.env.TALKORA_KG_FIXED_NARRATION_CACHE = old
   }
 })
+
+it('KG3 sher teaches lion in Hindi, saves replay locale and never advances before an English letter + audio ACK', async () => {
+  const { student, auth } = await fixture()
+  await KGLevel2Progress.updateOne({ studentId: student._id }, { $set: { currentIndex: 6, completedAt: new Date() } })
+  await get(3, auth).expect(200)
+  // Earlier K was completed in this disposable fixture; L is the current checkpoint.
+  await KGContinuationProgress.updateOne({ studentId: student._id, level: 3 }, { $set: { currentIndex: 1 } })
+  const headers = await intro(3, auth, student._id)
+  const speech = jest.spyOn(KGSpeechService, 'transcribe')
+    .mockResolvedValueOnce({ transcript: 'sher', available: true, provider: 'sarvam', languageCode: 'en-IN' } as never)
+    .mockResolvedValueOnce({ transcript: 'el', available: true, provider: 'sarvam', languageCode: 'en-IN' } as never)
+  const azure = jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached')
+    .mockResolvedValue({ audio: Buffer.alloc(512, 65), contentType: 'audio/mpeg' })
+  const submit = (id: string) => request(app).post('/api/kg-continuation/3/attempt').set(headers).send({
+    letter: 'L', submissionId: id, durationMs: 1000, mimeType: 'audio/webm', audioBase64: 'Y'.repeat(160),
+  })
+  const translationId = 'kg3-sher-lion-12345'
+  const translated = await submit(translationId).expect(200)
+  expect(translated.body.data.outcome).toBe('incorrect')
+  expect(translated.body.data.feedbackText).toContain('शेर')
+  expect(translated.body.data.feedbackText).toContain('lion')
+  expect(translated.body.data.feedbackText).toContain('Say L.')
+  let persisted = await KGContinuationAttempt.findOne({ studentId: student._id, level: 3, submissionId: translationId }).lean()
+  expect(persisted?.feedbackLanguageCode).toBe('hi-IN')
+  expect(persisted?.feedbackAcknowledgedAt).toBeUndefined()
+  expect((await get(3, auth).expect(200)).body.data.currentIndex).toBe(1)
+  const audio = await request(app).get('/api/kg-continuation/3/attempt/' + translationId + '/feedback-audio')
+    .set(headers).expect(200)
+  expect(azure).toHaveBeenCalledWith(expect.stringContaining('lion'), { language: 'hi-IN' })
+  expect(audio.headers['x-kg-feedback-receipt']).toMatch(/^v1\./)
+  await request(app).post('/api/kg-continuation/3/attempt/' + translationId + '/feedback-played')
+    .set(headers).send({ feedbackReceipt: audio.headers['x-kg-feedback-receipt'] }).expect(200)
+  // A Hindi translation is understanding evidence, NOT English letter mastery.
+  expect((await get(3, auth).expect(200)).body.data.currentIndex).toBe(1)
+  const englishId = 'kg3-letter-l-123456'
+  const correct = await submit(englishId).expect(200)
+  expect(correct.body.data.outcome).toBe('correct')
+  const englishAudio = await request(app).get('/api/kg-continuation/3/attempt/' + englishId + '/feedback-audio')
+    .set(headers).expect(200)
+  await request(app).post('/api/kg-continuation/3/attempt/' + englishId + '/feedback-played')
+    .set(headers).send({ feedbackReceipt: englishAudio.headers['x-kg-feedback-receipt'] }).expect(200)
+  expect((await get(3, auth).expect(200)).body.data.currentIndex).toBe(2)
+  expect(speech).toHaveBeenCalledTimes(2)
+  persisted = await KGContinuationAttempt.findOne({ studentId: student._id, level: 3, submissionId: translationId }).lean()
+  expect(persisted?.feedbackAcknowledgedAt).toBeTruthy()
+})
