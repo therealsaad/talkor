@@ -9,6 +9,7 @@ export interface IKGContinuationAttempt {
   letter: string
   outcome: 'correct' | 'incorrect' | 'unclear'
   feedbackText: string
+  feedbackLanguageCode?: 'en-IN' | 'hi-IN' | 'mr-IN'
   feedbackAcknowledgedAt?: Date
 }
 const schema = new Schema<IKGContinuationAttempt>({
@@ -20,6 +21,7 @@ const schema = new Schema<IKGContinuationAttempt>({
   letter: { type: String, required: true, match: /^[K-Z]$/ },
   outcome: { type: String, enum: ['correct', 'incorrect', 'unclear'], required: true },
   feedbackText: { type: String, required: true, maxlength: 240 },
+  feedbackLanguageCode: { type: String, enum: ['en-IN', 'hi-IN', 'mr-IN'] },
   feedbackAcknowledgedAt: Date,
 }, { timestamps: true })
 schema.index({ studentId: 1, level: 1, submissionId: 1 }, { unique: true })
