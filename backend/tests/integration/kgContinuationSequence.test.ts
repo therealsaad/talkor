@@ -210,7 +210,7 @@ it('KG3 sher teaches lion in Hindi, saves replay locale and never advances befor
   expect(translated.body.data.outcome).toBe('incorrect')
   expect(translated.body.data.feedbackText).toContain('शेर')
   expect(translated.body.data.feedbackText).toContain('lion')
-  expect(translated.body.data.feedbackText).toContain('Say L.')
+  expect(translated.body.data.feedbackText).toContain('Say lion.')
   let persisted = await KGContinuationAttempt.findOne({ studentId: student._id, level: 3, submissionId: translationId }).lean()
   expect(persisted?.feedbackLanguageCode).toBe('hi-IN')
   expect(persisted?.feedbackAcknowledgedAt).toBeUndefined()
