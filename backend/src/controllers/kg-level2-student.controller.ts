@@ -107,7 +107,9 @@ async function speak(res: Response, words: string, receipt?: string, timer?: Tur
   const startedVoiceAt = Date.now()
   let bytes: Buffer, contentType: string, provider: string
   try {
-    const azure = await new AzureVoiceProvider().synthesizeUncached(words, { language })
+    const azure = language
+      ? await new AzureVoiceProvider().synthesizeUncached(words, { language })
+      : await new AzureVoiceProvider().synthesizeUncached(words)
     if (azure.audio.length < 256 || azure.audio.length > 8 * 1024 * 1024) throw Error('Invalid Azure audio size')
     bytes = azure.audio; contentType = azure.contentType; provider = 'azure'
   } catch {
