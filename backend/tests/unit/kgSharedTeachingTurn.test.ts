@@ -49,6 +49,7 @@ describe('one KG teaching-turn contract, all staged levels', () => {
     expect(result.kind).toBe('translation_hi_mr')
     expect(result.languageCode).toBe(locale)
     expect(result.feedbackText).toContain(english)
+    expect(result.feedbackText).toContain('Say ' + english + '.')
     expect(result.source).toBe('guided')
   })
 
