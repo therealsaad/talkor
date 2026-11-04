@@ -118,7 +118,7 @@ describe('one KG teaching-turn contract, all staged levels', () => {
       expect(bodies).toHaveLength(1)
       expect(bodies[0]).toContain('<voice name="hi-IN-SwaraNeural">')
       expect(bodies[0]).toContain('<voice name="en-IN-NeerjaNeural">')
-      expect(bodies[0]).toContain('Say L.')
+      expect(bodies[0]).toContain('Say lion.')
     } finally { delete process.env.AZURE_SPEECH_KEY }
   })
 })
