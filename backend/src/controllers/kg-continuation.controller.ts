@@ -115,7 +115,9 @@ async function voice(res: Response, text: string, receipt?: string, timer?: Turn
   const voiceStartedAt = Date.now()
   let audio: Buffer, contentType: string, provider: string
   try {
-    const output = await new AzureVoiceProvider().synthesizeUncached(text, { language })
+    const output = language
+      ? await new AzureVoiceProvider().synthesizeUncached(text, { language })
+      : await new AzureVoiceProvider().synthesizeUncached(text)
     audio = output.audio; contentType = output.contentType; provider = 'azure'
     if (audio.length < 256 || audio.length > 8 * 1024 * 1024) throw Error('Azure response invalid')
   } catch {
