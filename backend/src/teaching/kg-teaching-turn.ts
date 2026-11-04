@@ -224,6 +224,10 @@ export async function composeKGTeachingTurn(input: {
   const keepLegacy = turn.language === 'en-IN' && input.existingFeedbackText &&
     ['correct_letter', 'wrong_word', 'silence_or_noise'].includes(turn.kind)
   return { kind: turn.kind, feedbackText: reply || (keepLegacy ? input.existingFeedbackText! : fallbackText(turn, input.letter)),
-    languageCode: turn.language, source: reply ? 'qwen-8002' : 'guided' }
+    // Once the child independently speaks the English PICTURE word in higher KG,
+    // praise and model the remaining letter with an English voice (not the
+    // prior native explanation voice). This is still not letter mastery.
+    languageCode: turn.kind === 'correct_english' && input.level > 1 ? 'en-IN' : turn.language,
+    source: reply ? 'qwen-8002' : 'guided' }
 
 }
