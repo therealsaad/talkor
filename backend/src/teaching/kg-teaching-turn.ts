@@ -150,7 +150,9 @@ function fallbackText(input: KGTeachingClassification, letter: string): string {
     const intro = language === 'hi-IN'
       ? translation + ', अच्छा बेटा! अंग्रेज़ी में इसे ' + target + ' कहते हैं। '
       : translation + ', छान बाळा! इंग्रजीत याला ' + target + ' म्हणतात। '
-    return intro + (input.word?.level === 1 ? 'Say ' + target + '.' : letterModel)
+    // Always teach and ask for the translated English WORD first. Higher KG
+    // letter exercises then separately require their original letter target.
+    return intro + 'Say ' + target + '.'
   }
   if (kind === 'correct_english' && target) {
     return 'Great! ' + target + ' is an English word. Now say the letter ' + letter.toUpperCase() + '.'
