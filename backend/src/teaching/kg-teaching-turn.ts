@@ -205,11 +205,17 @@ async function boundedQuestion(input: KGTeachingClassification, letter: string, 
 export async function composeKGTeachingTurn(input: {
   level: number; letter: string; transcript?: string; outcome: KGTeacherOutcome
   detectedLanguage?: KGTeachingLocale; noSpeech?: boolean; uncertain?: boolean
-}): Promise<{ kind: KGTurnKind; feedbackText: string; languageCode: KGTeachingLocale }> {
+  existingFeedbackText?: string
+}): Promise<{ kind: KGTurnKind; feedbackText: string; languageCode: KGTeachingLocale; source: 'guided' | 'qwen-8002' }> {
   const turn = classifyKGTeachingTurn(input)
   const reply = turn.kind === 'question_or_offtopic'
     ? await boundedQuestion(turn, input.letter, input.transcript || '')
     : null
-  return { kind: turn.kind, feedbackText: reply || fallbackText(turn, input.letter),
-    languageCode: turn.language }
+  // Keep the original, already-shipped English coaching lines unchanged for
+  // ordinary grades. Only the multilingual or contextual cases get new wording.
+  const keepLegacy = turn.language === 'en-IN' && input.existingFeedbackText &&
+    ['correct_letter', 'wrong_word', 'silence_or_noise'].includes(turn.kind)
+  return { kind: turn.kind, feedbackText: reply || (keepLegacy ? input.existingFeedbackText! : fallbackText(turn, input.letter)),
+    languageCode: turn.language, source: reply ? 'qwen-8002' : 'guided' }
+
 }
