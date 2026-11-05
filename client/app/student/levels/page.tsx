@@ -7460,7 +7460,7 @@ export default function AdventureMapPage() {
       (unit?.status as
         | MapStatus
         | undefined) ??
-      'UPCOMING'
+      'LOCKED'
     )
   }
 
@@ -7876,33 +7876,6 @@ export default function AdventureMapPage() {
     )
   }
 
-  if (error) {
-    return (
-      <main className="tk-map-error">
-        <div>
-          <h1>
-            Adventure paused
-          </h1>
-
-          <p>
-            {error}
-          </p>
-
-          <button
-            type="button"
-            onClick={() =>
-              window.location.reload()
-            }
-          >
-            Try again
-          </button>
-        </div>
-
-        <AdventureStyles />
-      </main>
-    )
-  }
-
   return (
     <div className="tk-map">
       <motion.aside
@@ -8022,10 +7995,10 @@ export default function AdventureMapPage() {
           resetPointer
         }
       >
-        {error && student?.grade === 1 ? (
-          <aside className="tk-class1-map-notice" role="status">
-            <strong>Class 1 map is ready</strong>
-            <span>The Class 1 curriculum could not be loaded. Check that the Level 1 demo curriculum is seeded in the backend, then retry.</span>
+        {error ? (
+          <aside className="tk-class1-map-notice" role="alert">
+            <strong>Miss Julie's lessons aren't ready yet</strong>
+            <span>{error} You can look around the map, but all unverified lessons stay locked. Ask your teacher to check the curriculum publication.</span>
             <button type="button" onClick={() => window.location.reload()}>Retry</button>
           </aside>
         ) : null}
