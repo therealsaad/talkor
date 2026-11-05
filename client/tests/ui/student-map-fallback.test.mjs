@@ -6,7 +6,7 @@ const source = await readFile(new URL('../../app/student/levels/page.tsx', impor
 const activePage = source.slice(source.lastIndexOf('export default function AdventureMapPage()'))
 
 test('student adventure remains visible when the published curriculum API fails', () => {
-  assert.match(activePage, /if \(error\) \{[\s\S]*?setLoading\(false\)/)
+  assert.match(activePage, /catch \(cause\) \{[\s\S]*?setError\([\s\S]*?setLoading\(false\)/)
   assert.doesNotMatch(activePage, /if \(error\)\s*\{\s*return \(\s*<main className="tk-map-error">/)
   assert.match(activePage, /\{error \? \(\s*<aside className="tk-class1-map-notice" role="alert">/)
   assert.match(activePage, /all unverified lessons stay locked/)
