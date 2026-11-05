@@ -123,6 +123,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
   const stepStartedAtRef = useRef(0)
   const retryListeningRef = useRef<(stepIndex: number, token: number) => void>(() => undefined)
   const requestRef = useRef<AbortController | null>(null)
+  const preloadRef = useRef<AbortController | null>(null)
   const micStartingRef = useRef(false)
   const pendingSubmissionRef = useRef<{ prepared: KGPreparedAttempt; stepIndex: number } | null>(null)
   const pendingResultRef = useRef<{ result: KGAttemptResponse; stepIndex: number } | null>(null)
@@ -193,6 +194,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       alive = false
       generation.current++
       requestRef.current?.abort()
+      preloadRef.current?.abort()
       pendingSubmissionRef.current = null; pendingResultRef.current = null
       kgAlphabetService.clearAudioCache()
       audioRef.current?.pause()
@@ -324,6 +326,12 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       // The child is about to answer: use that time to fetch the picture-help clip and the next step's prompt.
       prefetchStepAudio(stepIndex, true)
       prefetchStepAudio(stepIndex + 1)
+      // Once per visit, while the child answers the first prompt: save the rest of the fixed clips on this device
+      // so later steps and later visits need no download. Skipped on data-saver and 2G links.
+      if (!preview && stepIndex === 0 && (!preloadRef.current || preloadRef.current.signal.aborted)) {
+        preloadRef.current = new AbortController()
+        void kgAlphabetService.preloadToDevice(preloadRef.current.signal)
+      }
       if (stepAt(stepIndex).mode === 'speak' && ((!replayRef.current && stateRef.current?.fallbackAvailable) || (preview && previewErrorsRef.current >= 2))) {
         await playClip(`find-${stepAt(stepIndex).letter.toLowerCase()}`)
         if (generation.current === token) setPhase('assist')
