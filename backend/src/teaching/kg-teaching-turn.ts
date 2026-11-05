@@ -161,16 +161,22 @@ function fallbackText(input: KGTeachingClassification, letter: string): string {
   }
   if (language === 'hi-IN') {
     if (kind === 'silence_or_noise') return 'मैं सुन रही हूँ। आराम से बोलो। ' + letterModel
-    if (kind === 'question_or_offtopic') return 'अच्छा सवाल! हम अभी अक्षर ' + letter.toUpperCase() + ' सीख रहे हैं। ' + letterModel
+    if (kind === 'question_or_offtopic') return word?.level === 1 && target
+      ? 'अच्छा सवाल! अभी हम अंग्रेज़ी में ' + target + ' बोलना सीख रहे हैं। ' + letterModel
+      : 'अच्छा सवाल! हम अभी अक्षर ' + letter.toUpperCase() + ' सीख रहे हैं। ' + letterModel
     return 'अच्छी कोशिश! मेरी बात सुनो। ' + letterModel
   }
   if (language === 'mr-IN') {
     if (kind === 'silence_or_noise') return 'मी ऐकते आहे। हळू बोल। ' + letterModel
-    if (kind === 'question_or_offtopic') return 'छान प्रश्न! आपण आता अक्षर ' + letter.toUpperCase() + ' शिकतोय। ' + letterModel
+    if (kind === 'question_or_offtopic') return word?.level === 1 && target
+      ? 'छान प्रश्न! आपण आता इंग्रजीत ' + target + ' म्हणायला शिकतोय। ' + letterModel
+      : 'छान प्रश्न! आपण आता अक्षर ' + letter.toUpperCase() + ' शिकतोय। ' + letterModel
     return 'छान प्रयत्न! माझ्यासोबत म्हण। ' + letterModel
   }
   if (kind === 'silence_or_noise') return 'I am listening! Take your time. ' + letterModel
-  if (kind === 'question_or_offtopic') return 'Good question! Let us learn this letter first. ' + letterModel
+  if (kind === 'question_or_offtopic') return word?.level === 1 && target
+    ? 'Good question! We are learning the English word ' + target + '. ' + letterModel
+    : 'Good question! Let us learn this letter first. ' + letterModel
   return 'Good try! Listen once more. ' + letterModel
 }
 
