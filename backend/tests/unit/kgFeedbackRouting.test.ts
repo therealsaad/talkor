@@ -79,4 +79,32 @@ describe('KG rule-first response routing', () => {
     expect(result.text).toMatch(/[\u0900-\u097f]/)
     expect(result.text).toContain('Say cat.')
   })
+  it('answers a KG1 child question through the shared teaching turn and models the English picture word', async () => {
+    const fetch = jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(
+      JSON.stringify({ message: 'A cat is a small animal. Say cat.' }),
+      { status: 200, headers: { 'Content-Type': 'application/json' } },
+    ))
+    const result = await KGQwenFeedbackService.compose({
+      ...base, outcome: 'incorrect', transcript: 'What is a cat?', languageCode: 'en-IN',
+    })
+    const request = JSON.parse(String(fetch.mock.calls[0][1]?.body))
+    expect(request.levelId).toBe('g00-l01')
+    expect(request.currentQuestion).toBe('Say the English word cat')
+    expect(result.source).toBe('qwen-8002')
+    expect(result.text).toContain('Say cat.')
+    expect(result.text).not.toContain('Say C.')
+  })
+
+  it('keeps the current KG1 word in a Hindi child-question fallback when Qwen is offline', async () => {
+    const fetch = jest.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('offline'))
+    const result = await KGQwenFeedbackService.compose({
+      ...base, outcome: 'incorrect', transcript: 'बिल्ली क्या है?', languageCode: 'hi-IN',
+    })
+    expect(fetch).toHaveBeenCalledTimes(1)
+    expect(result.source).toBe('guided')
+    expect(result.text).toMatch(/[\u0900-\u097f]/)
+    expect(result.text).toContain('Say cat.')
+    expect(result.text).not.toContain('Say C.')
+  })
+
 })
