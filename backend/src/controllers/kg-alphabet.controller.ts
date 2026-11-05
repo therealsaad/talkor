@@ -1,4 +1,5 @@
 import { gradeKGTranscription } from '../kg/kg-child-grading'
+import { classifyKGTeachingTurn } from '../teaching/kg-teaching-turn'
 import { Request, Response } from 'express'
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import { Types } from 'mongoose'
@@ -411,11 +412,15 @@ async function previewOutcome(input: Record<string, unknown>): Promise<KGPreview
   if (!stt.available) throw ApiError.provider('Speech recognition is temporarily unavailable')
   const transcript = String(stt.transcript || '').slice(0, 240)
   const confidence = 'confidence' in stt ? stt.confidence : undefined
-  const outcome = gradeKGTranscription({
+  let outcome = gradeKGTranscription({
     transcript, letter: activity.letter,
     uncertain: 'uncertain' in stt && stt.uncertain === true,
     confidence: typeof confidence === 'number' ? confidence : undefined,
   })
+  const teaching = classifyKGTeachingTurn({ level: 1, letter: activity.letter,
+    transcript, outcome, uncertain: 'uncertain' in stt && stt.uncertain === true })
+  if (outcome === 'incorrect' && teaching.kind === 'translation_hi_mr' &&
+    !(typeof confidence === 'number' && confidence < 0.5)) outcome = 'supported'
   return { activity, outcome, transcript }
 }
 
@@ -723,6 +728,13 @@ export const KGAlphabetController = {
           confidence: sttConfidence,
         })
         if (outcome === 'unclear') recognitionReason = 'uncertain'
+        // Share the same safe translation detector as later KG lessons.
+        // Never count a home-language word as an independent English pass.
+        const shared = classifyKGTeachingTurn({ level: 1, letter: activity.letter,
+          transcript, outcome, detectedLanguage: languageCode,
+          uncertain: 'uncertain' in transcription && transcription.uncertain === true })
+        if (outcome === 'incorrect' && shared.kind === 'translation_hi_mr' &&
+          (sttConfidence === undefined || sttConfidence >= 0.5)) outcome = 'supported'
       } else {
         selected = String(req.body?.selected || '').toLowerCase().trim().slice(0, 20)
         if (!LETTERS.some((item) => item.word === selected)) throw ApiError.badRequest('Choose one of the four pictures')
@@ -741,7 +753,10 @@ export const KGAlphabetController = {
       // as English or omits its locale. Never change the grading verdict.
       // The translation is transcribed server-side, never client-provided.
       const bridgeLanguage = outcome === 'supported' && activity.mode === 'speak' && !assistedPicture
-        ? kgBilingualBridgeLanguage(transcript || '', activity.letter) : undefined
+        ? (kgBilingualBridgeLanguage(transcript || '', activity.letter) ||
+          (() => { const shared = classifyKGTeachingTurn({ level: 1, letter: activity.letter,
+            transcript, outcome, detectedLanguage: languageCode });
+            return shared.kind === 'translation_hi_mr' ? shared.language : undefined })()) : undefined
       const feedbackLanguageCode = bridgeLanguage ||
         stableKGTeachingLanguage(languageCode, recentLocales.map((prior) => prior.languageCode))
 

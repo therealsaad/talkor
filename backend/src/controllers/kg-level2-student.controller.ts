@@ -12,6 +12,8 @@ import { PythonVoiceProvider } from '../providers/voice/PythonVoiceProvider'
 import { issueKGFeedbackReceipt, verifyKGFeedbackReceipt } from '../services/kg-feedback-receipt'
 import { isSupportedVoiceAudioMimeType } from '../schemas/voice.schema'
 import { LEVEL2_LETTERS, LEVEL2_NARRATION, gradeLevel2Transcription } from '../kg/level2-content'
+import { composeKGTeachingTurn, type KGTeachingLocale } from '../teaching/kg-teaching-turn'
+import { stableKGTeachingLanguage } from '../services/kg-teaching-language'
 import { ApiError } from '../utils/ApiError'
 import { ok } from '../utils/ApiResponse'
 import { catchAsync } from '../utils/catchAsync'
@@ -101,11 +103,13 @@ function feedbackText(letter: string, outcome: IKGLevel2Attempt['outcome']): str
   if (outcome === 'unclear') return 'I am listening. Take your time. Say the letter ' + letter + '.'
   return 'Good try! Listen and say the letter ' + letter + ' once more.'
 }
-async function speak(res: Response, words: string, receipt?: string, timer?: TurnTimer) {
+async function speak(res: Response, words: string, receipt?: string, timer?: TurnTimer, language?: KGTeachingLocale) {
   const startedVoiceAt = Date.now()
   let bytes: Buffer, contentType: string, provider: string
   try {
-    const azure = await new AzureVoiceProvider().synthesizeUncached(words)
+    const azure = language
+      ? await new AzureVoiceProvider().synthesizeUncached(words, { language })
+      : await new AzureVoiceProvider().synthesizeUncached(words)
     if (azure.audio.length < 256 || azure.audio.length > 8 * 1024 * 1024) throw Error('Invalid Azure audio size')
     bytes = azure.audio; contentType = azure.contentType; provider = 'azure'
   } catch {
@@ -216,6 +220,8 @@ export const KGLevel2StudentController = {
     const durationMs = Number(req.body?.durationMs)
     if (!Number.isFinite(durationMs) || durationMs < 250 || durationMs > 12_000) throw ApiError.badRequest('Invalid recording duration')
     let outcome: IKGLevel2Attempt['outcome'] = 'unclear'
+    let transcript = ''
+    let detectedLanguage: KGTeachingLocale | undefined
     if (req.body?.noSpeech !== true) {
       const audioBase64 = req.body?.audioBase64
       const mimeType = req.body?.mimeType
@@ -229,14 +235,26 @@ export const KGLevel2StudentController = {
       const confidence = 'confidence' in recognition ? recognition.confidence : undefined
       const uncertain = ('uncertain' in recognition && recognition.uncertain === true) ||
         (typeof confidence === 'number' && (!Number.isFinite(confidence) || confidence < 0.5))
-      outcome = gradeLevel2Transcription(String(recognition.transcript || ''), expected, uncertain)
+      transcript = String(recognition.transcript || '').slice(0, 240)
+      const locale = 'languageCode' in recognition ? recognition.languageCode : undefined
+      if (locale === 'en-IN' || locale === 'hi-IN' || locale === 'mr-IN') detectedLanguage = locale
+      outcome = gradeLevel2Transcription(transcript, expected, uncertain)
     }
-    const words = feedbackText(expected, outcome)
+    const recentLocales = await KGLevel2Attempt.find({ studentId, schoolId,
+      createdAt: { $gte: row.introStartedAt || new Date() },
+    }).sort({ createdAt: -1 }).limit(2).select('feedbackLanguageCode').lean()
+    const coachingLanguage = stableKGTeachingLanguage(detectedLanguage,
+      recentLocales.map((attempt) => attempt.feedbackLanguageCode))
+    const teaching = await composeKGTeachingTurn({ level: 2, letter: expected,
+      outcome, transcript, detectedLanguage: coachingLanguage, noSpeech: req.body?.noSpeech === true,
+      uncertain: outcome === 'unclear', existingFeedbackText: feedbackText(expected, outcome) })
+    timing.note('feedbackSource', teaching.source)
+    const words = teaching.feedbackText
     let saved: IKGLevel2Attempt
     try {
       saved = await timing.time('save', () => KGLevel2Attempt.create({
         studentId, schoolId, submissionId: id, index: row.currentIndex, letter: expected,
-        outcome, feedbackText: words,
+        outcome, feedbackText: words, feedbackLanguageCode: teaching.languageCode,
       }))
     } catch (error) {
       if ((error as { code?: number }).code !== 11000) throw error
@@ -266,7 +284,7 @@ export const KGLevel2StudentController = {
     })
     const audioTiming = createTurnTimer()
     audioTiming.note('level', 2)
-    await speak(res, attempt.feedbackText, receipt, audioTiming)
+    await speak(res, attempt.feedbackText, receipt, audioTiming, attempt.feedbackLanguageCode)
     logTurnTiming(logger, 'audio', audioTiming.finish(),
       { submissionId: id, outcome: attempt.outcome, mode: 'speak' },
       { enabled: process.env.KG_TURN_TIMING_LOG !== 'false', slowMs: parseSlowTurnMs(process.env.KG_SLOW_TURN_MS) })

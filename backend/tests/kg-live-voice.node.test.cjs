@@ -103,6 +103,7 @@ test('staff preview routes audio through STT and returns manifest-selected Priya
       evaluateKGSpeech: (transcript) => transcript === 'apple' ? 'correct' : 'incorrect',
     },
     '../kg/kg-child-grading': { gradeKGTranscription: ({ transcript }) => transcript === 'apple' ? 'correct' : 'incorrect' },
+    '../teaching/kg-teaching-turn': { classifyKGTeachingTurn: () => ({ kind: 'wrong_word', language: 'en-IN' }) },
     '../services/kg-pilot-access': { isAuthorizedKGAlphabetStudent: () => true },
     '../services/kg-static-audio-cache': { getKGStaticAudio: async () => null },
     '../services/kg-azure-narration.service': { getKGAzureNarrationAudio: async () => null },
