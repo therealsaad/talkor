@@ -7,6 +7,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { ArrowLeft, Check, Headphones, LoaderCircle, Mic, Play, RotateCw, Sparkles, Volume2, VolumeX } from 'lucide-react'
 import { watchVoiceActivity } from '@/lib/voice-activity'
+import { lessonTurnTelemetry } from '@/lib/lesson-turn-telemetry'
+import { LatencyReportButton } from '@/components/latency-report-button'
 import { parseSilenceMs } from '@/lib/silence-policy'
 import { kgAlphabetService, type KGAlphabetState, type KGOutcome, type KGPreparedAttempt, type KGAttemptResponse } from './services/kg-alphabet-service'
 import { requestKGMicrophone, KG_SESSION_END_EVENT } from '@/lib/kg-microphone'
@@ -569,6 +571,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       recorder.ondataavailable = (event) => { if (event.data.size) chunks.push(event.data) }
       recorder.onerror = (event) => { recorder.onstop = null; stopRecording(); releaseMic(); if (generation.current === token) { const message = friendlyMicrophoneError(event); setMicError(message); setFeedback(message); setPhase('error') } }
       recorder.onstop = () => {
+        lessonTurnTelemetry.mark('recorderStop', 'kg1')
         const duration = Math.min(11900, Math.max(250, Math.round(performance.now() - startedAt)))
         const blob = new Blob(chunks, { type: recorder.mimeType || mimeType || 'audio/webm' })
         releaseMic()
@@ -582,7 +585,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       }
       recorder.start()
       setPhase('listening')
-      stopWatcher.current = watchVoiceActivity(stream, () => { if (recorder.state === 'recording') recorder.stop() },
+      stopWatcher.current = watchVoiceActivity(stream, (info) => { if (info?.heardVoice) lessonTurnTelemetry.mark('speechEnd', 'kg1', info.lastVoiceAt); if (recorder.state === 'recording') recorder.stop() },
         { silenceMs: 1100, silenceAfterSpeechMs: KG_SILENCE_AFTER_SPEECH_MS, minimumSpeechMs: 350, noSpeechTimeoutMs: 6500, speechThreshold: .017,
           resumeContext: true, sampleIntervalMs: 50, onSpeech: () => { speechDetected = true },
           onUnavailable: () => { vadAvailable = false } })
@@ -968,5 +971,5 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
 
 /** Canonical KG Level 1 entrypoint used by the registered student route. */
 export default function LevelExperience(props: Parameters<typeof KGAlphabetLesson>[0] = {}) {
-  return <Suspense fallback={<main className="kg-alpha kg-alpha-loading"><LoaderCircle className="kg-spin" size={24} /> Opening your garden…</main>}><KGAlphabetLesson {...props} /></Suspense>
+  return <><Suspense fallback={<main className="kg-alpha kg-alpha-loading"><LoaderCircle className="kg-spin" size={24} /> Opening your garden…</main>}><KGAlphabetLesson {...props} /></Suspense><LatencyReportButton /></>
 }

@@ -77,6 +77,9 @@ jobs:
       - name: Verify end-of-speech silence policy keeps a safe floor
         run: node --test tests/ui/silence-policy.test.mjs
         working-directory: client
+      - name: Verify lesson latency telemetry is opt-in, anonymous and isolated per student
+        run: node --test tests/ui/lesson-turn-telemetry.test.mjs
+        working-directory: client
       - name: Verify the device audio cache only keeps fixed lesson clips
         run: node --test tests/ui/device-audio-cache.test.mjs
         working-directory: client

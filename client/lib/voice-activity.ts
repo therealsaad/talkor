@@ -6,9 +6,12 @@ import { shouldStopRecording } from '@/lib/silence-policy'
  * this helper; audio is uploaded only by the existing consented lesson recorder.
  * No new dependency or server round-trip is required.
  */
+/** Passed to onSilence so callers can measure the silence wait. Ignoring it changes nothing. */
+export type VoiceStopInfo = { lastVoiceAt: number; stoppedAt: number; heardVoice: boolean }
+
 export function watchVoiceActivity(
   stream: MediaStream,
-  onSilence: () => void,
+  onSilence: (info?: VoiceStopInfo) => void,
   options: { silenceMs?: number; minimumSpeechMs?: number; noSpeechTimeoutMs?: number; onSpeech?: () => void; speechThreshold?: number;
     resumeContext?: boolean; sampleIntervalMs?: number; onUnavailable?: () => void;
     /** Shorter silence allowed once the child has been speaking for `quickSpeechMs`. Unset keeps `silenceMs` for everything. */
@@ -62,7 +65,7 @@ export function watchVoiceActivity(
           silenceAfterSpeechMs: options.silenceAfterSpeechMs, quickSpeechMs: options.quickSpeechMs,
           minimumSpeechMs: minimumSpeech, noSpeechTimeoutMs: noSpeechLimit })) {
         ended = true
-        onSilence()
+        onSilence({ lastVoiceAt, stoppedAt: now, heardVoice })
       }
     }, options.sampleIntervalMs ?? 100)
     if (options.onUnavailable) {
