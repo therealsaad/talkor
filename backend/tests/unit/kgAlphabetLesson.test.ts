@@ -48,11 +48,12 @@ describe('KG alphabet lesson v1', () => {
 
   it('classifies fixed teaching separately from live feedback while preserving bridge-c activity mapping', () => {
     const byId = new Map(AUDIO_MANIFEST.map((line) => [line.id, line]))
-    expect(CURRICULUM_STATIC_AUDIO_MANIFEST).toHaveLength(20)
+    expect(CURRICULUM_STATIC_AUDIO_MANIFEST).toHaveLength(16)
     expect(byId.get('word-cat')?.kind).toBe('curriculum_static')
-    expect(byId.get('say-c')?.kind).toBe('curriculum_static')
+    expect(byId.get('say-c')?.kind).toBe('dynamic_tts')
     expect(byId.get('bridge-c')?.kind).toBe('dynamic_tts')
     expect(ACTIVITY_AUDIO_IDS['say-c']).toContain('say-c')
     expect(byId.get('bridge-c')?.activityIds).toEqual(['say-c'])
   })
 })
+

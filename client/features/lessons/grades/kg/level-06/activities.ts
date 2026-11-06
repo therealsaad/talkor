@@ -1,9 +1,37 @@
-import { kgFutureDraftActivities, kgFutureDraftSuggestions } from '../future-level-drafts'
 
-/** Eight original educator-reviewable KG Level 6 beats. This staff-only
- * activity list is NOT a published lesson or an authorized student path.
- * Each beat is deliberately approved:false until media/rubrics are reviewed.
- */
-export const activities = kgFutureDraftActivities(6)
 
-export const suggestedActivities = kgFutureDraftSuggestions(6)
+type LevelActivity = {
+  label: string
+  mode: string
+  educatorNote?: string
+  [key: string]: unknown
+}
+
+type SuggestedActivity = {
+  label: string
+  mode: string
+  educatorNote?: string
+  [key: string]: unknown
+}
+
+/** Add reviewed, working exercises. Empty means NOT student-playable. */
+export const activities: LevelActivity[] = []
+
+/** Editorial ideas only; not exposed to students or grading. */
+export const suggestedActivities: SuggestedActivity[] = [
+  {
+    "label": "Listen and explore: Family Words",
+    "mode": "tap-picture",
+    "educatorNote": "Teacher defines visual scene and sound cues here."
+  },
+  {
+    "label": "Speak about Family Words",
+    "mode": "repeat-after-julie",
+    "educatorNote": "Teacher supplies sample answer, corrective hints and language support."
+  },
+  {
+    "label": "Show what you know about Family Words",
+    "mode": "listen-and-find",
+    "educatorNote": "Teacher sets scoring rubric, touch choices and mastery threshold."
+  }
+]
