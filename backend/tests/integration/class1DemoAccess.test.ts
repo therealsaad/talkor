@@ -274,3 +274,55 @@ describe('development-only Class 1 student demo access', () => {
     expect(loaded.body.data.activities).toHaveLength(1)
   })
 })
+
+describe('Class 1 First Day additive student link resolution', () => {
+  it('opens the ten v3 scenes from an OLD v2 lesson URL without deleting old attempts or activities', async () => {
+    process.env.NODE_ENV = 'development'
+    process.env.TALKORA_CLASS1_STUDENT_DEMO = 'true'
+    const { student, token } = await createStudent(1, 'First Day Learner')
+    process.env.TALKORA_CLASS1_DEMO_STUDENT_ID = student._id.toString()
+    const { level, lesson: legacy, activities: legacyActivities } = await createClass1Draft('active')
+
+    const v3 = await Lesson.create({
+      levelId: level._id, title: 'My First Day — School Adventure',
+      order: 0, status: 'draft',
+      settings: { talkoraDemoDraft: true, experienceId: 'g01-l01',
+        lessonPlanRevision: 'class1-first-day-only-v3-parallel',
+        introVideoUrl: 'https://example.org/reviewed-class1-first-day.mp4' },
+    })
+    const ids = [
+      'hello-school','skip-bunny','run-race','walk-school','big-grin',
+      'school-bell','jump-frog','play-friends','enter-class','grade-one',
+    ]
+    await Activity.create(ids.map((key, index) => ({
+      lessonId: v3._id, curriculumVersion: CLASS1_DEMO_VERSION,
+      activityKey: 'class1-l01-v3-' + key,
+      grade: 1, term: 1, unitNumber: 1, order: index + 1,
+      type: 'CONVERSATION', stage: 'INTERACT',
+      title: key, prompt: 'Miss Julie says hello.',
+      target: 'school', choices: [], difficulty: 'easy', xp: 0,
+      estimatedSeconds: 30, voiceEnabled: true, aiEnabled: true,
+      allowMic: true, allowOptions: false, core: true, required: true, status: 'draft',
+      content: { audioKey: 'class-01/level-01/v3/' + key + '-en.wav' },
+      metadata: { conversationMode: 'OPEN' },
+    })))
+
+    const next = await request(app).get('/api/students/me/next-lesson')
+      .set('Authorization', `Bearer ${token}`)
+    expect(next.status).toBe(200)
+    expect(next.body.data.lessonId).toBe(v3._id.toString())
+
+    // Screenshot scenario: a bookmarked URL still contains the old v2 ID.
+    const loaded = await request(app).get(`/api/students/me/lessons/${legacy._id}`)
+      .set('Authorization', `Bearer ${token}`)
+    expect(loaded.status).toBe(200)
+    expect(loaded.body.data.lesson.id).toBe(v3._id.toString())
+    expect(loaded.body.data.lesson.settings.introVideoUrl)
+      .toBe('https://example.org/reviewed-class1-first-day.mp4')
+    expect(loaded.body.data.activities.map((a: { activityKey: string }) => a.activityKey))
+      .toEqual(ids.map(key => 'class1-l01-v3-' + key))
+
+    expect(await Activity.countDocuments({ lessonId: legacy._id })).toBe(legacyActivities.length)
+    expect(await Activity.countDocuments({ lessonId: v3._id })).toBe(10)
+  })
+})

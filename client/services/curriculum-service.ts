@@ -651,6 +651,8 @@ export interface FastLessonPackage {
 }
 
 export interface NextLessonLocation {
+  blocked?: boolean
+  blockedMessage?: string
   grade: number
   lessonId: string | null
   activityId: string | null

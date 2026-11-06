@@ -1,5 +1,6 @@
-import { apiClient, apiClientBlob } from '@/lib/api-client'
+import { apiClient, apiClientBlob, getStoredToken } from '@/lib/api-client'
 import { kgRequest } from './kg-request'
+import { clipKey, createDeviceAudioCache, shouldSkipBackgroundDownload } from '@/lib/device-audio-cache'
 
 export type KGOutcome = 'correct' | 'incorrect' | 'unclear' | 'supported'
 export type KGLetter = 'A' | 'B' | 'C' | 'D'
@@ -27,6 +28,7 @@ export interface KGAlphabetState {
 }
 export interface KGAttemptResponse {
   outcome: KGOutcome
+  advance?: boolean
   replay: boolean
   duplicate?: boolean
   state: KGAlphabetState
@@ -40,13 +42,42 @@ export interface KGAttemptResponse {
 }
 export type KGPreparedAttempt = { body: string }
 
-type ClipCacheEntry = { promise: Promise<string>; settled: boolean; url: string | null; expiresAt: number }
+// Fixed lesson clips are kept on the device between visits. Learned from the state the level loads; see rememberManifest.
+const deviceAudio = createDeviceAudioCache(() => (typeof caches === 'undefined' ? undefined : caches))
+let manifest: { version: string; clips: Map<string, { path: string; key: string }> } | null = null
+
+/** Remembers which clips are fixed curriculum audio and their device-cache keys. Dynamic and feedback audio never qualify. */
+function rememberManifest(state: KGAlphabetState) {
+  const clips = new Map<string, { path: string; key: string }>()
+  for (const [id, line] of Object.entries(state.audio || {})) {
+    if (line.kind !== 'curriculum_static') continue
+    const path = audioPath(id, line.url)
+    clips.set(path, { path, key: clipKey(state.audioVersion, id, line.text) })
+  }
+  manifest = { version: state.audioVersion, clips }
+  void deviceAudio.prune(new Set([...clips.values()].map((clip) => clip.key)))
+}
+
+type ClipCacheEntry = { promise: Promise<string>; settled: boolean; url: string | null; expiresAt: number; ownerToken: string | null; ownerTicket: string | null; receipt?: string }
 const clipCache = new Map<string, ClipCacheEntry>()
 const MAX_CLIPS = 20
 const MISSING_CLIP_TTL_MS = 60_000
 
 // Tab-memory-only. A fresh watch ticket is required for every KG Level 1 entry.
 let playbackId: string | null = null
+// Bind completed tickets to the login that created them, not only pending starts.
+let playbackStudentToken: string | null = null
+// React Strict Mode may mount twice while the first intro/start is in flight.
+// Never issue two requests that invalidate one another's watch tickets.
+let pendingIntroStart: Promise<{ playbackId: string }> | null = null
+let pendingIntroStudentToken: string | null = null
+// Never acknowledge audio before playback.onended, or from another login/watch.
+const completedFeedbackReceipts = new Map<string, { receipt: string; studentToken: string; ticket: string }>()
+
+function introTicketHeaders(): Record<string, string> {
+  if (!playbackId || !playbackStudentToken || getStoredToken() !== playbackStudentToken) throw new Error('Miss Julie intro ticket missing or belongs to another login. Please restart the story.')
+  return { 'X-KG-Intro-Playback': playbackId }
+}
 
 function audioPath(id: string, path?: string): string {
   if (path?.startsWith('/kg-alphabet/audio/v1/') && !path.includes('..')) return path
@@ -68,25 +99,50 @@ function trimClipCache() {
   }
 }
 
-async function loadAudioUrl(key: string, signal?: AbortSignal, kind: KGAudioKind = 'curriculum_static'): Promise<string> {
+async function loadAudioUrl(key: string, signal?: AbortSignal, kind: KGAudioKind = 'curriculum_static',
+  headers?: Record<string, string>, onReceipt?: (receipt: string) => void): Promise<string> {
+  const ownerToken = getStoredToken()
+  const ownerTicket = headers?.['X-KG-Intro-Playback'] || null
   const existing = clipCache.get(key)
-  if (existing && (!existing.expiresAt || existing.expiresAt > Date.now())) {
+  if (existing && existing.ownerToken === ownerToken && existing.ownerTicket === ownerTicket &&
+      (!existing.expiresAt || existing.expiresAt > Date.now())) {
     clipCache.delete(key)
     clipCache.set(key, existing)
-    return existing.promise
+    return existing.promise.then((url) => {
+      if (onReceipt) {
+        if (!existing.receipt) throw new Error('Feedback audio receipt missing. Please replay Miss Julie.')
+        onReceipt(existing.receipt)
+      }
+      return url
+    })
   }
-  if (existing) clipCache.delete(key)
+  if (existing) {
+    clipCache.delete(key)
+    if (existing.url) URL.revokeObjectURL(existing.url)
+  }
 
-  const entry: ClipCacheEntry = { promise: Promise.resolve(''), settled: false, url: null, expiresAt: 0 }
-  entry.promise = kgRequest(
-    (requestSignal) => apiClientBlob(key, { cache: 'no-store', signal: requestSignal }),
+  const entry: ClipCacheEntry = { promise: Promise.resolve(''), settled: false, url: null, expiresAt: 0, ownerToken, ownerTicket }
+  // A fixed clip already on this device needs no network at all. Receipts and feedback audio are never device-cached.
+  const deviceKey = !onReceipt && kind === 'curriculum_static' ? manifest?.clips.get(key)?.key : undefined
+  entry.promise = (deviceKey ? deviceAudio.get(deviceKey) : Promise.resolve(null)).then((stored) => stored ?? kgRequest(
+    (requestSignal) => apiClientBlob(key, { cache: 'no-store', signal: requestSignal, headers }, onReceipt
+      ? (responseHeaders) => {
+          const receipt = responseHeaders.get('X-KG-Feedback-Receipt') || ''
+          if (!/^v1\.[0-9]+\.[a-f0-9]{32}\.[a-f0-9]{64}$/.test(receipt)) {
+            throw new Error('Feedback receipt unavailable. Please replay Miss Julie.')
+          }
+          entry.receipt = receipt
+        }
+      : undefined),
     signal,
-    { retries: 1, timeoutMs: kind === 'dynamic_tts' ? 15000 : 30000, delayMs: 300 },
-  ).then((blob) => {
+    { retries: 1, timeoutMs: kind === 'dynamic_tts' ? 35000 : 30000, delayMs: 300 },
+  ).then((fetched) => { if (deviceKey) void deviceAudio.put(deviceKey, fetched); return fetched })).then((blob) => {
     if (clipCache.get(key) !== entry) throw new DOMException('Audio request is no longer active', 'AbortError')
     entry.url = URL.createObjectURL(blob)
     entry.settled = true
+    if (entry.receipt) entry.expiresAt = Date.now() + 5 * 60 * 1000
     trimClipCache()
+    if (onReceipt) onReceipt(entry.receipt || '')
     return entry.url
   }, (error) => {
     entry.settled = true
@@ -122,21 +178,48 @@ async function playAudioUrl(url: string, audio: HTMLAudioElement, signal?: Abort
 }
 
 export const kgAlphabetService = {
-  state: () => apiClient<KGAlphabetState>('/kg-alphabet/state', { cache: 'no-store' }),
+  state: () => apiClient<KGAlphabetState>('/kg-alphabet/state', { cache: 'no-store' }).then((state) => { rememberManifest(state); return state }),
+  /** Resumes only the most recent current-activity attempt without another STT pass. */
+  pendingFeedback: () => apiClient<{ pending: KGAttemptResponse | null }>('/kg-alphabet/pending-feedback', {
+    cache: 'no-store', headers: introTicketHeaders(),
+  }),
 
-  hasIntroTicket: () => Boolean(playbackId),
+  hasIntroTicket: () => Boolean(playbackId && playbackStudentToken && getStoredToken() === playbackStudentToken),
 
   async beginIntro() {
+    const token = getStoredToken()
+    if (!token) throw new Error('KG story requires student login')
+    // Deduplicate Strict Mode starts only for the SAME login. A different
+    // student on a shared computer must never inherit a pending intro
+    // ticket from the previous student's tab session.
+    if (pendingIntroStart && pendingIntroStudentToken === token) return pendingIntroStart
     playbackId = null
-    const session = await apiClient<{ playbackId: string }>('/kg-alphabet/intro/start', {
+    playbackStudentToken = null
+    completedFeedbackReceipts.clear()
+    let pending: Promise<{ playbackId: string }>
+    pending = apiClient<{ playbackId: string }>('/kg-alphabet/intro/start', {
       method: 'POST', cache: 'no-store',
+    }).then((session) => {
+      if (pendingIntroStart === pending &&
+          pendingIntroStudentToken === token && getStoredToken() === token) {
+        playbackId = session.playbackId
+        playbackStudentToken = token
+      }
+      return session
     })
-    playbackId = session.playbackId
-    return session
+    pendingIntroStart = pending
+    pendingIntroStudentToken = token
+    try { return await pending }
+    finally {
+      if (pendingIntroStart === pending) {
+        pendingIntroStart = null
+        pendingIntroStudentToken = null
+      }
+    }
   },
 
   introSeen: () => {
-    if (!playbackId) throw new Error('Start the full story first')
+    if (!playbackId || !playbackStudentToken || getStoredToken() !== playbackStudentToken) throw new Error('Start the full story first with this student login')
     return apiClient('/kg-alphabet/intro-seen', {
       method: 'POST', cache: 'no-store', body: JSON.stringify({ videoEnded: true, playbackId }),
     })
@@ -145,6 +228,24 @@ export const kgAlphabetService = {
     method: 'POST', body: JSON.stringify({ homeworkId: 'kg-abcd-picture-homework-v1' }),
   }),
   prefetch: (id: string, path?: string, kind?: KGAudioKind) => { void audioUrl(id, path, undefined, kind).catch(() => undefined) },
+  /**
+   * Downloads the lesson's remaining fixed clips one at a time into the device cache (no playback, no object URLs).
+   * Skipped on data-saver or 2G links. Safe to call repeatedly; clips already stored are not fetched again.
+   */
+  async preloadToDevice(signal?: AbortSignal): Promise<number> {
+    const nav = typeof navigator === 'undefined' ? undefined : (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } })
+    if (!manifest || shouldSkipBackgroundDownload(nav?.connection)) return 0
+    let stored = 0
+    for (const clip of manifest.clips.values()) {
+      if (signal?.aborted) break
+      try {
+        if (await deviceAudio.has(clip.key)) continue
+        const blob = await kgRequest((requestSignal) => apiClientBlob(clip.path, { cache: 'no-store', signal: requestSignal }), signal, { retries: 0, timeoutMs: 30000, delayMs: 300 })
+        if (await deviceAudio.put(clip.key, blob)) stored += 1
+      } catch { /* optional background work: the clip is fetched normally when it is needed */ }
+    }
+    return stored
+  },
   ensure: (id: string, path?: string, kind?: KGAudioKind) => audioUrl(id, path, undefined, kind).then(() => undefined),
   audioUrl,
   /** Staff-only preview uses the same manifest-selected S3/Priya delivery as the student route. */
@@ -185,24 +286,52 @@ export const kgAlphabetService = {
       }) }
   },
   async playAttemptFeedback(submissionId: string, audio: HTMLAudioElement, signal?: AbortSignal) {
-    const url = await loadAudioUrl(`/kg-alphabet/attempt/${encodeURIComponent(submissionId)}/feedback-audio`, signal, 'dynamic_tts')
+    // One audio receipt may be sent only after this particular playback ends.
+    const headers = introTicketHeaders()
+    const ownerToken = getStoredToken()
+    const ownerTicket = playbackId
+    completedFeedbackReceipts.delete(submissionId)
+    let receipt = ''
+    const url = await loadAudioUrl(
+      `/kg-alphabet/attempt/${encodeURIComponent(submissionId)}/feedback-audio`,
+      signal, 'dynamic_tts', headers, (value) => { receipt = value },
+    )
+    if (!receipt) throw new Error('Miss Julie audio receipt missing; please replay the feedback.')
     await playAudioUrl(url, audio, signal)
+    if (!ownerToken || !ownerTicket || getStoredToken() !== ownerToken || playbackId !== ownerTicket) {
+      throw new Error('Student session changed during playback. Restart Miss Julie.')
+    }
+    completedFeedbackReceipts.set(submissionId, { receipt, studentToken: ownerToken, ticket: ownerTicket })
   },
   acknowledgeFeedback(submissionId: string, signal?: AbortSignal) {
-    return apiClient<{ state: KGAlphabetState }>(`/kg-alphabet/attempt/${encodeURIComponent(submissionId)}/feedback-played`, { method: 'POST', signal })
+    const headers = introTicketHeaders()
+    const saved = completedFeedbackReceipts.get(submissionId)
+    if (!saved || saved.studentToken !== getStoredToken() || saved.ticket !== playbackId) {
+      throw new Error('Listen to Miss Julie feedback before continuing.')
+    }
+    return apiClient<{ state: KGAlphabetState }>(
+      `/kg-alphabet/attempt/${encodeURIComponent(submissionId)}/feedback-played`,
+      { method: 'POST', signal, headers, body: JSON.stringify({ feedbackReceipt: saved.receipt }) },
+    )
   },
   submitPrepared(prepared: KGPreparedAttempt, signal?: AbortSignal): Promise<KGAttemptResponse> {
     return kgRequest((requestSignal) => apiClient<KGAttemptResponse>('/kg-alphabet/attempt', {
       method: 'POST', body: prepared.body, signal: requestSignal,
 
-      headers: playbackId ? { 'X-KG-Intro-Playback': playbackId } : {},
+      headers: introTicketHeaders(),
     }), signal, { retries: 1, timeoutMs: 65000 })
   },
   async submit(input: { activityId: string; replay: boolean; selected?: string; audio?: Blob; durationMs?: number; timeSpentMs?: number }): Promise<KGAttemptResponse> {
     return this.submitPrepared(await this.prepare(input))
   },
   clearAudioCache() {
+    completedFeedbackReceipts.clear()
     for (const entry of clipCache.values()) if (entry.url) URL.revokeObjectURL(entry.url)
     clipCache.clear()
+  },
+  invalidateAudioUrl(key: string) {
+    const entry = clipCache.get(key)
+    if (entry?.url) URL.revokeObjectURL(entry.url)
+    clipCache.delete(key)
   },
 }

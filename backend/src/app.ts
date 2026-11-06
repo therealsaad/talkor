@@ -3,6 +3,7 @@ import helmet from 'helmet'
 import cors from 'cors'
 import morgan from 'morgan'
 import { env } from './config/env'
+import { buildCorsOptions } from './config/cors-options'
 import routes from './routes'
 import { errorHandler, notFoundHandler } from './middleware/error'
 import { generalLimiter } from './middleware/rateLimit'
@@ -12,12 +13,7 @@ export function createApp() {
 
   app.disable('x-powered-by')
   app.use(helmet())
-  app.use(
-    cors({
-      origin: Array.from(new Set([env.clientUrl, ...(process.env.CLIENT_URLS || '').split(',').map((url) => url.trim()).filter(Boolean), ...(env.isProd ? [] : ['http://localhost:3000'])])),
-      credentials: true,
-    }),
-  )
+  app.use(cors(buildCorsOptions({ clientUrl: env.clientUrl, extraClientUrls: process.env.CLIENT_URLS, isProd: env.isProd })))
   // Base64 audio is bounded at the voice route; allow its encoded payload through Express.
   app.use(express.json({ limit: '12mb' }))
   app.use(express.urlencoded({ extended: true, limit: '1mb' }))

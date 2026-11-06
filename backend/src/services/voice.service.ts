@@ -255,7 +255,7 @@ export const VoiceService = {
       : undefined
 
     session.aiResponse = aiResponse
-    if (activity?.activityKey?.startsWith('class1-l01-v3-')) {
+    if (/^class1-l01-v(?:3|4)-/.test(activity?.activityKey || '')) {
       session.metadata = { ...(session.metadata || {}), detectedLanguage: input.detectedLanguage || 'en-IN' }
       session.markModified('metadata')
     }
@@ -270,7 +270,7 @@ export const VoiceService = {
   async pendingTeacherAudio(studentId: string, activityId: string) {
     if (!Types.ObjectId.isValid(activityId)) throw ApiError.badRequest('Invalid activity ID')
     const access = await CurriculumAccessService.assertActivity(studentId, activityId)
-    if (!access.activity.activityKey?.startsWith('class1-l01-v3-')) throw ApiError.forbidden()
+    if (!/^class1-l01-v(?:3|4)-/.test(access.activity.activityKey || '')) throw ApiError.forbidden()
     const session = await VoiceSession.findOne({
       studentId, activityId, status: 'completed',
       'aiResponse.activityComplete': true,
@@ -293,7 +293,7 @@ export const VoiceService = {
       throw ApiError.conflict('No completed First Day teacher turn to acknowledge')
     }
     const access = await CurriculumAccessService.assertActivity(studentId, session.activityId.toString())
-    if (!access.activity.activityKey?.startsWith('class1-l01-v3-')) throw ApiError.forbidden()
+    if (!/^class1-l01-v(?:3|4)-/.test(access.activity.activityKey || '')) throw ApiError.forbidden()
     const ai = session.aiResponse as {
       activityComplete?: boolean
       conversation?: { id?: string; masteryStatus?: string }

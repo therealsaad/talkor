@@ -94,12 +94,13 @@ async function main() {
 
   // Validate progress-write eligibility BEFORE spending the Sarvam STT credit.
   if (commit) {
-    const lesson = await api<{ activities: Array<{ id: string; type: string; aiEnabled?: boolean }> }>(
+    const lesson = await api<{ activities: Array<{ id: string; type: string; aiEnabled?: boolean; activityKey?: string }> }>(
       '/students/me/lessons/' + next.lessonId, token,
     )
     const current = lesson.activities.find((item) => item.id === next.activityId)
-    if (!current?.aiEnabled || current.type !== 'CONVERSATION') {
-      throw new Error('Next activity must be an AI CONVERSATION; finish earlier activities first.')
+    if (!current?.aiEnabled || current.type !== 'CONVERSATION' ||
+        !current.activityKey?.startsWith('class1-l01-v3-')) {
+      throw new Error('The next activity must be the installed First Day v3 AI speaking scene. Refuse to test old AM draft.')
     }
   }
 
@@ -107,7 +108,8 @@ async function main() {
   const upload = new FormData()
   upload.append('audio', new Blob([await readFile(file)], { type: mimeType }), path.basename(file))
   upload.append('mode', 'fast')
-  const recognized = await api<{ transcript: string | null; provider?: string }>(
+  const sttStartedAt = Date.now()
+  const recognized = await api<{ transcript: string | null; provider?: string; languageCode?: 'en-IN' | 'hi-IN' | 'mr-IN' }>(
     '/voice/transcribe', token, { method: 'POST', body: upload },
   )
   if (!recognized.transcript?.trim()) throw new Error('STT returned no speech; stop rather than retry')
@@ -116,7 +118,7 @@ async function main() {
   if (!recognized.provider?.toLowerCase().includes(expectedStt)) {
     throw new Error('Expected ' + expectedStt + ' STT; check SPEECH_PROVIDER in running backend .env')
   }
-  console.log('PASS: ' + expectedStt + ' STT recognized an utterance (transcript hidden)')
+  console.log('PASS: ' + expectedStt + ' STT recognized an utterance (transcript hidden); latencyMs=' + (Date.now() - sttStartedAt))
 
   let teacherLine = 'Let us learn English together.'
   if (commit) {
@@ -124,25 +126,45 @@ async function main() {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ lessonId: next.lessonId, activityId: next.activityId }),
     })
-    const completed = await api<{ status: string; aiResponse?: { message?: string } }>(
+    const qwenStartedAt = Date.now()
+    const completed = await api<{ status: string; aiResponse?: {
+      message?: string; followUpQuestion?: string | null; activityComplete?: boolean;
+      shouldRetry?: boolean; conversation?: { id?: string }
+    } }>(
       '/voice/sessions/' + session._id + '/transcript', token, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ transcript: recognized.transcript, inputMode: 'MIC' }),
+        body: JSON.stringify({
+          transcript: recognized.transcript, inputMode: 'MIC',
+          ...(recognized.languageCode ? { detectedLanguage: recognized.languageCode } : {}),
+        }),
       },
     )
     if (completed.status !== 'completed' || !completed.aiResponse?.message) {
       throw new Error('Voice session did not return a Class 1 teacher reply')
     }
-    teacherLine = completed.aiResponse.message.slice(0, 180)
-    await api('/students/me/progress', token)
-    console.log('PASS: Node voice session -> Python/Qwen -> MongoDB progress readable')
-    console.log('NOTE: One turn may not complete the activity; progress requires pedagogy thresholds.')
+    if (!completed.aiResponse.conversation?.id) {
+      throw new Error('The AI response did not return an authenticated First Day conversation ID')
+    }
+    // Speak the EXACT message shown in the student UI, including its coached
+    // follow-up. Do not truncate at 180 characters or silently substitute a
+    // generic sample, and never log the child's words or model's free text.
+    teacherLine = [completed.aiResponse.message, completed.aiResponse.followUpQuestion]
+      .filter(Boolean).join(' ')
+    console.log('PASS: Node voice session -> local First Day Qwen coaching; latencyMs=' + (Date.now() - qwenStartedAt))
+    console.log('NOTE: session writes a conversation turn, not a completed activity attempt until audible Azure playback is acknowledged by the real browser.')
+    console.log('Teacher decision: ' + (completed.aiResponse.activityComplete ? 'completed-answer-awaits-audio' :
+      completed.aiResponse.shouldRetry ? 'gentle-retry-same-scene' : 'ongoing-conversation-same-scene'))
   }
 
+  const azureStartedAt = Date.now()
   const audioResponse = await fetch(apiUrl + '/api/voice/synthesize', {
     method: 'POST',
     headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text: teacherLine, purpose: 'CONVERSATION' }),
+    body: JSON.stringify({
+      text: teacherLine, purpose: 'CONVERSATION',
+      ...(commit ? { activityId: next.activityId } : {}),
+      ...(recognized.languageCode ? { language: recognized.languageCode } : {}),
+    }),
     signal: AbortSignal.timeout(30_000),
   })
   if (!audioResponse.ok || !(audioResponse.headers.get('content-type') || '').startsWith('audio/')) {
@@ -156,8 +178,10 @@ async function main() {
   if (!(audioResponse.headers.get('x-voice-provider') || '').includes('azure')) {
     throw new Error('Expected Azure TTS; check provider configuration/fallback')
   }
-  console.log('PASS: Azure TTS received (' + bytes + ' bytes); no student audio/text logged')
-  console.log('RESULT: one ' + expectedStt + ' STT + one Azure TTS request. Supervised browser listening still required.')
+  console.log('PASS: Azure TTS received (' + bytes + ' bytes); latencyMs=' + (Date.now() - azureStartedAt) + '; no student audio/text logged')
+  console.log('RESULT: one ' + expectedStt + ' STT + one Azure TTS request.' +
+    (commit ? ' This also exercised the REAL Class 1 v3 authenticated Qwen turn and Azure dynamic path.' : '') +
+    ' Supervised browser playback, media-ended acknowledgement and progression are NOT simulated.')
 }
 
 main().catch((error: unknown) => {

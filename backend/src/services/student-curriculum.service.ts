@@ -26,6 +26,9 @@ import {
   CLASS1_DEMO_ACTIVITY_FILTER,
   CLASS1_DEMO_LESSON_FILTER,
   CLASS1_DEMO_VERSION,
+  CLASS1_FIRST_DAY_PARALLEL_REVISION,
+  CLASS1_FIRST_DAY_POEM_REVISION,
+  preferClass1FirstDayLesson,
 } from './class1-demo-access'
 
 /* =========================================================
@@ -120,7 +123,7 @@ export const StudentCurriculumService = {
           unit._id,
       )
 
-    const lessons =
+    const lessonCandidates =
       unitIds.length >
       0
         ? await Lesson.find({
@@ -138,6 +141,9 @@ export const StudentCurriculumService = {
             })
             .lean()
         : []
+    const lessons = isClass1Demo
+      ? preferClass1FirstDayLesson(lessonCandidates)
+      : lessonCandidates
 
     /* =====================================================
        ACTIVITIES
@@ -427,6 +433,15 @@ export const StudentCurriculumService = {
              LESSON SUMMARY
              =============================================== */
 
+          // The published First Day lesson retains its syllabus/map identity
+          // after the development-only demo flag is no longer in effect.
+          const isClass1Level1 = student.grade === 1 && unit.number === 1
+          const hasPoem = (isClass1Demo || isClass1Level1) && unitLessons.some(
+            lesson => lesson.settings?.lessonPlanRevision === CLASS1_FIRST_DAY_POEM_REVISION,
+          )
+          const hasFirstDay = (isClass1Demo || isClass1Level1) && unitLessons.some(
+            lesson => [CLASS1_FIRST_DAY_PARALLEL_REVISION, CLASS1_FIRST_DAY_POEM_REVISION].includes(String(lesson.settings?.lessonPlanRevision || '')),
+          )
           const lessonSummary =
             unitLessons.map(
               (lesson) => {
@@ -481,13 +496,13 @@ export const StudentCurriculumService = {
              * Curriculum title remains authoritative.
              */
             title:
-              unit.title,
+              hasPoem ? 'My First Day — English Poem' : hasFirstDay ? 'My First Day — School Adventure' : unit.title,
 
             /*
              * Product world label stays separate.
              */
             worldName:
-              unit.place,
+              hasPoem ? 'Poem Garden' : hasFirstDay ? 'School Garden' : unit.place,
 
             term:
               unit.term,
@@ -530,12 +545,14 @@ export const StudentCurriculumService = {
               unit.badge,
 
             learningObjectives:
-              unit.learningObjectives ??
-              [],
+              hasFirstDay
+                ? (hasPoem ? ['Listen and recite My First Day in two-line pairs and as a full poem'] : ['Listen to and speak the First Day school actions in English'])
+                : (unit.learningObjectives ?? []),
 
             speakingGoals:
-              unit.speakingGoals ??
-              [],
+              hasFirstDay
+                ? (hasPoem ? ['Say each two-line poem part and recite all three stanzas'] : ['Speak about school, walk, run, skip, jump, grin, bell and play'])
+                : (unit.speakingGoals ?? []),
 
             lessonCount:
               unitLessons.length,
@@ -680,7 +697,7 @@ export const StudentCurriculumService = {
        ===================================================== */
 
     const contentStatus = access.isKGPilot || access.isClass1Demo ? 'draft' : 'active'
-    const lessons =
+    const lessonCandidates =
       await Lesson.find({
         levelId:
           currentUnit.id,
@@ -691,6 +708,9 @@ export const StudentCurriculumService = {
           order: 1,
         })
         .lean()
+    const lessons = access.isClass1Demo
+      ? preferClass1FirstDayLesson(lessonCandidates)
+      : lessonCandidates
 
     /* =====================================================
        ACTIVITIES

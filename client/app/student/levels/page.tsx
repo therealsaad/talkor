@@ -7394,7 +7394,14 @@ export default function AdventureMapPage() {
   const student =
     session?.student
 
-  const worlds = student?.grade === 1 ? CLASS1_WORLDS : WORLDS
+  // Coordinates belong to the artwork; titles/statuses come from the real
+  // student's server-authoritative syllabus rather than an outdated map draft.
+  const worlds = useMemo(() => student?.grade === 1
+    ? CLASS1_WORLDS.map(world => {
+        const unit = curriculum?.units.find(item => Number(item.unitNumber) === world.number)
+        return { ...world, name: unit?.worldName || world.name, syllabus: unit?.title || world.syllabus }
+      })
+    : WORLDS, [curriculum, student?.grade])
   const mapBackground = student?.grade === 1 ? CLASS1_MAP_BACKGROUND : MAP_BACKGROUND
 
   const firstName =
@@ -7453,7 +7460,7 @@ export default function AdventureMapPage() {
       (unit?.status as
         | MapStatus
         | undefined) ??
-      'UPCOMING'
+      'LOCKED'
     )
   }
 
@@ -7786,7 +7793,13 @@ export default function AdventureMapPage() {
     }
 
     focusCamera(world, 1.48)
-    router.push(`/student/lesson/${encodeURIComponent(targetLesson.id)}`)
+    // A CURRENT stone must always resume the backend-selected unfinished
+    // activity. Direct lesson links remain only for completed-stage review.
+    if (status === 'CURRENT') {
+      router.push('/student/continue')
+    } else {
+      router.push(`/student/lesson/${encodeURIComponent(targetLesson.id)}`)
+    }
   }
 
   function chooseWorld(
@@ -7797,14 +7810,7 @@ export default function AdventureMapPage() {
 
     setSelected(world.number)
 
-    if (error && student?.grade === 1 && world.number === 1) {
-      const message = 'Class 1 Level 1 could not load. Check that the Class 1 demo curriculum is seeded, then retry.'
-      setJulieMessage(message)
-      void speakJulie(message)
-      return
-    }
-
-    if (
+      if (
       status === 'CURRENT' ||
       status === 'COMPLETED'
     ) {
@@ -7867,33 +7873,6 @@ export default function AdventureMapPage() {
 
         <AdventureStyles />
       </div>
-    )
-  }
-
-  if (error && student?.grade !== 1) {
-    return (
-      <main className="tk-map-error">
-        <div>
-          <h1>
-            Adventure paused
-          </h1>
-
-          <p>
-            {error}
-          </p>
-
-          <button
-            type="button"
-            onClick={() =>
-              window.location.reload()
-            }
-          >
-            Try again
-          </button>
-        </div>
-
-        <AdventureStyles />
-      </main>
     )
   }
 
@@ -8016,10 +7995,10 @@ export default function AdventureMapPage() {
           resetPointer
         }
       >
-        {error && student?.grade === 1 ? (
-          <aside className="tk-class1-map-notice" role="status">
-            <strong>Class 1 map is ready</strong>
-            <span>The Class 1 curriculum could not be loaded. Check that the Level 1 demo curriculum is seeded in the backend, then retry.</span>
+        {error ? (
+          <aside className="tk-class1-map-notice" role="alert">
+            <strong>Miss Julie's lessons aren't ready yet</strong>
+            <span>{error} You can look around the map, but all unverified lessons stay locked. Ask your teacher to check the curriculum publication.</span>
             <button type="button" onClick={() => window.location.reload()}>Retry</button>
           </aside>
         ) : null}

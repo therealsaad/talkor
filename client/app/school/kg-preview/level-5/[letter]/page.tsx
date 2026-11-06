@@ -1,21 +1,9 @@
-import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
-import { SchoolShell } from '@/components/school/school-shell'
-import Level5Experience from '@/features/lessons/grades/kg/level-05/LevelExperience'
+import { notFound } from 'next/navigation'
+import { CurriculumExplorerPage } from '@/features/curriculum-explorer/CurriculumExplorer'
 
-const LETTERS = ['W', 'X', 'Y', 'Z'] as const
-
-export function generateStaticParams() {
-  return LETTERS.map((letter) => ({ letter }))
-}
-
+/** Legacy letter URLs inspect the draft; they do not start a live voice session. */
 export default async function KGLevel5LetterPreview({ params }: { params: Promise<{ letter: string }> }) {
-  const { letter } = await params
-  const startLetter = LETTERS.find((item) => item === letter.toUpperCase()) || 'W'
-  return <SchoolShell title={`KG Level 5 · Letter ${startLetter}`} subtitle="Staff-only alphabet preview. Not available to students.">
-    <Link href="/school/kg-preview/level-5" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, margin: '14px 0', color: '#4b5563', fontWeight: 750, textDecoration: 'none' }}>
-      <ArrowLeft size={17} /> Level 5 letters
-    </Link>
-    <Level5Experience preview previewStartLevel5Letter={startLetter} />
-  </SchoolShell>
+  const letter = (await params).letter.toUpperCase()
+  if (!/^[W-Z]$/.test(letter)) notFound()
+  return <CurriculumExplorerPage initialGrade={0} initialLevel={5} initialView="teaching" initialSample={`say-${letter.toLowerCase()}`} />
 }

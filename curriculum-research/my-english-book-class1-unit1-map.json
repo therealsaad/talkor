@@ -1,0 +1,3172 @@
+{
+  "schemaVersion": "1.1.0",
+  "dataset": {
+    "name": "my-english-book-class1-unit1-map",
+    "description": "Syllabus-verified curriculum map for My English Book Grade One (Non-English Medium), Unit One (chapters 1.1-1.11), the second official Maharashtra Std 1 English textbook (PM dual-track decision). Designed for Miss Julie's teaching flow. No textbook passage text is reproduced: titles, page references, word banks, activity types and Talkora-original pedagogy only. Maps onto the SAME ten canonical g01-l01..l10 levels as the English Balbharati track; canonical level IDs are unchanged.",
+    "generatedOn": "2026-10-31",
+    "generatedBy": "Z.ai Curriculum Agent (Sprint 1, checkpoint 2)",
+    "textbookTrack": {
+      "textbookId": "MY_ENGLISH_BOOK_G01_NON_ENGLISH_MEDIUM",
+      "trackType": "NON_ENGLISH_MEDIUM",
+      "selectionModel": "School/admin configuration selects the applicable textbook track; students never choose their curriculum or difficulty."
+    },
+    "textbookEdition": {
+      "title": "My English Book — Grade One (Non-English Medium)",
+      "publisher": "Maharashtra State Bureau of Textbook Production and Curriculum Research, Pune (Balbharati)",
+      "editionYear": 2025,
+      "approval": "Verified by SCERT Maharashtra and approved by the Coordination Committee (GR No. Abhyas-2116/(Pra.Kra.43/16) SD-4) in its meeting held on April 16, 2025, for use from academic year 2025-26 onwards, as printed on the title page.",
+      "academicYearOfFirstUse": "2025-26",
+      "sourceUrl": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+      "verifiedOn": "2026-10-31",
+      "verificationMethod": "Direct download and text extraction of the official eBalbharati PDF (87 PDF pages; Index lists 4 units / 42 chapters; Unit One = printed pp. 1-17, 11 chapters).",
+      "confidence": "OFFICIAL_SOURCE_VERIFIED"
+    },
+    "curriculumVersion": {
+      "framework": "Foundational Stage Curriculum 2024 (SCF Maharashtra)",
+      "policyBasis": "National Education Policy (NEP) 2020",
+      "coordinationCommitteeApprovalDate": "2025-04-16",
+      "academicYearOfFirstUse": "2025-26",
+      "verificationAuthority": "SCERT Maharashtra, Pune-30 (stated on the book's title page)"
+    },
+    "editionVerification": {
+      "title": "My English Book — Grade One (Non-English Medium)",
+      "publisher": "Maharashtra State Bureau of Textbook Production and Curriculum Research, Pune (Balbharati)",
+      "editionYear": 2025,
+      "approval": "Verified by SCERT Maharashtra and approved by the Coordination Committee (GR No. Abhyas-2116/(Pra.Kra.43/16) SD-4) in its meeting held on April 16, 2025, for use from academic year 2025-26 onwards, as printed on the title page.",
+      "academicYearOfFirstUse": "2025-26",
+      "sourceUrl": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+      "verifiedOn": "2026-10-31",
+      "verificationMethod": "Direct download and text extraction of the official eBalbharati PDF (87 PDF pages; Index lists 4 units / 42 chapters; Unit One = printed pp. 1-17, 11 chapters).",
+      "confidence": "OFFICIAL_SOURCE_VERIFIED"
+    },
+    "comparisonWithTalkoraCurrent": {
+      "talkoraEditionClaim": "Talkora's existing Class 1 implementation (class1-first-day-poem.ts) is built on English Balbharati Grade One (2025); no My English Book content was implemented before this dataset.",
+      "officialEdition": "My English Book — Grade One (Non-English Medium), Balbharati, first use AY 2025-26, approved 2025-04-16.",
+      "editionDriftFound": false,
+      "evidence": [
+        "Title page (PDF p.3): 'MY ENGLISH BOOK ... Grade One (Non-English Medium)' with the April 16, 2025 Coordination Committee approval and SCERT verification statement.",
+        "Index page (PDF p.10) lists Unit One chapters 1.1-1.11 at printed pp. 1-17, matching the chapter records in this dataset.",
+        "No pre-existing Talkora My English Book claims exist to drift from; the English Balbharati implementation is a separate track and is untouched."
+      ]
+    }
+  },
+  "entries": [
+    {
+      "curriculumId": "meb-g01-u1-c1.01",
+      "textbookId": "MY_ENGLISH_BOOK_G01_NON_ENGLISH_MEDIUM",
+      "board": "Maharashtra State Board (Balbharati)",
+      "grade": 1,
+      "subject": "English",
+      "textbookEdition": {
+        "title": "My English Book — Grade One (Non-English Medium)",
+        "publisher": "Maharashtra State Bureau of Textbook Production and Curriculum Research, Pune (Balbharati)",
+        "editionYear": 2025,
+        "approval": "Verified by SCERT Maharashtra and approved by the Coordination Committee (GR No. Abhyas-2116/(Pra.Kra.43/16) SD-4) in its meeting held on April 16, 2025, for use from academic year 2025-26 onwards, as printed on the title page.",
+        "academicYearOfFirstUse": "2025-26",
+        "sourceUrl": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+        "verifiedOn": "2026-10-31",
+        "verificationMethod": "Direct download and text extraction of the official eBalbharati PDF (87 PDF pages; Index lists 4 units / 42 chapters; Unit One = printed pp. 1-17, 11 chapters).",
+        "confidence": "OFFICIAL_SOURCE_VERIFIED"
+      },
+      "unit": {
+        "number": 1,
+        "title": null,
+        "printedPageRange": "1-17"
+      },
+      "chapter": {
+        "code": "1.1",
+        "title": "Body Body Pop Pop",
+        "printedPage": 1,
+        "contentCategory": "ACTION_RHYME",
+        "copyrightStatus": {
+          "category": "THIRD_PARTY_PERMISSION_AWAITED",
+          "reproductionRule": "The Index page acknowledges copyright holders generally and states: 'Some permission are awaited. Acknowledgement to them will be made in subsequent reprint.' No per-chapter credit is printed for Unit One; this chapter is a song/rhyme, so a third-party origin cannot be ruled out.",
+          "creditNote": "Index page: permissions awaited for some reproduced material; no per-chapter credit printed for this chapter."
+        }
+      },
+      "lesson": {
+        "orderInUnit": 1,
+        "talkoraLevelMapping": [
+          {
+            "talkoraLevelId": "g01-l01",
+            "roadmapTitle": "Little Words & My First Day",
+            "role": "INTRODUCES",
+            "status": "PROPOSED_MAPPING_PENDING_PM_APPROVAL"
+          }
+        ]
+      },
+      "sourceReferences": [
+        {
+          "type": "OFFICIAL_TEXTBOOK_PDF",
+          "locator": "My English Book Grade One (2025), printed p.1, chapter 1.1 Body Body Pop Pop — action song ('Listen and sing', 'Listen and speak') plus 'For the Teacher' conversation frames (What is this? / Show me your fingers / Where is your chin?)",
+          "url": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+          "verifiedOn": "2026-10-31",
+          "confidence": "OFFICIAL_SOURCE_VERIFIED"
+        }
+      ],
+      "learningObjectives": [
+        "Sing the body-parts action song with pointing actions (touch head, shoulders, eyes, ears, nose, mouth, hand, feet).",
+        "Recognise and say the body-part words from the song and teacher frames: head, shoulders, eyes, ears, nose, mouth, hand, feet, fingers, neck, chin.",
+        "Answer 'What is this?' with 'This is my ___' while pointing.",
+        "Follow one-step body instructions (Touch your ___ / Show me your ___)."
+      ],
+      "vocabulary": [
+        {
+          "en": "head",
+          "hi": "सिर",
+          "mr": "डोकं",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.1 song line 'Touch your head', printed p.1"
+        },
+        {
+          "en": "shoulders",
+          "hi": "कंधे",
+          "mr": "खांदे",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.1 song line 'Touch your shoulders', printed p.1"
+        },
+        {
+          "en": "eyes",
+          "hi": "आँखें",
+          "mr": "डोळे",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.1 song line 'Touch your eyes', printed p.1"
+        },
+        {
+          "en": "ears",
+          "hi": "कान",
+          "mr": "कान",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.1 song line 'Touch your ears', printed p.1"
+        },
+        {
+          "en": "nose",
+          "hi": "नाक",
+          "mr": "नाक",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.1 song line 'Touch your nose', printed p.1"
+        },
+        {
+          "en": "mouth",
+          "hi": "मुँह",
+          "mr": "तोंड",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.1 song line 'Touch your mouth', printed p.1"
+        },
+        {
+          "en": "hand",
+          "hi": "हाथ",
+          "mr": "हात",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.1 song line 'Touch your hand', printed p.1"
+        },
+        {
+          "en": "fingers",
+          "hi": "उँगलियाँ",
+          "mr": "बोटं",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.1 teacher frame 'Show me your fingers', printed p.1"
+        },
+        {
+          "en": "neck",
+          "hi": "गर्दन",
+          "mr": "मान",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.1 teacher frame 'This is my neck', printed p.1"
+        },
+        {
+          "en": "chin",
+          "hi": "ठुड्डी",
+          "mr": "हनुटी",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.1 teacher frame 'Where is your chin?', printed p.1",
+          "audioAsset": {
+            "status": "RIGHTS_UNDECIDED",
+            "officialQrRef": "Official in-book QR audio (title page promises digital audio/visual resources).",
+            "note": "Rights undecided; Talkora ships no such audio until Balbharati authorization is documented."
+          }
+        }
+      ],
+      "adaptiveTeachingHints": [
+        {
+          "learnerState": "BEGINNER_COMPLETE",
+          "hint": "Point-and-say relay: child touches each body part and says the word while the song plays."
+        },
+        {
+          "learnerState": "BEGINNER_HINDI",
+          "hint": "Child says the Hindi body word first: 'Very good! Aapne kaha सिर. In English — head. Say head!'"
+        },
+        {
+          "learnerState": "BEGINNER_MARATHI",
+          "hint": "Child says the Marathi body word first: 'खूप छान! डोकं. In English — head. Say head!'"
+        },
+        {
+          "learnerState": "ANSWERED_INCORRECT",
+          "hint": "Child names the wrong part: Miss Julie touches the same part on herself — 'Is THIS my nose?' Let the picture (body) decide, never say 'wrong'."
+        },
+        {
+          "learnerState": "SILENT",
+          "hint": "Any gesture counts: child points to the body part; Miss Julie supplies the word warmly and moves on."
+        },
+        {
+          "learnerState": "GUESSING_REPEATEDLY",
+          "hint": "'Our body knows the answer — touch it and it will tell you!' Body-pointing cannot be guessed wrong."
+        },
+        {
+          "learnerState": "FAST_LEARNER",
+          "hint": "Child leads the song: calls the next body part for the class."
+        },
+        {
+          "learnerState": "NEEDS_REVISION",
+          "hint": "Two-part check: Miss Julie says the word, child points; then child says the word for a part Miss Julie points to."
+        }
+      ],
+      "recallDesign": [
+        {
+          "milestone": "IMMEDIATE_REPETITION",
+          "activity": "Child echoes 'head' right after Miss Julie while touching the head."
+        },
+        {
+          "milestone": "INDEPENDENT_ANSWERING",
+          "activity": "Miss Julie asks a fresh 'What is this?' for a part not just practised; child answers with no model."
+        },
+        {
+          "milestone": "DELAYED_RECALL",
+          "activity": "Next session's warm-up: 'Show me and say — eyes!' Child produces the word unprompted; home task reports one body word in English."
+        }
+      ],
+      "review": {
+        "syllabusVerification": "OFFICIAL_PDF_VERIFIED",
+        "pedagogyStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+        "notes": "Syllabus facts verified against the official 2025 PDF. Pedagogy, Hindi/Marathi support lines and teaching moves are Talkora-original drafts awaiting a human teacher's review; synthetic example validation does not count as teacher approval."
+      },
+      "prerequisiteSkills": [
+        "No prior English assumed; KG 'My Body and Actions' (g00-l03) is helpful but optional.",
+        "Comfortable with whole-body imitation games."
+      ],
+      "grammarConcepts": [
+        {
+          "concept": "my (possessive)",
+          "childFriendlyFraming": "'My' means it belongs to me: my head, my hands. Everyone says 'my' about their own body."
+        }
+      ],
+      "speakingObjectives": [
+        "Say 'This is my ___' while touching the named part.",
+        "Answer 'Where is your chin?' with 'This is / Here is my chin.'"
+      ],
+      "suggestedVisualActivities": [
+        {
+          "title": "Child-friendly body-part poster (front view)",
+          "description": "Simple smiling child figure; each of the 11 words arrow-labelled; no textbook artwork copied.",
+          "assetStatus": "MISSING"
+        },
+        {
+          "title": "Point-and-say action icons",
+          "description": "Hand icon touching head/shoulders/eyes/ears/nose/mouth for the touch-the-part game.",
+          "assetStatus": "SKETCH_REQUESTED"
+        }
+      ],
+      "teacherExplanationExamples": [
+        {
+          "en": "Touch your head — this is my head.",
+          "hi": "अपना सिर छुओ — यह मेरा सिर है।",
+          "mr": "तुझं डोकं धर — हे माझं डोकं."
+        },
+        {
+          "en": "What is this? This is my hand.",
+          "hi": "यह क्या है? यह मेरा हाथ है।",
+          "mr": "हे काय? हे माझं हात."
+        }
+      ],
+      "hindiExplanations": [
+        "शरीर के अंगों के नाम पहले हिंदी में बच्चे जानते हैं — सिर, आँख, कान। अंग्रेज़ी शब्द वही चीज़ हैं: head, eyes, ears।"
+      ],
+      "marathiExplanations": [
+        "शरीराच्या अवयवांची नावं मराठीत माहीत आहेत — डोकं, डोळे, कान. इंग्रजी शब्द तेच आहेत: head, eyes, ears."
+      ],
+      "expectedStudentAnswers": [
+        "This is my head.",
+        "These are my fingers.",
+        "Here is my nose."
+      ],
+      "commonBeginnerMistakeIds": [
+        "mist-004",
+        "mist-018",
+        "mist-019",
+        "mist-029"
+      ],
+      "remediationStrategies": [
+        "Body-part words are taught through touch first, speech second — a silent child still learns.",
+        "Keep the 'my' frame constant; change only the body word."
+      ],
+      "assessmentCriteria": [
+        "Points correctly to at least 6 of 11 named body parts.",
+        "Says at least 4 body-part words with the 'This is my ___' frame."
+      ],
+      "masteryIndicators": [
+        "INDEPENDENT_ANSWERING: answers 'What is this?' for a picture-shown part with no model in the same session.",
+        "DELAYED_RECALL: names at least 3 body parts in English at the start of the next session, unprompted."
+      ],
+      "revisionActivities": [
+        "Reverse roles: Miss Julie touches a part, child names it.",
+        "Sing the song slowly with only 3 parts, then add one more each day."
+      ],
+      "shortSpokenHomework": "Touch and tell someone at home three body parts in English — head, eyes, nose are enough!",
+      "teachingStages": [
+        {
+          "stage": "DISCOVER",
+          "note": "Miss Julie touches and names her own head/eyes/nose; children copy the gesture."
+        },
+        {
+          "stage": "DEMONSTRATE",
+          "note": "Sing 1.1 with actions; slow the tempo on each body word."
+        },
+        {
+          "stage": "ASK",
+          "note": "'What is this?' frame with pointing."
+        },
+        {
+          "stage": "LISTEN",
+          "note": "Child follows 'Touch your ___' instructions."
+        },
+        {
+          "stage": "CORRECT",
+          "note": "Wrong part → teacher-modelled self-check, never 'wrong'."
+        },
+        {
+          "stage": "VERIFY",
+          "note": "Point-and-say relay in pairs."
+        },
+        {
+          "stage": "RECALL",
+          "note": "Next-day 'Show me and say' warm-up."
+        }
+      ]
+    },
+    {
+      "curriculumId": "meb-g01-u1-c1.02",
+      "textbookId": "MY_ENGLISH_BOOK_G01_NON_ENGLISH_MEDIUM",
+      "board": "Maharashtra State Board (Balbharati)",
+      "grade": 1,
+      "subject": "English",
+      "textbookEdition": {
+        "title": "My English Book — Grade One (Non-English Medium)",
+        "publisher": "Maharashtra State Bureau of Textbook Production and Curriculum Research, Pune (Balbharati)",
+        "editionYear": 2025,
+        "approval": "Verified by SCERT Maharashtra and approved by the Coordination Committee (GR No. Abhyas-2116/(Pra.Kra.43/16) SD-4) in its meeting held on April 16, 2025, for use from academic year 2025-26 onwards, as printed on the title page.",
+        "academicYearOfFirstUse": "2025-26",
+        "sourceUrl": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+        "verifiedOn": "2026-10-31",
+        "verificationMethod": "Direct download and text extraction of the official eBalbharati PDF (87 PDF pages; Index lists 4 units / 42 chapters; Unit One = printed pp. 1-17, 11 chapters).",
+        "confidence": "OFFICIAL_SOURCE_VERIFIED"
+      },
+      "unit": {
+        "number": 1,
+        "title": null,
+        "printedPageRange": "1-17"
+      },
+      "chapter": {
+        "code": "1.2",
+        "title": "What is your name?",
+        "printedPage": 2,
+        "contentCategory": "SELF_INTRODUCTION",
+        "copyrightStatus": {
+          "category": "BALBHARATI_ALL_RIGHTS_RESERVED",
+          "reproductionRule": "Reference-only in Talkora datasets: cite title/page; teach with Talkora-original name games. Do not reproduce the poem text; name lists and sentence frames are functional content."
+        }
+      },
+      "lesson": {
+        "orderInUnit": 2,
+        "talkoraLevelMapping": [
+          {
+            "talkoraLevelId": "g01-l03",
+            "roadmapTitle": "People and Family",
+            "role": "INTRODUCES",
+            "status": "PROPOSED_MAPPING_PENDING_PM_APPROVAL"
+          },
+          {
+            "talkoraLevelId": "g01-l08",
+            "roadmapTitle": "Simple Questions",
+            "role": "INTRODUCES",
+            "status": "PROPOSED_MAPPING_PENDING_PM_APPROVAL"
+          }
+        ]
+      },
+      "sourceReferences": [
+        {
+          "type": "OFFICIAL_TEXTBOOK_PDF",
+          "locator": "My English Book Grade One (2025), printed p.2, chapter 1.2 What is your name? — name flash-card frames (I am Jaya. / My name is Kiran.), the 'Oh dear!' poem, and 'For the Teacher' chain-drill note",
+          "url": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+          "verifiedOn": "2026-10-31",
+          "confidence": "OFFICIAL_SOURCE_VERIFIED"
+        }
+      ],
+      "learningObjectives": [
+        "Ask and answer 'What is your name?' with 'I am ___.' or 'My name is ___.",
+        "Respond to 'How are you?' with 'I am fine, thank you.'",
+        "Use the polite exchange 'Glad to meet you.' when meeting someone.",
+        "Hear that classmate names are special names said with a capital letter when written."
+      ],
+      "vocabulary": [
+        {
+          "en": "name",
+          "hi": "नाम",
+          "mr": "नाव",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.2 question frame 'What is your name?', printed p.2"
+        },
+        {
+          "en": "glad",
+          "hi": "खुश",
+          "mr": "आनंदी",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.2 poem line 'Glad to meet you', printed p.2"
+        },
+        {
+          "en": "meet",
+          "hi": "मिलना",
+          "mr": "भेटणे",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.2 poem line 'Glad to meet you', printed p.2"
+        },
+        {
+          "en": "fine",
+          "hi": "ठीक",
+          "mr": "बरं",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.2 poem answer 'I am fine, thank you', printed p.2"
+        },
+        {
+          "en": "thank you",
+          "hi": "धन्यवाद",
+          "mr": "धन्यवाद",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.2 poem answer 'I am fine, thank you', printed p.2"
+        },
+        {
+          "en": "Jaya",
+          "hi": "जया (नाम)",
+          "mr": "जया (नाव)",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.2 flash-card names: Vihan, Seema, Merry, John, Raj, Farida, Ishan, Aman, Jaya, Kiran, Ravi",
+          "audioAsset": {
+            "status": "RIGHTS_UNDECIDED",
+            "officialQrRef": "Official in-book QR audio (title page promises digital audio/visual resources).",
+            "note": "Rights undecided; Talkora ships no such audio until Balbharati authorization is documented."
+          }
+        }
+      ],
+      "adaptiveTeachingHints": [
+        {
+          "learnerState": "BEGINNER_COMPLETE",
+          "hint": "Chain drill: each child asks the next 'What is your name?' — the book's own activity."
+        },
+        {
+          "learnerState": "BEGINNER_HINDI",
+          "hint": "Child answers in Hindi ('मेरा नाम…'): 'Very good! Mera naam — in English: My name is… Try it!'"
+        },
+        {
+          "learnerState": "BEGINNER_MARATHI",
+          "hint": "Child answers in Marathi ('माझं नाव…'): 'छान! माझं नाव — in English: My name is… Try it!'"
+        },
+        {
+          "learnerState": "ANSWERED_INCORRECT",
+          "hint": "Child answers 'Your name is…' (order lost): Miss Julie models with a puppet asking the puppet, child echoes the puppet's answer."
+        },
+        {
+          "learnerState": "SILENT",
+          "hint": "Miss Julie holds the flash card with the child's own name and answers FOR the child happily, inviting only a nod first."
+        },
+        {
+          "learnerState": "GUESSING_REPEATEDLY",
+          "hint": "'Only YOU know your name — nobody can guess this treasure!' Personal facts block guessing."
+        },
+        {
+          "learnerState": "FAST_LEARNER",
+          "hint": "Child becomes the puppeteer: asks the whole class and picks who answers."
+        },
+        {
+          "learnerState": "NEEDS_REVISION",
+          "hint": "Two-step ladder: echo the full answer → finish the started frame ('My name is…') → answer alone."
+        }
+      ],
+      "recallDesign": [
+        {
+          "milestone": "IMMEDIATE_REPETITION",
+          "activity": "Child echoes 'My name is ___' once after the model."
+        },
+        {
+          "milestone": "INDEPENDENT_ANSWERING",
+          "activity": "Miss Julie turns to the child fresh: 'And YOU? What is your name?' Child answers without a model."
+        },
+        {
+          "milestone": "DELAYED_RECALL",
+          "activity": "Next session's attendance game: child answers the roll with 'My name is ___' / 'I am fine, thank you.'"
+        }
+      ],
+      "review": {
+        "syllabusVerification": "OFFICIAL_PDF_VERIFIED",
+        "pedagogyStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+        "notes": "Syllabus facts verified against the official 2025 PDF. Pedagogy, Hindi/Marathi support lines and teaching moves are Talkora-original drafts awaiting a human teacher's review; synthetic example validation does not count as teacher approval."
+      },
+      "prerequisiteSkills": [
+        "Can say their own name in the home language.",
+        "Has experienced turn-taking in a group."
+      ],
+      "grammarConcepts": [
+        {
+          "concept": "What is your name? — question frame",
+          "childFriendlyFraming": "'What' asks for information. The answer swaps 'your' for 'my': your name → MY name."
+        }
+      ],
+      "comprehensionGoals": [
+        "Child recognises the difference between the question (What is your name?) and the answer (My name is ___)."
+      ],
+      "speakingObjectives": [
+        "Ask 'What is your name?' and answer with 'I am ___' / 'My name is ___'.",
+        "Say 'How are you?' — 'I am fine, thank you.'"
+      ],
+      "suggestedVisualActivities": [
+        {
+          "title": "Name flash cards (Talkora-original)",
+          "description": "Blank cards the class writes classmate names on; textbook artwork not copied.",
+          "assetStatus": "SKETCH_REQUESTED"
+        }
+      ],
+      "teacherExplanationExamples": [
+        {
+          "en": "What is your name? — My name is Priya.",
+          "hi": "तुम्हारा नाम क्या है? — मेरा नाम प्रिया है।",
+          "mr": "तुझं नाव काय? — माझं नाव प्रिया."
+        },
+        {
+          "en": "How are you? — I am fine, thank you.",
+          "hi": "तुम कैसे हो? — मैं ठीक हूँ, धन्यवाद।",
+          "mr": "तू कसा आहेस? — मी बरं, धन्यवाद."
+        }
+      ],
+      "hindiExplanations": [
+        "सवाल में 'your' (तुम्हारा) आता है, जवाब में 'my' (मेरा)। 'What is your name?' — 'My name is…'"
+      ],
+      "marathiExplanations": [
+        "प्रश्नात 'your' (तुझं) येतं, उत्तरात 'my' (माझं). 'What is your name?' — 'My name is…'"
+      ],
+      "expectedStudentAnswers": [
+        "I am Aman.",
+        "My name is Farida.",
+        "I am fine, thank you."
+      ],
+      "commonBeginnerMistakeIds": [
+        "mist-015",
+        "mist-017",
+        "mist-020",
+        "mist-038"
+      ],
+      "remediationStrategies": [
+        "Answer-first teaching: child produces their own name sentence before practising the question.",
+        "Capital-letter idea tied to each child's own name — personal, never abstract."
+      ],
+      "assessmentCriteria": [
+        "Answers 'What is your name?' with a complete 'My name is ___' frame.",
+        "Uses 'I am fine, thank you.' in the How-are-you exchange."
+      ],
+      "masteryIndicators": [
+        "INDEPENDENT_ANSWERING: child asks AND answers the name exchange with a peer, no teacher model.",
+        "DELAYED_RECALL: next-day roll-call answered in English without prompting."
+      ],
+      "revisionActivities": [
+        "Puppet asks child; child answers; then swap.",
+        "Name-circle: every child says one classmate's name with 'Glad to meet you.'"
+      ],
+      "shortSpokenHomework": "Ask one person at home 'What is your name?' in English and tell Miss Julie tomorrow what they said.",
+      "teachingStages": [
+        {
+          "stage": "DISCOVER",
+          "note": "Miss Julie 'meets' a puppet: full exchange modelled."
+        },
+        {
+          "stage": "DEMONSTRATE",
+          "note": "Chain drill with flash cards, per the teacher note."
+        },
+        {
+          "stage": "ASK",
+          "note": "Children ask each other in pairs."
+        },
+        {
+          "stage": "CORRECT",
+          "note": "Frame swap your→my rehearsed with gesture (point away/point to self)."
+        },
+        {
+          "stage": "VERIFY",
+          "note": "Fresh-prompt check by Miss Julie."
+        },
+        {
+          "stage": "RECALL",
+          "note": "Attendance game next session."
+        }
+      ]
+    },
+    {
+      "curriculumId": "meb-g01-u1-c1.03",
+      "textbookId": "MY_ENGLISH_BOOK_G01_NON_ENGLISH_MEDIUM",
+      "board": "Maharashtra State Board (Balbharati)",
+      "grade": 1,
+      "subject": "English",
+      "textbookEdition": {
+        "title": "My English Book — Grade One (Non-English Medium)",
+        "publisher": "Maharashtra State Bureau of Textbook Production and Curriculum Research, Pune (Balbharati)",
+        "editionYear": 2025,
+        "approval": "Verified by SCERT Maharashtra and approved by the Coordination Committee (GR No. Abhyas-2116/(Pra.Kra.43/16) SD-4) in its meeting held on April 16, 2025, for use from academic year 2025-26 onwards, as printed on the title page.",
+        "academicYearOfFirstUse": "2025-26",
+        "sourceUrl": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+        "verifiedOn": "2026-10-31",
+        "verificationMethod": "Direct download and text extraction of the official eBalbharati PDF (87 PDF pages; Index lists 4 units / 42 chapters; Unit One = printed pp. 1-17, 11 chapters).",
+        "confidence": "OFFICIAL_SOURCE_VERIFIED"
+      },
+      "unit": {
+        "number": 1,
+        "title": null,
+        "printedPageRange": "1-17"
+      },
+      "chapter": {
+        "code": "1.3",
+        "title": "My Home",
+        "printedPage": 3,
+        "contentCategory": "PICTURE_TALK",
+        "copyrightStatus": {
+          "category": "BALBHARATI_ALL_RIGHTS_RESERVED",
+          "reproductionRule": "Reference-only: cite title/page; teach the picture word bank with Talkora-original images. No textbook artwork reproduced."
+        }
+      },
+      "lesson": {
+        "orderInUnit": 3,
+        "talkoraLevelMapping": [
+          {
+            "talkoraLevelId": "g01-l05",
+            "roadmapTitle": "Things I Like",
+            "role": "INTRODUCES",
+            "status": "PROPOSED_MAPPING_PENDING_PM_APPROVAL"
+          }
+        ]
+      },
+      "sourceReferences": [
+        {
+          "type": "OFFICIAL_TEXTBOOK_PDF",
+          "locator": "My English Book Grade One (2025), printed p.3, chapter 1.3 My Home — home picture with word bank: fan, table, glass, door, chair, sofa, vase, clock, window, cupboard, television; 'Where have you seen these things?' prompt",
+          "url": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+          "verifiedOn": "2026-10-31",
+          "confidence": "OFFICIAL_SOURCE_VERIFIED"
+        }
+      ],
+      "learningObjectives": [
+        "Name common home objects from the picture: fan, table, glass, door, chair, sofa, vase, clock, window, cupboard, television.",
+        "Point to the named object in a picture or real room.",
+        "Say 'I have a ___ at home' or point-and-name for at least four objects.",
+        "Connect English object words to home-language words the child already owns."
+      ],
+      "vocabulary": [
+        {
+          "en": "fan",
+          "hi": "पंखा",
+          "mr": "पंखा",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.3 My Home picture word bank, printed p.3",
+          "audioAsset": {
+            "status": "RIGHTS_UNDECIDED",
+            "officialQrRef": "Official in-book QR audio (title page promises digital audio/visual resources).",
+            "note": "Rights undecided; Talkora ships no such audio until Balbharati authorization is documented."
+          }
+        },
+        {
+          "en": "table",
+          "hi": "मेज़",
+          "mr": "मेज",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.3 My Home picture word bank, printed p.3"
+        },
+        {
+          "en": "glass",
+          "hi": "गिलास",
+          "mr": "ग्लास",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.3 My Home picture word bank, printed p.3"
+        },
+        {
+          "en": "door",
+          "hi": "दरवाज़ा",
+          "mr": "दार",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.3 My Home picture word bank, printed p.3"
+        },
+        {
+          "en": "chair",
+          "hi": "कुर्सी",
+          "mr": "खुर्ची",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.3 My Home picture word bank, printed p.3"
+        },
+        {
+          "en": "sofa",
+          "hi": "सोफ़ा",
+          "mr": "सोफा",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.3 My Home picture word bank, printed p.3"
+        },
+        {
+          "en": "vase",
+          "hi": "फूलदान",
+          "mr": "फुलदाणी",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.3 My Home picture word bank, printed p.3"
+        },
+        {
+          "en": "clock",
+          "hi": "घड़ी",
+          "mr": "घड्याळ",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.3 My Home picture word bank, printed p.3"
+        },
+        {
+          "en": "window",
+          "hi": "खिड़की",
+          "mr": "खिडकी",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.3 My Home picture word bank, printed p.3"
+        },
+        {
+          "en": "cupboard",
+          "hi": "अलमारी",
+          "mr": "कपाट",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.3 My Home picture word bank, printed p.3"
+        },
+        {
+          "en": "television",
+          "hi": "टेलीविज़न",
+          "mr": "दूरदर्शन",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.3 My Home picture word bank, printed p.3"
+        }
+      ],
+      "adaptiveTeachingHints": [
+        {
+          "learnerState": "BEGINNER_COMPLETE",
+          "hint": "Hidden-object game: child names the object Miss Julie partially reveals."
+        },
+        {
+          "learnerState": "BEGINNER_HINDI",
+          "hint": "Child names it in Hindi: 'हाँ! मेज़. English mein — table. Say table!'"
+        },
+        {
+          "learnerState": "BEGINNER_MARATHI",
+          "hint": "Child names it in Marathi: 'बरोबर! मेज. English madhye — table. Mhaṇ — table!'"
+        },
+        {
+          "learnerState": "ANSWERED_INCORRECT",
+          "hint": "Child says chair for table: line the two pictures side by side — 'Which one do we sit ON? Show me!' Pictures decide."
+        },
+        {
+          "learnerState": "SILENT",
+          "hint": "Child only points; Miss Julie names warmly: 'Yes — the clock!' and moves on."
+        },
+        {
+          "learnerState": "GUESSING_REPEATEDLY",
+          "hint": "'Look carefully — the picture will tell you.' Reveal the picture corner first; guessing needs no listening, looking does."
+        },
+        {
+          "learnerState": "FAST_LEARNER",
+          "hint": "Child describes where the thing is: 'The clock is on the wall.'"
+        },
+        {
+          "learnerState": "NEEDS_REVISION",
+          "hint": "Two-object choice ('fan or door?') before open naming."
+        }
+      ],
+      "recallDesign": [
+        {
+          "milestone": "IMMEDIATE_REPETITION",
+          "activity": "Child repeats 'table' right after Miss Julie while pointing."
+        },
+        {
+          "milestone": "INDEPENDENT_ANSWERING",
+          "activity": "Miss Julie asks 'Show me the…' for an object not just named; child points and names alone."
+        },
+        {
+          "milestone": "DELAYED_RECALL",
+          "activity": "Home task: find one object from the list at home and tell its English name next session."
+        }
+      ],
+      "review": {
+        "syllabusVerification": "OFFICIAL_PDF_VERIFIED",
+        "pedagogyStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+        "notes": "Syllabus facts verified against the official 2025 PDF. Pedagogy, Hindi/Marathi support lines and teaching moves are Talkora-original drafts awaiting a human teacher's review; synthetic example validation does not count as teacher approval."
+      },
+      "prerequisiteSkills": [
+        "Knows these objects in the home language (they are daily household things)."
+      ],
+      "comprehensionGoals": [
+        "Answer 'Where have you seen these things?' — at home (the book's own prompt)."
+      ],
+      "speakingObjectives": [
+        "Name at least four home objects in English from a picture.",
+        "Point to a named object among three distractors."
+      ],
+      "suggestedVisualActivities": [
+        {
+          "title": "Home room scene (Talkora-original)",
+          "description": "Simple room drawing containing all 11 objects; drawn fresh, not copied from the textbook.",
+          "assetStatus": "MISSING"
+        }
+      ],
+      "teacherExplanationExamples": [
+        {
+          "en": "I have a fan at home. Point to the fan.",
+          "hi": "मेरे घर में पंखा है। पंखे की ओर इशारा करो।",
+          "mr": "माझ्या घरी पंखा आहे. पंख्याकडे बघू."
+        }
+      ],
+      "hindiExplanations": [
+        "घर की चीज़ें बच्चे पहले से जानते हैं — पंखा, मेज़, कुर्सी। अंग्रेज़ी नाम वही चीज़ें हैं: fan, table, chair।"
+      ],
+      "marathiExplanations": [
+        "घरातल्या वस्तू मुलांना माहीत आहेत — पंखा, मेज, खुर्ची. इंग्रजी नावं त्याच वस्तू: fan, table, chair."
+      ],
+      "expectedStudentAnswers": [
+        "fan",
+        "chair",
+        "I have a clock at home."
+      ],
+      "commonBeginnerMistakeIds": [
+        "mist-010",
+        "mist-018",
+        "mist-019",
+        "mist-030"
+      ],
+      "remediationStrategies": [
+        "Teach with real classroom/home objects before pictures.",
+        "Group objects by place-seen: home vs classroom (feeds 1.8 My Classroom sorting)."
+      ],
+      "assessmentCriteria": [
+        "Names at least 4 of 11 objects correctly from the picture.",
+        "Points correctly to a named object among distractors."
+      ],
+      "masteryIndicators": [
+        "INDEPENDENT_ANSWERING: names a hidden then revealed object without a model.",
+        "DELAYED_RECALL: reports one home object in English at the next session's opening."
+      ],
+      "revisionActivities": [
+        "Slow-reveal picture game.",
+        "Real-object touch-and-name round."
+      ],
+      "shortSpokenHomework": "Find two things from today's list at home, touch them, and say their English names to someone at home.",
+      "teachingStages": [
+        {
+          "stage": "DISCOVER",
+          "note": "Real object shown; child says the home-language word."
+        },
+        {
+          "stage": "EXPLAIN",
+          "note": "English word linked to the same object."
+        },
+        {
+          "stage": "LISTEN",
+          "note": "'Show me the ___' game."
+        },
+        {
+          "stage": "ASK",
+          "note": "'Where have you seen these things?' (book prompt)."
+        },
+        {
+          "stage": "VERIFY",
+          "note": "Hidden-object reveal."
+        },
+        {
+          "stage": "RECALL",
+          "note": "Home object report next session."
+        }
+      ]
+    },
+    {
+      "curriculumId": "meb-g01-u1-c1.04",
+      "textbookId": "MY_ENGLISH_BOOK_G01_NON_ENGLISH_MEDIUM",
+      "board": "Maharashtra State Board (Balbharati)",
+      "grade": 1,
+      "subject": "English",
+      "textbookEdition": {
+        "title": "My English Book — Grade One (Non-English Medium)",
+        "publisher": "Maharashtra State Bureau of Textbook Production and Curriculum Research, Pune (Balbharati)",
+        "editionYear": 2025,
+        "approval": "Verified by SCERT Maharashtra and approved by the Coordination Committee (GR No. Abhyas-2116/(Pra.Kra.43/16) SD-4) in its meeting held on April 16, 2025, for use from academic year 2025-26 onwards, as printed on the title page.",
+        "academicYearOfFirstUse": "2025-26",
+        "sourceUrl": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+        "verifiedOn": "2026-10-31",
+        "verificationMethod": "Direct download and text extraction of the official eBalbharati PDF (87 PDF pages; Index lists 4 units / 42 chapters; Unit One = printed pp. 1-17, 11 chapters).",
+        "confidence": "OFFICIAL_SOURCE_VERIFIED"
+      },
+      "unit": {
+        "number": 1,
+        "title": null,
+        "printedPageRange": "1-17"
+      },
+      "chapter": {
+        "code": "1.4",
+        "title": "Clap your hands.",
+        "printedPage": 4,
+        "contentCategory": "ACTION_RHYME",
+        "copyrightStatus": {
+          "category": "THIRD_PARTY_PERMISSION_AWAITED",
+          "reproductionRule": "The Index page acknowledges copyright holders generally and states: 'Some permission are awaited. Acknowledgement to them will be made in subsequent reprint.' No per-chapter credit is printed for Unit One; this chapter is a song/rhyme, so a third-party origin cannot be ruled out.",
+          "creditNote": "Index page: permissions awaited for some reproduced material; no per-chapter credit printed for this chapter."
+        }
+      },
+      "lesson": {
+        "orderInUnit": 4,
+        "talkoraLevelMapping": [
+          {
+            "talkoraLevelId": "g01-l02",
+            "roadmapTitle": "My School",
+            "role": "INTRODUCES",
+            "status": "PROPOSED_MAPPING_PENDING_PM_APPROVAL"
+          },
+          {
+            "talkoraLevelId": "g01-l07",
+            "roadmapTitle": "Action Words",
+            "role": "INTRODUCES",
+            "status": "PROPOSED_MAPPING_PENDING_PM_APPROVAL"
+          }
+        ]
+      },
+      "sourceReferences": [
+        {
+          "type": "OFFICIAL_TEXTBOOK_PDF",
+          "locator": "My English Book Grade One (2025), printed p.4, chapter 1.4 Clap your hands. — TPR rhyme ('Listen, sing and act') plus instruction set (Stand straight, Turn right, Turn left, Sit down, Hands up, Stand up) and teacher substitution note",
+          "url": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+          "verifiedOn": "2026-10-31",
+          "confidence": "OFFICIAL_SOURCE_VERIFIED",
+          "note": "NOTE: this chapter shares its title with English Balbharati 1.2 'Clap your hands.' but is a DIFFERENT rhyme in a different book. The tracks are separate: meb-g01-u1-c1.04 vs bal-g01-u1-c1.02. No ID reuse."
+        }
+      ],
+      "learningObjectives": [
+        "Act out the action rhyme: clap hands, stamp feet, turn around, jump up high.",
+        "Follow classroom instructions: Stand straight. Turn right. Turn left. Sit down. Hands up. Stand up.",
+        "Say the instruction after doing it (action → word), building the action-word bank for later levels.",
+        "Invent new instruction lines by substitution (teacher note: replace 'Clap your hands' with 'Touch the ground')."
+      ],
+      "vocabulary": [
+        {
+          "en": "clap",
+          "hi": "ताली बजाना",
+          "mr": "टाळी वाजवणे",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.4 rhyme title/refrain 'Clap your hands', printed p.4"
+        },
+        {
+          "en": "stamp",
+          "hi": "पैर पटकना",
+          "mr": "पाय ठोकणे",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.4 rhyme verse 'Stamp your feet', printed p.4"
+        },
+        {
+          "en": "turn around",
+          "hi": "घूम जाना",
+          "mr": "वळून जाणे",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.4 rhyme verse 'Turn around', printed p.4"
+        },
+        {
+          "en": "jump up high",
+          "hi": "ऊँचा उछलना",
+          "mr": "उंच उडी मारणे",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.4 rhyme verse 'Jump up high', printed p.4"
+        },
+        {
+          "en": "stand straight",
+          "hi": "सीधे खड़े होना",
+          "mr": "सरळ उभे राहणे",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.4 'Let us do' instructions, printed p.4"
+        },
+        {
+          "en": "turn right",
+          "hi": "दाईं ओर मुड़ना",
+          "mr": "उजवीकडे वळणे",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.4 'Let us do' instructions, printed p.4"
+        },
+        {
+          "en": "turn left",
+          "hi": "बाईं ओर मुड़ना",
+          "mr": "डावीकडे वळणे",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.4 'Let us do' instructions, printed p.4"
+        },
+        {
+          "en": "sit down",
+          "hi": "बैठ जाना",
+          "mr": "बसणे",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.4 'Let us do' instructions, printed p.4"
+        },
+        {
+          "en": "hands up",
+          "hi": "हाथ ऊपर",
+          "mr": "हात वर",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.4 'Let us do' instructions, printed p.4"
+        },
+        {
+          "en": "stand up",
+          "hi": "खड़े होना",
+          "mr": "उभे राहणे",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.4 'Let us do' instructions, printed p.4"
+        }
+      ],
+      "adaptiveTeachingHints": [
+        {
+          "learnerState": "BEGINNER_COMPLETE",
+          "hint": "Child performs AND calls the next instruction for the class."
+        },
+        {
+          "learnerState": "BEGINNER_HINDI",
+          "hint": "Child acts first, words come in Hindi: 'शाबाश! बैठ गए. English — sit down. Say it!'"
+        },
+        {
+          "learnerState": "BEGINNER_MARATHI",
+          "hint": "Child acts first: 'शाब्बास! बसली. English — sit down. Mhaṇ!'"
+        },
+        {
+          "learnerState": "ANSWERED_INCORRECT",
+          "hint": "Child turns left for 'Turn right': Miss Julie stands beside the child facing the same way — bodies decide, not 'wrong'."
+        },
+        {
+          "learnerState": "SILENT",
+          "hint": "Child does the action only — the body is the answer; words join when ready."
+        },
+        {
+          "learnerState": "GUESSING_REPEATEDLY",
+          "hint": "Actions cannot be faked: 'Let your feet do the listening!'"
+        },
+        {
+          "learnerState": "FAST_LEARNER",
+          "hint": "Child is the caller in Simon-says style rounds."
+        },
+        {
+          "learnerState": "NEEDS_REVISION",
+          "hint": "Do-then-say: action first, then the word; next round word first."
+        }
+      ],
+      "recallDesign": [
+        {
+          "milestone": "IMMEDIATE_REPETITION",
+          "activity": "Child echoes 'Hands up!' while doing it."
+        },
+        {
+          "milestone": "INDEPENDENT_ANSWERING",
+          "activity": "Child follows a fresh instruction not just practised, then names it."
+        },
+        {
+          "milestone": "DELAYED_RECALL",
+          "activity": "Assembly drill next day (links to 1.5 assembly lines): child responds to 'Stand in a line' type English instructions."
+        }
+      ],
+      "review": {
+        "syllabusVerification": "OFFICIAL_PDF_VERIFIED",
+        "pedagogyStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+        "notes": "Syllabus facts verified against the official 2025 PDF. Pedagogy, Hindi/Marathi support lines and teaching moves are Talkora-original drafts awaiting a human teacher's review; synthetic example validation does not count as teacher approval."
+      },
+      "prerequisiteSkills": [
+        "Can imitate whole-body actions.",
+        "Has followed one-step instructions at home/school."
+      ],
+      "grammarConcepts": [
+        {
+          "concept": "Imperatives (instruction form)",
+          "childFriendlyFraming": "Instruction words are short bossy-words: Stand up! Sit down! Hands up! No name needed — the class all does it together."
+        }
+      ],
+      "speakingObjectives": [
+        "Give one instruction to a peer (e.g. 'Hands up!').",
+        "Say what the action is called after performing it."
+      ],
+      "suggestedVisualActivities": [
+        {
+          "title": "Instruction icon cards",
+          "description": "Stick-figure icons for the six 'Let us do' instructions.",
+          "assetStatus": "SKETCH_REQUESTED"
+        }
+      ],
+      "teacherExplanationExamples": [
+        {
+          "en": "Hands up! Stretch like the morning sun.",
+          "hi": "हाथ ऊपर! सुबह के सूरज की तरह फैलो।",
+          "mr": "हात वर! सकाळच्या सूर्यासारखे ताणून बघू."
+        },
+        {
+          "en": "Stand straight like a soldier.",
+          "hi": "सिपाही की तरह सीधे खड़े हो जाओ।",
+          "mr": "सैनिकासारखे सरळ उभे राहा."
+        }
+      ],
+      "hindiExplanations": [
+        "पहले करो, फिर बोलो — 'बैठ गए! अंग्रेज़ी में sit down।'"
+      ],
+      "marathiExplanations": [
+        "आधी करू, मग बोलू — 'बसलो! इंग्रजीत sit down.'"
+      ],
+      "expectedStudentAnswers": [
+        "Stand up!",
+        "Turn right!",
+        "Sit down!"
+      ],
+      "commonBeginnerMistakeIds": [
+        "mist-022",
+        "mist-005",
+        "mist-029",
+        "mist-031"
+      ],
+      "remediationStrategies": [
+        "Action-first teaching: the body learns before the mouth.",
+        "Two instructions only per round; add one each session."
+      ],
+      "assessmentCriteria": [
+        "Performs 5 of 6 instructions correctly.",
+        "Says at least 3 instruction phrases after acting them."
+      ],
+      "masteryIndicators": [
+        "INDEPENDENT_ANSWERING: child gives an instruction to a peer who obeys it correctly.",
+        "DELAYED_RECALL: responds to English assembly instructions next session without Hindi/Marathi prompt."
+      ],
+      "revisionActivities": [
+        "Freeze-dance with instruction cards.",
+        "Whisper-instruction round (listening attention)."
+      ],
+      "shortSpokenHomework": "Teach one English instruction to someone at home and make them do it — Hands up! works well.",
+      "teachingStages": [
+        {
+          "stage": "DEMONSTRATE",
+          "note": "Miss Julie sings and acts; children mirror."
+        },
+        {
+          "stage": "LISTEN",
+          "note": "Instruction rounds, one step at a time."
+        },
+        {
+          "stage": "ASK",
+          "note": "Child callers lead after round two."
+        },
+        {
+          "stage": "CORRECT",
+          "note": "Side-by-side re-modelling for right/left."
+        },
+        {
+          "stage": "VERIFY",
+          "note": "Peer-instruction exchange."
+        },
+        {
+          "stage": "RECALL",
+          "note": "Assembly drill next session."
+        }
+      ]
+    },
+    {
+      "curriculumId": "meb-g01-u1-c1.05",
+      "textbookId": "MY_ENGLISH_BOOK_G01_NON_ENGLISH_MEDIUM",
+      "board": "Maharashtra State Board (Balbharati)",
+      "grade": 1,
+      "subject": "English",
+      "textbookEdition": {
+        "title": "My English Book — Grade One (Non-English Medium)",
+        "publisher": "Maharashtra State Bureau of Textbook Production and Curriculum Research, Pune (Balbharati)",
+        "editionYear": 2025,
+        "approval": "Verified by SCERT Maharashtra and approved by the Coordination Committee (GR No. Abhyas-2116/(Pra.Kra.43/16) SD-4) in its meeting held on April 16, 2025, for use from academic year 2025-26 onwards, as printed on the title page.",
+        "academicYearOfFirstUse": "2025-26",
+        "sourceUrl": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+        "verifiedOn": "2026-10-31",
+        "verificationMethod": "Direct download and text extraction of the official eBalbharati PDF (87 PDF pages; Index lists 4 units / 42 chapters; Unit One = printed pp. 1-17, 11 chapters).",
+        "confidence": "OFFICIAL_SOURCE_VERIFIED"
+      },
+      "unit": {
+        "number": 1,
+        "title": null,
+        "printedPageRange": "1-17"
+      },
+      "chapter": {
+        "code": "1.5",
+        "title": "Chit Chat",
+        "printedPage": 5,
+        "contentCategory": "GREETINGS_DIALOGUE",
+        "copyrightStatus": {
+          "category": "BALBHARATI_ALL_RIGHTS_RESERVED",
+          "reproductionRule": "Reference-only: cite title/page; teach greetings and routine frames with Talkora-original dialogues. Sentence frames are functional content, not passages."
+        }
+      },
+      "lesson": {
+        "orderInUnit": 5,
+        "talkoraLevelMapping": [
+          {
+            "talkoraLevelId": "g01-l09",
+            "roadmapTitle": "My Day",
+            "role": "INTRODUCES",
+            "status": "PROPOSED_MAPPING_PENDING_PM_APPROVAL"
+          },
+          {
+            "talkoraLevelId": "g01-l08",
+            "roadmapTitle": "Simple Questions",
+            "role": "INTRODUCES",
+            "status": "PROPOSED_MAPPING_PENDING_PM_APPROVAL"
+          }
+        ]
+      },
+      "sourceReferences": [
+        {
+          "type": "OFFICIAL_TEXTBOOK_PDF",
+          "locator": "My English Book Grade One (2025), printed pp.5-7, chapter 1.5 Chit Chat — greeting set by time of day (Hi!, Hello!, Very good morning., Good morning/afternoon/evening/night.), time-of-day routine frames (I take bath in the morning.), the 'My Day' routine chart, and assembly instructions (pp.6-7: Stand in a line, Attention, Stand at ease, Join your hands, Let us pray, etc.)",
+          "url": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+          "verifiedOn": "2026-10-31",
+          "confidence": "OFFICIAL_SOURCE_VERIFIED"
+        }
+      ],
+      "learningObjectives": [
+        "Greet appropriately by time of day: Good morning / Good afternoon / Good evening / Good night.",
+        "Ask and answer 'When do you ___?' with 'In the morning / afternoon / evening.'",
+        "Say three things from the My Day routine chart: I wake up early. I brush my teeth. I go to school.",
+        "Follow assembly instructions in English: Stand in a line. Attention. Join your hands."
+      ],
+      "vocabulary": [
+        {
+          "en": "morning",
+          "hi": "सुबह",
+          "mr": "सकाळ",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.5 greeting set 'Good morning.', printed p.5"
+        },
+        {
+          "en": "afternoon",
+          "hi": "दोपहर",
+          "mr": "दुपार",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.5 greeting set 'Good afternoon.', printed p.5"
+        },
+        {
+          "en": "evening",
+          "hi": "शाम",
+          "mr": "संध्याकाळ",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.5 greeting set 'Good evening.', printed p.5"
+        },
+        {
+          "en": "night",
+          "hi": "रात",
+          "mr": "रात्र",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.5 greeting set 'Good night.', printed p.5"
+        },
+        {
+          "en": "take bath",
+          "hi": "नहाना",
+          "mr": "आंघोळ करणे",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.5 routine frame 'I take bath in the morning.', printed p.5"
+        },
+        {
+          "en": "breakfast",
+          "hi": "नाश्ता",
+          "mr": "नाश्ता",
+          "origin": "PICTURE_PROMPT_DERIVED",
+          "sourceRef": "1.5 routine chart 'take breakfast', printed p.5"
+        },
+        {
+          "en": "homework",
+          "hi": "गृहकार्य",
+          "mr": "गृहपाठ",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.5 routine chart 'complete homework', printed p.5"
+        },
+        {
+          "en": "wake up",
+          "hi": "जागे होना",
+          "mr": "जागे होणे",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.5 My Day chart 'I wake up early.', printed p.6"
+        },
+        {
+          "en": "go to school",
+          "hi": "स्कूल जाना",
+          "mr": "शाळेला जाणे",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.5 My Day chart 'I go to school.', printed p.6"
+        },
+        {
+          "en": "go to bed",
+          "hi": "बिस्तर पर जाना",
+          "mr": "अंगवस्त्री झोपणे",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.5 My Day chart 'I go to bed.', printed p.6",
+          "audioAsset": {
+            "status": "RIGHTS_UNDECIDED",
+            "officialQrRef": "Official in-book QR audio (title page promises digital audio/visual resources).",
+            "note": "Rights undecided; Talkora ships no such audio until Balbharati authorization is documented."
+          }
+        }
+      ],
+      "adaptiveTeachingHints": [
+        {
+          "learnerState": "BEGINNER_COMPLETE",
+          "hint": "Time-of-day role play: child picks a clock/scene card and greets accordingly."
+        },
+        {
+          "learnerState": "BEGINNER_HINDI",
+          "hint": "Child greets in Hindi: 'बहुत बढ़िया! Namaste. Subah ke liye English greeting — Good morning!'"
+        },
+        {
+          "learnerState": "BEGINNER_MARATHI",
+          "hint": "Child greets in Marathi: 'उत्तम! नमस्कार. सकाळच्या वेळेसाठी इंग्रजी — Good morning!'"
+        },
+        {
+          "learnerState": "ANSWERED_INCORRECT",
+          "hint": "Child says 'Good night' entering class in the morning: match greeting to sun/moon picture cards — the sky decides."
+        },
+        {
+          "learnerState": "SILENT",
+          "hint": "Child picks the correct scene card (sun rising = Good morning) without speaking; words follow."
+        },
+        {
+          "learnerState": "GUESSING_REPEATEDLY",
+          "hint": "'The sky tells you which greeting — look at the card!' Visual anchor blocks guessing."
+        },
+        {
+          "learnerState": "FAST_LEARNER",
+          "hint": "Child plays the teacher: holds cards, class greets."
+        },
+        {
+          "learnerState": "NEEDS_REVISION",
+          "hint": "Greeting ladder: echo → complete ('Good ___!') → say with the right card."
+        }
+      ],
+      "recallDesign": [
+        {
+          "milestone": "IMMEDIATE_REPETITION",
+          "activity": "Child echoes 'Good morning!' with the sunrise card."
+        },
+        {
+          "milestone": "INDEPENDENT_ANSWERING",
+          "activity": "Child draws an unknown card and produces the matching greeting without a model."
+        },
+        {
+          "milestone": "DELAYED_RECALL",
+          "activity": "Child greets Miss Julie at the DOOR in English next session — real-world delayed recall."
+        }
+      ],
+      "review": {
+        "syllabusVerification": "OFFICIAL_PDF_VERIFIED",
+        "pedagogyStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+        "notes": "Syllabus facts verified against the official 2025 PDF. Pedagogy, Hindi/Marathi support lines and teaching moves are Talkora-original drafts awaiting a human teacher's review; synthetic example validation does not count as teacher approval."
+      },
+      "prerequisiteSkills": [
+        "Knows the four times of day in the home language.",
+        "Experienced school assembly (for the assembly instruction subset)."
+      ],
+      "grammarConcepts": [
+        {
+          "concept": "in the morning / afternoon / evening",
+          "childFriendlyFraming": "Time-of-day words ride inside 'in the': in the morning, in the evening. 'Night' is special: at night."
+        }
+      ],
+      "comprehensionGoals": [
+        "Matches each greeting to its time-of-day picture.",
+        "Sequences three My Day chart events (wake up → go to school → go to bed)."
+      ],
+      "speakingObjectives": [
+        "Greet Miss Julie/classmate with the right greeting for the time of day.",
+        "Answer 'When do you play?' with 'I play in the evening.'"
+      ],
+      "suggestedVisualActivities": [
+        {
+          "title": "Sky scene cards (sunrise / bright sun / sunset / moon)",
+          "description": "Four simple sky cards anchoring the four greetings.",
+          "assetStatus": "MISSING"
+        },
+        {
+          "title": "My Day sequencing strip",
+          "description": "Five Talkora-original routine icons for ordering practice.",
+          "assetStatus": "SKETCH_REQUESTED"
+        }
+      ],
+      "teacherExplanationExamples": [
+        {
+          "en": "The sun is waking up — say: Good morning!",
+          "hi": "सूरज जाग रहा है — कहो: Good morning!",
+          "mr": "सूरज जागा होतोय — म्हण: Good morning!"
+        },
+        {
+          "en": "I take bath in the morning. When do you take bath?",
+          "hi": "मैं सुबह नहाता/नहाती हूँ। तुम कब नहाते हो?",
+          "mr": "मी सकाळी आंघोळ करतो/करते. तू कधी आंघोळ करतेस?"
+        }
+      ],
+      "hindiExplanations": [
+        "सुबह की greeting 'Good morning', शाम की 'Good evening', सोते समय 'Good night' — आसमान देखकर चुनो।"
+      ],
+      "marathiExplanations": [
+        "सकाळची greeting 'Good morning', संध्याकाळची 'Good evening', झोपण्यापूर्वी 'Good night' — आकाश बघून निवडा."
+      ],
+      "expectedStudentAnswers": [
+        "Good morning!",
+        "I play in the evening.",
+        "I go to school in the morning."
+      ],
+      "commonBeginnerMistakeIds": [
+        "mist-020",
+        "mist-017",
+        "mist-013",
+        "mist-038"
+      ],
+      "remediationStrategies": [
+        "Greeting → time-of-day taught as one visual bundle, never as a list to recite.",
+        "Assembly instructions practised in the real assembly, not only on-screen."
+      ],
+      "assessmentCriteria": [
+        "Chooses the right greeting for 4/4 time-of-day cards.",
+        "Says three routine sentences with 'I ___' frames."
+      ],
+      "masteryIndicators": [
+        "INDEPENDENT_ANSWERING: answers 'When do you ___?' for a fresh routine verb with the in-the-… frame.",
+        "DELAYED_RECALL: next-session door greeting in English, unprompted."
+      ],
+      "revisionActivities": [
+        "Daily greeting ritual at session start.",
+        "Routine chart ordering race in pairs."
+      ],
+      "shortSpokenHomework": "Greet everyone at home in English tonight by the right time of day — Good evening works at dinner!",
+      "teachingStages": [
+        {
+          "stage": "DISCOVER",
+          "note": "Sky cards introduce the four day-parts."
+        },
+        {
+          "stage": "EXPLAIN",
+          "note": "Each greeting tied to its sky."
+        },
+        {
+          "stage": "DEMONSTRATE",
+          "note": "Teacher-pupil greeting role play."
+        },
+        {
+          "stage": "ASK",
+          "note": "'When do you ___?' exchanges."
+        },
+        {
+          "stage": "CORRECT",
+          "note": "Sky-card arbitration for wrong greetings."
+        },
+        {
+          "stage": "VERIFY",
+          "note": "Fresh-card check."
+        },
+        {
+          "stage": "RECALL",
+          "note": "Door-greeting ritual next session."
+        }
+      ]
+    },
+    {
+      "curriculumId": "meb-g01-u1-c1.06",
+      "textbookId": "MY_ENGLISH_BOOK_G01_NON_ENGLISH_MEDIUM",
+      "board": "Maharashtra State Board (Balbharati)",
+      "grade": 1,
+      "subject": "English",
+      "textbookEdition": {
+        "title": "My English Book — Grade One (Non-English Medium)",
+        "publisher": "Maharashtra State Bureau of Textbook Production and Curriculum Research, Pune (Balbharati)",
+        "editionYear": 2025,
+        "approval": "Verified by SCERT Maharashtra and approved by the Coordination Committee (GR No. Abhyas-2116/(Pra.Kra.43/16) SD-4) in its meeting held on April 16, 2025, for use from academic year 2025-26 onwards, as printed on the title page.",
+        "academicYearOfFirstUse": "2025-26",
+        "sourceUrl": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+        "verifiedOn": "2026-10-31",
+        "verificationMethod": "Direct download and text extraction of the official eBalbharati PDF (87 PDF pages; Index lists 4 units / 42 chapters; Unit One = printed pp. 1-17, 11 chapters).",
+        "confidence": "OFFICIAL_SOURCE_VERIFIED"
+      },
+      "unit": {
+        "number": 1,
+        "title": null,
+        "printedPageRange": "1-17"
+      },
+      "chapter": {
+        "code": "1.6",
+        "title": "Fun with Sounds (b-c-p-t-a)",
+        "printedPage": 8,
+        "contentCategory": "PHONICS_SOUNDS",
+        "copyrightStatus": {
+          "category": "BALBHARATI_ALL_RIGHTS_RESERVED",
+          "reproductionRule": "Reference-only: cite title/page; teach beginning sounds with Talkora-original picture sets. Word lists are functional content."
+        }
+      },
+      "lesson": {
+        "orderInUnit": 6,
+        "talkoraLevelMapping": [
+          {
+            "talkoraLevelId": "g01-l02",
+            "roadmapTitle": "My School",
+            "role": "INTRODUCES",
+            "status": "PROPOSED_MAPPING_PENDING_PM_APPROVAL"
+          }
+        ]
+      },
+      "sourceReferences": [
+        {
+          "type": "OFFICIAL_TEXTBOOK_PDF",
+          "locator": "My English Book Grade One (2025), printed pp.8-9, chapter 1.6 Fun with Sounds (b-c-p-t-a) — beginning-sound picture sets: b (bike, box, bat, bus), c (car, cat, cup, cow), p (pen, puppy, pigeon, parrot), t (top, table, teddy, tiger), a (axe, ankle, ant, apple); letter tracing; word-building frames -ap/-ab/-at (cap, tap, cab, tab, bat, pat, mat, cat)",
+          "url": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+          "verifiedOn": "2026-10-31",
+          "confidence": "OFFICIAL_SOURCE_VERIFIED"
+        }
+      ],
+      "learningObjectives": [
+        "Hear and say the beginning sounds /b/, /c/, /p/, /t/, /a/.",
+        "Sort pictures by beginning sound into letter buckets b, c, p, t, a.",
+        "Blend short a-vowel words: cap, tap, cab, tab, bat, pat, mat, cat.",
+        "Trace letters b, c, p, t, a with a finger before writing."
+      ],
+      "vocabulary": [
+        {
+          "en": "bat",
+          "hi": "बल्ला",
+          "mr": "बल्ला",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.6 b-set picture word, printed p.8"
+        },
+        {
+          "en": "bus",
+          "hi": "बस",
+          "mr": "बस",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.6 b-set picture word, printed p.8"
+        },
+        {
+          "en": "cat",
+          "hi": "बिल्ली",
+          "mr": "मांजर",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.6 c-set picture word, printed p.8"
+        },
+        {
+          "en": "cup",
+          "hi": "कप",
+          "mr": "कप",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.6 c-set picture word, printed p.8"
+        },
+        {
+          "en": "pen",
+          "hi": "कलम",
+          "mr": "पेन",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.6 p-set picture word, printed p.8"
+        },
+        {
+          "en": "pigeon",
+          "hi": "कबूतर",
+          "mr": "कबूतर",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.6 p-set picture word, printed p.8"
+        },
+        {
+          "en": "tiger",
+          "hi": "बाघ",
+          "mr": "वाघ",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.6 t-set picture word, printed p.8"
+        },
+        {
+          "en": "top",
+          "hi": "लट्टू",
+          "mr": "भोवरा",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.6 t-set picture word, printed p.8"
+        },
+        {
+          "en": "ant",
+          "hi": "चींटी",
+          "mr": "मुंगी",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.6 a-set picture word, printed p.8"
+        },
+        {
+          "en": "apple",
+          "hi": "सेब",
+          "mr": "सफरचंद",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.6 a-set picture word, printed p.8",
+          "audioAsset": {
+            "status": "RIGHTS_UNDECIDED",
+            "officialQrRef": "Official in-book QR audio (title page promises digital audio/visual resources).",
+            "note": "Rights undecided; Talkora ships no such audio until Balbharati authorization is documented."
+          }
+        },
+        {
+          "en": "cap",
+          "hi": "टोपी",
+          "mr": "टोपी",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.6 word-building frame output, printed p.9"
+        },
+        {
+          "en": "mat",
+          "hi": "चटाई",
+          "mr": "चटई",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.6 word-building frame output, printed p.9"
+        }
+      ],
+      "adaptiveTeachingHints": [
+        {
+          "learnerState": "BEGINNER_COMPLETE",
+          "hint": "Sound-sort relay: child runs pictures to the right letter bucket."
+        },
+        {
+          "learnerState": "BEGINNER_HINDI",
+          "hint": "Child says the Hindi word first: 'बिल्ली! English mein — cat. Cat begins with /k/ — letter c!'"
+        },
+        {
+          "learnerState": "BEGINNER_MARATHI",
+          "hint": "Child says the Marathi word: 'मांजर! English madhye — cat. Cat चा पहिला आवाज /k/ — c!'"
+        },
+        {
+          "learnerState": "ANSWERED_INCORRECT",
+          "hint": "Child sorts cat under p: stretch the sound together — 'c-c-cat. Does /k/ live in p or c?' The ear decides."
+        },
+        {
+          "learnerState": "SILENT",
+          "hint": "Child sorts without naming — sorting IS the answer; naming joins after."
+        },
+        {
+          "learnerState": "GUESSING_REPEATEDLY",
+          "hint": "'Sing the sound first: c-c-c… Now listen to the picture word.' Guessing skips the sound; sounding does not."
+        },
+        {
+          "learnerState": "FAST_LEARNER",
+          "hint": "Child adds a new word to a letter bucket from their own world."
+        },
+        {
+          "learnerState": "NEEDS_REVISION",
+          "hint": "Two-bucket sort (b vs t) before the full five."
+        }
+      ],
+      "recallDesign": [
+        {
+          "milestone": "IMMEDIATE_REPETITION",
+          "activity": "Child echoes the stretched sound 't-t-top' after the model."
+        },
+        {
+          "milestone": "INDEPENDENT_ANSWERING",
+          "activity": "Child hears a NEW picture word and names its beginning sound alone."
+        },
+        {
+          "milestone": "DELAYED_RECALL",
+          "activity": "Sound-sort warm-up next session with two new words per bucket."
+        }
+      ],
+      "review": {
+        "syllabusVerification": "OFFICIAL_PDF_VERIFIED",
+        "pedagogyStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+        "notes": "Syllabus facts verified against the official 2025 PDF. Pedagogy, Hindi/Marathi support lines and teaching moves are Talkora-original drafts awaiting a human teacher's review; synthetic example validation does not count as teacher approval."
+      },
+      "prerequisiteSkills": [
+        "Hears beginning sounds in home-language words (rhyme exposure helps).",
+        "No letter knowledge strictly required — sounds first, letters follow."
+      ],
+      "phonicsConcepts": [
+        "Beginning sounds /b/ /c/ /p/ /t/ /a/",
+        "Short-a word families: -ap, -ab, -at",
+        "Sound blending before letter names (oral-first design)"
+      ],
+      "grammarConcepts": [
+        {
+          "concept": "a/an by sound (preview)",
+          "childFriendlyFraming": "Words beginning with the 'a' sound take 'an': an apple, an ant. This is the sound rule children meet again in English Balbharati 1.5 'special letters'."
+        }
+      ],
+      "speakingObjectives": [
+        "Say each picture word stretching its first sound: c-c-cat.",
+        "Blend a 3-letter word aloud with teacher claps."
+      ],
+      "suggestedVisualActivities": [
+        {
+          "title": "Sound-bucket mats (b c p t a)",
+          "description": "Five large letter mats; Talkora-original picture cards for sorting.",
+          "assetStatus": "MISSING"
+        }
+      ],
+      "teacherExplanationExamples": [
+        {
+          "en": "c-c-cat! The word starts with the /k/ sound — letter c.",
+          "hi": "c-c-cat! शब्द /k/ आवाज़ से शुरू होता है — अक्षर c।",
+          "mr": "c-c-cat! शब्द /k/ आवाजाने सुरू होतो — अक्षर c."
+        }
+      ],
+      "hindiExplanations": [
+        "पहले आवाज़, बाद में अक्षर — 'c-c-cat' बोलकर सुनो, फिर letter c देखो।"
+      ],
+      "marathiExplanations": [
+        "आधी आवाज, मग अक्षर — 'c-c-cat' म्हणून ऐका, मग c अक्षर बघा."
+      ],
+      "expectedStudentAnswers": [
+        "cat",
+        "cap",
+        "ant"
+      ],
+      "commonBeginnerMistakeIds": [
+        "mist-003",
+        "mist-008",
+        "mist-009",
+        "mist-026"
+      ],
+      "remediationStrategies": [
+        "Sounds before letter names, matching the book's oral-first design.",
+        "b/d-style reversals prevented by sound anchoring: the ear, not the eye, sorts first."
+      ],
+      "assessmentCriteria": [
+        "Sorts 8/10 picture cards to the correct beginning-sound bucket.",
+        "Blends at least 3 short-a words aloud."
+      ],
+      "masteryIndicators": [
+        "INDEPENDENT_ANSWERING: names the beginning sound of an unseen picture word.",
+        "DELAYED_RECALL: next-session sort with new words, no re-teaching."
+      ],
+      "revisionActivities": [
+        "I-spy with beginning sounds.",
+        "Body-letter tracing on a partner's back."
+      ],
+      "shortSpokenHomework": "Find one thing at home that starts with the 'b' sound and tell Miss Julie its English name if you know it.",
+      "teachingStages": [
+        {
+          "stage": "DISCOVER",
+          "note": "Mystery sound box: feel/listen, guess the object."
+        },
+        {
+          "stage": "EXPLAIN",
+          "note": "Stretch the first sound together."
+        },
+        {
+          "stage": "DEMONSTRATE",
+          "note": "Teacher sorts two cards, thinking aloud."
+        },
+        {
+          "stage": "LISTEN",
+          "note": "Eyes-closed sound game."
+        },
+        {
+          "stage": "CORRECT",
+          "note": "Sound-stretch arbitration."
+        },
+        {
+          "stage": "VERIFY",
+          "note": "New-picture check."
+        },
+        {
+          "stage": "RECALL",
+          "note": "Next-session sort."
+        }
+      ]
+    },
+    {
+      "curriculumId": "meb-g01-u1-c1.07",
+      "textbookId": "MY_ENGLISH_BOOK_G01_NON_ENGLISH_MEDIUM",
+      "board": "Maharashtra State Board (Balbharati)",
+      "grade": 1,
+      "subject": "English",
+      "textbookEdition": {
+        "title": "My English Book — Grade One (Non-English Medium)",
+        "publisher": "Maharashtra State Bureau of Textbook Production and Curriculum Research, Pune (Balbharati)",
+        "editionYear": 2025,
+        "approval": "Verified by SCERT Maharashtra and approved by the Coordination Committee (GR No. Abhyas-2116/(Pra.Kra.43/16) SD-4) in its meeting held on April 16, 2025, for use from academic year 2025-26 onwards, as printed on the title page.",
+        "academicYearOfFirstUse": "2025-26",
+        "sourceUrl": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+        "verifiedOn": "2026-10-31",
+        "verificationMethod": "Direct download and text extraction of the official eBalbharati PDF (87 PDF pages; Index lists 4 units / 42 chapters; Unit One = printed pp. 1-17, 11 chapters).",
+        "confidence": "OFFICIAL_SOURCE_VERIFIED"
+      },
+      "unit": {
+        "number": 1,
+        "title": null,
+        "printedPageRange": "1-17"
+      },
+      "chapter": {
+        "code": "1.7",
+        "title": "What can you do?",
+        "printedPage": 10,
+        "contentCategory": "ABILITY_GAME",
+        "copyrightStatus": {
+          "category": "BALBHARATI_ALL_RIGHTS_RESERVED",
+          "reproductionRule": "Reference-only: cite title/page; teach can/can't frames and the imitation game with Talkora-original materials."
+        }
+      },
+      "lesson": {
+        "orderInUnit": 7,
+        "talkoraLevelMapping": [
+          {
+            "talkoraLevelId": "g01-l07",
+            "roadmapTitle": "Action Words",
+            "role": "CONSOLIDATES",
+            "status": "PROPOSED_MAPPING_PENDING_PM_APPROVAL"
+          },
+          {
+            "talkoraLevelId": "g01-l08",
+            "roadmapTitle": "Simple Questions",
+            "role": "INTRODUCES",
+            "status": "PROPOSED_MAPPING_PENDING_PM_APPROVAL"
+          }
+        ]
+      },
+      "sourceReferences": [
+        {
+          "type": "OFFICIAL_TEXTBOOK_PDF",
+          "locator": "My English Book Grade One (2025), printed pp.10-11, chapter 1.7 What can you do? — action word set (sing, swim, play, read, write, jump, walk, dance), can/can't frames ('Can you sing?' — 'Yes, I can sing.' / 'No, I can't ___.'), and the 'Queen Says' imitation game (Walk like an old man, Hop like a frog, Roar like a lion, etc.)",
+          "url": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+          "verifiedOn": "2026-10-31",
+          "confidence": "OFFICIAL_SOURCE_VERIFIED"
+        }
+      ],
+      "learningObjectives": [
+        "Say 'I can ___' with at least five action words: sing, swim, play, read, write, jump, walk, dance.",
+        "Answer 'Can you ___?' with 'Yes, I can ___.' or 'No, I can't ___.'",
+        "Play the Queen Says imitation game: Walk like an elephant. Fly like a bird. Roar like a lion.",
+        "Consolidate the action-word bank started with 1.4 Clap your hands."
+      ],
+      "vocabulary": [
+        {
+          "en": "sing",
+          "hi": "गाना गाना",
+          "mr": "गाणे",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.7 action word set, printed p.10"
+        },
+        {
+          "en": "swim",
+          "hi": "तैरना",
+          "mr": "पोहणे",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.7 action word set, printed p.10"
+        },
+        {
+          "en": "read",
+          "hi": "पढ़ना",
+          "mr": "वाचणे",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.7 action word set, printed p.10"
+        },
+        {
+          "en": "write",
+          "hi": "लिखना",
+          "mr": "लिहिणे",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.7 action word set, printed p.10"
+        },
+        {
+          "en": "dance",
+          "hi": "नाचना",
+          "mr": "नाचणे",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.7 action word set, printed p.10"
+        },
+        {
+          "en": "walk",
+          "hi": "चलना",
+          "mr": "चालणे",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.7 action word set, printed p.10"
+        },
+        {
+          "en": "hop",
+          "hi": "उछलकूद करना",
+          "mr": "उड्या मारणे",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.7 Queen Says 'Hop like a frog', printed p.11"
+        },
+        {
+          "en": "roar",
+          "hi": "दहाड़ना",
+          "mr": "दहाडणे",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.7 Queen Says 'Roar like a lion', printed p.11"
+        },
+        {
+          "en": "fly",
+          "hi": "उड़ना",
+          "mr": "उडणे",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.7 Queen Says 'Fly like a bird', printed p.11",
+          "audioAsset": {
+            "status": "RIGHTS_UNDECIDED",
+            "officialQrRef": "Official in-book QR audio (title page promises digital audio/visual resources).",
+            "note": "Rights undecided; Talkora ships no such audio until Balbharati authorization is documented."
+          }
+        }
+      ],
+      "adaptiveTeachingHints": [
+        {
+          "learnerState": "BEGINNER_COMPLETE",
+          "hint": "Ability show-and-tell: each child demonstrates one 'I can ___' to the class."
+        },
+        {
+          "learnerState": "BEGINNER_HINDI",
+          "hint": "Child mimes first: 'वाह! तुम नाच सकते हो. English — I can dance. Say it!'"
+        },
+        {
+          "learnerState": "BEGINNER_MARATHI",
+          "hint": "Child mimes first: 'वा! तू नाचू शकतेस. English — I can dance. Mhaṇ!'"
+        },
+        {
+          "learnerState": "ANSWERED_INCORRECT",
+          "hint": "Child says 'I can't sing' proudly — it is a TRUE answer; praise the frame, then ask about another action."
+        },
+        {
+          "learnerState": "SILENT",
+          "hint": "Child mimes the ability; Miss Julie voices it: 'You can jump! Can YOU say it?' Nod is enough the first time."
+        },
+        {
+          "learnerState": "GUESSING_REPEATEDLY",
+          "hint": "'Show me first — your body cannot guess, it knows!' Mime precedes speech."
+        },
+        {
+          "learnerState": "FAST_LEARNER",
+          "hint": "Child asks three classmates 'Can you ___?' and reports: 'Ayesha can jump!'"
+        },
+        {
+          "learnerState": "NEEDS_REVISION",
+          "hint": "Yes-only round first (build frames), then introduce one no-answer."
+        }
+      ],
+      "recallDesign": [
+        {
+          "milestone": "IMMEDIATE_REPETITION",
+          "activity": "Child echoes 'I can jump' while jumping."
+        },
+        {
+          "milestone": "INDEPENDENT_ANSWERING",
+          "activity": "Child states a NEW ability (not just demonstrated) with the I-can frame."
+        },
+        {
+          "milestone": "DELAYED_RECALL",
+          "activity": "Next session opening: 'Tell me one thing you can do!' — unprompted sentence."
+        }
+      ],
+      "review": {
+        "syllabusVerification": "OFFICIAL_PDF_VERIFIED",
+        "pedagogyStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+        "notes": "Syllabus facts verified against the official 2025 PDF. Pedagogy, Hindi/Marathi support lines and teaching moves are Talkora-original drafts awaiting a human teacher's review; synthetic example validation does not count as teacher approval."
+      },
+      "prerequisiteSkills": [
+        "Action words introduced with 1.4 (clap, stamp, jump, turn).",
+        "Comfortable miming in front of others (or observing first)."
+      ],
+      "grammarConcepts": [
+        {
+          "concept": "can / can't",
+          "childFriendlyFraming": "'Can' is the magic power-word: I can sing! 'Can't' closes the door: I can't swim. Both answers are equally good.",
+          "note": "ANSWERED_INCORRECT framing: 'No, I can't' is a correct sentence, not a failure."
+        }
+      ],
+      "comprehensionGoals": [
+        "Understands that 'Can you…?' asks about ability, not about liking."
+      ],
+      "speakingObjectives": [
+        "State one ability with 'I can ___.'",
+        "Ask a peer 'Can you ___?' and relay the answer."
+      ],
+      "suggestedVisualActivities": [
+        {
+          "title": "Animal imitation cards (Queen Says)",
+          "description": "Eight Talkora-original animal/character cards for the imitation game.",
+          "assetStatus": "SKETCH_REQUESTED"
+        }
+      ],
+      "teacherExplanationExamples": [
+        {
+          "en": "Can you sing? — Yes, I can sing!",
+          "hi": "क्या तुम गा सकते हो? — हाँ, मैं गा सकता/सकती हूँ!",
+          "mr": "तू गाऊ शकतेस का? — हो, मी गाऊ शकतो/शकते!"
+        },
+        {
+          "en": "Walk like an old man — slow, slow steps!",
+          "hi": "बुज़ुर्ग की तरह चलो — धीरे-धीरे!",
+          "mr": "आजोबांसारखे चला — हळू हळू!"
+        }
+      ],
+      "hindiExplanations": [
+        "'क्या तुम ___ सकते हो?' का जवाब: 'हाँ, मैं ___ सकता हूँ' या 'नहीं, मैं ___ नहीं सकता' — दोनों सही जवाब हैं।"
+      ],
+      "marathiExplanations": [
+        "'तू ___ शकतेस का?' चे उत्तर: 'हो, मी ___ शकतो' किंवा 'नाही, मी ___ शकत नाही' — दोन्ही बरोबर."
+      ],
+      "expectedStudentAnswers": [
+        "Yes, I can sing.",
+        "No, I can't swim.",
+        "I can dance!"
+      ],
+      "commonBeginnerMistakeIds": [
+        "mist-013",
+        "mist-022",
+        "mist-031",
+        "mist-029"
+      ],
+      "remediationStrategies": [
+        "Verb re-teaching through the animal game (the child's favourite lion/frog carries the word).",
+        "can't answers treated as successes to keep risk-taking safe."
+      ],
+      "assessmentCriteria": [
+        "Produces 5 I-can sentences with correct action words.",
+        "Asks and answers one Can-you exchange with a peer."
+      ],
+      "masteryIndicators": [
+        "INDEPENDENT_ANSWERING: asks a peer 'Can you ___?' and reports the answer to the class.",
+        "DELAYED_RECALL: states a new ability in English at next session's opening."
+      ],
+      "revisionActivities": [
+        "Queen Says tournament (caller rotates).",
+        "Ability wall: each child's I-can card."
+      ],
+      "shortSpokenHomework": "Tell someone at home two things you can do: 'I can ___. I can ___.'",
+      "teachingStages": [
+        {
+          "stage": "DISCOVER",
+          "note": "Miss Julie mimes; children guess the action."
+        },
+        {
+          "stage": "EXPLAIN",
+          "note": "can/can't frames with gesture (open/closed hands)."
+        },
+        {
+          "stage": "DEMONSTRATE",
+          "note": "Queen Says modelled by teacher as Queen."
+        },
+        {
+          "stage": "ASK",
+          "note": "Can-you pair exchanges."
+        },
+        {
+          "stage": "VERIFY",
+          "note": "Ability show-and-tell."
+        },
+        {
+          "stage": "RECALL",
+          "note": "Opening tell-me next session."
+        }
+      ]
+    },
+    {
+      "curriculumId": "meb-g01-u1-c1.08",
+      "textbookId": "MY_ENGLISH_BOOK_G01_NON_ENGLISH_MEDIUM",
+      "board": "Maharashtra State Board (Balbharati)",
+      "grade": 1,
+      "subject": "English",
+      "textbookEdition": {
+        "title": "My English Book — Grade One (Non-English Medium)",
+        "publisher": "Maharashtra State Bureau of Textbook Production and Curriculum Research, Pune (Balbharati)",
+        "editionYear": 2025,
+        "approval": "Verified by SCERT Maharashtra and approved by the Coordination Committee (GR No. Abhyas-2116/(Pra.Kra.43/16) SD-4) in its meeting held on April 16, 2025, for use from academic year 2025-26 onwards, as printed on the title page.",
+        "academicYearOfFirstUse": "2025-26",
+        "sourceUrl": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+        "verifiedOn": "2026-10-31",
+        "verificationMethod": "Direct download and text extraction of the official eBalbharati PDF (87 PDF pages; Index lists 4 units / 42 chapters; Unit One = printed pp. 1-17, 11 chapters).",
+        "confidence": "OFFICIAL_SOURCE_VERIFIED"
+      },
+      "unit": {
+        "number": 1,
+        "title": null,
+        "printedPageRange": "1-17"
+      },
+      "chapter": {
+        "code": "1.8",
+        "title": "My Classroom",
+        "printedPage": 12,
+        "contentCategory": "PICTURE_TALK",
+        "copyrightStatus": {
+          "category": "BALBHARATI_ALL_RIGHTS_RESERVED",
+          "reproductionRule": "Reference-only: cite title/page; teach classroom-object vocabulary with Talkora-original visuals. Word lists are functional content."
+        }
+      },
+      "lesson": {
+        "orderInUnit": 8,
+        "talkoraLevelMapping": [
+          {
+            "talkoraLevelId": "g01-l02",
+            "roadmapTitle": "My School",
+            "role": "INTRODUCES",
+            "status": "PROPOSED_MAPPING_PENDING_PM_APPROVAL"
+          }
+        ]
+      },
+      "sourceReferences": [
+        {
+          "type": "OFFICIAL_TEXTBOOK_PDF",
+          "locator": "My English Book Grade One (2025), printed pp.12-13, chapter 1.8 My Classroom — classroom word bank (book, bench, chalk, tiffin, duster, dustbin, notebook, blackboard, school bag, water-bottle, calendar, computer) and the school-vs-home sorting activity (bookshelf, bell, slide, mirror, computer, toothbrush, sofa, mixer, bench, bed, table, see-saw)",
+          "url": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+          "verifiedOn": "2026-10-31",
+          "confidence": "OFFICIAL_SOURCE_VERIFIED"
+        }
+      ],
+      "learningObjectives": [
+        "Name classroom objects: book, bench, chalk, tiffin, duster, dustbin, notebook, blackboard, school bag, water-bottle, calendar, computer.",
+        "Sort things into 'school' and 'home' places (the book's Anandi activity).",
+        "Answer 'Where have you seen these things?' for classroom objects.",
+        "Build the My School vocabulary for the canonical g01-l02 level."
+      ],
+      "vocabulary": [
+        {
+          "en": "book",
+          "hi": "किताब",
+          "mr": "पुस्तक",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.8 classroom word bank, printed p.12"
+        },
+        {
+          "en": "bench",
+          "hi": "बेंच",
+          "mr": "बाक",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.8 classroom word bank, printed p.12"
+        },
+        {
+          "en": "chalk",
+          "hi": "चॉक",
+          "mr": "खडू",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.8 classroom word bank, printed p.12"
+        },
+        {
+          "en": "tiffin",
+          "hi": "टिफिन",
+          "mr": "डबा",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.8 classroom word bank, printed p.12"
+        },
+        {
+          "en": "duster",
+          "hi": "पोंछा (डस्टर)",
+          "mr": "डस्टर",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.8 classroom word bank, printed p.12"
+        },
+        {
+          "en": "dustbin",
+          "hi": "कचरापेटी",
+          "mr": "कचरापेटी",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.8 classroom word bank, printed p.12"
+        },
+        {
+          "en": "notebook",
+          "hi": "कॉपी",
+          "mr": "वही",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.8 classroom word bank, printed p.12"
+        },
+        {
+          "en": "blackboard",
+          "hi": "श्यामपट्ट",
+          "mr": "फळा",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.8 classroom word bank, printed p.12"
+        },
+        {
+          "en": "school bag",
+          "hi": "बस्ता",
+          "mr": "बस्ता",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.8 classroom word bank, printed p.12",
+          "audioAsset": {
+            "status": "RIGHTS_UNDECIDED",
+            "officialQrRef": "Official in-book QR audio (title page promises digital audio/visual resources).",
+            "note": "Rights undecided; Talkora ships no such audio until Balbharati authorization is documented."
+          }
+        },
+        {
+          "en": "water-bottle",
+          "hi": "पानी की बोतल",
+          "mr": "पाण्याची बाटली",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.8 classroom word bank, printed p.12"
+        },
+        {
+          "en": "calendar",
+          "hi": "कैलेंडर",
+          "mr": "दिनदर्शिका",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.8 classroom word bank, printed p.12"
+        },
+        {
+          "en": "computer",
+          "hi": "संगणक",
+          "mr": "संगणक",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.8 classroom word bank, printed p.12"
+        }
+      ],
+      "adaptiveTeachingHints": [
+        {
+          "learnerState": "BEGINNER_COMPLETE",
+          "hint": "Classroom scavenger hunt: child finds and names real objects."
+        },
+        {
+          "learnerState": "BEGINNER_HINDI",
+          "hint": "Child points and says the Hindi word: 'हाँ! फ़र्श-पेटी… dustbin! English mein dustbin.'"
+        },
+        {
+          "learnerState": "BEGINNER_MARATHI",
+          "hint": "Child points: 'बरोबर! फळा — blackboard!'"
+        },
+        {
+          "learnerState": "ANSWERED_INCORRECT",
+          "hint": "Child mixes notebook/book: hold both up — 'Which one has pages to WRITE on?' Objects decide."
+        },
+        {
+          "learnerState": "SILENT",
+          "hint": "Child fetches the object — carrying is answering; name it for them gently."
+        },
+        {
+          "learnerState": "GUESSING_REPEATEDLY",
+          "hint": "'Your classroom is full of answers — go and find one!' Real search defeats guessing."
+        },
+        {
+          "learnerState": "FAST_LEARNER",
+          "hint": "Child labels real classroom objects with sticky notes (with help writing)."
+        },
+        {
+          "learnerState": "NEEDS_REVISION",
+          "hint": "Two-object choice first (book or notebook?), then open naming."
+        }
+      ],
+      "recallDesign": [
+        {
+          "milestone": "IMMEDIATE_REPETITION",
+          "activity": "Child echoes 'blackboard' while pointing at the real board."
+        },
+        {
+          "milestone": "INDEPENDENT_ANSWERING",
+          "activity": "Child names a real object from their own desk without a model."
+        },
+        {
+          "milestone": "DELAYED_RECALL",
+          "activity": "Next-session scavenger hunt with the same word bank; new session, no re-teaching."
+        }
+      ],
+      "review": {
+        "syllabusVerification": "OFFICIAL_PDF_VERIFIED",
+        "pedagogyStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+        "notes": "Syllabus facts verified against the official 2025 PDF. Pedagogy, Hindi/Marathi support lines and teaching moves are Talkora-original drafts awaiting a human teacher's review; synthetic example validation does not count as teacher approval."
+      },
+      "prerequisiteSkills": [
+        "Sits in a real classroom daily (all words are physically present)."
+      ],
+      "comprehensionGoals": [
+        "Classifies objects as school-things or home-things."
+      ],
+      "speakingObjectives": [
+        "Name at least six classroom objects in English.",
+        "Say 'This is my ___' about a real object on their desk."
+      ],
+      "suggestedVisualActivities": [
+        {
+          "title": "Classroom scene (Talkora-original)",
+          "description": "Simple classroom drawing with all 12 objects, styled differently from the textbook artwork.",
+          "assetStatus": "MISSING"
+        },
+        {
+          "title": "School/Home sorting mats",
+          "description": "Two mats plus 12 object cards for the Anandi-style sorting game.",
+          "assetStatus": "SKETCH_REQUESTED"
+        }
+      ],
+      "teacherExplanationExamples": [
+        {
+          "en": "This is my notebook. I write in it.",
+          "hi": "यह मेरी कॉपी है। मैं इसमें लिखता/लिखती हूँ।",
+          "mr": "ही माझी वही आहे. मी यात लिहितो/लिहिते."
+        }
+      ],
+      "hindiExplanations": [
+        "कक्षा की चीज़ें रोज़ दिखती हैं — बोर्ड, चॉक, बस्ता। नाम अंग्रेज़ी में बोलकर छुओ।"
+      ],
+      "marathiExplanations": [
+        "वर्गातल्या वस्तू रोज दिसतात — फळा, खडू, बस्ता. नाव इंग्रजीत म्हणून स्पर्श करा."
+      ],
+      "expectedStudentAnswers": [
+        "book",
+        "blackboard",
+        "This is my school bag."
+      ],
+      "commonBeginnerMistakeIds": [
+        "mist-010",
+        "mist-018",
+        "mist-019",
+        "mist-033"
+      ],
+      "remediationStrategies": [
+        "Real objects before pictures — the classroom itself is the flash-card set.",
+        "For quiet speakers: fetching/pointing tasks keep participation possible."
+      ],
+      "assessmentCriteria": [
+        "Names 6/12 classroom objects from the scene.",
+        "Sorts 10/12 items correctly in the school/home game."
+      ],
+      "masteryIndicators": [
+        "INDEPENDENT_ANSWERING: names a desk object chosen by Miss Julie, unseen in the drill.",
+        "DELAYED_RECALL: next-session hunt completed without re-teaching."
+      ],
+      "revisionActivities": [
+        "Sticky-note labelling.",
+        "Point-to-it-fast round."
+      ],
+      "shortSpokenHomework": "Show someone at home (or say from memory) three classroom things in English.",
+      "teachingStages": [
+        {
+          "stage": "DISCOVER",
+          "note": "Mystery bag: pull out a real object, guess it."
+        },
+        {
+          "stage": "EXPLAIN",
+          "note": "English name with the real thing."
+        },
+        {
+          "stage": "LISTEN",
+          "note": "'Touch the ___' rounds."
+        },
+        {
+          "stage": "ASK",
+          "note": "Sorting game (school vs home)."
+        },
+        {
+          "stage": "VERIFY",
+          "note": "Desk-object check."
+        },
+        {
+          "stage": "RECALL",
+          "note": "Next-session hunt."
+        }
+      ]
+    },
+    {
+      "curriculumId": "meb-g01-u1-c1.09",
+      "textbookId": "MY_ENGLISH_BOOK_G01_NON_ENGLISH_MEDIUM",
+      "board": "Maharashtra State Board (Balbharati)",
+      "grade": 1,
+      "subject": "English",
+      "textbookEdition": {
+        "title": "My English Book — Grade One (Non-English Medium)",
+        "publisher": "Maharashtra State Bureau of Textbook Production and Curriculum Research, Pune (Balbharati)",
+        "editionYear": 2025,
+        "approval": "Verified by SCERT Maharashtra and approved by the Coordination Committee (GR No. Abhyas-2116/(Pra.Kra.43/16) SD-4) in its meeting held on April 16, 2025, for use from academic year 2025-26 onwards, as printed on the title page.",
+        "academicYearOfFirstUse": "2025-26",
+        "sourceUrl": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+        "verifiedOn": "2026-10-31",
+        "verificationMethod": "Direct download and text extraction of the official eBalbharati PDF (87 PDF pages; Index lists 4 units / 42 chapters; Unit One = printed pp. 1-17, 11 chapters).",
+        "confidence": "OFFICIAL_SOURCE_VERIFIED"
+      },
+      "unit": {
+        "number": 1,
+        "title": null,
+        "printedPageRange": "1-17"
+      },
+      "chapter": {
+        "code": "1.9",
+        "title": "Fun with Sounds (d-f-m-n-e)",
+        "printedPage": 14,
+        "contentCategory": "PHONICS_SOUNDS",
+        "copyrightStatus": {
+          "category": "BALBHARATI_ALL_RIGHTS_RESERVED",
+          "reproductionRule": "Reference-only: cite title/page; teach beginning sounds with Talkora-original picture sets. Word lists are functional content."
+        }
+      },
+      "lesson": {
+        "orderInUnit": 9,
+        "talkoraLevelMapping": [
+          {
+            "talkoraLevelId": "g01-l02",
+            "roadmapTitle": "My School",
+            "role": "CONSOLIDATES",
+            "status": "PROPOSED_MAPPING_PENDING_PM_APPROVAL"
+          }
+        ]
+      },
+      "sourceReferences": [
+        {
+          "type": "OFFICIAL_TEXTBOOK_PDF",
+          "locator": "My English Book Grade One (2025), printed pp.14-15, chapter 1.9 Fun with Sounds (d-f-m-n-e) — beginning-sound picture sets: d (duck, den, doll, door), f (farmer, fan, fish, fox), m (mug, mobile, mango, mat), n (nose, nail, nurse, nest), e (egg, elbow, elephant, eight); letter tracing; word-building frames (pet, met, net; bed, fed; pen, den, ten)",
+          "url": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+          "verifiedOn": "2026-10-31",
+          "confidence": "OFFICIAL_SOURCE_VERIFIED"
+        }
+      ],
+      "learningObjectives": [
+        "Hear and say the beginning sounds /d/, /f/, /m/, /n/, /e/.",
+        "Sort pictures by beginning sound into d, f, m, n, e buckets.",
+        "Blend new short-vowel words: pet, met, net, bed, fed, pen, den, ten.",
+        "Hear the special behaviour of the 'e' sound at word beginnings (egg, elbow, elephant) — an early vowel-sound awareness."
+      ],
+      "vocabulary": [
+        {
+          "en": "duck",
+          "hi": "बत्तख",
+          "mr": "बदक",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.9 d-set picture word, printed p.14"
+        },
+        {
+          "en": "den",
+          "hi": "गुफा (जानवर का घर)",
+          "mr": "मांद",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.9 d-set picture word, printed p.14"
+        },
+        {
+          "en": "doll",
+          "hi": "गुड़िया",
+          "mr": "बाहुली",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.9 d-set picture word, printed p.14"
+        },
+        {
+          "en": "fan",
+          "hi": "पंखा",
+          "mr": "पंखा",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.9 f-set picture word, printed p.14"
+        },
+        {
+          "en": "fox",
+          "hi": "लोमड़ी",
+          "mr": "कोल्हा",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.9 f-set picture word, printed p.14"
+        },
+        {
+          "en": "mango",
+          "hi": "आम",
+          "mr": "आंबा",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.9 m-set picture word, printed p.14"
+        },
+        {
+          "en": "nest",
+          "hi": "घोंसला",
+          "mr": "घरटे",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.9 n-set picture word, printed p.14"
+        },
+        {
+          "en": "egg",
+          "hi": "अंडा",
+          "mr": "अंडे",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.9 e-set picture word, printed p.14"
+        },
+        {
+          "en": "elephant",
+          "hi": "हाथी",
+          "mr": "हत्ती",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.9 e-set picture word, printed p.14",
+          "audioAsset": {
+            "status": "RIGHTS_UNDECIDED",
+            "officialQrRef": "Official in-book QR audio (title page promises digital audio/visual resources).",
+            "note": "Rights undecided; Talkora ships no such audio until Balbharati authorization is documented."
+          }
+        },
+        {
+          "en": "bed",
+          "hi": "बिस्तर",
+          "mr": "पलंग",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.9 word-building output, printed p.15"
+        },
+        {
+          "en": "ten",
+          "hi": "दस",
+          "mr": "दहा",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.9 word-building output, printed p.15"
+        }
+      ],
+      "adaptiveTeachingHints": [
+        {
+          "learnerState": "BEGINNER_COMPLETE",
+          "hint": "Five-bucket sort relay, then blend race on the word-building frames."
+        },
+        {
+          "learnerState": "BEGINNER_HINDI",
+          "hint": "Child says the Hindi word: 'हाथी! English mein — elephant. It starts with the e sound: e-e-elephant!'"
+        },
+        {
+          "learnerState": "BEGINNER_MARATHI",
+          "hint": "Child says the Marathi word: 'हत्ती! English — elephant. e-e-elephant!'"
+        },
+        {
+          "learnerState": "ANSWERED_INCORRECT",
+          "hint": "Child blends 'pen' as 'pain': stretch-and-blend together — 'p-e-n. Tap it: /p/ /e/ /n/ → pen.' The ear decides."
+        },
+        {
+          "learnerState": "SILENT",
+          "hint": "Child sorts only; sorting is answering. Naming joins when ready."
+        },
+        {
+          "learnerState": "GUESSING_REPEATEDLY",
+          "hint": "'Sing the sound first — d-d-duck. Now the picture word.' Sounding replaces guessing."
+        },
+        {
+          "learnerState": "FAST_LEARNER",
+          "hint": "Child builds NEW frame words with magnetic letters (pet→jet? keep real words: net, get)."
+        },
+        {
+          "learnerState": "NEEDS_REVISION",
+          "hint": "Revisit 1.6 buckets first, then add the five new sounds gradually."
+        }
+      ],
+      "recallDesign": [
+        {
+          "milestone": "IMMEDIATE_REPETITION",
+          "activity": "Child echoes 'm-m-mango' after the model."
+        },
+        {
+          "milestone": "INDEPENDENT_ANSWERING",
+          "activity": "Child names the beginning sound of a NEW picture word without a model."
+        },
+        {
+          "milestone": "DELAYED_RECALL",
+          "activity": "Next-session blend race on the -en/-et/-ed frames with no re-teaching."
+        }
+      ],
+      "review": {
+        "syllabusVerification": "OFFICIAL_PDF_VERIFIED",
+        "pedagogyStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+        "notes": "Syllabus facts verified against the official 2025 PDF. Pedagogy, Hindi/Marathi support lines and teaching moves are Talkora-original drafts awaiting a human teacher's review; synthetic example validation does not count as teacher approval."
+      },
+      "prerequisiteSkills": [
+        "Beginning sounds /b c p t a/ from 1.6.",
+        "Has blended at least one -at/-ap family word."
+      ],
+      "phonicsConcepts": [
+        "Beginning sounds /d/ /f/ /m/ /n/ /e/",
+        "Short-e family blends: -en, -et, -ed",
+        "Vowel-beginning awareness (e-set words take 'an': an egg, an elephant — sound rule preview)"
+      ],
+      "speakingObjectives": [
+        "Say each picture word with its stretched first sound: m-m-mango.",
+        "Blend pen, den, ten aloud in sequence."
+      ],
+      "suggestedVisualActivities": [
+        {
+          "title": "Sound-bucket mats (d f m n e)",
+          "description": "Five letter mats plus Talkora-original picture cards, matching the 1.6 set style.",
+          "assetStatus": "MISSING"
+        }
+      ],
+      "teacherExplanationExamples": [
+        {
+          "en": "e-e-egg! 'Egg' begins with a vowel sound, so we say AN egg.",
+          "hi": "e-e-egg! 'egg' स्वर आवाज़ से शुरू होता है, इसलिए AN egg कहते हैं।",
+          "mr": "e-e-egg! 'egg' स्वर आवाजाने सुरू होतं, म्हणून AN egg म्हणतात."
+        }
+      ],
+      "hindiExplanations": [
+        "स्वर (a, e, i, o, u) की आवाज़ से शुरू होने वाले शब्दों के आगे 'an' आता है — an egg, an elephant।"
+      ],
+      "marathiExplanations": [
+        "स्वर (a, e, i, o, u) यांच्या आवाजाने सुरू होणाऱ्या शब्दांपुढे 'an' येतं — an egg, an elephant."
+      ],
+      "expectedStudentAnswers": [
+        "duck",
+        "mango",
+        "bed",
+        "ten"
+      ],
+      "commonBeginnerMistakeIds": [
+        "mist-003",
+        "mist-009",
+        "mist-011",
+        "mist-008"
+      ],
+      "remediationStrategies": [
+        "Same routine as 1.6 — familiarity lets the new sounds land.",
+        "Article transfer (an egg) tied to the SOUND, never to spelling, per PM rule."
+      ],
+      "assessmentCriteria": [
+        "Sorts 8/10 new picture cards correctly.",
+        "Blends 4/8 frame words aloud."
+      ],
+      "masteryIndicators": [
+        "INDEPENDENT_ANSWERING: blends an unseen frame word (e.g. 'jet' kept out of drills).",
+        "DELAYED_RECALL: next-session sort and blend with new words."
+      ],
+      "revisionActivities": [
+        "Sound-bucket revision circle.",
+        "Word-family slide drill (pe→pen, de→den, te→ten)."
+      ],
+      "shortSpokenHomework": "Find one thing at home starting with the 'm' sound and say its English name tomorrow.",
+      "teachingStages": [
+        {
+          "stage": "DISCOVER",
+          "note": "Sound mystery box (new sounds)."
+        },
+        {
+          "stage": "DEMONSTRATE",
+          "note": "Sort-and-think-aloud."
+        },
+        {
+          "stage": "LISTEN",
+          "note": "Eyes-closed first-sound game."
+        },
+        {
+          "stage": "CORRECT",
+          "note": "Stretch-and-blend arbitration."
+        },
+        {
+          "stage": "VERIFY",
+          "note": "New-word blend check."
+        },
+        {
+          "stage": "RECALL",
+          "note": "Next-session race."
+        }
+      ]
+    },
+    {
+      "curriculumId": "meb-g01-u1-c1.10",
+      "textbookId": "MY_ENGLISH_BOOK_G01_NON_ENGLISH_MEDIUM",
+      "board": "Maharashtra State Board (Balbharati)",
+      "grade": 1,
+      "subject": "English",
+      "textbookEdition": {
+        "title": "My English Book — Grade One (Non-English Medium)",
+        "publisher": "Maharashtra State Bureau of Textbook Production and Curriculum Research, Pune (Balbharati)",
+        "editionYear": 2025,
+        "approval": "Verified by SCERT Maharashtra and approved by the Coordination Committee (GR No. Abhyas-2116/(Pra.Kra.43/16) SD-4) in its meeting held on April 16, 2025, for use from academic year 2025-26 onwards, as printed on the title page.",
+        "academicYearOfFirstUse": "2025-26",
+        "sourceUrl": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+        "verifiedOn": "2026-10-31",
+        "verificationMethod": "Direct download and text extraction of the official eBalbharati PDF (87 PDF pages; Index lists 4 units / 42 chapters; Unit One = printed pp. 1-17, 11 chapters).",
+        "confidence": "OFFICIAL_SOURCE_VERIFIED"
+      },
+      "unit": {
+        "number": 1,
+        "title": null,
+        "printedPageRange": "1-17"
+      },
+      "chapter": {
+        "code": "1.10",
+        "title": "Tip-Tap, Tip-Tap",
+        "printedPage": 16,
+        "contentCategory": "POEM",
+        "copyrightStatus": {
+          "category": "THIRD_PARTY_PERMISSION_AWAITED",
+          "reproductionRule": "The Index page acknowledges copyright holders generally and states: 'Some permission are awaited. Acknowledgement to them will be made in subsequent reprint.' No per-chapter credit is printed for Unit One; this chapter is a song/rhyme, so a third-party origin cannot be ruled out.",
+          "creditNote": "Index page: permissions awaited for some reproduced material; no per-chapter credit printed for this chapter."
+        }
+      },
+      "lesson": {
+        "orderInUnit": 10,
+        "talkoraLevelMapping": [
+          {
+            "talkoraLevelId": "g01-l10",
+            "roadmapTitle": "Story Time",
+            "role": "INTRODUCES",
+            "status": "PROPOSED_MAPPING_PENDING_PM_APPROVAL"
+          }
+        ]
+      },
+      "sourceReferences": [
+        {
+          "type": "OFFICIAL_TEXTBOOK_PDF",
+          "locator": "My English Book Grade One (2025), printed p.16, chapter 1.10 Tip-Tap, Tip-Tap — rain poem with seasons picture (Rainy, Winter, Summer), sound-word list (tick-tack, zig-zag, ding-dong, tip-top, zip-zap, sing-song, pitter-patter, ping-pong) and alliteration tongue-twisters (Two tall trees, Blue bag black bag, Big blue boat, Big brown ball)",
+          "url": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+          "verifiedOn": "2026-10-31",
+          "confidence": "OFFICIAL_SOURCE_VERIFIED"
+        }
+      ],
+      "learningObjectives": [
+        "Listen to and recite the rain poem with rhythm and actions.",
+        "Name the three seasons in the picture: rainy, winter, summer.",
+        "Play with sound words: tip-tap, zig-zag, ding-dong, pitter-patter.",
+        "Hear alliteration in the tongue-twisters (Two tall trees, Big blue boat) — same-sound beginnings."
+      ],
+      "vocabulary": [
+        {
+          "en": "rain",
+          "hi": "बारिश",
+          "mr": "पाऊस",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.10 poem refrain 'Rain falls from the sky', printed p.16"
+        },
+        {
+          "en": "rainy",
+          "hi": "बरसाती (मौसम)",
+          "mr": "पावसाळा",
+          "origin": "PICTURE_PROMPT_DERIVED",
+          "sourceRef": "1.10 seasons picture 'Rainy', printed p.16"
+        },
+        {
+          "en": "winter",
+          "hi": "सर्दी (मौसम)",
+          "mr": "हिवाळा",
+          "origin": "PICTURE_PROMPT_DERIVED",
+          "sourceRef": "1.10 seasons picture 'Winter', printed p.16"
+        },
+        {
+          "en": "summer",
+          "hi": "गर्मी (मौसम)",
+          "mr": "उन्हाळा",
+          "origin": "PICTURE_PROMPT_DERIVED",
+          "sourceRef": "1.10 seasons picture 'Summer', printed p.16"
+        },
+        {
+          "en": "sky",
+          "hi": "आकाश",
+          "mr": "आकाश",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.10 poem refrain 'Rain falls from the sky', printed p.16"
+        },
+        {
+          "en": "water",
+          "hi": "पानी",
+          "mr": "पाणी",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.10 poem verse 'Water flows by', printed p.16",
+          "audioAsset": {
+            "status": "RIGHTS_UNDECIDED",
+            "officialQrRef": "Official in-book QR audio (title page promises digital audio/visual resources).",
+            "note": "Rights undecided; Talkora ships no such audio until Balbharati authorization is documented."
+          }
+        },
+        {
+          "en": "tip-tap",
+          "hi": "टिप-टैप (आवाज़)",
+          "mr": "टिप-टॅप (आवाज)",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.10 sound-word list, printed p.16"
+        },
+        {
+          "en": "zig-zag",
+          "hi": "टेढ़ा-मेढ़ा",
+          "mr": "वाकडी-तिकडी",
+          "origin": "TEXTBOOK_WORD_BANK",
+          "sourceRef": "1.10 sound-word list, printed p.16"
+        }
+      ],
+      "adaptiveTeachingHints": [
+        {
+          "learnerState": "BEGINNER_COMPLETE",
+          "hint": "Sound-word orchestra: children split the sound words among groups and perform."
+        },
+        {
+          "learnerState": "BEGINNER_HINDI",
+          "hint": "Child recites the rhythm first in any language: 'बहुत सुंदर! Now the rain speaks English — Tip-Tap!'"
+        },
+        {
+          "learnerState": "BEGINNER_MARATHI",
+          "hint": "Child recites the rhythm: 'छान! आता पाऊस इंग्रजीत बोलतो — Tip-Tap!'"
+        },
+        {
+          "learnerState": "ANSWERED_INCORRECT",
+          "hint": "Child says 'tip-top' for 'tip-tap': clap the two rhythms side by side — the hands decide."
+        },
+        {
+          "learnerState": "SILENT",
+          "hint": "Child joins the body percussion only; recitation joins later."
+        },
+        {
+          "learnerState": "GUESSING_REPEATEDLY",
+          "hint": "Sound words are nonsense-fun — any confident attempt is celebrated, then tuned by ear."
+        },
+        {
+          "learnerState": "FAST_LEARNER",
+          "hint": "Child invents a new sound word for rain and teaches the class."
+        },
+        {
+          "learnerState": "NEEDS_REVISION",
+          "hint": "Rhythm-clap first, words second, then full recitation."
+        }
+      ],
+      "recallDesign": [
+        {
+          "milestone": "IMMEDIATE_REPETITION",
+          "activity": "Child echoes 'Tip-Tap, Tip-Tap' with the body rhythm."
+        },
+        {
+          "milestone": "INDEPENDENT_ANSWERING",
+          "activity": "Child recites the refrain alone when Miss Julie shows the rain card only."
+        },
+        {
+          "milestone": "DELAYED_RECALL",
+          "activity": "Next rainy day (or next session): child says 'Tip-Tap!' when rain is mentioned — real-world recall."
+        }
+      ],
+      "review": {
+        "syllabusVerification": "OFFICIAL_PDF_VERIFIED",
+        "pedagogyStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+        "notes": "Syllabus facts verified against the official 2025 PDF. Pedagogy, Hindi/Marathi support lines and teaching moves are Talkora-original drafts awaiting a human teacher's review; synthetic example validation does not count as teacher approval."
+      },
+      "prerequisiteSkills": [
+        "Has sung two action rhymes (1.1, 1.4) — rhythm readiness.",
+        "Knows rain/seasons in the home language (Maharashtra monsoon is lived experience)."
+      ],
+      "phonicsConcepts": [
+        "Rhyme and rhythm awareness (LO 11.1.1.1 identifies rhyming words and alliterations).",
+        "Alliteration: two tall trees, big blue boat."
+      ],
+      "comprehensionGoals": [
+        "Matches season words to season pictures.",
+        "Hears that some word pairs begin with the same sound."
+      ],
+      "speakingObjectives": [
+        "Recite the poem refrain with actions.",
+        "Say two sound words and one tongue-twister attempt."
+      ],
+      "suggestedVisualActivities": [
+        {
+          "title": "Three-season scene cards",
+          "description": "Talkora-original rainy/winter/summer cards with the same child figure.",
+          "assetStatus": "MISSING"
+        }
+      ],
+      "teacherExplanationExamples": [
+        {
+          "en": "Listen — the rain talks: tip-tap, tip-tap!",
+          "hi": "सुनो — बारिश बातें करती है: टिप-टैप, टिप-टैप!",
+          "mr": "ऐका — पाऊस बोलतो: टिप-टॅप, टिप-टॅप!"
+        },
+        {
+          "en": "Big blue boat — B-B-B! Three words start with the same sound.",
+          "hi": "Big blue boat — B-B-B! तीन शब्द एक ही आवाज़ से शुरू होते हैं।",
+          "mr": "Big blue boat — B-B-B! तीन शब्द एकाच आवाजाने सुरू होतात."
+        }
+      ],
+      "hindiExplanations": [
+        "तीन मौसम — बरसाती (rainy), सर्दी (winter), गर्मी (summer)। बारिश की आवाज़-भाषा: tip-tap!"
+      ],
+      "marathiExplanations": [
+        "तीन ऋतू — पावसाळा (rainy), हिवाळा (winter), उन्हाळा (summer). पावसाची आवाज-भाषा: tip-tap!"
+      ],
+      "expectedStudentAnswers": [
+        "rainy",
+        "tip-tap",
+        "Big blue boat!"
+      ],
+      "commonBeginnerMistakeIds": [
+        "mist-003",
+        "mist-031",
+        "mist-029"
+      ],
+      "remediationStrategies": [
+        "Rhythm and sound-play lower speech anxiety — nonsense words are safe words.",
+        "Season words tied to lived monsoon experience before English labels."
+      ],
+      "assessmentCriteria": [
+        "Recites the refrain with actions.",
+        "Matches 3/3 season words to pictures."
+      ],
+      "masteryIndicators": [
+        "INDEPENDENT_ANSWERING: recites refrain from the picture card alone.",
+        "DELAYED_RECALL: produces a sound word or tongue-twister next session unprompted."
+      ],
+      "revisionActivities": [
+        "Body-percussion poem round.",
+        "Same-sound hunt in classmates' names."
+      ],
+      "shortSpokenHomework": "Say the rain sound words to someone at home when it rains — Tip-Tap!",
+      "teachingStages": [
+        {
+          "stage": "DISCOVER",
+          "note": "Rain sound audio (teacher-made) or finger drums."
+        },
+        {
+          "stage": "DEMONSTRATE",
+          "note": "Recitation with body rhythm."
+        },
+        {
+          "stage": "ASK",
+          "note": "Which season is it now?"
+        },
+        {
+          "stage": "LISTEN",
+          "note": "Same-sound beginning game."
+        },
+        {
+          "stage": "CORRECT",
+          "note": "Rhythm-clap arbitration."
+        },
+        {
+          "stage": "RECALL",
+          "note": "Unprompted sound-word check next session."
+        }
+      ]
+    },
+    {
+      "curriculumId": "meb-g01-u1-c1.11",
+      "textbookId": "MY_ENGLISH_BOOK_G01_NON_ENGLISH_MEDIUM",
+      "board": "Maharashtra State Board (Balbharati)",
+      "grade": 1,
+      "subject": "English",
+      "textbookEdition": {
+        "title": "My English Book — Grade One (Non-English Medium)",
+        "publisher": "Maharashtra State Bureau of Textbook Production and Curriculum Research, Pune (Balbharati)",
+        "editionYear": 2025,
+        "approval": "Verified by SCERT Maharashtra and approved by the Coordination Committee (GR No. Abhyas-2116/(Pra.Kra.43/16) SD-4) in its meeting held on April 16, 2025, for use from academic year 2025-26 onwards, as printed on the title page.",
+        "academicYearOfFirstUse": "2025-26",
+        "sourceUrl": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+        "verifiedOn": "2026-10-31",
+        "verificationMethod": "Direct download and text extraction of the official eBalbharati PDF (87 PDF pages; Index lists 4 units / 42 chapters; Unit One = printed pp. 1-17, 11 chapters).",
+        "confidence": "OFFICIAL_SOURCE_VERIFIED"
+      },
+      "unit": {
+        "number": 1,
+        "title": null,
+        "printedPageRange": "1-17"
+      },
+      "chapter": {
+        "code": "1.11",
+        "title": "We want rain.",
+        "printedPage": 17,
+        "contentCategory": "PICTURE_STORY",
+        "copyrightStatus": {
+          "category": "THIRD_PARTY_PERMISSION_AWAITED",
+          "reproductionRule": "The Index page acknowledges copyright holders generally and states: 'Some permission are awaited. Acknowledgement to them will be made in subsequent reprint.' No per-chapter credit is printed for Unit One; this chapter is a song/rhyme, so a third-party origin cannot be ruled out.",
+          "creditNote": "Index page: permissions awaited for some reproduced material; no per-chapter credit printed for this chapter."
+        }
+      },
+      "lesson": {
+        "orderInUnit": 11,
+        "talkoraLevelMapping": [
+          {
+            "talkoraLevelId": "g01-l10",
+            "roadmapTitle": "Story Time",
+            "role": "INTRODUCES",
+            "status": "PROPOSED_MAPPING_PENDING_PM_APPROVAL"
+          }
+        ]
+      },
+      "sourceReferences": [
+        {
+          "type": "OFFICIAL_TEXTBOOK_PDF",
+          "locator": "My English Book Grade One (2025), printed p.17, chapter 1.11 We want rain. — picture story ('Look, listen and enjoy'): a dark cloud in the sky; the peacock says 'Please rain, I want to dance.'; the fish says 'Please rain, I want more water.'",
+          "url": "https://ebooks.ebalbharati.in/pdfs/103050035.pdf",
+          "verifiedOn": "2026-10-31",
+          "confidence": "OFFICIAL_SOURCE_VERIFIED"
+        }
+      ],
+      "learningObjectives": [
+        "Listen to and enjoy the picture story 'We want rain.'",
+        "Answer simple story questions: Who wanted rain? What did the peacock want? What did the fish want?",
+        "Use the polite request frame 'Please ___' (Please rain. Please sit.).",
+        "Retell one story event with a picture prompt."
+      ],
+      "vocabulary": [
+        {
+          "en": "cloud",
+          "hi": "बादल",
+          "mr": "ढग",
+          "origin": "PICTURE_PROMPT_DERIVED",
+          "sourceRef": "1.11 story picture 'A dark cloud was in the sky', printed p.17"
+        },
+        {
+          "en": "peacock",
+          "hi": "मोर",
+          "mr": "मोर",
+          "origin": "PICTURE_PROMPT_DERIVED",
+          "sourceRef": "1.11 story picture, printed p.17"
+        },
+        {
+          "en": "fish",
+          "hi": "मछली",
+          "mr": "मासे",
+          "origin": "PICTURE_PROMPT_DERIVED",
+          "sourceRef": "1.11 story picture, printed p.17"
+        },
+        {
+          "en": "please",
+          "hi": "कृपया",
+          "mr": "कृपया",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.11 story speech 'Please rain, I want to dance', printed p.17"
+        },
+        {
+          "en": "dance",
+          "hi": "नाचना",
+          "mr": "नाचणे",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.11 peacock speech 'I want to dance', printed p.17"
+        },
+        {
+          "en": "want",
+          "hi": "चाहना",
+          "mr": "हवं असणे",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.11 story speech 'I want more water', printed p.17",
+          "audioAsset": {
+            "status": "RIGHTS_UNDECIDED",
+            "officialQrRef": "Official in-book QR audio (title page promises digital audio/visual resources).",
+            "note": "Rights undecided; Talkora ships no such audio until Balbharati authorization is documented."
+          }
+        },
+        {
+          "en": "more",
+          "hi": "और/अधिक",
+          "mr": "अजून",
+          "origin": "DIALOGUE_DERIVED",
+          "sourceRef": "1.11 fish speech 'I want more water', printed p.17"
+        }
+      ],
+      "adaptiveTeachingHints": [
+        {
+          "learnerState": "BEGINNER_COMPLETE",
+          "hint": "Child retells both animal wishes with picture cards, then adds their own wish for rain."
+        },
+        {
+          "learnerState": "BEGINNER_HINDI",
+          "hint": "Child tells the story in Hindi: 'बहुत अच्छे! Now in English — the peacock says: Please rain!'"
+        },
+        {
+          "learnerState": "BEGINNER_MARATHI",
+          "hint": "Child tells the story in Marathi: 'उत्तम! आता इंग्रजीत — the peacock says: Please rain!'"
+        },
+        {
+          "learnerState": "ANSWERED_INCORRECT",
+          "hint": "Child says 'the fish want rain': Miss Julie holds up ONE fish card — 'One fish says…' The picture count decides."
+        },
+        {
+          "learnerState": "SILENT",
+          "hint": "Child holds up the right animal card when Miss Julie reads each wish — participation without speech."
+        },
+        {
+          "learnerState": "GUESSING_REPEATEDLY",
+          "hint": "'Look at the picture — who is dancing? The picture tells you.'"
+        },
+        {
+          "learnerState": "FAST_LEARNER",
+          "hint": "Child plays the peacock/fish and performs the request lines with feeling."
+        },
+        {
+          "learnerState": "NEEDS_REVISION",
+          "hint": "Two-card choice (peacock or fish?) before open retelling."
+        }
+      ],
+      "recallDesign": [
+        {
+          "milestone": "IMMEDIATE_REPETITION",
+          "activity": "Child echoes 'Please rain!' with the cloud card raised."
+        },
+        {
+          "milestone": "INDEPENDENT_ANSWERING",
+          "activity": "Child answers fresh who-questions with the cards face-down, using one-word or frame answers."
+        },
+        {
+          "milestone": "DELAYED_RECALL",
+          "activity": "Next session: child retells ONE wish unprompted from a single picture card."
+        }
+      ],
+      "review": {
+        "syllabusVerification": "OFFICIAL_PDF_VERIFIED",
+        "pedagogyStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+        "notes": "Syllabus facts verified against the official 2025 PDF. Pedagogy, Hindi/Marathi support lines and teaching moves are Talkora-original drafts awaiting a human teacher's review; synthetic example validation does not count as teacher approval."
+      },
+      "prerequisiteSkills": [
+        "Has listened to 1.10 (rain vocabulary ready).",
+        "Experienced listening to short told stories."
+      ],
+      "grammarConcepts": [
+        {
+          "concept": "Please + request",
+          "childFriendlyFraming": "'Please' is the polite-magic word for asking. Please rain! Please give me water. We use it when we want something."
+        }
+      ],
+      "comprehensionGoals": [
+        "Answers who/what questions about the story.",
+        "Sequences: dark cloud → peacock's wish → fish's wish."
+      ],
+      "speakingObjectives": [
+        "Says one story line with a picture prompt: 'The peacock says: Please rain!'",
+        "Makes one polite request with 'Please ___."
+      ],
+      "suggestedVisualActivities": [
+        {
+          "title": "Three-scene story strip (Talkora-original)",
+          "description": "Dark cloud; happy peacock dancing; fish in water — drawn fresh, not copied.",
+          "assetStatus": "MISSING"
+        }
+      ],
+      "teacherExplanationExamples": [
+        {
+          "en": "The peacock says: 'Please rain, I want to dance!'",
+          "hi": "मोर कहता है: 'कृपया बारिश, मैं नाचना चाहता/चाहती हूँ!'",
+          "mr": "मोर म्हणतो: 'कृपया पाऊस, मला नाचायचं आहे!'"
+        }
+      ],
+      "hindiExplanations": [
+        "कहानी सुनो, तस्वीर बताएगी — बादल, मोर, मछली। फिर अंग्रेज़ी में एक इच्छा बोलो: 'Please rain!'"
+      ],
+      "marathiExplanations": [
+        "गोष्ट ऐका, चित्र सांगेल — ढग, मोर, मासे. मग इंग्रजीत एक इच्छा म्हणा: 'Please rain!'"
+      ],
+      "expectedStudentAnswers": [
+        "The peacock.",
+        "I want to dance.",
+        "Please rain!"
+      ],
+      "commonBeginnerMistakeIds": [
+        "mist-032",
+        "mist-031",
+        "mist-029",
+        "mist-013"
+      ],
+      "remediationStrategies": [
+        "Story-first, language-second: enjoyment carries the words.",
+        "Echoing (mist-032) is caught by the face-down-card check — repetition alone is never accepted as understanding."
+      ],
+      "assessmentCriteria": [
+        "Answers 2/3 story who/what questions correctly.",
+        "Produces one 'Please ___' request."
+      ],
+      "masteryIndicators": [
+        "INDEPENDENT_ANSWERING: answers story questions with cards face-down (cannot echo).",
+        "DELAYED_RECALL: retells one wish next session from a single prompt card."
+      ],
+      "revisionActivities": [
+        "Story-card sequencing pairs.",
+        "Polite-request role plays (Please give me the chalk.)."
+      ],
+      "shortSpokenHomework": "Tell someone at home what the peacock and the fish asked the rain for — in English or mixed.",
+      "teachingStages": [
+        {
+          "stage": "DISCOVER",
+          "note": "Cloud picture: what is coming?"
+        },
+        {
+          "stage": "LISTEN",
+          "note": "Told story with animal voices."
+        },
+        {
+          "stage": "ASK",
+          "note": "Who/what questions with cards."
+        },
+        {
+          "stage": "DEMONSTRATE",
+          "note": "Teacher retells with cards."
+        },
+        {
+          "stage": "CORRECT",
+          "note": "Picture-count arbitration."
+        },
+        {
+          "stage": "VERIFY",
+          "note": "Face-down-card check (anti-echo)."
+        },
+        {
+          "stage": "RECALL",
+          "note": "One-wish retell next session."
+        }
+      ]
+    }
+  ]
+}

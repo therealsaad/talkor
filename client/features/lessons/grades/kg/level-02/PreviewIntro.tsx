@@ -9,7 +9,7 @@ const INTRO_VIDEO = '/lessons/kg/level-02/level-2-e-to-j.mp4'
 const VIDEO_BUFFER_TIMEOUT_MS = 15_000
 type PlaybackState = 'ready' | 'loading' | 'playing' | 'paused' | 'blocked' | 'error'
 
-export function Level2PreviewIntro({ onComplete }: { onComplete: () => void }) {
+export function Level2PreviewIntro({ onComplete, videoSrc = INTRO_VIDEO }: { onComplete: () => void; videoSrc?: string }) {
   const [playback, setPlayback] = useState<PlaybackState>('ready')
   const [videoError, setVideoError] = useState('')
   const [videoAttempt, setVideoAttempt] = useState(0)
@@ -125,7 +125,7 @@ export function Level2PreviewIntro({ onComplete }: { onComplete: () => void }) {
         <video
           key={videoAttempt}
           ref={videoRef}
-          src={INTRO_VIDEO}
+          src={videoSrc}
           playsInline
           preload="metadata"
           controls={false}

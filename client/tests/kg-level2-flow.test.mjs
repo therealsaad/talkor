@@ -53,14 +53,14 @@ test('intro playback starts automatically when permitted, resists seeking, and o
   assert.equal(canCompleteIntroVideo({ ended: true, duration: Number.NaN, currentTime: 60 }, 60), false)
 })
 
-test('the Level 2 route uses its one-use marker and starts the lesson at E', () => {
+test('Level 2 staff routes use read-only rehearsal while the canonical runtime keeps its E–J flow', () => {
   assert.equal(LEVEL2_INTRO_COMPLETED_KEY, 'talkora:kg-level2-intro-completed')
-  assert.match(introRoute, /sessionStorage\.setItem\(LEVEL2_INTRO_COMPLETED_KEY, 'complete'\)/)
-  assert.match(introRoute, /router\.push\('\/school\/kg-preview\/level-2\/E'\)/)
-  assert.match(activityRoute, /sessionStorage\.getItem\(LEVEL2_INTRO_COMPLETED_KEY\) === 'complete'/)
-  assert.match(activityRoute, /sessionStorage\.removeItem\(LEVEL2_INTRO_COMPLETED_KEY\)/)
-  assert.match(activityRoute, /letter === 'E'/)
-  assert.match(activityRoute, /router\.replace\('\/school\/kg-preview\/level-2'\)/)
+  assert.match(introRoute, /CurriculumExplorerPage/)
+  assert.doesNotMatch(introRoute, /requestKGMicrophone|MediaRecorder|<Level\d?Experience/)
+  assert.match(introRoute, /initialLevel=\{2\}/)
+  assert.match(activityRoute, /CurriculumExplorerPage/)
+  assert.doesNotMatch(activityRoute, /requestKGMicrophone|MediaRecorder|<Level\d?Experience/)
+  assert.match(activityRoute, /initialLevel=\{2\}/)
   assert.match(activity, /useState<Level2Letter>\('E'\)/)
   assert.match(dashboardMap, /dashboardHref[\s\S]*?2: '\/school\/kg-preview\/level-2'/)
   assert.notEqual(LEVEL2_INTRO_COMPLETED_KEY, 'talkora:kg-level3-intro-completed')
@@ -126,7 +126,9 @@ test('microphone recordings are submitted to the Level 2 authenticated service o
 
 test('Level 1 and Level 3 routes, video marker, and student boundary remain separate', () => {
   assert.match(level1, /INTRO_VIDEO = '\/lessons\/kg\/videos\/fullkg\.mp4'/)
-  assert.match(level3Route, /LEVEL3_INTRO_COMPLETED_KEY/)
+  assert.match(level3Route, /CurriculumExplorerPage/)
+  assert.doesNotMatch(level3Route, /requestKGMicrophone|MediaRecorder|<Level\d?Experience/)
+  assert.match(level3Route, /initialLevel=\{3\}/)
   assert.match(level3Flow, /talkora:kg-level3-intro-completed/)
   assert.match(dashboardMap, /1: '\/school\/kg-preview\/level-1'/)
   assert.match(dashboardMap, /3: '\/school\/kg-preview\/level-3'/)

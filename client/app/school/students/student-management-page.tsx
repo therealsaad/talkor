@@ -130,20 +130,6 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
     fetchStudents()
   }, [gradeFilter, page, submittedSearch])
 
-  useEffect(() => {
-    const refresh = () => {
-      if (document.visibilityState === 'visible') void fetchStudents()
-    }
-    const interval = window.setInterval(refresh, 15000)
-    window.addEventListener('focus', refresh)
-    document.addEventListener('visibilitychange', refresh)
-    return () => {
-      window.clearInterval(interval)
-      window.removeEventListener('focus', refresh)
-      document.removeEventListener('visibilitychange', refresh)
-    }
-  }, [gradeFilter, page, submittedSearch])
-
   function handleSearchSubmit(e: FormEvent) {
     e.preventDefault()
     setPage(1)

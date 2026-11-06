@@ -1,20 +1,39 @@
 import { env } from '../config/env'
 import { safeKGFeedback, type KGFeedbackInput } from './kg-feedback.service'
+import { classifyKGTeachingTurn, composeKGTeachingTurn } from '../teaching/kg-teaching-turn'
 
 /** The backend grades KG speech. Qwen may choose *wording*, never the verdict,
  * the next activity, a child's level, or pronunciation mastery. */
 export const KGQwenFeedbackService = {
   async compose(input: KGFeedbackInput): Promise<{ text: string; source: 'qwen-8002' | 'guided' }> {
     const target = { A: 'apple', B: 'ball', C: 'cat', D: 'dog' }[input.letter]
-    const guided = input.outcome === 'supported'
-      ? `Nice try! In English, we call that an ${target}. Listen: ${target}. Can you say ${target}?`
-      : safeKGFeedback(input)
+    const guided = safeKGFeedback(input)
     // No LLM may turn a translation, silence or a supported-picture answer
     // into independent English evidence. Keep those short, concrete and safe.
-    if (input.outcome === 'supported' || input.noSpeech) return { text: guided, source: 'guided' }
+    // Correct answers, known translations, silence, unclear audio and picture
+    // taps are deterministic. Qwen is reserved for genuine unexpected speech.
+    if (input.outcome !== 'incorrect' || input.mode !== 'speak' ||
+        input.noSpeech || !input.transcript?.trim()) return { text: guided, source: 'guided' }
+    // Unexpected child questions use the SAME KG teaching policy as Levels 2–5.
+    // Keep normal KG1 answers, known translations, silence and brief wrong words
+    // on their existing fast/reviewed path; the shared builder never grades XP.
+    const classification = classifyKGTeachingTurn({
+      level: 1, letter: input.letter, transcript: input.transcript,
+      outcome: input.outcome, detectedLanguage: input.languageCode,
+    })
+    if (classification.kind === 'question_or_offtopic') {
+      const turn = await composeKGTeachingTurn({
+        level: 1, letter: input.letter, transcript: input.transcript,
+        outcome: input.outcome, detectedLanguage: input.languageCode,
+        existingFeedbackText: guided,
+      })
+      return { text: turn.feedbackText, source: turn.source }
+    }
     const key = env.talkoraServiceKey.trim()
     if (env.isProd && key.length < 32) return { text: guided, source: 'guided' }
     try {
+      const configuredTimeout = Number(process.env.TALKORA_KG_QWEN_TIMEOUT_MS || 1800)
+      const timeoutMs = Number.isFinite(configuredTimeout) ? Math.min(2500, Math.max(500, configuredTimeout)) : 1800
       const baseUrl = (process.env.TALKORA_KG1_AI_URL || 'http://127.0.0.1:8002').replace(/\/$/, '')
       const spoken = input.transcript?.slice(0, 160).trim() || (input.selected ? `I selected ${input.selected.slice(0, 16)}` : 'I am trying.')
       const response = await fetch(`${baseUrl}/v1/brain/respond`, {
@@ -23,7 +42,7 @@ export const KGQwenFeedbackService = {
           'Content-Type': 'application/json',
           ...(key ? { 'X-Talkora-Service-Key': key } : {}),
         },
-        signal: AbortSignal.timeout(7000),
+        signal: AbortSignal.timeout(timeoutMs),
         body: JSON.stringify({
           grade: 0,
           levelId: 'g00-l01',
@@ -34,9 +53,10 @@ export const KGQwenFeedbackService = {
           allowedVocabulary: [target, input.letter],
           recentMistakes: [],
           conversationHistory: [],
-          preferredExplanationLanguage: 'English',
-          waitingForRetry: input.outcome !== 'correct',
-          hintLevel: input.outcome === 'correct' ? 0 : 1,
+          preferredExplanationLanguage: input.languageCode === 'hi-IN' ? 'Hindi'
+            : input.languageCode === 'mr-IN' ? 'Marathi' : 'English',
+          waitingForRetry: true,
+          hintLevel: 1,
           studentMessage: spoken,
         }),
       })
@@ -49,7 +69,8 @@ export const KGQwenFeedbackService = {
       // correct, skip the word, or introduce arbitrary lessons/identifying asks.
       if (text.length < 12 || text.length > 240 || !new RegExp(`\\b${target}\\b`, 'i').test(text) ||
           /[<>\\[\\]{}]|https?:|www\.|password|phone number|your address/i.test(text) ||
-          (input.outcome !== 'correct' && /you got it|exactly right|correct answer|perfect|well done/i.test(text))) {
+          /you got it|exactly right|correct answer|perfect|well done/i.test(text) ||
+          ((input.languageCode === 'hi-IN' || input.languageCode === 'mr-IN') && !/[\u0900-\u097f]/.test(text))) {
         return { text: guided, source: 'guided' }
       }
       return { text, source: 'qwen-8002' }

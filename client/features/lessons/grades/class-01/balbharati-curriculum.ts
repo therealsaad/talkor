@@ -30,14 +30,14 @@ type Class1LevelDraft = {
  *  The ten Talkora levels group related chapters, not entire unit recitations.
  */
 export const CLASS1_BALBHARATI_DRAFTS: readonly Class1LevelDraft[] = [
-  { level: 1, title: 'Little Words & My First Day', goal: 'Use beginner school words in a first-day conversation.', scene: 'First Day Word Meadow', exercises: [
+  { level: 1, title: 'My First Day — School Adventure', goal: 'Use school-action words across ten original First Day speaking turns.', scene: 'First Day Word Meadow', exercises: [
     { chapter:'1.1', name:'My First Day', page:1, mode:'guided-dialogue', prompt:'Miss Julie is at school. Say one English word about your school.', evidence:'Learner tries a relevant English school word or requests a model.' },
   ] },
   { level: 2, title: 'Action Beats & Rainbow Words', goal: 'Listen, act and connect letters with familiar words.', scene: 'Rainbow Sound Garden', exercises: [
     { chapter:'1.2', name:'Clap your hands.', page:2, mode:'repeat-after-julie', prompt:'Clap two times. Now say clap with Miss Julie.', evidence:'Learner attempts the action word after modeling.' },
     { chapter:'1.3', name:'I know my alphabet.', page:3, mode:'listen-and-find', prompt:'Listen to the letter B. Find B from A, B and D.', evidence:'Learner distinguishes the named letter from distractors.' },
     { chapter:'1.4', name:'Let us read.', page:5, mode:'word-builder', prompt:'Put c, a and t together. What word did we make?', evidence:'Learner builds cat and attempts to say it.' },
-    { chapter:'1.5', name:'Fun with Special Letters', page:7, mode:'repeat-after-julie', prompt:'Listen to sh in ship. Can you try the sound sh?', evidence:'Learner attempts an English letter combination without an accent score.' },
+    { chapter:'1.5', name:'Fun with Special Letters', page:7, mode:'listen-and-find', prompt:'Listen: a, e, i, o, u are vowels. Find the vowel a in cat.', evidence:'Learner identifies a vowel in a familiar word; written missing-vowel work remains teacher-led.' },
     { chapter:'1.6', name:'The Rainbow', page:8, mode:'picture-choice', prompt:'Look at three colour cards. Which one is red?', evidence:'Learner selects or names a presented colour.' },
   ] },
   { level: 3, title: 'My Family & My Day', goal: 'Name familiar people and say one short daily-routine sentence.', scene: 'Happy Home Lane', exercises: [

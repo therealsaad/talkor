@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from 'react'
 
-import { AUTH_INVALIDATED_EVENT } from '@/lib/api-client'
+import { AUTH_INVALIDATED_EVENT, getStoredToken, getStoredUser } from '@/lib/api-client'
 import { KG_SESSION_END_EVENT } from '@/lib/kg-microphone'
 import {
   authService,
@@ -46,9 +46,12 @@ export function homeForRole(role: AuthSession['role']): string {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  // The server cannot read local/sessionStorage. Both SSR and the first
+  // browser render must start from the same snapshot to hydrate safely.
+  // Rehydrate the cached login AFTER hydration, then verify it via /auth/me.
   const [status, setStatus] = useState<AuthStatus>('loading')
   const [session, setSession] = useState<AuthSession | null>(null)
-  const sessionRef = useRef<AuthSession | null>(null)
+  const sessionRef = useRef<AuthSession | null>(session)
 
   const acceptSession = useCallback((next: AuthSession) => {
     sessionRef.current = next
@@ -65,7 +68,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const restore = useCallback(async () => {
     const hadSession = Boolean(sessionRef.current)
-    setStatus('loading')
+    if (!hadSession) setStatus('loading')
     try {
       const next = await authService.getMe()
       if (!next) {
@@ -87,6 +90,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [acceptSession, clearSession])
 
   useEffect(() => {
+    // Preserve the existing cached-session behavior (including resilience
+    // to temporary backend outages), but never read browser storage during
+    // React's initial server/client render.
+    const cached = getStoredToken() ? getStoredUser<AuthSession>() : null
+    if (cached) {
+      sessionRef.current = cached
+      setSession(cached)
+      setStatus('authenticated')
+    }
     void restore()
 
     const invalidate = () => clearSession()

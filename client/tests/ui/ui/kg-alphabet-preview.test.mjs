@@ -11,13 +11,12 @@ const controller = await read('../../../../backend/src/controllers/kg-alphabet.c
 const students = await read('../../../../backend/src/controllers/student.controller.ts')
 const routes = await read('../../../../backend/src/routes/student.routes.ts')
 
-test('school preview opens the garden while Level 1 keeps its existing map and lesson', () => {
-  assert.match(preview, /kg-simple-garden\.webp/)
-  assert.match(preview, /\/school\/kg-preview\/level-1/)
-  assert.match(preview, /\/school\/kg-preview\/level-3/)
-  assert.match(level1Preview, /KGAlphabetMap preview/)
-  assert.match(level1Preview, /KGLevel1Experience/)
-  assert.match(level1Preview, /previewStartIndex=\{step\}/)
+test('school preview uses the explorer while canonical Level 1 retains its existing map and lesson', () => {
+  assert.match(preview, /CurriculumExplorerPage/)
+  assert.doesNotMatch(preview, /requestKGMicrophone|MediaRecorder|<Level\d?Experience/)
+  assert.match(level1Preview, /CurriculumExplorerPage/)
+  assert.doesNotMatch(level1Preview, /requestKGMicrophone|MediaRecorder|<Level\d?Experience/)
+  assert.match(level1Preview, /initialLevel=\{1\}/)
   assert.match(lesson, /if \(preview\) \{[\s\S]*setPhase\('intro'\)/)
   assert.match(lesson, /kgAlphabetService\.previewSubmitPrepared/)
   assert.match(lesson, /function pictureChoices/)

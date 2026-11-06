@@ -1,0 +1,1141 @@
+{
+  "registryVersion": "class1-unit1-objectives-draft.v1",
+  "runtimeStatus": "NOT_AUTHORIZED_FOR_STUDENTS",
+  "sourceSchemaVersion": "1.1.0",
+  "editorialRule": "Objective keys are stable proposed addresses, not publishable teaching content. No implicit approval, migration or mastered progress is granted by this registry.",
+  "namespace": "talkora.mh.english.g01",
+  "books": [
+    {
+      "textbookId": "ENGLISH_BALBHARATI_G01",
+      "trackId": "ENGLISH_MEDIUM",
+      "edition": "2025-26",
+      "chapterCount": 10,
+      "objectives": [
+        {
+          "objectiveId": "bal-g01-u1-c1.01-o01",
+          "sourceCurriculumId": "bal-g01-u1-c1.01",
+          "sourceChapter": "1.1",
+          "sourceChapterOrder": 1,
+          "sourceObjectiveOrdinal": 1,
+          "sourceObjectiveText": "Listen to and enjoy the first-day-of-school poem and sing it with actions.",
+          "candidateLevelIds": [
+            "g01-l01"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.01-o02",
+          "sourceCurriculumId": "bal-g01-u1-c1.01",
+          "sourceChapter": "1.1",
+          "sourceChapterOrder": 1,
+          "sourceObjectiveOrdinal": 2,
+          "sourceObjectiveText": "Recognise and say the 12 poem words from the 'Look and say' bank: see, skip, walk, grin, bell, rings, jump, play, school, Grade, everyone, hurray.",
+          "candidateLevelIds": [
+            "g01-l01"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.01-o03",
+          "sourceCurriculumId": "bal-g01-u1-c1.01",
+          "sourceChapter": "1.1",
+          "sourceChapterOrder": 1,
+          "sourceObjectiveOrdinal": 3,
+          "sourceObjectiveText": "Connect each action word (skip, run, walk, jump, play) to a physical action.",
+          "candidateLevelIds": [
+            "g01-l01"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.01-o04",
+          "sourceCurriculumId": "bal-g01-u1-c1.01",
+          "sourceChapter": "1.1",
+          "sourceChapterOrder": 1,
+          "sourceObjectiveOrdinal": 4,
+          "sourceObjectiveText": "Speak one line about coming to school using a poem word with teacher support.",
+          "candidateLevelIds": [
+            "g01-l01"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.02-o01",
+          "sourceCurriculumId": "bal-g01-u1-c1.02",
+          "sourceChapter": "1.2",
+          "sourceChapterOrder": 2,
+          "sourceObjectiveOrdinal": 1,
+          "sourceObjectiveText": "Perform the body-action rhyme: clap hands, nod head, stamp foot, bend, turn around, touch knee/floor.",
+          "candidateLevelIds": [
+            "g01-l02",
+            "g01-l07"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.02-o02",
+          "sourceCurriculumId": "bal-g01-u1-c1.02",
+          "sourceChapter": "1.2",
+          "sourceChapterOrder": 2,
+          "sourceObjectiveOrdinal": 2,
+          "sourceObjectiveText": "Say the 14 body/action words while doing them.",
+          "candidateLevelIds": [
+            "g01-l02",
+            "g01-l07"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.02-o03",
+          "sourceCurriculumId": "bal-g01-u1-c1.02",
+          "sourceChapter": "1.2",
+          "sourceChapterOrder": 2,
+          "sourceObjectiveOrdinal": 3,
+          "sourceObjectiveText": "Follow one-step English instructions ('Touch your nose.', 'Blink your eyes.').",
+          "candidateLevelIds": [
+            "g01-l02",
+            "g01-l07"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.02-o04",
+          "sourceCurriculumId": "bal-g01-u1-c1.02",
+          "sourceChapter": "1.2",
+          "sourceChapterOrder": 2,
+          "sourceObjectiveOrdinal": 4,
+          "sourceObjectiveText": "Hear and respond to number words one to five woven into the rhyme.",
+          "candidateLevelIds": [
+            "g01-l02",
+            "g01-l07"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.03-o01",
+          "sourceCurriculumId": "bal-g01-u1-c1.03",
+          "sourceChapter": "1.3",
+          "sourceChapterOrder": 3,
+          "sourceObjectiveOrdinal": 1,
+          "sourceObjectiveText": "Recognise and name the sampled capital-small letter pairs (Aa, Cc, Ee, Mm, Nn, Oo, Rr, Ss, Uu, Vv, Ww, Xx, Zz).",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.03-o02",
+          "sourceCurriculumId": "bal-g01-u1-c1.03",
+          "sourceChapter": "1.3",
+          "sourceChapterOrder": 3,
+          "sourceObjectiveOrdinal": 2,
+          "sourceObjectiveText": "Match a capital letter to its small letter by sound in the 'We go together' game.",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.03-o03",
+          "sourceCurriculumId": "bal-g01-u1-c1.03",
+          "sourceChapter": "1.3",
+          "sourceChapterOrder": 3,
+          "sourceObjectiveOrdinal": 3,
+          "sourceObjectiveText": "Trace the letter shapes in the air and on screen.",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.03-o04",
+          "sourceCurriculumId": "bal-g01-u1-c1.03",
+          "sourceChapter": "1.3",
+          "sourceChapterOrder": 3,
+          "sourceObjectiveOrdinal": 4,
+          "sourceObjectiveText": "Hear the middle 'e' sound in simple words and follow e-sound words through a picture maze.",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.04-o01",
+          "sourceCurriculumId": "bal-g01-u1-c1.04",
+          "sourceChapter": "1.4",
+          "sourceChapterOrder": 4,
+          "sourceObjectiveOrdinal": 1,
+          "sourceObjectiveText": "Read two-letter word families aloud (am, an, as, at…; be, he, me, we…; if, in, is, it…; of, on, or).",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.04-o02",
+          "sourceCurriculumId": "bal-g01-u1-c1.04",
+          "sourceChapter": "1.4",
+          "sourceChapterOrder": 4,
+          "sourceObjectiveOrdinal": 2,
+          "sourceObjectiveText": "Blend an initial letter onto a family ending to build new words (c-an → can, f-an → fan, m-an → man).",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.04-o03",
+          "sourceCurriculumId": "bal-g01-u1-c1.04",
+          "sourceChapter": "1.4",
+          "sourceChapterOrder": 4,
+          "sourceObjectiveOrdinal": 3,
+          "sourceObjectiveText": "Break long words into two parts they already know (man-go, sun-day) — the official break-down exercise.",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.04-o04",
+          "sourceCurriculumId": "bal-g01-u1-c1.04",
+          "sourceChapter": "1.4",
+          "sourceChapterOrder": 4,
+          "sourceObjectiveOrdinal": 4,
+          "sourceObjectiveText": "Read the little sight words go, no, so, by, my, up, us on sight.",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.05-o01",
+          "sourceCurriculumId": "bal-g01-u1-c1.05",
+          "sourceChapter": "1.5",
+          "sourceChapterOrder": 5,
+          "sourceObjectiveOrdinal": 1,
+          "sourceObjectiveText": "Know that a, e, i, o, u are the five 'special letters' (vowels) and every word needs one.",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.05-o02",
+          "sourceCurriculumId": "bal-g01-u1-c1.05",
+          "sourceChapter": "1.5",
+          "sourceChapterOrder": 5,
+          "sourceObjectiveOrdinal": 2,
+          "sourceObjectiveText": "Spot the special letter inside a familiar word (ball, dog, cup, ice, tree, onion, zebra, umbrella).",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.05-o03",
+          "sourceCurriculumId": "bal-g01-u1-c1.05",
+          "sourceChapter": "1.5",
+          "sourceChapterOrder": 5,
+          "sourceObjectiveOrdinal": 3,
+          "sourceObjectiveText": "Fill in a missing vowel to complete a word (sun, cat, fish, egg, owl).",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.05-o04",
+          "sourceCurriculumId": "bal-g01-u1-c1.05",
+          "sourceChapter": "1.5",
+          "sourceChapterOrder": 5,
+          "sourceObjectiveOrdinal": 4,
+          "sourceObjectiveText": "Say the five vowel sounds in isolation after the teacher.",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.06-o01",
+          "sourceCurriculumId": "bal-g01-u1-c1.06",
+          "sourceChapter": "1.6",
+          "sourceChapterOrder": 6,
+          "sourceObjectiveOrdinal": 1,
+          "sourceObjectiveText": "Name the seven rainbow colours in English in order (red, orange, yellow, green, blue, indigo, violet).",
+          "candidateLevelIds": [
+            "g01-l04"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.06-o02",
+          "sourceCurriculumId": "bal-g01-u1-c1.06",
+          "sourceChapter": "1.6",
+          "sourceChapterOrder": 6,
+          "sourceObjectiveOrdinal": 2,
+          "sourceObjectiveText": "Say the word-bank words: rainbow, peeping, sky, clouds, orange, indigo.",
+          "candidateLevelIds": [
+            "g01-l04"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.06-o03",
+          "sourceCurriculumId": "bal-g01-u1-c1.06",
+          "sourceChapter": "1.6",
+          "sourceChapterOrder": 6,
+          "sourceObjectiveOrdinal": 3,
+          "sourceObjectiveText": "Answer the book's discussion questions: favourite colour, seen a rainbow?",
+          "candidateLevelIds": [
+            "g01-l04"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.06-o04",
+          "sourceCurriculumId": "bal-g01-u1-c1.06",
+          "sourceChapter": "1.6",
+          "sourceChapterOrder": 6,
+          "sourceObjectiveOrdinal": 4,
+          "sourceObjectiveText": "Choose 'a', 'an' or 'the' correctly for common classroom words (a box, an elephant, the sun).",
+          "candidateLevelIds": [
+            "g01-l04"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.07-o01",
+          "sourceCurriculumId": "bal-g01-u1-c1.07",
+          "sourceChapter": "1.7",
+          "sourceChapterOrder": 7,
+          "sourceObjectiveOrdinal": 1,
+          "sourceObjectiveText": "Greet elders and friends politely: Hello, Namaste, Welcome home, Nice to meet you.",
+          "candidateLevelIds": [
+            "g01-l03"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.07-o02",
+          "sourceCurriculumId": "bal-g01-u1-c1.07",
+          "sourceChapter": "1.7",
+          "sourceChapterOrder": 7,
+          "sourceObjectiveOrdinal": 2,
+          "sourceObjectiveText": "Introduce family members: 'Meet my mother/father/Aaji/Ajoba.'",
+          "candidateLevelIds": [
+            "g01-l03"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.07-o03",
+          "sourceCurriculumId": "bal-g01-u1-c1.07",
+          "sourceChapter": "1.7",
+          "sourceChapterOrder": 7,
+          "sourceObjectiveOrdinal": 3,
+          "sourceObjectiveText": "Respond to 'Thank you' with 'You are welcome' or 'It's my pleasure'.",
+          "candidateLevelIds": [
+            "g01-l03"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.07-o04",
+          "sourceCurriculumId": "bal-g01-u1-c1.07",
+          "sourceChapter": "1.7",
+          "sourceChapterOrder": 7,
+          "sourceObjectiveOrdinal": 4,
+          "sourceObjectiveText": "Name family members in English alongside the Marathi kin terms the book itself uses (Aaji, Ajoba, Kaka, Kaki).",
+          "candidateLevelIds": [
+            "g01-l03"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.08-o01",
+          "sourceCurriculumId": "bal-g01-u1-c1.08",
+          "sourceChapter": "1.8",
+          "sourceChapterOrder": 8,
+          "sourceObjectiveOrdinal": 1,
+          "sourceObjectiveText": "Introduce oneself: 'Hello! I am ___.' / 'I live in ___.' / 'I study in Grade One.'",
+          "candidateLevelIds": [
+            "g01-l08",
+            "g01-l03"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.08-o02",
+          "sourceCurriculumId": "bal-g01-u1-c1.08",
+          "sourceChapter": "1.8",
+          "sourceChapterOrder": 8,
+          "sourceObjectiveOrdinal": 2,
+          "sourceObjectiveText": "Ask a peer 'What is your name?' and answer the same when asked.",
+          "candidateLevelIds": [
+            "g01-l08",
+            "g01-l03"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.08-o03",
+          "sourceCurriculumId": "bal-g01-u1-c1.08",
+          "sourceChapter": "1.8",
+          "sourceChapterOrder": 8,
+          "sourceObjectiveOrdinal": 3,
+          "sourceObjectiveText": "Say why special names (people, cities) begin with capital letters.",
+          "candidateLevelIds": [
+            "g01-l08",
+            "g01-l03"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.08-o04",
+          "sourceCurriculumId": "bal-g01-u1-c1.08",
+          "sourceChapter": "1.8",
+          "sourceChapterOrder": 8,
+          "sourceObjectiveOrdinal": 4,
+          "sourceObjectiveText": "Describe one animal from the chapter with its action (The rabbit hops. The tiger is the national animal of India.).",
+          "candidateLevelIds": [
+            "g01-l08",
+            "g01-l03"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.09-o01",
+          "sourceCurriculumId": "bal-g01-u1-c1.09",
+          "sourceChapter": "1.9",
+          "sourceChapterOrder": 9,
+          "sourceObjectiveOrdinal": 1,
+          "sourceObjectiveText": "Say own name proudly and clearly, and a family member's name.",
+          "candidateLevelIds": [
+            "g01-l03"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.09-o02",
+          "sourceCurriculumId": "bal-g01-u1-c1.09",
+          "sourceChapter": "1.9",
+          "sourceChapterOrder": 9,
+          "sourceObjectiveOrdinal": 2,
+          "sourceObjectiveText": "Complete the frame: 'My name is ___.' / 'My mother's name is ___.'",
+          "candidateLevelIds": [
+            "g01-l03"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.09-o03",
+          "sourceCurriculumId": "bal-g01-u1-c1.09",
+          "sourceChapter": "1.9",
+          "sourceChapterOrder": 9,
+          "sourceObjectiveOrdinal": 3,
+          "sourceObjectiveText": "Understand names can be short or long, same or different — and all are right.",
+          "candidateLevelIds": [
+            "g01-l03"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.09-o04",
+          "sourceCurriculumId": "bal-g01-u1-c1.09",
+          "sourceChapter": "1.9",
+          "sourceChapterOrder": 9,
+          "sourceObjectiveOrdinal": 4,
+          "sourceObjectiveText": "Follow 4+ spoken step-by-step instructions (Activity Time: paper cap folding).",
+          "candidateLevelIds": [
+            "g01-l03"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.10-o01",
+          "sourceCurriculumId": "bal-g01-u1-c1.10",
+          "sourceChapter": "1.10",
+          "sourceChapterOrder": 10,
+          "sourceObjectiveOrdinal": 1,
+          "sourceObjectiveText": "Speak a morning-to-night routine using the Help Box words (get up, brush my teeth, take a bath, wear my uniform, go to school, study, play, homework, dinner, bed).",
+          "candidateLevelIds": [
+            "g01-l09"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.10-o02",
+          "sourceCurriculumId": "bal-g01-u1-c1.10",
+          "sourceChapter": "1.10",
+          "sourceChapterOrder": 10,
+          "sourceObjectiveOrdinal": 2,
+          "sourceObjectiveText": "Tell the time anchor '7.00 am' for getting up, with clock awareness.",
+          "candidateLevelIds": [
+            "g01-l09"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.10-o03",
+          "sourceCurriculumId": "bal-g01-u1-c1.10",
+          "sourceChapter": "1.10",
+          "sourceChapterOrder": 10,
+          "sourceObjectiveOrdinal": 3,
+          "sourceObjectiveText": "Sequence at least four routine events in order.",
+          "candidateLevelIds": [
+            "g01-l09"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "bal-g01-u1-c1.10-o04",
+          "sourceCurriculumId": "bal-g01-u1-c1.10",
+          "sourceChapter": "1.10",
+          "sourceChapterOrder": 10,
+          "sourceObjectiveOrdinal": 4,
+          "sourceObjectiveText": "Say one routine sentence completely on their own.",
+          "candidateLevelIds": [
+            "g01-l09"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        }
+      ]
+    },
+    {
+      "textbookId": "MY_ENGLISH_BOOK_G01_NON_ENGLISH_MEDIUM",
+      "trackId": "NON_ENGLISH_MEDIUM",
+      "edition": "2025-26",
+      "chapterCount": 11,
+      "objectives": [
+        {
+          "objectiveId": "meb-g01-u1-c1.01-o01",
+          "sourceCurriculumId": "meb-g01-u1-c1.01",
+          "sourceChapter": "1.1",
+          "sourceChapterOrder": 1,
+          "sourceObjectiveOrdinal": 1,
+          "sourceObjectiveText": "Sing the body-parts action song with pointing actions (touch head, shoulders, eyes, ears, nose, mouth, hand, feet).",
+          "candidateLevelIds": [
+            "g01-l01"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.01-o02",
+          "sourceCurriculumId": "meb-g01-u1-c1.01",
+          "sourceChapter": "1.1",
+          "sourceChapterOrder": 1,
+          "sourceObjectiveOrdinal": 2,
+          "sourceObjectiveText": "Recognise and say the body-part words from the song and teacher frames: head, shoulders, eyes, ears, nose, mouth, hand, feet, fingers, neck, chin.",
+          "candidateLevelIds": [
+            "g01-l01"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.01-o03",
+          "sourceCurriculumId": "meb-g01-u1-c1.01",
+          "sourceChapter": "1.1",
+          "sourceChapterOrder": 1,
+          "sourceObjectiveOrdinal": 3,
+          "sourceObjectiveText": "Answer 'What is this?' with 'This is my ___' while pointing.",
+          "candidateLevelIds": [
+            "g01-l01"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.01-o04",
+          "sourceCurriculumId": "meb-g01-u1-c1.01",
+          "sourceChapter": "1.1",
+          "sourceChapterOrder": 1,
+          "sourceObjectiveOrdinal": 4,
+          "sourceObjectiveText": "Follow one-step body instructions (Touch your ___ / Show me your ___).",
+          "candidateLevelIds": [
+            "g01-l01"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.02-o01",
+          "sourceCurriculumId": "meb-g01-u1-c1.02",
+          "sourceChapter": "1.2",
+          "sourceChapterOrder": 2,
+          "sourceObjectiveOrdinal": 1,
+          "sourceObjectiveText": "Ask and answer 'What is your name?' with 'I am ___.' or 'My name is ___.",
+          "candidateLevelIds": [
+            "g01-l03",
+            "g01-l08"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.02-o02",
+          "sourceCurriculumId": "meb-g01-u1-c1.02",
+          "sourceChapter": "1.2",
+          "sourceChapterOrder": 2,
+          "sourceObjectiveOrdinal": 2,
+          "sourceObjectiveText": "Respond to 'How are you?' with 'I am fine, thank you.'",
+          "candidateLevelIds": [
+            "g01-l03",
+            "g01-l08"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.02-o03",
+          "sourceCurriculumId": "meb-g01-u1-c1.02",
+          "sourceChapter": "1.2",
+          "sourceChapterOrder": 2,
+          "sourceObjectiveOrdinal": 3,
+          "sourceObjectiveText": "Use the polite exchange 'Glad to meet you.' when meeting someone.",
+          "candidateLevelIds": [
+            "g01-l03",
+            "g01-l08"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.02-o04",
+          "sourceCurriculumId": "meb-g01-u1-c1.02",
+          "sourceChapter": "1.2",
+          "sourceChapterOrder": 2,
+          "sourceObjectiveOrdinal": 4,
+          "sourceObjectiveText": "Hear that classmate names are special names said with a capital letter when written.",
+          "candidateLevelIds": [
+            "g01-l03",
+            "g01-l08"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.03-o01",
+          "sourceCurriculumId": "meb-g01-u1-c1.03",
+          "sourceChapter": "1.3",
+          "sourceChapterOrder": 3,
+          "sourceObjectiveOrdinal": 1,
+          "sourceObjectiveText": "Name common home objects from the picture: fan, table, glass, door, chair, sofa, vase, clock, window, cupboard, television.",
+          "candidateLevelIds": [
+            "g01-l05"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.03-o02",
+          "sourceCurriculumId": "meb-g01-u1-c1.03",
+          "sourceChapter": "1.3",
+          "sourceChapterOrder": 3,
+          "sourceObjectiveOrdinal": 2,
+          "sourceObjectiveText": "Point to the named object in a picture or real room.",
+          "candidateLevelIds": [
+            "g01-l05"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.03-o03",
+          "sourceCurriculumId": "meb-g01-u1-c1.03",
+          "sourceChapter": "1.3",
+          "sourceChapterOrder": 3,
+          "sourceObjectiveOrdinal": 3,
+          "sourceObjectiveText": "Say 'I have a ___ at home' or point-and-name for at least four objects.",
+          "candidateLevelIds": [
+            "g01-l05"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.03-o04",
+          "sourceCurriculumId": "meb-g01-u1-c1.03",
+          "sourceChapter": "1.3",
+          "sourceChapterOrder": 3,
+          "sourceObjectiveOrdinal": 4,
+          "sourceObjectiveText": "Connect English object words to home-language words the child already owns.",
+          "candidateLevelIds": [
+            "g01-l05"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.04-o01",
+          "sourceCurriculumId": "meb-g01-u1-c1.04",
+          "sourceChapter": "1.4",
+          "sourceChapterOrder": 4,
+          "sourceObjectiveOrdinal": 1,
+          "sourceObjectiveText": "Act out the action rhyme: clap hands, stamp feet, turn around, jump up high.",
+          "candidateLevelIds": [
+            "g01-l02",
+            "g01-l07"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.04-o02",
+          "sourceCurriculumId": "meb-g01-u1-c1.04",
+          "sourceChapter": "1.4",
+          "sourceChapterOrder": 4,
+          "sourceObjectiveOrdinal": 2,
+          "sourceObjectiveText": "Follow classroom instructions: Stand straight. Turn right. Turn left. Sit down. Hands up. Stand up.",
+          "candidateLevelIds": [
+            "g01-l02",
+            "g01-l07"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.04-o03",
+          "sourceCurriculumId": "meb-g01-u1-c1.04",
+          "sourceChapter": "1.4",
+          "sourceChapterOrder": 4,
+          "sourceObjectiveOrdinal": 3,
+          "sourceObjectiveText": "Say the instruction after doing it (action → word), building the action-word bank for later levels.",
+          "candidateLevelIds": [
+            "g01-l02",
+            "g01-l07"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.04-o04",
+          "sourceCurriculumId": "meb-g01-u1-c1.04",
+          "sourceChapter": "1.4",
+          "sourceChapterOrder": 4,
+          "sourceObjectiveOrdinal": 4,
+          "sourceObjectiveText": "Invent new instruction lines by substitution (teacher note: replace 'Clap your hands' with 'Touch the ground').",
+          "candidateLevelIds": [
+            "g01-l02",
+            "g01-l07"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.05-o01",
+          "sourceCurriculumId": "meb-g01-u1-c1.05",
+          "sourceChapter": "1.5",
+          "sourceChapterOrder": 5,
+          "sourceObjectiveOrdinal": 1,
+          "sourceObjectiveText": "Greet appropriately by time of day: Good morning / Good afternoon / Good evening / Good night.",
+          "candidateLevelIds": [
+            "g01-l09",
+            "g01-l08"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.05-o02",
+          "sourceCurriculumId": "meb-g01-u1-c1.05",
+          "sourceChapter": "1.5",
+          "sourceChapterOrder": 5,
+          "sourceObjectiveOrdinal": 2,
+          "sourceObjectiveText": "Ask and answer 'When do you ___?' with 'In the morning / afternoon / evening.'",
+          "candidateLevelIds": [
+            "g01-l09",
+            "g01-l08"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.05-o03",
+          "sourceCurriculumId": "meb-g01-u1-c1.05",
+          "sourceChapter": "1.5",
+          "sourceChapterOrder": 5,
+          "sourceObjectiveOrdinal": 3,
+          "sourceObjectiveText": "Say three things from the My Day routine chart: I wake up early. I brush my teeth. I go to school.",
+          "candidateLevelIds": [
+            "g01-l09",
+            "g01-l08"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.05-o04",
+          "sourceCurriculumId": "meb-g01-u1-c1.05",
+          "sourceChapter": "1.5",
+          "sourceChapterOrder": 5,
+          "sourceObjectiveOrdinal": 4,
+          "sourceObjectiveText": "Follow assembly instructions in English: Stand in a line. Attention. Join your hands.",
+          "candidateLevelIds": [
+            "g01-l09",
+            "g01-l08"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.06-o01",
+          "sourceCurriculumId": "meb-g01-u1-c1.06",
+          "sourceChapter": "1.6",
+          "sourceChapterOrder": 6,
+          "sourceObjectiveOrdinal": 1,
+          "sourceObjectiveText": "Hear and say the beginning sounds /b/, /c/, /p/, /t/, /a/.",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.06-o02",
+          "sourceCurriculumId": "meb-g01-u1-c1.06",
+          "sourceChapter": "1.6",
+          "sourceChapterOrder": 6,
+          "sourceObjectiveOrdinal": 2,
+          "sourceObjectiveText": "Sort pictures by beginning sound into letter buckets b, c, p, t, a.",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.06-o03",
+          "sourceCurriculumId": "meb-g01-u1-c1.06",
+          "sourceChapter": "1.6",
+          "sourceChapterOrder": 6,
+          "sourceObjectiveOrdinal": 3,
+          "sourceObjectiveText": "Blend short a-vowel words: cap, tap, cab, tab, bat, pat, mat, cat.",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.06-o04",
+          "sourceCurriculumId": "meb-g01-u1-c1.06",
+          "sourceChapter": "1.6",
+          "sourceChapterOrder": 6,
+          "sourceObjectiveOrdinal": 4,
+          "sourceObjectiveText": "Trace letters b, c, p, t, a with a finger before writing.",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.07-o01",
+          "sourceCurriculumId": "meb-g01-u1-c1.07",
+          "sourceChapter": "1.7",
+          "sourceChapterOrder": 7,
+          "sourceObjectiveOrdinal": 1,
+          "sourceObjectiveText": "Say 'I can ___' with at least five action words: sing, swim, play, read, write, jump, walk, dance.",
+          "candidateLevelIds": [
+            "g01-l07",
+            "g01-l08"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.07-o02",
+          "sourceCurriculumId": "meb-g01-u1-c1.07",
+          "sourceChapter": "1.7",
+          "sourceChapterOrder": 7,
+          "sourceObjectiveOrdinal": 2,
+          "sourceObjectiveText": "Answer 'Can you ___?' with 'Yes, I can ___.' or 'No, I can't ___.'",
+          "candidateLevelIds": [
+            "g01-l07",
+            "g01-l08"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.07-o03",
+          "sourceCurriculumId": "meb-g01-u1-c1.07",
+          "sourceChapter": "1.7",
+          "sourceChapterOrder": 7,
+          "sourceObjectiveOrdinal": 3,
+          "sourceObjectiveText": "Play the Queen Says imitation game: Walk like an elephant. Fly like a bird. Roar like a lion.",
+          "candidateLevelIds": [
+            "g01-l07",
+            "g01-l08"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.07-o04",
+          "sourceCurriculumId": "meb-g01-u1-c1.07",
+          "sourceChapter": "1.7",
+          "sourceChapterOrder": 7,
+          "sourceObjectiveOrdinal": 4,
+          "sourceObjectiveText": "Consolidate the action-word bank started with 1.4 Clap your hands.",
+          "candidateLevelIds": [
+            "g01-l07",
+            "g01-l08"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.08-o01",
+          "sourceCurriculumId": "meb-g01-u1-c1.08",
+          "sourceChapter": "1.8",
+          "sourceChapterOrder": 8,
+          "sourceObjectiveOrdinal": 1,
+          "sourceObjectiveText": "Name classroom objects: book, bench, chalk, tiffin, duster, dustbin, notebook, blackboard, school bag, water-bottle, calendar, computer.",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.08-o02",
+          "sourceCurriculumId": "meb-g01-u1-c1.08",
+          "sourceChapter": "1.8",
+          "sourceChapterOrder": 8,
+          "sourceObjectiveOrdinal": 2,
+          "sourceObjectiveText": "Sort things into 'school' and 'home' places (the book's Anandi activity).",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.08-o03",
+          "sourceCurriculumId": "meb-g01-u1-c1.08",
+          "sourceChapter": "1.8",
+          "sourceChapterOrder": 8,
+          "sourceObjectiveOrdinal": 3,
+          "sourceObjectiveText": "Answer 'Where have you seen these things?' for classroom objects.",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.08-o04",
+          "sourceCurriculumId": "meb-g01-u1-c1.08",
+          "sourceChapter": "1.8",
+          "sourceChapterOrder": 8,
+          "sourceObjectiveOrdinal": 4,
+          "sourceObjectiveText": "Build the My School vocabulary for the canonical g01-l02 level.",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.09-o01",
+          "sourceCurriculumId": "meb-g01-u1-c1.09",
+          "sourceChapter": "1.9",
+          "sourceChapterOrder": 9,
+          "sourceObjectiveOrdinal": 1,
+          "sourceObjectiveText": "Hear and say the beginning sounds /d/, /f/, /m/, /n/, /e/.",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.09-o02",
+          "sourceCurriculumId": "meb-g01-u1-c1.09",
+          "sourceChapter": "1.9",
+          "sourceChapterOrder": 9,
+          "sourceObjectiveOrdinal": 2,
+          "sourceObjectiveText": "Sort pictures by beginning sound into d, f, m, n, e buckets.",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.09-o03",
+          "sourceCurriculumId": "meb-g01-u1-c1.09",
+          "sourceChapter": "1.9",
+          "sourceChapterOrder": 9,
+          "sourceObjectiveOrdinal": 3,
+          "sourceObjectiveText": "Blend new short-vowel words: pet, met, net, bed, fed, pen, den, ten.",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.09-o04",
+          "sourceCurriculumId": "meb-g01-u1-c1.09",
+          "sourceChapter": "1.9",
+          "sourceChapterOrder": 9,
+          "sourceObjectiveOrdinal": 4,
+          "sourceObjectiveText": "Hear the special behaviour of the 'e' sound at word beginnings (egg, elbow, elephant) — an early vowel-sound awareness.",
+          "candidateLevelIds": [
+            "g01-l02"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.10-o01",
+          "sourceCurriculumId": "meb-g01-u1-c1.10",
+          "sourceChapter": "1.10",
+          "sourceChapterOrder": 10,
+          "sourceObjectiveOrdinal": 1,
+          "sourceObjectiveText": "Listen to and recite the rain poem with rhythm and actions.",
+          "candidateLevelIds": [
+            "g01-l10"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.10-o02",
+          "sourceCurriculumId": "meb-g01-u1-c1.10",
+          "sourceChapter": "1.10",
+          "sourceChapterOrder": 10,
+          "sourceObjectiveOrdinal": 2,
+          "sourceObjectiveText": "Name the three seasons in the picture: rainy, winter, summer.",
+          "candidateLevelIds": [
+            "g01-l10"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.10-o03",
+          "sourceCurriculumId": "meb-g01-u1-c1.10",
+          "sourceChapter": "1.10",
+          "sourceChapterOrder": 10,
+          "sourceObjectiveOrdinal": 3,
+          "sourceObjectiveText": "Play with sound words: tip-tap, zig-zag, ding-dong, pitter-patter.",
+          "candidateLevelIds": [
+            "g01-l10"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.10-o04",
+          "sourceCurriculumId": "meb-g01-u1-c1.10",
+          "sourceChapter": "1.10",
+          "sourceChapterOrder": 10,
+          "sourceObjectiveOrdinal": 4,
+          "sourceObjectiveText": "Hear alliteration in the tongue-twisters (Two tall trees, Big blue boat) — same-sound beginnings.",
+          "candidateLevelIds": [
+            "g01-l10"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.11-o01",
+          "sourceCurriculumId": "meb-g01-u1-c1.11",
+          "sourceChapter": "1.11",
+          "sourceChapterOrder": 11,
+          "sourceObjectiveOrdinal": 1,
+          "sourceObjectiveText": "Listen to and enjoy the picture story 'We want rain.'",
+          "candidateLevelIds": [
+            "g01-l10"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.11-o02",
+          "sourceCurriculumId": "meb-g01-u1-c1.11",
+          "sourceChapter": "1.11",
+          "sourceChapterOrder": 11,
+          "sourceObjectiveOrdinal": 2,
+          "sourceObjectiveText": "Answer simple story questions: Who wanted rain? What did the peacock want? What did the fish want?",
+          "candidateLevelIds": [
+            "g01-l10"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.11-o03",
+          "sourceCurriculumId": "meb-g01-u1-c1.11",
+          "sourceChapter": "1.11",
+          "sourceChapterOrder": 11,
+          "sourceObjectiveOrdinal": 3,
+          "sourceObjectiveText": "Use the polite request frame 'Please ___' (Please rain. Please sit.).",
+          "candidateLevelIds": [
+            "g01-l10"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        },
+        {
+          "objectiveId": "meb-g01-u1-c1.11-o04",
+          "sourceCurriculumId": "meb-g01-u1-c1.11",
+          "sourceChapter": "1.11",
+          "sourceChapterOrder": 11,
+          "sourceObjectiveOrdinal": 4,
+          "sourceObjectiveText": "Retell one story event with a picture prompt.",
+          "candidateLevelIds": [
+            "g01-l10"
+          ],
+          "reviewStatus": "DRAFT_PENDING_TEACHER_REVIEW",
+          "approvedRevision": null
+        }
+      ]
+    }
+  ]
+}

@@ -45,7 +45,18 @@ export class AzureVoiceProvider implements VoiceProvider {
     const url = `https://${s.region}.tts.speech.microsoft.com/cognitiveservices/v1`
     const rate = kindergarten ? (process.env.KG_AZURE_SPEECH_RATE?.trim() || "+5%") : s.rate
     const pitch = kindergarten ? (process.env.KG_AZURE_SPEECH_PITCH?.trim() || "+6%") : s.pitch
-    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${selected.locale}"><voice name="${selected.voice}"><prosody rate="${rate}" pitch="${pitch}">${escapeXml(text)}</prosody></voice></speak>`
+    // A Hindi/Marathi explanation and its English target need two distinct
+    // voice segments, not one Hindi/Marathi voice reading the whole sentence.
+    // Azure accepts multiple voice nodes inside ONE synthesis request.
+    const practice = kindergarten && (selected.locale === 'hi-IN' || selected.locale === 'mr-IN')
+      ? /^(.*?)(\s+Say (?:[a-z][a-z'-]{0,26}|the letter [a-z])[.!?]?)$/is.exec(text)
+      : null
+    const voiceNode = (voice: string, words: string) =>
+      `<voice name="${voice}"><prosody rate="${rate}" pitch="${pitch}">${escapeXml(words)}</prosody></voice>`
+    const content = practice && practice[1].trim()
+      ? voiceNode(selected.voice, practice[1].trim()) + voiceNode('en-IN-NeerjaNeural', practice[2].trim())
+      : voiceNode(selected.voice, text)
+    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${selected.locale}">${content}</speak>`
 
     let response: Response
     try {
@@ -85,11 +96,14 @@ export class AzureVoiceProvider implements VoiceProvider {
     return this.settings().format.startsWith('audio-') ? 'audio/mpeg' : 'audio/wav'
   }
 
-  /** KG speech is transient: no MongoDB, no S3, no persistent audio cache. */
-  async synthesizeUncached(text: string): Promise<{ audio: Buffer; contentType: string }> {
+  /** KG speech is transient: no MongoDB, no S3, no persistent audio cache.
+   * Honor a server-verified Sarvam language hint for Hindi/Marathi teaching
+   * replies, including Romanized child words. English stays the default.
+   */
+  async synthesizeUncached(text: string, options?: { language?: 'en-IN' | 'hi-IN' | 'mr-IN' }): Promise<{ audio: Buffer; contentType: string }> {
     const normalized = text.replace(/\s+/g, ' ').trim()
     if (!normalized || normalized.length > 320) throw ApiError.badRequest('KG voice text must be 1–320 characters')
-    return { audio: await this.generate(normalized, true), contentType: this.contentType() }
+    return { audio: await this.generate(normalized, true, true, options?.language), contentType: this.contentType() }
   }
 
   async synthesize(text: string): Promise<VoiceSynthesisResult> {

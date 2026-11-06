@@ -96,17 +96,18 @@ export const CurriculumAccessService = {
     // or to all active Class 1 students when the explicit all-students flag is on.
     // Production students retain published-only access.
     const isKGPilot = pilotAllowlisted && curriculumClass.status === 'draft'
-    const isClass1Demo = class1DemoAllowlisted
-    if (isClass1Demo) {
-      // Fail closed unless this is our exact seed and its reviewed demo marker.
-      const demoLevel = await Level.findOne({
-        classId: curriculumClass._id,
-        number: 1,
-        curriculumVersion: CLASS1_DEMO_VERSION,
-        status: 'draft',
-        availability: 'UPCOMING',
-      }).select('_id').lean()
-      const demoLesson = demoLevel && await Lesson.exists({
+    // After Level 1 is genuinely published, development allowlist flags must
+    // not force the student back into the retired draft-only resolver.
+    const demoLevel = class1DemoAllowlisted && await Level.findOne({
+      classId: curriculumClass._id,
+      number: 1,
+      curriculumVersion: CLASS1_DEMO_VERSION,
+      status: 'draft',
+      availability: 'UPCOMING',
+    }).select('_id').lean()
+    const isClass1Demo = Boolean(demoLevel)
+    if (demoLevel) {
+      const demoLesson = await Lesson.exists({
         levelId: demoLevel._id,
         ...CLASS1_DEMO_LESSON_FILTER,
       })

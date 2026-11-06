@@ -18,7 +18,9 @@ const VOICE_PRESET = {
 } as const
 const ROOT = path.resolve(__dirname, '../..')
 const DEFAULT_OUTPUT_ROOT = path.join(ROOT, 'tmp', 'kg-level1-audio')
-const SAMPLE_ID = 'say-a'
+// The live 'say-a' introduction now uses Priya 8001, so the S3 test
+// sample must be an approved *static* curriculum line.
+const SAMPLE_ID = 'word-apple'
 const MAX_AUDIO_BYTES = 12 * 1024 * 1024
 const MAX_CLIP_SECONDS = 18
 
@@ -92,7 +94,7 @@ function printHelp() {
   console.log([
     'KG Level 1 Miss Julie voice pipeline',
     '',
-    '  npm run kg:audio -- --sample              Generate only the A/apple approval sample.',
+    '  npm run kg:audio -- --sample              Generate the static word-apple approval sample (NOT the live say-a prompt).',
     '  npm run kg:audio -- --all                 Generate all static curriculum narration/pronunciation clips.',
     '  npm run kg:audio -- --all --resume        Continue; skip clips whose manifest and checksum match.',
     '  npm run kg:audio -- --all --dry-run       List clips without TTS calls or file writes.',
