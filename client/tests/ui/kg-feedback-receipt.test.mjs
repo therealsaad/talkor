@@ -41,6 +41,7 @@ function harness() {
     window: { setTimeout },
     require: (id) => {
       if (id === '@/lib/api-client') return { apiClient, apiClientBlob, getStoredToken: () => token }
+      if (id === '@/lib/lesson-turn-telemetry') return { lessonTurnTelemetry: { bind() {}, markFor() {}, mark() {} }, setTelemetrySession() {} }
       if (id === '@/lib/device-audio-cache') return { clipKey: () => 'k', shouldSkipBackgroundDownload: () => true, createDeviceAudioCache: () => ({ get: async () => null, put: async () => false, has: async () => false, prune: async () => 0 }) }
       if (id === './kg-request') return { kgRequest: (fn) => fn() }
       throw new Error('Unexpected dependency: ' + id)
