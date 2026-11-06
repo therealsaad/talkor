@@ -46,7 +46,7 @@
     "grade": 0,
     "level": 3,
     "title": "Letters K to P",
-    "roadmapTitle": "My Body and Actions",
+    "roadmapTitle": "Letters K to P",
     "designTheme": "kg-03-my-body-and-actions",
     "world": "Coral Lagoon",
     "palette": {
@@ -214,8 +214,8 @@
     "id": "g01-l01",
     "grade": 1,
     "level": 1,
-    "title": "Little Words & My First Day",
-    "roadmapTitle": "Letters and Sounds",
+    "title": "My First Day — School Adventure",
+    "roadmapTitle": "My First Day — School Adventure",
     "designTheme": "class-01-01-letters-and-sounds",
     "world": "First Day Word Meadow",
     "palette": {
@@ -236,7 +236,7 @@
     "id": "g01-l02",
     "grade": 1,
     "level": 2,
-    "title": "My School",
+    "title": "Action Beats & Rainbow Words",
     "designTheme": "class-01-02-my-school",
     "world": "Treasure Cove",
     "palette": {

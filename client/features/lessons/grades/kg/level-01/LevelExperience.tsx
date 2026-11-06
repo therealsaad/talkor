@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { ArrowLeft, Check, Headphones, LoaderCircle, Mic, Play, RotateCw, Sparkles, Volume2, VolumeX } from 'lucide-react'
 import { watchVoiceActivity } from '@/lib/voice-activity'
+import { parseSilenceMs } from '@/lib/silence-policy'
 import { kgAlphabetService, type KGAlphabetState, type KGOutcome, type KGPreparedAttempt, type KGAttemptResponse } from './services/kg-alphabet-service'
 import { requestKGMicrophone, KG_SESSION_END_EVENT } from '@/lib/kg-microphone'
 import { AnimatedMissJulie } from './components/AnimatedMissJulie'
@@ -18,6 +19,9 @@ import './styles/kg-level1-polish.css'
 
 const INTRO_VIDEO = '/lessons/kg/videos/fullkg.mp4'
 const STEP_COUNT = 8
+// Once a child has clearly been speaking, stop after this much silence instead of the cautious 1100 ms.
+// Tune with NEXT_PUBLIC_KG_SILENCE_AFTER_SPEECH_MS (500-1100); too low cuts children off mid-word.
+const KG_SILENCE_AFTER_SPEECH_MS = parseSilenceMs(process.env.NEXT_PUBLIC_KG_SILENCE_AFTER_SPEECH_MS, 750, 1100)
 const LETTERS = ['A', 'B', 'C', 'D'] as const
 const WORDS = ['apple', 'ball', 'cat', 'dog'] as const
 const INTRO_PHASES = new Set(['intro', 'intro-playing', 'intro-paused', 'intro-error', 'saving-intro'])
@@ -119,6 +123,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
   const stepStartedAtRef = useRef(0)
   const retryListeningRef = useRef<(stepIndex: number, token: number) => void>(() => undefined)
   const requestRef = useRef<AbortController | null>(null)
+  const preloadRef = useRef<AbortController | null>(null)
   const micStartingRef = useRef(false)
   const pendingSubmissionRef = useRef<{ prepared: KGPreparedAttempt; stepIndex: number } | null>(null)
   const pendingResultRef = useRef<{ result: KGAttemptResponse; stepIndex: number } | null>(null)
@@ -189,6 +194,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       alive = false
       generation.current++
       requestRef.current?.abort()
+      preloadRef.current?.abort()
       pendingSubmissionRef.current = null; pendingResultRef.current = null
       kgAlphabetService.clearAudioCache()
       audioRef.current?.pause()
@@ -320,6 +326,12 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       // The child is about to answer: use that time to fetch the picture-help clip and the next step's prompt.
       prefetchStepAudio(stepIndex, true)
       prefetchStepAudio(stepIndex + 1)
+      // Once per visit, while the child answers the first prompt: save the rest of the fixed clips on this device
+      // so later steps and later visits need no download. Skipped on data-saver and 2G links.
+      if (!preview && stepIndex === 0 && (!preloadRef.current || preloadRef.current.signal.aborted)) {
+        preloadRef.current = new AbortController()
+        void kgAlphabetService.preloadToDevice(preloadRef.current.signal)
+      }
       if (stepAt(stepIndex).mode === 'speak' && ((!replayRef.current && stateRef.current?.fallbackAvailable) || (preview && previewErrorsRef.current >= 2))) {
         await playClip(`find-${stepAt(stepIndex).letter.toLowerCase()}`)
         if (generation.current === token) setPhase('assist')
@@ -571,7 +583,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       recorder.start()
       setPhase('listening')
       stopWatcher.current = watchVoiceActivity(stream, () => { if (recorder.state === 'recording') recorder.stop() },
-        { silenceMs: 1100, minimumSpeechMs: 350, noSpeechTimeoutMs: 6500, speechThreshold: .017,
+        { silenceMs: 1100, silenceAfterSpeechMs: KG_SILENCE_AFTER_SPEECH_MS, minimumSpeechMs: 350, noSpeechTimeoutMs: 6500, speechThreshold: .017,
           resumeContext: true, sampleIntervalMs: 50, onSpeech: () => { speechDetected = true },
           onUnavailable: () => { vadAvailable = false } })
       hardStop.current = window.setTimeout(() => { if (recorder.state === 'recording') recorder.stop() }, 9800)

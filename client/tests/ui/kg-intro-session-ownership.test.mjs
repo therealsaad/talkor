@@ -31,6 +31,7 @@ function makeHarness() {
     exports,
     module: { exports },
     require: (id) => {
+      if (id === '@/lib/device-audio-cache') return { clipKey: () => 'k', shouldSkipBackgroundDownload: () => true, createDeviceAudioCache: () => ({ get: async () => null, put: async () => false, has: async () => false, prune: async () => 0 }) }
       if (id === '@/lib/api-client') {
         return { apiClient, apiClientBlob: async () => new Blob(), getStoredToken: () => token }
       }

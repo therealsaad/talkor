@@ -1,4 +1,6 @@
 
+import { shouldStopRecording } from '@/lib/silence-policy'
+
 /**
  * Browser-local silence detector. Records/audio never leave the device through
  * this helper; audio is uploaded only by the existing consented lesson recorder.
@@ -8,7 +10,9 @@ export function watchVoiceActivity(
   stream: MediaStream,
   onSilence: () => void,
   options: { silenceMs?: number; minimumSpeechMs?: number; noSpeechTimeoutMs?: number; onSpeech?: () => void; speechThreshold?: number;
-    resumeContext?: boolean; sampleIntervalMs?: number; onUnavailable?: () => void } = {},
+    resumeContext?: boolean; sampleIntervalMs?: number; onUnavailable?: () => void;
+    /** Shorter silence allowed once the child has been speaking for `quickSpeechMs`. Unset keeps `silenceMs` for everything. */
+    silenceAfterSpeechMs?: number; quickSpeechMs?: number } = {},
 ): () => void {
   if (typeof window === 'undefined') return () => undefined
   const AudioContextClass = window.AudioContext
@@ -32,6 +36,8 @@ export function watchVoiceActivity(
     let heardVoice = false
     let noiseFloor = 0.009
     let positiveFrames = 0
+    let voicedMs = 0
+    let lastTickAt = startedAt
     const noSpeechLimit = options.noSpeechTimeoutMs ?? 6500
     const silenceLimit = options.silenceMs ?? 1050
     const minimumSpeech = options.minimumSpeechMs ?? 550
@@ -42,15 +48,19 @@ export function watchVoiceActivity(
       for (let i = 0; i < samples.length; i++) energy += samples[i] * samples[i]
       const rms = Math.sqrt(energy / samples.length)
       const now = performance.now()
+      // Capped so a suspended audio context cannot credit a long gap as speech.
+      const tickMs = Math.min(250, now - lastTickAt)
+      lastTickAt = now
       // Adjust the baseline only before speech, so a classroom fan won't trigger recording.
       if (!heardVoice) noiseFloor = Math.min(.06, noiseFloor * .96 + rms * .04)
       const active = rms > Math.max(options.speechThreshold ?? .024, noiseFloor * 2.7)
       if (active) {
         positiveFrames += 1
-        if (positiveFrames >= 2) { if (!heardVoice) options.onSpeech?.(); heardVoice = true; lastVoiceAt = now }
+        if (positiveFrames >= 2) { if (!heardVoice) options.onSpeech?.(); heardVoice = true; lastVoiceAt = now; voicedMs += tickMs }
       } else positiveFrames = 0
-      if (heardVoice && now - startedAt >= minimumSpeech && now - lastVoiceAt > silenceLimit ||
-          !heardVoice && now - startedAt > noSpeechLimit) {
+      if (shouldStopRecording({ now, startedAt, lastVoiceAt, heardVoice, voicedMs, silenceMs: silenceLimit,
+          silenceAfterSpeechMs: options.silenceAfterSpeechMs, quickSpeechMs: options.quickSpeechMs,
+          minimumSpeechMs: minimumSpeech, noSpeechTimeoutMs: noSpeechLimit })) {
         ended = true
         onSilence()
       }

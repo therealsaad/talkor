@@ -19,7 +19,7 @@ test('studio designs retain their lesson titles while matching the authoritative
     const roadmapTitle = design && 'roadmapTitle' in design ? design.roadmapTitle : design?.title
     expect(roadmapTitle).toBe(entry.title)
   }
-  expect(studioDesignForLevel(1, 1)?.title).toBe('Little Words & My First Day')
+  expect(studioDesignForLevel(1, 1)?.title).toBe('My First Day — School Adventure')
 })
 
 test('daily, weekly, monthly windows are UTC bounded', () => {

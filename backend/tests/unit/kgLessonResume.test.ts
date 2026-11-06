@@ -3,7 +3,12 @@ jest.mock('../../src/models/CurriculumClass', () => ({ CurriculumClass: { findOn
 jest.mock('../../src/models/Level', () => ({ Level: { exists: jest.fn(), find: jest.fn() } }))
 jest.mock('../../src/models/Lesson', () => ({ Lesson: { find: jest.fn() } }))
 jest.mock('../../src/models/Activity', () => ({ Activity: { find: jest.fn() } }))
-jest.mock('../../src/services/progress.service', () => ({ ProgressService: { getForStudent: jest.fn() } }))
+jest.mock('../../src/services/progress.service', () => ({
+  ProgressService: {
+    getForStudent: jest.fn(),
+    assertLevelAccessible: jest.fn().mockResolvedValue(undefined),
+  },
+}))
 
 import { Student } from '../../src/models/Student'
 import { CurriculumClass } from '../../src/models/CurriculumClass'

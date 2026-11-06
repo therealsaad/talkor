@@ -11,6 +11,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Guard shared staff preview structural verification against regressions
+        run: node --test tools/tests/staff-preview-boundaries.test.cjs
       - name: Validate all 110 level workspaces and mapping boundaries
         run: node tools/verify-110-levels.cjs
   frontend:
@@ -31,6 +33,14 @@ jobs:
         working-directory: client
       - name: Guard development-only classroom preview and static asset
         run: node --test tests/ui/classroom-preview-production-gate.test.mjs
+        working-directory: client
+      - name: Verify shared staff curriculum explorer and student boundaries
+        run: node --test tests/curriculum-explorer.test.mjs tests/lesson-registry.test.mjs tests/frontend-safety-contract.test.mjs tests/ui/school-curriculum-map-page.test.mjs
+        working-directory: client
+      - name: Verify staff login, filters, coverage and student restrictions in real Chromium
+        run: node --test tests/staff-explorer.browser.test.mjs
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
         working-directory: client
       - name: Verify production preview endpoints are truly unavailable
         working-directory: client
@@ -64,6 +74,12 @@ jobs:
       - name: Guard KG1 replayable Azure coaching and a single retry CTA
         run: node --test tests/ui/kg-audio-feedback-retry.test.mjs
         working-directory: client
+      - name: Verify end-of-speech silence policy keeps a safe floor
+        run: node --test tests/ui/silence-policy.test.mjs
+        working-directory: client
+      - name: Verify the device audio cache only keeps fixed lesson clips
+        run: node --test tests/ui/device-audio-cache.test.mjs
+        working-directory: client
       - name: Verify KG playback receipt only follows audio ended and isolates lab sessions
         run: node --test tests/ui/kg-feedback-receipt.test.mjs
         working-directory: client
@@ -79,6 +95,9 @@ jobs:
       - name: "Guard all 110 levels: next KG letter journey, published-grade locking and session resume"
         run: node --test tests/ui/grade0-to10-sequential-resume.test.mjs
         working-directory: client
+      - name: Verify KG6–10 and Class 1 L2 teacher drafts stay complete but locked from students
+        run: node --test tests/ui/kg6-10-class1-l2-editorial-drafts.test.mjs
+        working-directory: client
       - name: Verify Class 1 hands-free audio and landscape contracts
         run: node --test tests/ui/class1-voice-runtime-contract.test.mjs
         working-directory: client
@@ -87,6 +106,9 @@ jobs:
         working-directory: client
       - name: Verify Class 1 poem UI and existing voice loop contracts
         run: node --test tests/ui/class1-poem-recitation.test.mjs
+        working-directory: client
+      - name: Verify Class 1 Level 1 curriculum/map is the real ten-scene First Day
+        run: node --test tests/ui/class1-level1-experience.test.mjs
         working-directory: client
       - name: Verify illustrated v3 First Day speaking classroom
         run: node --test tests/ui/class1-first-day-adventure.test.mjs
@@ -126,6 +148,9 @@ jobs:
         working-directory: backend
       - run: pnpm build
         working-directory: backend
+      - name: Verify real KG latency report only aggregates correlated timings and cannot leak speech
+        run: node --test tests/kg-turn-latency-report.node.test.mjs
+        working-directory: backend
       - name: Verify real school-lab KG PIN acceptance report resolves exact server progress
         run: node --test tests/kg-live-session-acceptance.node.test.mjs
         working-directory: backend
@@ -155,6 +180,9 @@ jobs:
         working-directory: backend
       - name: Verify KG1 live Azure Hindi/Marathi language selection
         run: pnpm exec jest --runInBand tests/unit/kgAzureBilingualLocale.test.ts
+        working-directory: backend
+      - name: Verify shared KG1–5 multilingual teacher, draft isolation, Hindi/Marathi bridges and Azure SSML
+        run: pnpm exec jest --runInBand tests/unit/kgSharedTeachingTurn.test.ts
         working-directory: backend
       - name: Verify rule-first KG Qwen fallback and session-stable Sarvam language
         run: pnpm exec jest --runInBand tests/unit/kgFeedbackRouting.test.ts tests/unit/kgTeachingLanguage.test.ts
@@ -246,6 +274,12 @@ jobs:
         working-directory: backend
       - name: Verify Hindi and Marathi Azure voice routing for reviewed First Day clips
         run: pnpm exec jest --runInBand tests/unit/class1FirstDayAzureLocale.test.ts
+        working-directory: backend
+      - name: Verify real Mongo Class 1 published Level 1 map, resume and Level 2 lock
+        run: pnpm exec jest --runInBand tests/integration/class1PublishedLevel1Journey.test.ts
+        working-directory: backend
+      - name: Guard Class 1 First Day release against false publishing and historical progress
+        run: pnpm exec jest --runInBand tests/unit/class1Level1Publication.test.ts
         working-directory: backend
       - name: Guard real Class 1 Sarvam to Qwen to Azure smoke route
         run: pnpm exec jest --runInBand tests/unit/class1LiveSmokeContract.test.ts

@@ -1,5 +1,6 @@
 import { apiClient, apiClientBlob, getStoredToken } from '@/lib/api-client'
 import { kgRequest } from './kg-request'
+import { clipKey, createDeviceAudioCache, shouldSkipBackgroundDownload } from '@/lib/device-audio-cache'
 
 export type KGOutcome = 'correct' | 'incorrect' | 'unclear' | 'supported'
 export type KGLetter = 'A' | 'B' | 'C' | 'D'
@@ -40,6 +41,22 @@ export interface KGAttemptResponse {
   feedbackVoice?: 'dynamic_tts' | 'curriculum_static' | 'azure' | 'unavailable'
 }
 export type KGPreparedAttempt = { body: string }
+
+// Fixed lesson clips are kept on the device between visits. Learned from the state the level loads; see rememberManifest.
+const deviceAudio = createDeviceAudioCache(() => (typeof caches === 'undefined' ? undefined : caches))
+let manifest: { version: string; clips: Map<string, { path: string; key: string }> } | null = null
+
+/** Remembers which clips are fixed curriculum audio and their device-cache keys. Dynamic and feedback audio never qualify. */
+function rememberManifest(state: KGAlphabetState) {
+  const clips = new Map<string, { path: string; key: string }>()
+  for (const [id, line] of Object.entries(state.audio || {})) {
+    if (line.kind !== 'curriculum_static') continue
+    const path = audioPath(id, line.url)
+    clips.set(path, { path, key: clipKey(state.audioVersion, id, line.text) })
+  }
+  manifest = { version: state.audioVersion, clips }
+  void deviceAudio.prune(new Set([...clips.values()].map((clip) => clip.key)))
+}
 
 type ClipCacheEntry = { promise: Promise<string>; settled: boolean; url: string | null; expiresAt: number; ownerToken: string | null; ownerTicket: string | null; receipt?: string }
 const clipCache = new Map<string, ClipCacheEntry>()
@@ -105,7 +122,9 @@ async function loadAudioUrl(key: string, signal?: AbortSignal, kind: KGAudioKind
   }
 
   const entry: ClipCacheEntry = { promise: Promise.resolve(''), settled: false, url: null, expiresAt: 0, ownerToken, ownerTicket }
-  entry.promise = kgRequest(
+  // A fixed clip already on this device needs no network at all. Receipts and feedback audio are never device-cached.
+  const deviceKey = !onReceipt && kind === 'curriculum_static' ? manifest?.clips.get(key)?.key : undefined
+  entry.promise = (deviceKey ? deviceAudio.get(deviceKey) : Promise.resolve(null)).then((stored) => stored ?? kgRequest(
     (requestSignal) => apiClientBlob(key, { cache: 'no-store', signal: requestSignal, headers }, onReceipt
       ? (responseHeaders) => {
           const receipt = responseHeaders.get('X-KG-Feedback-Receipt') || ''
@@ -117,7 +136,7 @@ async function loadAudioUrl(key: string, signal?: AbortSignal, kind: KGAudioKind
       : undefined),
     signal,
     { retries: 1, timeoutMs: kind === 'dynamic_tts' ? 35000 : 30000, delayMs: 300 },
-  ).then((blob) => {
+  ).then((fetched) => { if (deviceKey) void deviceAudio.put(deviceKey, fetched); return fetched })).then((blob) => {
     if (clipCache.get(key) !== entry) throw new DOMException('Audio request is no longer active', 'AbortError')
     entry.url = URL.createObjectURL(blob)
     entry.settled = true
@@ -159,7 +178,7 @@ async function playAudioUrl(url: string, audio: HTMLAudioElement, signal?: Abort
 }
 
 export const kgAlphabetService = {
-  state: () => apiClient<KGAlphabetState>('/kg-alphabet/state', { cache: 'no-store' }),
+  state: () => apiClient<KGAlphabetState>('/kg-alphabet/state', { cache: 'no-store' }).then((state) => { rememberManifest(state); return state }),
   /** Resumes only the most recent current-activity attempt without another STT pass. */
   pendingFeedback: () => apiClient<{ pending: KGAttemptResponse | null }>('/kg-alphabet/pending-feedback', {
     cache: 'no-store', headers: introTicketHeaders(),
@@ -209,6 +228,24 @@ export const kgAlphabetService = {
     method: 'POST', body: JSON.stringify({ homeworkId: 'kg-abcd-picture-homework-v1' }),
   }),
   prefetch: (id: string, path?: string, kind?: KGAudioKind) => { void audioUrl(id, path, undefined, kind).catch(() => undefined) },
+  /**
+   * Downloads the lesson's remaining fixed clips one at a time into the device cache (no playback, no object URLs).
+   * Skipped on data-saver or 2G links. Safe to call repeatedly; clips already stored are not fetched again.
+   */
+  async preloadToDevice(signal?: AbortSignal): Promise<number> {
+    const nav = typeof navigator === 'undefined' ? undefined : (navigator as Navigator & { connection?: { saveData?: boolean; effectiveType?: string } })
+    if (!manifest || shouldSkipBackgroundDownload(nav?.connection)) return 0
+    let stored = 0
+    for (const clip of manifest.clips.values()) {
+      if (signal?.aborted) break
+      try {
+        if (await deviceAudio.has(clip.key)) continue
+        const blob = await kgRequest((requestSignal) => apiClientBlob(clip.path, { cache: 'no-store', signal: requestSignal }), signal, { retries: 0, timeoutMs: 30000, delayMs: 300 })
+        if (await deviceAudio.put(clip.key, blob)) stored += 1
+      } catch { /* optional background work: the clip is fetched normally when it is needed */ }
+    }
+    return stored
+  },
   ensure: (id: string, path?: string, kind?: KGAudioKind) => audioUrl(id, path, undefined, kind).then(() => undefined),
   audioUrl,
   /** Staff-only preview uses the same manifest-selected S3/Priya delivery as the student route. */

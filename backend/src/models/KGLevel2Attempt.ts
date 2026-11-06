@@ -8,6 +8,7 @@ export interface IKGLevel2Attempt {
   letter: string
   outcome: 'correct' | 'incorrect' | 'unclear'
   feedbackText: string
+  feedbackLanguageCode?: 'en-IN' | 'hi-IN' | 'mr-IN'
   feedbackAcknowledgedAt?: Date
   createdAt: Date
 }
@@ -19,6 +20,7 @@ const schema = new Schema<IKGLevel2Attempt>({
   letter: { type: String, required: true, enum: ['E','F','G','H','I','J'] },
   outcome: { type: String, required: true, enum: ['correct','incorrect','unclear'] },
   feedbackText: { type: String, required: true, maxlength: 240 },
+  feedbackLanguageCode: { type: String, enum: ['en-IN', 'hi-IN', 'mr-IN'] },
   feedbackAcknowledgedAt: Date,
 }, { timestamps: { createdAt: true, updatedAt: false } })
 schema.index({ studentId: 1, submissionId: 1 }, { unique: true })

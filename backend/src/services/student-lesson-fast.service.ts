@@ -51,7 +51,7 @@ export const StudentLessonFastService = {
         .select('_id order settings').sort('order').lean()
       // Historical v2 progress stays in MongoDB, but the next-lesson
       // resolver teaches ONLY the new syllabus once the v3 lesson is ready.
-      const lessons = isClass1Demo
+      const lessons = isClass1Demo || (student.grade === 1 && unit.number === 1)
         ? preferClass1FirstDayLesson(lessonCandidates)
         : lessonCandidates
       for (const lesson of lessons) {
@@ -100,10 +100,15 @@ export const StudentLessonFastService = {
     await ProgressService.assertLevelAccessible(studentId, curriculumClass._id.toString(), level._id.toString())
     // Existing student bookmarks may point to the old v2 ObjectId. Resolve
     // only within the SAME authenticated Class 1 level and demo curriculum.
-    const firstDayCandidates = isClass1Demo
+    const publishedFirstDay = !isClass1Demo && student.grade === 1 &&
+      level.number === 1 && level.status === 'active' && level.availability === 'PUBLISHED'
+    const firstDayCandidates = isClass1Demo || publishedFirstDay
       ? await Lesson.find({
           levelId: level._id,
-          ...CLASS1_DEMO_LESSON_FILTER,
+          ...(isClass1Demo ? CLASS1_DEMO_LESSON_FILTER : {
+            status: 'active',
+            'settings.experienceId': CLASS1_DEMO_EXPERIENCE_ID,
+          }),
           'settings.lessonPlanRevision': { $in: [CLASS1_FIRST_DAY_POEM_REVISION, CLASS1_FIRST_DAY_PARALLEL_REVISION] },
         }).lean()
       : []
@@ -130,7 +135,7 @@ export const StudentLessonFastService = {
     const lessonProgress = levelProgress.lessons.find(item => item.lessonId.toString() === lesson._id.toString())
     return {
       grade: student.grade,
-      experienceId: isClass1Demo ? CLASS1_DEMO_EXPERIENCE_ID : undefined,
+      experienceId: (isClass1Demo || firstDay) ? CLASS1_DEMO_EXPERIENCE_ID : undefined,
       curriculumClass: { id: curriculumClass._id.toString(), grade: student.grade, name: curriculumClass.name, order: curriculumClass.order },
       level: { ...level,
         ...(firstDay ? firstDay.settings?.lessonPlanRevision === CLASS1_FIRST_DAY_POEM_REVISION

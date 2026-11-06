@@ -1,4 +1,5 @@
 import { gradeKGTranscription } from '../kg/kg-child-grading'
+import { classifyKGTeachingTurn } from '../teaching/kg-teaching-turn'
 import { Request, Response } from 'express'
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import { Types } from 'mongoose'
@@ -24,6 +25,8 @@ import { issueKGFeedbackReceipt, verifyKGFeedbackReceipt } from '../services/kg-
 import { KGSpeechService } from '../services/kg-speech.service'
 import { kgTeachingHint } from '../services/kg-teaching-hint'
 import { env } from '../config/env'
+import { logger } from '../utils/logger'
+import { createTurnTimer, logTurnTiming, parseSlowTurnMs, serverTimingHeader, type TurnTimer } from '../services/kg-turn-timing'
 import { isSupportedVoiceAudioMimeType } from '../schemas/voice.schema'
 import { hasExpectedAudioHeader } from '../services/voice-audio-format'
 
@@ -222,8 +225,12 @@ async function frozenKGFeedback(attempt: IKGAlphabetAttempt): Promise<string> {
   throw ApiError.internal('KG feedback is not yet ready')
 }
 
-async function kgDynamicFeedback(input: { letter: typeof LETTERS[number]['letter']; mode: 'speak' | 'touch'; outcome: 'correct' | 'incorrect' | 'unclear' | 'supported'; transcript?: string; selected?: string; noSpeech?: boolean; languageCode?: 'en-IN' | 'hi-IN' | 'mr-IN' }) {
-  const coached = await KGQwenFeedbackService.compose(input)
+// Timing is for finding the slow step. Only durations and labels are logged, never what a child said.
+const timingOptions = () => ({ enabled: process.env.KG_TURN_TIMING_LOG !== 'false', slowMs: parseSlowTurnMs(process.env.KG_SLOW_TURN_MS) })
+
+async function kgDynamicFeedback(input: { letter: typeof LETTERS[number]['letter']; mode: 'speak' | 'touch'; outcome: 'correct' | 'incorrect' | 'unclear' | 'supported'; transcript?: string; selected?: string; noSpeech?: boolean; languageCode?: 'en-IN' | 'hi-IN' | 'mr-IN' }, timer?: TurnTimer) {
+  const coached = timer ? await timer.time('feedback', () => KGQwenFeedbackService.compose(input)) : await KGQwenFeedbackService.compose(input)
+  timer?.note('feedbackSource', coached.source)
   return { feedbackText: coached.text, feedbackAudioBase64: null, feedbackVoice: 'azure' as const }
 }
 
@@ -405,11 +412,15 @@ async function previewOutcome(input: Record<string, unknown>): Promise<KGPreview
   if (!stt.available) throw ApiError.provider('Speech recognition is temporarily unavailable')
   const transcript = String(stt.transcript || '').slice(0, 240)
   const confidence = 'confidence' in stt ? stt.confidence : undefined
-  const outcome = gradeKGTranscription({
+  let outcome = gradeKGTranscription({
     transcript, letter: activity.letter,
     uncertain: 'uncertain' in stt && stt.uncertain === true,
     confidence: typeof confidence === 'number' ? confidence : undefined,
   })
+  const teaching = classifyKGTeachingTurn({ level: 1, letter: activity.letter,
+    transcript, outcome, uncertain: 'uncertain' in stt && stt.uncertain === true })
+  if (outcome === 'incorrect' && teaching.kind === 'translation_hi_mr' &&
+    !(typeof confidence === 'number' && confidence < 0.5)) outcome = 'supported'
   return { activity, outcome, transcript }
 }
 
@@ -546,6 +557,7 @@ export const KGAlphabetController = {
     // child hears versus the submitted feedback displayed on-screen.
     // Old unfinished attempts recover an immutable safe sentence after lease expiry.
     const words = await frozenKGFeedback(attempt)
+    const audioTimer = createTurnTimer()
     await sendKGAzure(res, words, {
       letter: attempt.letter as typeof LETTERS[number]['letter'],
       mode: attempt.mode,
@@ -562,6 +574,11 @@ export const KGAlphabetController = {
       })
       res.setHeader('X-KG-Feedback-Receipt', receipt)
     })
+    // sendKGAzure already answered; this only records how long the voice took and whether the cache served it.
+    const audioTiming = audioTimer.finish()
+    audioTiming.steps.tts = audioTiming.steps.total
+    audioTiming.notes.ttsSource = /desc="([a-z]+)"/.exec(String(res.getHeader?.('Server-Timing') || ''))?.[1]
+    logTurnTiming(logger, 'audio', audioTiming, { submissionId, outcome: attempt.outcome, mode: attempt.mode }, timingOptions())
   }),
   /** A refreshed lab tab must be able to replay its last graded, unplayed
    * turn without sending the child's recording to STT a second time. Only
@@ -608,6 +625,7 @@ export const KGAlphabetController = {
       teachingHint: kgTeachingHint(result.activity.letter, result.activity.mode, result.outcome), ...voice, preview: true })
   }),
   attempt: catchAsync(async (req: Request, res: Response) => {
+    const timer = createTurnTimer()
     const { student, state } = await ensureState(req)
     if (!state.introSeen) throw ApiError.conflict('Watch Miss Julie\u2019s Level 1 story to the end before starting the activities.')
     const introTicket = await assertIntroTicket(req, student._id, student.schoolId)
@@ -693,13 +711,15 @@ export const KGAlphabetController = {
         const durationMs = Number(req.body?.durationMs)
         if (!Number.isFinite(durationMs) || durationMs < 250 || durationMs > 12000) throw ApiError.badRequest('Audio must be between 0.25 and 12 seconds')
         if (!/^[A-Za-z0-9+/]+={0,2}$/.test(audioBase64) || audioBase64.length % 4 === 1) throw ApiError.badRequest('Invalid audio encoding')
-        const transcription = await KGSpeechService.transcribe({ audioBase64, mimeType, durationMs })
+        const transcription = await timer.time('stt', () => KGSpeechService.transcribe({ audioBase64, mimeType, durationMs }))
         if (!transcription.available) throw ApiError.provider('Speech recognition is temporarily unavailable')
         transcript = String(transcription.transcript || '').slice(0, 240)
         sttProvider = transcription.provider
+        timer.note('sttProvider', transcription.provider)
         const detected = 'languageCode' in transcription ? transcription.languageCode : undefined
         languageCode = detected === 'hi-IN' || detected === 'mr-IN' || detected === 'en-IN'
           ? detected : undefined
+        timer.note('language', languageCode)
         const confidence = 'confidence' in transcription ? transcription.confidence : undefined
         sttConfidence = typeof confidence === 'number' && Number.isFinite(confidence) && confidence >= 0 && confidence <= 1 ? confidence : undefined
         outcome = gradeKGTranscription({
@@ -708,6 +728,13 @@ export const KGAlphabetController = {
           confidence: sttConfidence,
         })
         if (outcome === 'unclear') recognitionReason = 'uncertain'
+        // Share the same safe translation detector as later KG lessons.
+        // Never count a home-language word as an independent English pass.
+        const shared = classifyKGTeachingTurn({ level: 1, letter: activity.letter,
+          transcript, outcome, detectedLanguage: languageCode,
+          uncertain: 'uncertain' in transcription && transcription.uncertain === true })
+        if (outcome === 'incorrect' && shared.kind === 'translation_hi_mr' &&
+          (sttConfidence === undefined || sttConfidence >= 0.5)) outcome = 'supported'
       } else {
         selected = String(req.body?.selected || '').toLowerCase().trim().slice(0, 20)
         if (!LETTERS.some((item) => item.word === selected)) throw ApiError.badRequest('Choose one of the four pictures')
@@ -726,7 +753,10 @@ export const KGAlphabetController = {
       // as English or omits its locale. Never change the grading verdict.
       // The translation is transcribed server-side, never client-provided.
       const bridgeLanguage = outcome === 'supported' && activity.mode === 'speak' && !assistedPicture
-        ? kgBilingualBridgeLanguage(transcript || '', activity.letter) : undefined
+        ? (kgBilingualBridgeLanguage(transcript || '', activity.letter) ||
+          (() => { const shared = classifyKGTeachingTurn({ level: 1, letter: activity.letter,
+            transcript, outcome, detectedLanguage: languageCode });
+            return shared.kind === 'translation_hi_mr' ? shared.language : undefined })()) : undefined
       const feedbackLanguageCode = bridgeLanguage ||
         stableKGTeachingLanguage(languageCode, recentLocales.map((prior) => prior.languageCode))
 
@@ -743,7 +773,7 @@ export const KGAlphabetController = {
 
       const latest = await KGAlphabetProgress.findOne({ studentId: student._id, schoolId: student.schoolId })
       const voice = await kgDynamicFeedback({ letter: activity.letter, mode: assistedPicture ? 'touch' : activity.mode, outcome,
-        transcript, languageCode: feedbackLanguageCode, selected, noSpeech: recognitionReason === 'silence' })
+        transcript, languageCode: feedbackLanguageCode, selected, noSpeech: recognitionReason === 'silence' }, timer)
       // Persist only the guarded teacher sentence, never audio, after the
       // speech attempt is recorded. Duplicate submissions and replay-audio
       // endpoints must use the exact same line, not regenerate Qwen text.
@@ -760,6 +790,9 @@ export const KGAlphabetController = {
       // Start voicing a fixed line now so synthesis overlaps this response; the browser's audio request finds it ready.
       KGFeedbackAudioService.warm(feedbackText, { letter: activity.letter, mode: assistedPicture ? 'touch' : activity.mode, outcome,
         noSpeech: recognitionReason === 'silence', languageCode: feedbackLanguageCode })
+      const timing = timer.finish()
+      res.setHeader('Server-Timing', serverTimingHeader(timing.steps))
+      logTurnTiming(logger, 'attempt', timing, { submissionId, outcome, mode: assistedPicture ? 'touch' : activity.mode }, timingOptions())
       res.setHeader('Cache-Control', 'no-store')
       return ok(res, { submissionId, outcome, replay, advance: outcome === 'correct' || (outcome === 'supported' && assistedPicture), transcript: transcript || '', state: { ...presentState(latest || state),
         fallbackAvailable: await canUsePictureSupport(student._id, student.schoolId, (latest || state).currentIndex) },

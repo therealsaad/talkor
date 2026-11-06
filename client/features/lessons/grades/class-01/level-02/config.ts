@@ -6,10 +6,10 @@ export const config = {
   "grade": 1,
   "level": 2,
   "gradeLabel": "Class 1",
-  "title": "My School",
+  "title": "Action Beats & Rainbow Words",
   "editorialStatus": "draft",
   "studentPlayable": false,
-  "description": "Original voice-first Balbharati activities for chapters 1.2–1.6, with English practice and optional Hindi/Marathi support. Educator sign-off pending.",
+  "description": "Original Balbharati 1.2–1.6 teaching: clap, alphabet, cat word-building, vowel sounds and colours. Thirty staff-review draft activities (including 19 exercise checkpoints), no unapproved student publication.",
   "syllabus": {
     "objectives": [
       "Listen, act and connect letters with familiar words.",
@@ -23,7 +23,7 @@ export const config = {
     ],
     "boardReviewRequired": true,
     "sourceBook": "English Balbharati Standard One (2025; 2026 reprint)",
-    "sourcePages": [2, 3, 5, 7, 8],
+    "sourcePages": [2, 3, 4, 5, 6, 7, 8, 9],
     "syllabusVerified": false
   },
   "experience": {
@@ -50,8 +50,8 @@ export const config = {
     "voiceFirst": true,
     "invisibleAdaptive": true,
     "autoResume": true,
-    "introRequired": false,
-    "introMustComplete": false,
+    "introRequired": true,
+    "introMustComplete": true,
     "speechLanguage": "en-IN",
     "beginnerHindiSupport": true,
     "spontaneousFeedbackTTS": "azure-uncached",

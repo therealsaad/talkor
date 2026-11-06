@@ -12,7 +12,9 @@ export const config = {
   "description": "My Classroom — a distinct little market adventure for KG learners.",
   "syllabus": {
     "objectives": [
-      "Recognize, hear, and speak language connected to my classroom."
+      "Recognize pictured classroom objects book, pencil, bag, chair, desk and board.",
+      "Make one polite English classroom request with Miss Julie's model.",
+      "Review the same object using a reshuffled picture pair and spoken homework."
     ],
     "skills": [
       "listening",
@@ -48,8 +50,8 @@ export const config = {
     "voiceFirst": true,
     "invisibleAdaptive": true,
     "autoResume": true,
-    "introRequired": false,
-    "introMustComplete": false,
+    "introRequired": true,
+    "introMustComplete": true,
     "speechLanguage": "en-IN",
     "beginnerHindiSupport": true,
     "spontaneousFeedbackTTS": "azure-uncached",

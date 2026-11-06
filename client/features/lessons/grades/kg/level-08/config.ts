@@ -12,7 +12,9 @@ export const config = {
   "description": "Feelings and Greetings — a distinct music meadow adventure for KG learners.",
   "syllabus": {
     "objectives": [
-      "Recognize, hear, and speak language connected to feelings and greetings."
+      "Match happy/sad words to fictional character drawings without inferring the student's mood.",
+      "Use hello, goodbye, please and thank you in a friendly fictional exchange.",
+      "Practise expressions with optional Hindi/Marathi explanation but English-only mastery."
     ],
     "skills": [
       "listening",
@@ -48,8 +50,8 @@ export const config = {
     "voiceFirst": true,
     "invisibleAdaptive": true,
     "autoResume": true,
-    "introRequired": false,
-    "introMustComplete": false,
+    "introRequired": true,
+    "introMustComplete": true,
     "speechLanguage": "en-IN",
     "beginnerHindiSupport": true,
     "spontaneousFeedbackTTS": "azure-uncached",

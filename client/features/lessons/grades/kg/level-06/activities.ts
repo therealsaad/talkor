@@ -1,4 +1,4 @@
-import type { LevelActivity, SuggestedActivity } from '../../../types'
+import { kgFutureDraftActivities, kgFutureDraftSuggestions } from '../future-level-drafts'
 
 /** Add reviewed, working exercises. Empty means NOT student-playable. */
 export const activities: LevelActivity[] = []
@@ -6,18 +6,18 @@ export const activities: LevelActivity[] = []
 /** Editorial ideas only; not exposed to students or grading. */
 export const suggestedActivities: SuggestedActivity[] = [
   {
-    "label": "Listen and explore: Vowel Sounds",
+    "label": "Listen and explore: Family Words",
     "mode": "tap-picture",
-    "educatorNote": "Teacher explains vowels as open speech sounds."
+    "educatorNote": "Teacher defines visual scene and sound cues here."
   },
   {
-    "label": "Practice the vowel sounds",
+    "label": "Speak about Family Words",
     "mode": "repeat-after-julie",
-    "educatorNote": "Learner listens to and repeats isolated vowel sounds."
+    "educatorNote": "Teacher supplies sample answer, corrective hints and language support."
   },
   {
-    "label": "Show what you know about vowel sounds",
+    "label": "Show what you know about Family Words",
     "mode": "listen-and-find",
-    "educatorNote": "Review short vowel sound practice."
+    "educatorNote": "Teacher sets scoring rubric, touch choices and mastery threshold."
   }
 ]

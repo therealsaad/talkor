@@ -1,3 +1,4 @@
+
 import type { LevelDesignConfig } from '../../../types'
 
 /** Distinct, editable theme and pedagogy for g00-l06. Authoring is NOT publishing. */
@@ -6,18 +7,20 @@ export const config = {
   "grade": 0,
   "level": 6,
   "gradeLabel": "Kindergarten",
-  "title": "Vowel Sounds",
+  "title": "Family Words",
   "editorialStatus": "draft",
   "studentPlayable": false,
-  "description": "Learn what vowel sounds are, then listen to and practice A, E, I, O, and U.",
+  "description": "Family Words — a distinct rainbow valley adventure for KG learners.",
   "syllabus": {
     "objectives": [
-      "Recognize the five vowel letters and practice their short sounds."
+      "Identify inclusive fictional family pictures using English words without asking for personal family details.",
+      "Listen to Miss Julie, attempt one word and practise a simple friendly greeting.",
+      "Review previous KG words and finish with short offline spoken homework."
     ],
     "skills": [
       "listening",
       "speaking",
-      "phonemic-awareness"
+      "picture-recognition"
     ],
     "boardReviewRequired": true,
     "sourceBook": null,
@@ -25,7 +28,7 @@ export const config = {
     "syllabusVerified": false
   },
   "experience": {
-    "themeId": "kg-06-vowel-sounds",
+    "themeId": "kg-06-family-words",
     "world": "Rainbow Valley",
     "sceneDescription": "sky bridges, color ribbons and clouds",
     "layout": "big-board",
@@ -48,8 +51,8 @@ export const config = {
     "voiceFirst": true,
     "invisibleAdaptive": true,
     "autoResume": true,
-    "introRequired": false,
-    "introMustComplete": false,
+    "introRequired": true,
+    "introMustComplete": true,
     "speechLanguage": "en-IN",
     "beginnerHindiSupport": true,
     "spontaneousFeedbackTTS": "azure-uncached",
