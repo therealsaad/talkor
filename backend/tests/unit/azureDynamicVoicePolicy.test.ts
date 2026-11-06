@@ -13,19 +13,20 @@ it('speaks new Class 1+ feedback without persisting individual replies in S3/Atl
   process.env.AZURE_SPEECH_KEY = 'test-only-key'
   const cacheRead = jest.spyOn(AudioCacheService, 'get')
   const cacheWrite = jest.spyOn(AudioCacheService, 'put')
+  const mockAudio = Buffer.alloc(300, 0x41)
   const fetchMock = jest.spyOn(globalThis, 'fetch').mockImplementation(async () =>
-    new Response(Buffer.alloc(256, 73), { status: 200 }),
+    new Response(mockAudio, { status: 200 }),
   )
 
   const provider = new AzureVoiceProvider()
   const streamed = await provider.synthesizeStream('Nice effort, beta ji! Say apple.')
   expect(streamed.provider).toBe('azure-neerja')
   expect(streamed.metadata?.['x-talkora-cache']).toBe('BYPASS')
-  expect(Buffer.from(await new Response(streamed.body).arrayBuffer())).toEqual(Buffer.alloc(256, 73))
+  expect(Buffer.from(await new Response(streamed.body).arrayBuffer())).toEqual(mockAudio)
 
   const generated = await provider.synthesize('Try this sound once more!')
   expect(generated.available).toBe(true)
-  expect(generated.audioBase64).toBe(Buffer.alloc(256, 73).toString('base64'))
+  expect(generated.audioBase64).toBe(mockAudio.toString('base64'))
   expect(fetchMock).toHaveBeenCalledTimes(2)
   expect(cacheRead).not.toHaveBeenCalled()
   expect(cacheWrite).not.toHaveBeenCalled()

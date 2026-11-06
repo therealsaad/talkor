@@ -7,19 +7,37 @@ import { logger } from '../../utils/logger'
 
 const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
 
-export function detectLearnerLanguage(message: string): 'HINDI' | 'URDU' | 'ROMANIZED_HINDUSTANI' | 'ENGLISH_OR_OTHER' {
-  if (/[\u0900-\u097F]/.test(message)) return 'HINDI'
-  if (/[\u0600-\u06FF]/.test(message)) return 'URDU'
-  if (/\b(kaise|kaisi|aap|tum|kya|hai|hain|ho|mera|mujhe|achha|shukriya)\b/i.test(message)) return 'ROMANIZED_HINDUSTANI'
+export type LearnerLanguageHint =
+  | 'HINDI' | 'MARATHI' | 'URDU' | 'ROMANIZED_HINDUSTANI'
+  | 'ROMANIZED_MARATHI' | 'DEVANAGARI_UNDETERMINED' | 'ENGLISH_OR_OTHER'
+
+/** Advisory transcript hint: Hindi and Marathi share Devanagari. Do not
+ * treat writing system alone as a reliable learner-language detection. */
+export function detectLearnerLanguage(message: string): LearnerLanguageHint {
+  const text = message.slice(0, 240).normalize('NFKC')
+  if (/[\u0600-\u06FF]/u.test(text)) return 'URDU'
+  if (/[\u0900-\u097F]/u.test(text)) {
+    const terms = text.match(/[\u0900-\u097F]+/gu) || []
+    const marathi = new Set(['मला', 'काय', 'शाळा', 'मांजर', 'मराठी', 'आहे', 'पुन्हा', 'छान', 'समजत', 'चेंडू', 'म्हणा'])
+    const hindi = new Set(['मुझे', 'कैसे', 'हिंदी', 'बिल्ली', 'नहीं', 'क्यों', 'क्या', 'हैं', 'हूँ'])
+    const hasMarathi = terms.some((term) => marathi.has(term))
+    const hasHindi = terms.some((term) => hindi.has(term))
+    if (hasMarathi && !hasHindi) return 'MARATHI'
+    if (hasHindi && !hasMarathi) return 'HINDI'
+    return 'DEVANAGARI_UNDETERMINED'
+  }
+  if (/\b(mala|samjat|kaay|aahe|ahe|tumhi|chendu|manjar|shala|marathi)\b/i.test(text)) return 'ROMANIZED_MARATHI'
+  if (/\b(kaise|kaisi|aap|tum|kya|hai|hain|ho|mera|mujhe|achha|shukriya)\b/i.test(text)) return 'ROMANIZED_HINDUSTANI'
   return 'ENGLISH_OR_OTHER'
 }
 
 export function buildSystemPrompt(): string {
   return [
     'You are Miss Julie, a warm English conversation coach for a school child.',
-    'You understand Hindi, Urdu, Romanized Hindi/Urdu, and English. The student may switch languages in one sentence. Read what they mean before correcting them.',
-    'Speak in brief, age-appropriate English. For KG–Class 2 or beginning speakers of any age, use simple English and occasional Hindi help if the child asks; never shame home-language use. Do not assume class means speaking ability.',
-    'When the child says a Hindi or Urdu phrase such as "kaise ho", briefly teach its English equivalent: "In English, we say: How are you?" Then answer naturally and ask one lesson-related question.',
+    'You understand English, Hindi, Marathi, Urdu and Romanized home-language speech, including mixed-language responses. Read what the child means before correcting them.',
+    'Speak in brief, age-appropriate English. For KG–Class 2 or beginners, add short Hindi or Marathi explanations when needed, but always model the English lesson target. Never shame home-language use or assume grade equals speaking ability.',
+    'When a child says a Hindi, Marathi or Urdu phrase such as "kaise ho", briefly teach its English equivalent: "In English, we say: How are you?" Answer naturally and ask one lesson-related question.',
+    'Follow explicit support-language requests first, then the authenticated preferredExplanationLanguage hint when supplied. A DEVANAGARI_UNDETERMINED transcript is not proof of Hindi or Marathi; do not guess a language from its script.',
     'When the child makes an English grammar mistake, give one short corrected English sentence and a kind explanation. Do not invent a mistake when the answer is correct.',
     'Keep message plus followUpQuestion ideally under 180 characters for responsive speech. Preserve the meaning of the child response.',
     'Read the recent conversation. The student just answered the most recent Julie question. Respond to what the student actually said.',
@@ -31,7 +49,7 @@ export function buildSystemPrompt(): string {
   ].join(' ')
 }
 
-function buildUserPrompt(context: MissJulieContext): string {
+export function buildUserPrompt(context: MissJulieContext): string {
   const unitGuidance = unitTeachingGuidance(context)
   return JSON.stringify({
     student: context.studentName,
@@ -59,6 +77,7 @@ function buildUserPrompt(context: MissJulieContext): string {
     interactionContext: context.promptContext,
     studentMessage: context.studentMessage,
     studentLanguageHint: detectLearnerLanguage(context.studentMessage),
+    preferredExplanationLanguage: context.preferredExplanationLanguage ?? null,
   })
 }
 

@@ -1,5 +1,6 @@
 import { apiClient, apiClientBlob, getStoredToken } from '@/lib/api-client'
 import { kgRequest } from './kg-request'
+import { lessonTurnTelemetry, setTelemetrySession } from '@/lib/lesson-turn-telemetry'
 import { clipKey, createDeviceAudioCache, shouldSkipBackgroundDownload } from '@/lib/device-audio-cache'
 
 export type KGOutcome = 'correct' | 'incorrect' | 'unclear' | 'supported'
@@ -40,7 +41,10 @@ export interface KGAttemptResponse {
   submissionId?: string
   feedbackVoice?: 'dynamic_tts' | 'curriculum_static' | 'azure' | 'unavailable'
 }
-export type KGPreparedAttempt = { body: string }
+export type KGPreparedAttempt = { body: string; submissionId?: string }
+
+// Telemetry compares logins through a fingerprint so a new student never inherits the last student's timings.
+setTelemetrySession(() => getStoredToken())
 
 // Fixed lesson clips are kept on the device between visits. Learned from the state the level loads; see rememberManifest.
 const deviceAudio = createDeviceAudioCache(() => (typeof caches === 'undefined' ? undefined : caches))
@@ -160,18 +164,19 @@ async function audioUrl(id: string, path?: string, signal?: AbortSignal, kind?: 
   return loadAudioUrl(audioPath(id, path), signal, kind)
 }
 
-async function playAudioUrl(url: string, audio: HTMLAudioElement, signal?: AbortSignal): Promise<void> {
+async function playAudioUrl(url: string, audio: HTMLAudioElement, signal?: AbortSignal, onPlaying?: () => void): Promise<void> {
   signal?.throwIfAborted()
   audio.pause()
   audio.src = url
   audio.currentTime = 0
   await new Promise<void>((resolve, reject) => {
-    const clean = () => { clearTimeout(clock); audio.onended = null; audio.onerror = null; signal?.removeEventListener('abort', abort) }
+    const clean = () => { clearTimeout(clock); audio.onended = null; audio.onerror = null; audio.onplaying = null; signal?.removeEventListener('abort', abort) }
     const fail = (error: unknown) => { clean(); audio.pause(); reject(error) }
     const abort = () => fail(signal?.reason || new DOMException('Playback cancelled', 'AbortError'))
     const clock = window.setTimeout(() => fail(new Error('Miss Julie audio timed out')), 35000)
     audio.onended = () => { clean(); resolve() }
     audio.onerror = () => fail(new Error('Miss Julie audio could not play'))
+    if (onPlaying) audio.onplaying = () => { audio.onplaying = null; onPlaying() }
     signal?.addEventListener('abort', abort, { once: true })
     void audio.play().catch(fail)
   })
@@ -278,11 +283,13 @@ export const kgAlphabetService = {
         reader.readAsDataURL(input.audio!)
       })
     }
-    return { body: JSON.stringify({
+    const submissionId = crypto.randomUUID().replace(/-/g, '')
+    lessonTurnTelemetry.bind(submissionId)
+    return { submissionId, body: JSON.stringify({
         activityId: input.activityId, replay: input.replay, selected: input.selected,
         audioBase64, mimeType: input.audio?.type, durationMs: input.durationMs, timeSpentMs: input.timeSpentMs,
         noSpeech: input.noSpeech, assistedPicture: input.assistedPicture,
-        submissionId: crypto.randomUUID().replace(/-/g, ''),
+        submissionId,
       }) }
   },
   async playAttemptFeedback(submissionId: string, audio: HTMLAudioElement, signal?: AbortSignal) {
@@ -292,12 +299,15 @@ export const kgAlphabetService = {
     const ownerTicket = playbackId
     completedFeedbackReceipts.delete(submissionId)
     let receipt = ''
+    lessonTurnTelemetry.markFor(submissionId, 'audioRequestStart')
     const url = await loadAudioUrl(
       `/kg-alphabet/attempt/${encodeURIComponent(submissionId)}/feedback-audio`,
       signal, 'dynamic_tts', headers, (value) => { receipt = value },
     )
+    lessonTurnTelemetry.markFor(submissionId, 'audioDownloaded')
     if (!receipt) throw new Error('Miss Julie audio receipt missing; please replay the feedback.')
-    await playAudioUrl(url, audio, signal)
+    await playAudioUrl(url, audio, signal, () => lessonTurnTelemetry.markFor(submissionId, 'audioPlaying'))
+    lessonTurnTelemetry.markFor(submissionId, 'audioEnded')
     if (!ownerToken || !ownerTicket || getStoredToken() !== ownerToken || playbackId !== ownerTicket) {
       throw new Error('Student session changed during playback. Restart Miss Julie.')
     }
@@ -312,14 +322,18 @@ export const kgAlphabetService = {
     return apiClient<{ state: KGAlphabetState }>(
       `/kg-alphabet/attempt/${encodeURIComponent(submissionId)}/feedback-played`,
       { method: 'POST', signal, headers, body: JSON.stringify({ feedbackReceipt: saved.receipt }) },
-    )
+    ).then((result) => { lessonTurnTelemetry.markFor(submissionId, 'ackDone'); return result })
   },
   submitPrepared(prepared: KGPreparedAttempt, signal?: AbortSignal): Promise<KGAttemptResponse> {
+    if (prepared.submissionId) lessonTurnTelemetry.markFor(prepared.submissionId, 'requestStart')
     return kgRequest((requestSignal) => apiClient<KGAttemptResponse>('/kg-alphabet/attempt', {
       method: 'POST', body: prepared.body, signal: requestSignal,
 
       headers: introTicketHeaders(),
-    }), signal, { retries: 1, timeoutMs: 65000 })
+    }), signal, { retries: 1, timeoutMs: 65000 }).then((response) => {
+      if (prepared.submissionId) lessonTurnTelemetry.markFor(prepared.submissionId, 'apiResponse')
+      return response
+    })
   },
   async submit(input: { activityId: string; replay: boolean; selected?: string; audio?: Blob; durationMs?: number; timeSpentMs?: number }): Promise<KGAttemptResponse> {
     return this.submitPrepared(await this.prepare(input))

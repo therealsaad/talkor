@@ -139,7 +139,9 @@ export function classifyKGTeachingTurn(input: {
 function fallbackText(input: KGTeachingClassification, letter: string): string {
   const { kind, language, word } = input
   const target = word?.targetEn
-  const letterModel = 'Say ' + letter.toUpperCase() + '.'
+  // KG1 teaches an English PICTURE WORD; KG2–5 teach letter names.
+  const letterModel = word?.level === 1 && target
+    ? 'Say ' + target + '.' : 'Say ' + letter.toUpperCase() + '.'
   const englishModel = target ? ' Say ' + target + '. ' : ' '
   if (kind === 'correct_letter' || (kind === 'correct_english' && input.word?.level === 1)) {
     return language === 'hi-IN' ? 'शाबाश! बहुत अच्छा!' :
@@ -159,16 +161,22 @@ function fallbackText(input: KGTeachingClassification, letter: string): string {
   }
   if (language === 'hi-IN') {
     if (kind === 'silence_or_noise') return 'मैं सुन रही हूँ। आराम से बोलो। ' + letterModel
-    if (kind === 'question_or_offtopic') return 'अच्छा सवाल! हम अभी अक्षर ' + letter.toUpperCase() + ' सीख रहे हैं। ' + letterModel
+    if (kind === 'question_or_offtopic') return word?.level === 1 && target
+      ? 'अच्छा सवाल! अभी हम अंग्रेज़ी में ' + target + ' बोलना सीख रहे हैं। ' + letterModel
+      : 'अच्छा सवाल! हम अभी अक्षर ' + letter.toUpperCase() + ' सीख रहे हैं। ' + letterModel
     return 'अच्छी कोशिश! मेरी बात सुनो। ' + letterModel
   }
   if (language === 'mr-IN') {
     if (kind === 'silence_or_noise') return 'मी ऐकते आहे। हळू बोल। ' + letterModel
-    if (kind === 'question_or_offtopic') return 'छान प्रश्न! आपण आता अक्षर ' + letter.toUpperCase() + ' शिकतोय। ' + letterModel
+    if (kind === 'question_or_offtopic') return word?.level === 1 && target
+      ? 'छान प्रश्न! आपण आता इंग्रजीत ' + target + ' म्हणायला शिकतोय। ' + letterModel
+      : 'छान प्रश्न! आपण आता अक्षर ' + letter.toUpperCase() + ' शिकतोय। ' + letterModel
     return 'छान प्रयत्न! माझ्यासोबत म्हण। ' + letterModel
   }
   if (kind === 'silence_or_noise') return 'I am listening! Take your time. ' + letterModel
-  if (kind === 'question_or_offtopic') return 'Good question! Let us learn this letter first. ' + letterModel
+  if (kind === 'question_or_offtopic') return word?.level === 1 && target
+    ? 'Good question! We are learning the English word ' + target + '. ' + letterModel
+    : 'Good question! Let us learn this letter first. ' + letterModel
   return 'Good try! Listen once more. ' + letterModel
 }
 
@@ -181,6 +189,8 @@ async function boundedQuestion(input: KGTeachingClassification, letter: string, 
   if (env.isProd && key.length < 32) return null
   const word = input.word?.targetEn
   const endpoint = (process.env.TALKORA_KG1_AI_URL || 'http://127.0.0.1:8002').replace(/\/$/, '') + '/v1/brain/respond'
+  const lessonTarget = input.word?.level === 1 && word
+    ? 'the English word ' + word : 'the letter ' + letter
   try {
     const res = await fetch(endpoint, {
       method: 'POST',
@@ -189,8 +199,8 @@ async function boundedQuestion(input: KGTeachingClassification, letter: string, 
       body: JSON.stringify({
         grade: 0, levelId: 'g00-l' + String(input.word?.level || 2).padStart(2, '0'),
         studentName: 'Learner', activityTitle: 'Letter ' + letter,
-        currentQuestion: 'Say the letter ' + letter, allowedVocabulary: [letter, ...(word ? [word] : [])],
-        learningObjectives: ['Briefly answer the question, then model English letter ' + letter],
+        currentQuestion: 'Say ' + lessonTarget, allowedVocabulary: [letter, ...(word ? [word] : [])],
+        learningObjectives: ['Briefly answer the question, then model ' + lessonTarget],
         preferredExplanationLanguage: input.language === 'hi-IN' ? 'Hindi' :
           input.language === 'mr-IN' ? 'Marathi' : 'English',
         recentMistakes: [], conversationHistory: [], waitingForRetry: true,
@@ -203,7 +213,9 @@ async function boundedQuestion(input: KGTeachingClassification, letter: string, 
       .join(' ').replace(/\s+/g, ' ').trim()
     if (reply.length < 12 || reply.length > 180 || /[<>\[\]{}]|https?:|www\.|password|phone|address|secret/i.test(reply)) return null
     if (/\b(perfect|correct answer|you got it|exactly right)\b/i.test(reply)) return null
-    if (!new RegExp('\\b' + letter + '\\b', 'i').test(reply)) return null
+    // In KG1 insist on an English word model; a bare letter is not the goal.
+    const required = input.word?.level === 1 && word ? word : letter
+    if (!new RegExp('\\b' + required + '\\b', 'i').test(reply)) return null
     if (input.language !== 'en-IN' && !/[\u0900-\u097f]/.test(reply)) return null
     return reply
   } catch { return null }
