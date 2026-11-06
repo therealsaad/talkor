@@ -1,5 +1,9 @@
 import { apiClient, apiClientBlob, getStoredToken } from '@/lib/api-client'
 import type { Level2Letter } from '../level2-flow'
+import { lessonTurnTelemetry, setTelemetrySession } from '@/lib/lesson-turn-telemetry'
+
+// Telemetry compares logins through a fingerprint so a new student never inherits the last student's timings.
+setTelemetrySession(() => getStoredToken())
 
 export interface KGLevel2State {
   version: string
@@ -40,7 +44,7 @@ function clearIntro() {
   introOwner = null
   heardReceipts.clear()
 }
-function playBlob(blob: Blob, audio: HTMLAudioElement, signal?: AbortSignal): Promise<void> {
+function playBlob(blob: Blob, audio: HTMLAudioElement, signal?: AbortSignal, onPlaying?: () => void): Promise<void> {
   signal?.throwIfAborted()
   const url = URL.createObjectURL(blob)
   audio.pause()
@@ -51,6 +55,7 @@ function playBlob(blob: Blob, audio: HTMLAudioElement, signal?: AbortSignal): Pr
       window.clearTimeout(timer)
       audio.onended = null
       audio.onerror = null
+      audio.onplaying = null
       signal?.removeEventListener('abort', abort)
       URL.revokeObjectURL(url)
     }
@@ -59,6 +64,7 @@ function playBlob(blob: Blob, audio: HTMLAudioElement, signal?: AbortSignal): Pr
     const timer = window.setTimeout(() => fail(Error('Miss Julie audio timed out')), 35_000)
     audio.onended = () => { clean(); resolve() }
     audio.onerror = () => fail(Error('Miss Julie audio could not play'))
+    if (onPlaying) audio.onplaying = () => { audio.onplaying = null; onPlaying() }
     signal?.addEventListener('abort', abort, { once: true })
     void audio.play().catch(fail)
   })
@@ -115,6 +121,8 @@ export const kgLevel2StudentService = {
       })
     }
     input.signal?.throwIfAborted()
+    lessonTurnTelemetry.bind(input.submissionId)
+    lessonTurnTelemetry.markFor(input.submissionId, 'requestStart')
     return apiClient<KGLevel2AttemptResult>('/kg-level2/attempt', {
       method: 'POST', headers: ticketHeader(), signal: input.signal,
       body: JSON.stringify({
@@ -122,19 +130,22 @@ export const kgLevel2StudentService = {
         durationMs: input.durationMs, noSpeech: input.noSpeech,
         audioBase64, mimeType: input.audio?.type,
       }),
-    })
+    }).then((result) => { lessonTurnTelemetry.markFor(input.submissionId, 'apiResponse'); return result })
   },
 
   async playFeedback(submissionId: string, audio: HTMLAudioElement, signal?: AbortSignal): Promise<void> {
     heardReceipts.delete(submissionId)
     let receipt = ''
+    lessonTurnTelemetry.markFor(submissionId, 'audioRequestStart')
     const blob = await apiClientBlob(
       '/kg-level2/attempt/' + encodeURIComponent(submissionId) + '/feedback-audio',
       { headers: ticketHeader(), signal, cache: 'no-store' },
       (headers) => { receipt = headers.get('X-KG-Feedback-Receipt') || '' },
     )
     if (!/^v1\.[0-9]+\.[a-f0-9]{32}\.[a-f0-9]{64}$/.test(receipt)) throw Error('Audio playback receipt missing')
-    await playBlob(blob, audio, signal)
+    lessonTurnTelemetry.markFor(submissionId, 'audioDownloaded')
+    await playBlob(blob, audio, signal, () => lessonTurnTelemetry.markFor(submissionId, 'audioPlaying'))
+    lessonTurnTelemetry.markFor(submissionId, 'audioEnded')
     // No ACK can be sent before HTMLAudioElement.onended.
     ticketHeader()
     heardReceipts.set(submissionId, receipt)
@@ -148,6 +159,7 @@ export const kgLevel2StudentService = {
       { method: 'POST', headers: ticketHeader(), signal, body: JSON.stringify({ feedbackReceipt: receipt }) },
     )
     heardReceipts.delete(submissionId)
+    lessonTurnTelemetry.markFor(submissionId, 'ackDone')
     return fresh
   },
 
