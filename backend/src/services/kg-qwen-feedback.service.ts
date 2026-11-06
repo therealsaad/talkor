@@ -1,5 +1,6 @@
 import { env } from '../config/env'
 import { safeKGFeedback, type KGFeedbackInput } from './kg-feedback.service'
+import { classifyKGTeachingTurn, composeKGTeachingTurn } from '../teaching/kg-teaching-turn'
 
 /** The backend grades KG speech. Qwen may choose *wording*, never the verdict,
  * the next activity, a child's level, or pronunciation mastery. */
@@ -13,6 +14,21 @@ export const KGQwenFeedbackService = {
     // taps are deterministic. Qwen is reserved for genuine unexpected speech.
     if (input.outcome !== 'incorrect' || input.mode !== 'speak' ||
         input.noSpeech || !input.transcript?.trim()) return { text: guided, source: 'guided' }
+    // Unexpected child questions use the SAME KG teaching policy as Levels 2–5.
+    // Keep normal KG1 answers, known translations, silence and brief wrong words
+    // on their existing fast/reviewed path; the shared builder never grades XP.
+    const classification = classifyKGTeachingTurn({
+      level: 1, letter: input.letter, transcript: input.transcript,
+      outcome: input.outcome, detectedLanguage: input.languageCode,
+    })
+    if (classification.kind === 'question_or_offtopic') {
+      const turn = await composeKGTeachingTurn({
+        level: 1, letter: input.letter, transcript: input.transcript,
+        outcome: input.outcome, detectedLanguage: input.languageCode,
+        existingFeedbackText: guided,
+      })
+      return { text: turn.feedbackText, source: turn.source }
+    }
     const key = env.talkoraServiceKey.trim()
     if (env.isProd && key.length < 32) return { text: guided, source: 'guided' }
     try {
