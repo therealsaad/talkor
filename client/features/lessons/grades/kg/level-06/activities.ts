@@ -1,4 +1,18 @@
-import { kgFutureDraftActivities, kgFutureDraftSuggestions } from '../future-level-drafts'
+
+
+type LevelActivity = {
+  label: string
+  mode: string
+  educatorNote?: string
+  [key: string]: unknown
+}
+
+type SuggestedActivity = {
+  label: string
+  mode: string
+  educatorNote?: string
+  [key: string]: unknown
+}
 
 /** Add reviewed, working exercises. Empty means NOT student-playable. */
 export const activities: LevelActivity[] = []
