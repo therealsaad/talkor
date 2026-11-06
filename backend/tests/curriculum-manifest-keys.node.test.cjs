@@ -48,4 +48,5 @@ test('the level design manifest has no repeated keys, so no title is silently ov
 test('Class 1 Level 1 keeps the First Day title', () => {
   const level = JSON.parse(fs.readFileSync(manifest, 'utf8')).find((entry) => entry.id === 'g01-l01')
   assert.equal(level.title, 'My First Day — School Adventure')
+  assert.equal(level.roadmapTitle, 'My First Day — School Adventure', 'matches the authoritative roadmap.ts title')
 })
