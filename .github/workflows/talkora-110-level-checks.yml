@@ -82,6 +82,9 @@ jobs:
       - name: Verify lesson latency telemetry is opt-in, anonymous and isolated per student
         run: node --test tests/ui/lesson-turn-telemetry.test.mjs
         working-directory: client
+      - name: Verify KG2 to KG5 latency telemetry measures each stage and keeps students apart
+        run: node --test tests/ui/lesson-turn-telemetry-kg2-5.test.mjs
+        working-directory: client
       - name: Verify the device audio cache only keeps fixed lesson clips
         run: node --test tests/ui/device-audio-cache.test.mjs
         working-directory: client
