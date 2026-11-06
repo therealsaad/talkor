@@ -20,7 +20,7 @@ afterEach(() => {
 it('uses the global Sarvam provider for KG without ten grade-specific settings', async () => {
   delete process.env.KG_ALPHABET_STT_PROVIDER
   env.speechProvider = 'sarvam'
-  const transcribe = jest.spyOn(SarvamSpeechProvider.prototype, 'transcribe').mockResolvedValue({ transcript: 'apple', available: true, provider: 'sarvam', model: 'saaras:v4', latencyMs: 1 })
+  const transcribe = jest.spyOn(SarvamSpeechProvider.prototype, 'transcribe').mockResolvedValue({ transcript: 'apple', available: true, provider: 'sarvam', model: 'saaras:v4', latencyMs: 1, languageCode: undefined })
   await KGSpeechService.transcribe({ audioBase64: 'dGVzdA==', mimeType: 'audio/webm', durationMs: 1200 })
   expect(transcribe).toHaveBeenCalledWith({ audioBase64: 'dGVzdA==', mimeType: 'audio/webm', durationMs: 1200 })
 })
