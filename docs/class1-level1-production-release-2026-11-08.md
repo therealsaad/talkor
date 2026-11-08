@@ -61,6 +61,8 @@ pnpm exec tsx -r dotenv/config src/scripts/publish-class1-level1.ts --verify-med
 
 Require no blockers, an optimized reviewed video and 10/10 approved S3 WAVs. Independently verify deployed Node/Mongo, Sarvam code-mix STT, the authenticated Qwen endpoint, Azure voice, S3 read access, and TALKORA_CLASS1_STATIC_AUDIO_APPROVED=true. A healthy local service does not prove deployed reachability.
 
+The Python AI process must run the current **talkora-ai-starter/server.main** package (not the older qwen-service prototype). On both Node and Python, enable TALKORA_CLASS1_QWEN_PILOT=true. Set TALKORA_CLASS1_AI_URL on Node to an actually reachable protected Python 8002 endpoint, and configure the **same**, randomly generated TALKORA_SERVICE_KEY (32+ characters) on both services. Keep Ollama private/local to Python, load qwen3:4b-instruct, and run the existing synthetic backend check with pnpm exec tsx -r dotenv/config src/scripts/check-class1-ai-bridge.ts. A 200 /health response alone is insufficient evidence of a working authenticated student teaching turn.
+
 A responsible school reviewer must approve the actual video, all narration, full textbook exercise coverage, accent-friendly Hindi/Marathi help, and a supervised end-to-end physical microphone/speaker test with real feedback playback and saved progress. Do not fake this review.
 
 Only after that independent signoff and a verified MongoDB backup:
