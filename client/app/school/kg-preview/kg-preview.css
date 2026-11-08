@@ -83,13 +83,22 @@
   text-decoration: none;
 }
 
-a.kg-preview-garden__level {
+a.kg-preview-garden__level,
+button.kg-preview-garden__level--button {
   cursor: pointer;
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
+button.kg-preview-garden__level--button {
+  appearance: none;
+  font: inherit;
+  text-align: left;
+}
+
 a.kg-preview-garden__level:hover,
-a.kg-preview-garden__level:focus-visible {
+a.kg-preview-garden__level:focus-visible,
+button.kg-preview-garden__level--button:hover,
+button.kg-preview-garden__level--button:focus-visible {
   transform: translateY(-3px);
   outline: 4px solid #ffe078;
   outline-offset: 3px;
@@ -179,5 +188,5 @@ a.kg-preview-garden__level:focus-visible {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  a.kg-preview-garden__level { transition: none; }
+  a.kg-preview-garden__level, button.kg-preview-garden__level--button { transition: none; }
 }

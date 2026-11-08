@@ -1,3 +1,4 @@
+
 import type { LevelDesignConfig } from '../../../types'
 
 /** Distinct, editable theme and pedagogy for g00-l06. Authoring is NOT publishing. */

@@ -982,4 +982,3 @@ The existing repo remains authoritative for **React/Next.js UI, Express APIs, cu
 **Next concrete decision:** advance from mock-tested KG Level 1 to a **consented, teacher-supervised, real student classroom acceptance session**; fix any audio/auth/recovery failures it exposes before treating the pilot as a release. In parallel, complete Class 1 educator-approved content and versioned Qwen integration on separate, guarded branches. Broader level generation and scaling follow that evidence, not the other way around.
 
 ---
-
