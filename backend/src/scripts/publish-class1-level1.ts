@@ -1,9 +1,10 @@
 /**
  * Publish the existing Class 1 "My First Day" ten-scene lesson, not a map flag.
  *
- * Read-only preflight:
+ * Read-only database and media preflight:
  *   cd backend
- *   pnpm exec tsx -r dotenv/config src/scripts/publish-class1-level1.ts
+ *   pnpm exec tsx -r dotenv/config src/scripts/publish-class1-level1.ts --verify-media
+ * No credentials, student data or audio are printed by either mode.
  *
  * Explicit operator-controlled activation (after actual teacher/device signoff):
  *   TALKORA_CLASS1_L01_RELEASE_APPROVED=YES
@@ -24,7 +25,7 @@ import { Level } from '../models/Level'
 import { Lesson } from '../models/Lesson'
 import { Activity } from '../models/Activity'
 import { Progress } from '../models/Progress'
-import { S3Service } from '../services/S3Service'
+import { inspectClass1ReleaseMedia } from '../services/class1-release-media'
 import { CLASS1_DEMO_VERSION, CLASS1_FIRST_DAY_PARALLEL_REVISION } from '../services/class1-demo-access'
 import {
   class1Level1ReleaseBlockers, class1ReleaseApprovalBlockers, requiredClass1AudioKeys,
@@ -33,8 +34,10 @@ import {
 
 async function main() {
   const args = process.argv.slice(2)
-  if (args.some(arg => arg !== '--apply') || args.length > 1) throw Error('Only --apply or no arguments supported')
+  if (args.some(arg => !['--apply', '--verify-media'].includes(arg)) || args.length > 1)
+    throw Error('Use --verify-media for read-only checks, --apply for approved publication, or no arguments')
   const apply = args.includes('--apply')
+  const verifyMedia = args.includes('--verify-media')
   await mongoose.connect(env.mongodbUri, { autoIndex: false, serverSelectionTimeoutMS: 10000 })
   try {
     const classroom = await CurriculumClass.findOne({ grade: 1 }).lean()
@@ -44,10 +47,13 @@ async function main() {
     }).lean()
     if (!level) throw Error('No matching canonical g01-l01 level; nothing published')
     const lessons = await Lesson.find({ levelId: level._id }).lean()
-    const selected = lessons.find(lesson =>
+    const matches = lessons.filter(lesson =>
       lesson.settings?.lessonPlanRevision === CLASS1_FIRST_DAY_PARALLEL_REVISION &&
       lesson.settings?.experienceId === 'g01-l01')
-    if (!selected) throw Error('Reviewed ten-scene First Day v3 not installed; nothing published')
+    if (matches.length !== 1)
+      throw Error(matches.length ? 'Duplicate First Day v3 lessons: review required' :
+        'Reviewed ten-scene First Day v3 not installed; nothing published')
+    const selected = matches[0]
     const activities = await Activity.find({ lessonId: selected._id }).sort({ order: 1 }).lean()
     const otherActiveLessons = lessons.filter(item => String(item._id) !== String(selected._id) &&
       item.status === 'active').length
@@ -96,33 +102,27 @@ async function main() {
     })
     const introUrl = String(selected.settings?.introVideoUrl || '')
     if (!/^https:\/\//.test(introUrl)) blockers.push('REVIEWED_HTTPS_INTRO_NOT_ATTACHED_TO_LESSON')
+    // --verify-media is safe against the selected database; it never writes.
+    // --apply always runs these checks, even when a previous dry-run looked green.
+    const media = verifyMedia || apply ? await inspectClass1ReleaseMedia(introUrl) : null
+    const releaseBlockers = [...blockers, ...(media?.blockers || [])]
     console.log(JSON.stringify({
-      level: 'g01-l01', action: alreadyPublished ? 'ALREADY_PUBLISHED' : apply ? 'APPLY_REQUEST' : 'READ_ONLY_PREFLIGHT',
+      level: 'g01-l01', action: alreadyPublished ? 'ALREADY_PUBLISHED'
+        : apply ? 'APPLY_REQUEST' : verifyMedia ? 'READ_ONLY_MEDIA_PREFLIGHT' : 'READ_ONLY_PREFLIGHT',
       current: { classroom: classroom.status, level: level.status, availability: level.availability,
         lesson: selected.status, activeScenes: activities.filter(item => item.status === 'active').length,
         draftScenes: activities.filter(item => item.status === 'draft').length },
       selectedRevision: CLASS1_FIRST_DAY_PARALLEL_REVISION,
       expectedScenes: 10, otherActiveLessons, savedCompletedLevels,
-      blockers, pendingApprovals: approvalBlockers,
+      media: media ? { checked: true, introBytes: media.introBytes,
+        checkedAudioCount: media.checkedAudioCount, requiredAudioCount: media.requiredAudioCount }
+        : { checked: false, note: 'Use --verify-media to inspect hosted video and S3 narration' },
+      blockers: releaseBlockers, pendingApprovals: approvalBlockers,
       next: 'Student PIN -> /student/continue -> first unfinished First Day scene; 2–10 remain governed by their own publication gates.',
     }, null, 2))
     if (!apply || alreadyPublished) return
-    if (blockers.length || approvalBlockers.length)
-      throw Error('Publication blocked. Resolve the listed prerequisites; no database records changed.')
-
-    // Live media checks run BEFORE touching the curriculum.
-    const response = await fetch(introUrl, { method: 'HEAD', signal: AbortSignal.timeout(15000) })
-    const size = Number(response.headers.get('content-length'))
-    if (!response.ok || !/video\/(mp4|webm)/i.test(response.headers.get('content-type') || '') ||
-        !Number.isFinite(size) || size < 1_000_000)
-      throw Error('Reviewed First Day video is unavailable or has an invalid media response')
-    for (const key of requiredClass1AudioKeys()) {
-      const media = await S3Service.headAudio(key)
-      if (!media || !media.contentLength || media.contentLength < 256 ||
-          !/^audio\/(wav|x-wav)/.test(media.contentType || '')) {
-        throw Error('Missing approved First Day S3 narration: ' + key)
-      }
-    }
+    if (releaseBlockers.length || approvalBlockers.length)
+      throw Error('Publication blocked. Resolve prerequisites; no database records changed.')
 
     // Transaction is intentionally mandatory: partial releases must not make
     // a staff map look published while student activities are still drafts.
