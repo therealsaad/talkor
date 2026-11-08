@@ -4,6 +4,8 @@
 >
 > Repository: **https://github.com/therealsaad/talkor**
 
+> **Class 1 Level 1 release preparation (8 November 2026):** The ten-scene Balbharati 1.1 *My First Day* v3 now has a guarded **read-only-to-transactional staging** path for an explicitly selected school database, plus hosted intro/S3 media inspection in the publisher. The old developer-only installer remains restricted to local `test`. The bundled 83 MB introductory video must be optimized and educator-reviewed before school delivery; the release preflight caps the hosted video at 28 MB. **This code does not claim that any production MongoDB has been staged or published, that teacher approvals have occurred, or that a live student's speech test passed.** Follow [the protected production release runbook](docs/class1-level1-production-release-2026-11-08.md).
+
 > **Staff curriculum explorer (November 3, 2026):** Teacher and school preview URLs now share reusable KG–Class 10 level-map, coverage, and Miss Julie teaching-flow components. Filters inspect all 110 existing addresses; Class 1 retains its full 44-chapter distribution. A separate Unit One exercise audit maps all 35 numbered tasks into the existing levels. Source gaps, draft ideas, and live lesson availability remain distinct. Local review notes do not publish curriculum or change student progress. See [implementation, coverage and verification limits](docs/staff-curriculum-explorer.md).
 
 
