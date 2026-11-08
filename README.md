@@ -485,11 +485,11 @@ The uploader checks WAV signatures, calls `S3Service.headAudio()` and skips keys
 ### Class 1 Level 1
 
 - Canonical ID: `g01-l01`
-- Student learning goal: explicitly teach and practise **all eight** short words (`am`, `an`, `at`, `in`, `is`, `it`, `on`, `up`) through listening, building, sentence work and guided speaking
-- Login route: student PIN → next lesson; the first visit to `g01-l01` requires the supplied 90-second story video before activity one. There is no in-app skip or close control.
+- **Current canonical v3 goal:** ten original *My First Day* school-action scenes (school, skip, run, walk, grin, bell, jump, play, entering class and Grade One) with guided English speaking and Hindi/Marathi help. The earlier eight short words (`am`, `an`, `at`, `in`, `is`, `it`, `on`, `up`) belong to retained v2 history; they are **not** evidence of mastering the current Balbharati 1.1 level.
+- Login route: student PIN → server-selected next unfinished lesson. The first visit to the published `g01-l01` requires a reviewed 87–93-second story video before activity one, with no in-app skip. Optimize the 83 MB bundled source for school networks; see the release runbook.
 - Class 1 map art: `client/public/lessons/class-01/level-01/map.png`; place levels 1–9 on its circular pads and level 10 at the school entrance. Keep button coordinates in the same uncropped 1672×941 artwork canvas and hide the student `YOU` picture on this grade's map.
 - Miss Julie movement: use the alpha-channel WebM files from `client/public/miss-julie-animations/transparent/` across student maps and lesson stages (`idle`, `listening`, `thinking`, `speaking`, `encouraging`, `pointing`, `celebrating`); keep still-image fallbacks and respect reduced-motion settings.
-- Static narration: reviewed AI4Bharat WAVs use immutable S3 keys under `class-01/level-01/v2/`; the activity audio route reuses them. The manifest still requires human voice review before upload.
+- Current v3 static narration: ten separately reviewed AI4Bharat/Priya WAVs use immutable S3 keys under `class-01/level-01/v3/`. The old v2 files are preserved, but cannot be presented as v3 approved media. A human must review the clips before upload and publication.
 - Dynamic guidance: authenticated Node provider → Python FastAPI brain `8002` → Ollama `11434` (`qwen3:4b-instruct`). The separate internal AI/TTS service on `8001` exposes `/v1/tts`; do not confuse it with the Qwen brain.
 
 **Observed during development (Oct 27, 2026):** the local Node→Python→Qwen bridge returned a successful response. This verifies provider connectivity only; it does not prove student login, mic capture, static audio, MongoDB progress or lesson completion. The local story MP4 is 90 seconds. Keep the Class 1 curriculum unpublished until the full authenticated student flow and media have been reviewed.
