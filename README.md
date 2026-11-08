@@ -648,6 +648,17 @@ chore: update reviewed curriculum manifest
 
 Run the tests relevant to your changes. **Do not claim the app is production-ready just because TypeScript passes.**
 
+### One command: run the same checks as CI before you push (from repository root)
+
+```powershell
+node tools/run-ci-locally.mjs --changed    # only the jobs your changes can affect
+node tools/run-ci-locally.mjs              # every job: structure, frontend, backend
+node tools/run-ci-locally.mjs --list       # show the steps without running anything
+node tools/run-ci-locally.mjs --job backend --only billi --keep-going
+```
+
+It reads `.github/workflows/talkora-110-level-checks.yml`, so it always runs exactly what CI runs and never drifts from it. It does not deploy, seed, migrate or call paid providers. Run `pnpm install --frozen-lockfile` in `client/` and `backend/` first (or pass `--install`). Steps that cannot run on your computer (for example no MongoDB on `127.0.0.1:27017`, no Chrome at the CI path, or no `bash`) are **skipped and listed**, never silently passed: CI still runs them, so a skipped list is not a green light. If it prints `CI would be RED`, fix that step before pushing.
+
 ### Shared structural checks (from repository root)
 
 ```powershell
