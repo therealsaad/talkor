@@ -292,6 +292,9 @@ jobs:
       - name: Guard Class 1 First Day release against false publishing and historical progress
         run: pnpm exec jest --runInBand tests/unit/class1Level1Publication.test.ts
         working-directory: backend
+      - name: Verify Class 1 release staging and remote media safety contracts
+        run: pnpm exec jest --runInBand tests/unit/class1ProductionStaging.test.ts
+        working-directory: backend
       - name: Guard real Class 1 Sarvam to Qwen to Azure smoke route
         run: pnpm exec jest --runInBand tests/unit/class1LiveSmokeContract.test.ts
         working-directory: backend
