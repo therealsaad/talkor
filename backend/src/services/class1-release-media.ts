@@ -9,7 +9,7 @@ import { isRealFirstDayIntroUrl } from '../scripts/class1-first-day-intro-url'
 export const CLASS1_FIRST_DAY_INTRO_MIN_BYTES = 1_000_000
 export const CLASS1_FIRST_DAY_INTRO_MAX_BYTES = 28_000_000
 
-type AudioHead = { contentLength?: number; contentType?: string } | null
+type AudioHead = { contentLength?: number | null; contentType?: string | null } | null
 
 export interface Class1MediaReport {
   blockers: string[]
@@ -56,7 +56,8 @@ export async function inspectClass1ReleaseMedia(
       const head = dependencies.audioHead
         ? await dependencies.audioHead(key)
         : await S3Service.headAudio(key)
-      if (!head || !Number.isSafeInteger(head.contentLength) || (head.contentLength || 0) < 256 ||
+      const audioBytes = Number(head?.contentLength)
+      if (!head || !Number.isSafeInteger(audioBytes) || audioBytes < 256 ||
           !/^audio\/(?:wav|x-wav)(?:\s*;|$)/i.test(head.contentType || '')) {
         blockers.push('FIRST_DAY_AUDIO_MISSING_OR_INVALID:' + key)
       } else {
