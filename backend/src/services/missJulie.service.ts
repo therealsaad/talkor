@@ -11,6 +11,9 @@ import { MistakeService } from './mistake.service'
 import { StudentContextService } from './student-context.service'
 import { finalizeConversationTeacherResponse } from './conversationTurns'
 import { firstDaySceneSkills } from './first-day-evidence'
+import { guardFirstDayPoemTurn, isFirstDayPoemScene } from './class1-poem-teacher-guard'
+import { class1ExplanationLanguage } from '../providers/ai/class1-language'
+import type { AIStructuredResponse } from '../types'
 
 function detectedConcepts(message: string): string[] {
   const text = message.toLowerCase()
@@ -307,8 +310,30 @@ export const MissJulieService = {
 
     // All student turns honor the same explicit AI_PROVIDER setting. This
     // avoids free-talk silently requiring a second, unconfigured provider.
-    const provider = getAIProvider(studentContext)
-    let response = await provider.generate(studentContext)
+    // The canonical poem scene MUST win over stale two-letter-word defaults
+    // from an outdated Python 8002 process. Reject broken Mongo scene identity
+    // rather than showing a published poem while teaching an unrelated word.
+    const poemKey = String(activity?.metadata?.sceneKey || '')
+    const poemActivity = String(activity?.activityKey || '').startsWith('class1-l01-v4-poem-')
+    if (poemActivity && (!isFirstDayPoemScene(poemKey) ||
+      activity?.activityKey !== 'class1-l01-v4-' + poemKey)) {
+      throw ApiError.provider('FIRST_DAY_POEM_SCENE_NOT_AUTHORED')
+    }
+    let response: AIStructuredResponse
+    try {
+      response = await getAIProvider(studentContext).generate(studentContext)
+    } catch (error) {
+      if (!poemActivity) throw error
+      // A reviewed, syllabus-scoped fallback is preferable to making children
+      // repeat "at" or wait indefinitely when Ollama cannot teach the poem.
+      // Node alone still decides completion from independent transcript evidence.
+      response = guardFirstDayPoemTurn(
+        poemKey, input.message, class1ExplanationLanguage(studentContext))
+    }
+    if (poemActivity) {
+      response = guardFirstDayPoemTurn(
+        poemKey, input.message, class1ExplanationLanguage(studentContext), response)
+    }
     response = finalizeConversationTeacherResponse(response, finalTurn)
     if (lessonConversation || freeTalkConversation) response.activityComplete = finalTurn
     const teacherContent = [response.message, response.followUpQuestion].filter(Boolean).join(' ')
