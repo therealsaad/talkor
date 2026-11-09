@@ -40,9 +40,19 @@ export function guardFirstDayPoemTurn(
   const aiModel = comparable(ai?.modelSentence || '')
   const expectedModel = comparable(model)
   const aiText = [ai?.message, ai?.followUpQuestion].filter(Boolean).join(' ')
-  const legacyHijack = /\b(?:can you say at|say the word at|short english word|say at together)\b/i.test(aiText)
-  const aligned = Boolean(ai && !legacyHijack && aiModel.includes(expectedModel) &&
-    ai.message.trim().length >= 8)
+  const legacyHijack = /\b(?:can you say at|say the word at|short english word|say at\b|word at\b)/i.test(aiText)
+  const pairAnchors: Record<string, string[]> = {
+    'poem-pair-1': ['skip', 'run'],
+    'poem-pair-2': ['school', 'walk'],
+    'poem-pair-3': ['grin', 'smile', 'bell'],
+    'poem-pair-4': ['jump', 'play'],
+    'poem-pair-5': ['grade', 'hurray', 'hooray'],
+    'poem-full': ['poem', 'school', 'skip', 'run'],
+  }
+  const anchored = (pairAnchors[sceneKey] || [])
+    .some(word => new RegExp('\\b' + word + '\\b', 'i').test(ai?.message || ''))
+  const aligned = Boolean(ai && !legacyHijack && anchored &&
+    aiModel.includes(expectedModel) && ai.message.trim().length >= 8)
 
   const help = language === 'Hindi' ? step.hintHi
     : language === 'Marathi' ? step.hintMr : ''
