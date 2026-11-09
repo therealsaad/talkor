@@ -409,6 +409,7 @@ export function ImmersiveLessonStage({
       isAudioEnabled={audioEnabled}
       onEnableAudio={onEnableAudio}
       onReplayJulie={onReplayJulie}
+      onReciteLines={(text) => { void onSpeakText(text, `poem:${activity.id}:lines`) }}
       onStartMic={onStartMic}
       onStopMic={onStopMic}
       step={index + 1}
