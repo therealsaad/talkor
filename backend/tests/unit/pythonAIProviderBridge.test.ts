@@ -71,6 +71,29 @@ describe('Class 1 Node to Python production bridge', () => {
     )
   })
 
+  it('sends the signed poem scene key and the full two-line question to Python, never a stale at target', async () => {
+    const request = jest.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => response,
+    } as Response)
+    await new PythonAIProvider().generate({
+      ...class1Context,
+      sceneKey: 'poem-pair-3',
+      activityTitle: 'Poem lines 5–6: grin and bell',
+      activityTarget: 'Listen to both lines: See me grin. When the bell rings, I go in.',
+      studentMessage: 'At at.',
+    })
+    expect(request).toHaveBeenCalledTimes(1)
+    const payload = JSON.parse(String(request.mock.calls[0][1]?.body))
+    expect(payload.grade).toBe(1)
+    expect(payload.levelId).toBe('g01-l01')
+    expect(payload.sceneKey).toBe('poem-pair-3')
+    expect(payload.currentQuestion).toContain('See me grin.')
+    expect(payload.currentQuestion).toContain('bell rings')
+    expect(payload.currentQuestion).not.toBe('at')
+    expect(payload.studentMessage).toBe('At at.')
+  })
+
   it('rejects production pilot requests without a strong service key', async () => {
     env.isProd = true
     env.talkoraServiceKey = ''
