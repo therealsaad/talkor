@@ -58,7 +58,7 @@ export class AzureVoiceProvider implements VoiceProvider {
       : null
     const voiceNode = (voice: string, words: string) => {
       const spoken = poemRecitation
-        ? words.split(/\\r?\\n/).map(line => escapeXml(line.trim())).filter(Boolean)
+        ? words.split(/\r?\n/).map(line => escapeXml(line.trim())).filter(Boolean)
             .join('<break time="360ms"/>')
         : escapeXml(words)
       return `<voice name="${voice}"><prosody rate="${rate}" pitch="${pitch}">${spoken}</prosody></voice>`
