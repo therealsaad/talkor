@@ -114,9 +114,9 @@ function streamFromBuffer(audio: Buffer): ReadableStream<Uint8Array> {
 }
 
 async function tryStream(
-  provider: { name: string; synthesizeStream?: (text: string, options?: { conversation?: boolean; class1Lesson?: boolean; language?: string }) => Promise<VoiceStreamResult> },
+  provider: { name: string; synthesizeStream?: (text: string, options?: { conversation?: boolean; class1Lesson?: boolean; language?: string; poemRecitation?: boolean }) => Promise<VoiceStreamResult> },
   text: string,
-  options?: { conversation?: boolean; class1Lesson?: boolean; language?: string },
+  options?: { conversation?: boolean; class1Lesson?: boolean; language?: string; poemRecitation?: boolean },
 ): Promise<VoiceStreamResult | null> {
   if (!provider.synthesizeStream) return null
   try {
@@ -400,18 +400,22 @@ export const VoiceService = {
       }
     }
 
-    // Azure Neerja is Talkora's primary Miss Julie voice everywhere.
-    // Groq is the fast vendor fallback and the existing Python/Priya pipeline
-    // remains the final safety net for cached/legacy lesson audio.
-    const isClass1Lesson = Boolean(options.studentId && options.activityId &&
-      (await CurriculumAccessService.assertActivity(options.studentId, options.activityId)).activity.activityKey?.startsWith('class1-l01-'))
-    // Adaptive Class 1 speech has one explicit voice contract: Azure.
-    // An unexpected Groq/Python fallback can silently change language/voice
-    // or return cached words instead of the new Qwen answer.
-    // Teacher narration is still served from approved Priya/S3 above.
-    const dynamicFirstDay = isClass1Lesson && (purpose === 'CONVERSATION' || purpose === 'FEEDBACK')
+    // Azure is the sole voice for dynamic First Day teacher feedback, and
+    // for the v4 poem's *intro and every practice recitation* (LESSON purpose).
+    // A generic Groq/Python voice fallback could read a completely different
+    // cached word instead of the two poem lines on the child's screen.
+    const currentClass1Activity = options.studentId && options.activityId
+      ? (await CurriculumAccessService.assertActivity(options.studentId, options.activityId)).activity
+      : null
+    const isClass1Lesson = Boolean(currentClass1Activity?.activityKey?.startsWith('class1-l01-'))
+    const isFirstDayPoem = Boolean(currentClass1Activity?.activityKey?.startsWith('class1-l01-v4-poem-'))
+    const dynamicFirstDay = isClass1Lesson &&
+      (purpose === 'CONVERSATION' || purpose === 'FEEDBACK' || isFirstDayPoem)
     if (dynamicFirstDay) {
-      const azure = await tryStream(new AzureVoiceProvider(), text, { conversation: true, class1Lesson: true, language: options.language })
+      const azure = await tryStream(new AzureVoiceProvider(), text, {
+        conversation: true, class1Lesson: true,
+        language: options.language, poemRecitation: isFirstDayPoem,
+      })
       if (!azure) throw ApiError.provider('CLASS1_AZURE_DYNAMIC_VOICE_UNAVAILABLE')
       return azure
     }

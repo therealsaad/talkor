@@ -13,7 +13,13 @@ export class PythonAIProvider implements AIProvider {
   async generate(context: MissJulieContext): Promise<AIStructuredResponse> {
     const startedAt = Date.now()
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), env.aiServiceTimeoutMs)
+    // Even an OLD Python 8002 process must not keep a child waiting ten
+    // seconds on a poem recitation. Only this canonical scene is bounded;
+    // ordinary KG and other classes retain their original timeouts.
+    const poemScene = context.grade === 1 && context.levelId === 'g01-l01' &&
+      context.sceneKey?.startsWith('poem-') === true
+    const deadlineMs = poemScene ? Math.min(env.aiServiceTimeoutMs, 2800) : env.aiServiceTimeoutMs
+    const timeout = setTimeout(() => controller.abort(), deadlineMs)
     const unitGuidance = unitTeachingGuidance(context)
     const isClass1Pilot = context.grade === 1 && context.levelId === 'g01-l01'
     const pilotEnabled = isClass1Pilot
@@ -54,6 +60,8 @@ export class PythonAIProvider implements AIProvider {
             lessonTitle: context.lessonTitle,
             stage: context.stage || context.promptContext,
             activityTitle: context.activityTitle || '',
+            // Resolved from an authorized MongoDB activity, never from browser speech.
+            ...(isClass1Pilot && context.sceneKey ? { sceneKey: context.sceneKey } : {}),
             digitalType: context.digitalType || '',
             julieProfile: context.julieProfile || {},
             currentQuestion: context.activityTarget || context.activityTitle || '',

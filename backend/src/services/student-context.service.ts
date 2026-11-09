@@ -62,6 +62,7 @@ export const StudentContextService = {
     let allowedVocabulary: string[] = []
     let learningObjectives: string[] = []
     let requiredConcepts: string[] = []
+    let sceneKey: string | undefined
     let digitalType: string | undefined
     let julieProfile: Record<string, string> | undefined
 
@@ -88,6 +89,7 @@ export const StudentContextService = {
         .lean()
       if (activity) {
         activityTitle = activity.title
+        sceneKey = typeof activity.metadata?.sceneKey === 'string' ? activity.metadata.sceneKey : undefined
         const conversationTypes = new Set([
           'CONVERSATION',
           'OPEN_CONVERSATION',
@@ -128,7 +130,10 @@ export const StudentContextService = {
       }
     }
 
-    if (options.currentTarget?.trim()) {
+    // An OPEN poem scene has a full teacher prompt, not a one-word pronunciation
+    // target. The old voice-session target (e.g. 'grin') must never replace
+    // the actual two-line poem question when building the Python AI context.
+    if (options.currentTarget?.trim() && !sceneKey?.startsWith('poem-')) {
       activityTarget = options.currentTarget.trim()
     }
 
@@ -221,6 +226,7 @@ export const StudentContextService = {
       levelTitle,
       lessonTitle,
       activityTitle,
+      sceneKey,
       activityTarget,
       recentMistakes: recentMistakes.map(
         (m) => `${m.skill}: expected "${m.expected}", said "${m.actual}"`,

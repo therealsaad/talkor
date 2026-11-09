@@ -9,6 +9,8 @@ export interface MissJulieContext {
   levelTitle: string
   lessonTitle: string
   activityTitle?: string
+  /** Server-resolved immutable scene key from authorized Mongo activity metadata. */
+  sceneKey?: string
   activityTarget?: string
   recentMistakes: string[]
   memoryFacts: string[]
