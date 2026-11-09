@@ -1124,7 +1124,16 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
               onSpeakText={async (text, key) => {
                 if (!audioEnabled || !text.trim()) return
                 setTeacherText(text)
-                await julie.speak(text, `${key || `activity:${activity.id}`}:${++teacherSequence.current}`, 'LESSON')
+                // On demand, replay the exact highlighted poem pair using the
+                // authenticated activity's Azure voice. This never records XP.
+                const poemLineReplay = key?.startsWith('poem:' + activity.id + ':') === true &&
+                  activity.activityKey?.startsWith('class1-l01-v4-poem-')
+                const playback = await julie.speak(
+                  text, (key || 'activity:' + activity.id) + ':' + (++teacherSequence.current),
+                  poemLineReplay ? 'CONVERSATION' : 'LESSON',
+                  poemLineReplay ? activity.id : undefined,
+                )
+                if (poemLineReplay && playback === 'spoken') setExperience('waiting_for_student')
               }}
               onLocalComplete={(message?: string, answer?: string) => {
                 if (!answer) return
