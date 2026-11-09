@@ -54,6 +54,8 @@ export class PythonAIProvider implements AIProvider {
             lessonTitle: context.lessonTitle,
             stage: context.stage || context.promptContext,
             activityTitle: context.activityTitle || '',
+            // Resolved from an authorized MongoDB activity, never from browser speech.
+            ...(isClass1Pilot && context.sceneKey ? { sceneKey: context.sceneKey } : {}),
             digitalType: context.digitalType || '',
             julieProfile: context.julieProfile || {},
             currentQuestion: context.activityTarget || context.activityTitle || '',
