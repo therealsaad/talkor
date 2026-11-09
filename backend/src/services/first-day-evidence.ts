@@ -31,12 +31,19 @@ export function firstDaySceneSkills(sceneKey: string, message: string): string[]
  */
 export function poemEvidence(sceneKey: string, text: string): string[] {
   if (!text || /[?]|\b(?:what|why|how|help|repeat|again|meaning|i don['’]?t know|no idea)\b|क्या|मदद|मतलब|काय|म्हणजे|नाही|समजत/.test(text)) return []
+  // A bare word bank response ("grin bell", "skip run", or "at at")
+  // is NOT reciting both lines. Look for both authored phrase patterns with
+  // modest speech-recognition tolerance for punctuation and inflections.
+  // This is textual evidence, never an accent/pitch pronunciation score.
   const checks: Record<string, RegExp[]> = {
-    'poem-pair-1': [/\bskip(?:ping)?\b/, /\brun(?:ning)?\b/],
-    'poem-pair-2': [/\bschool\b/, /\bwalk(?:ing)?\b/],
-    'poem-pair-3': [/\b(?:grin|smile|smiling)\b/, /\b(?:bell|rings|ringing)\b/],
-    'poem-pair-4': [/\bjump(?:ing)?\b/, /\bplay(?:ing)?\b/],
-    'poem-pair-5': [/\bgrade\s+(?:one|1)\b/, /\b(?:hurray|hooray|hip\s*hip)\b/],
+    'poem-pair-1': [/\bsee\s+me\s+skip(?:ping)?\b/, /\bsee\s+me\s+run(?:ning)?\b/],
+    'poem-pair-2': [/\bgoing\s+to\s+school\b/, /\bsee\s+me\s+walk(?:ing)?\b/],
+    'poem-pair-3': [
+      /\bsee\s+me\s+(?:grin|smile|smiling)\b/,
+      /\bbell\s+(?:rings?|ringing)\b[\s\S]*\b(?:go\s+in|go\s+inside)\b/,
+    ],
+    'poem-pair-4': [/\bsee\s+me\s+jump(?:ing)?\b/, /\bsee\s+me\s+play(?:ing)?\b/],
+    'poem-pair-5': [/\b(?:i['’]?m|i\s+am)\s+in\s+grade\s+(?:one|1)\b/, /\b(?:hurray|hooray)\b/],
   }
   if (sceneKey === 'poem-full') {
     const themes = [/\bskip\b.*\brun\b/s,/\bwalk\b.*\bgrin\b/s,
