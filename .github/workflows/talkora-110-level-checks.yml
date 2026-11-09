@@ -17,6 +17,8 @@ jobs:
         run: node --test tools/tests/staff-preview-boundaries.test.cjs
       - name: Verify the local CI runner reads this workflow completely
         run: node --test tools/tests/run-ci-locally.test.mjs
+      - name: Keep lesson videos and images light for slow connections
+        run: node tools/check-asset-budget.mjs
       - name: Validate all 110 level workspaces and mapping boundaries
         run: node tools/verify-110-levels.cjs
   frontend:
