@@ -59,4 +59,35 @@ describe('Class 1 poem: Azure is the actual teacher voice, not a generic word cl
     expect(ssml).not.toContain('<break time="360ms"/>')
     expect(ssml).not.toContain('rate="-14%"')
   })
+  it('reads Hindi help in Swara but switches to English Neerja for the actual poem lines', async () => {
+    process.env.AZURE_SPEECH_KEY = 'fake-test-key-not-a-live-Azure-credential'
+    const mock = jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(new Uint8Array(512), { status: 200 }),
+    )
+    await new AzureVoiceProvider().synthesizeStream(
+      'इन दोनों पंक्तियों को ध्यान से सुनो।\nSee me grin.\nWhen the bell rings, I go in.',
+      { class1Lesson: true, conversation: true, poemRecitation: true, language: 'hi-IN' },
+    )
+    const ssml = String(mock.mock.calls[0][1]?.body)
+    expect(ssml).toContain('voice name="hi-IN-SwaraNeural"')
+    expect(ssml).toContain('voice name="en-IN-NeerjaNeural"')
+    expect(ssml.match(/<break time="360ms"\/>/g)).toHaveLength(2)
+    expect(ssml).toContain('See me grin.')
+    expect(ssml).toContain('When the bell rings, I go in.')
+  })
+
+  it('reads Marathi help in Aarohi, but uses the English poem voice on Latin-script lines', async () => {
+    process.env.AZURE_SPEECH_KEY = 'fake-test-key-not-a-live-Azure-credential'
+    const mock = jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(new Uint8Array(512), { status: 200 }),
+    )
+    await new AzureVoiceProvider().synthesizeStream(
+      'या दोन्ही ओळी ऐक.\nSee me grin.',
+      { class1Lesson: true, poemRecitation: true, language: 'mr-IN' },
+    )
+    const ssml = String(mock.mock.calls[0][1]?.body)
+    expect(ssml).toContain('voice name="mr-IN-AarohiNeural"')
+    expect(ssml).toContain('voice name="en-IN-NeerjaNeural"')
+  })
+
 })
