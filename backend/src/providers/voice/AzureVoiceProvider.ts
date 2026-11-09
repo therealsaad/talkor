@@ -56,16 +56,20 @@ export class AzureVoiceProvider implements VoiceProvider {
     const practice = kindergarten && (selected.locale === 'hi-IN' || selected.locale === 'mr-IN')
       ? /^(.*?)(\s+Say (?:[a-z][a-z'-]{0,26}|the letter [a-z])[.!?]?)$/is.exec(text)
       : null
-    const voiceNode = (voice: string, words: string) => {
-      const spoken = poemRecitation
-        ? words.split(/\r?\n/).map(line => escapeXml(line.trim())).filter(Boolean)
-            .join('<break time="360ms"/>')
-        : escapeXml(words)
-      return `<voice name="${voice}"><prosody rate="${rate}" pitch="${pitch}">${spoken}</prosody></voice>`
-    }
-    const content = practice && practice[1].trim()
-      ? voiceNode(selected.voice, practice[1].trim()) + voiceNode('en-IN-NeerjaNeural', practice[2].trim())
-      : voiceNode(selected.voice, text)
+    const voiceNode = (voice: string, words: string) =>
+      `<voice name="${voice}"><prosody rate="${rate}" pitch="${pitch}">${escapeXml(words)}</prosody></voice>`
+    // Voice-code hints come from verified Sarvam/Node; actual English poem
+    // lines ALWAYS use the English Neural voice. Devanagari support lines
+    // switch to the chosen Hindi/Marathi Neural voice in the same SSML call.
+    const content = poemRecitation
+      ? text.split(/\r?\n/).map(line => line.trim()).filter(Boolean)
+          .map((line, index) =>
+            (index ? '<break time="360ms"/>' : '') +
+            voiceNode(/[\u0900-\u097F]/u.test(line) ? selected.voice : s.voice, line))
+          .join('')
+      : practice && practice[1].trim()
+        ? voiceNode(selected.voice, practice[1].trim()) + voiceNode('en-IN-NeerjaNeural', practice[2].trim())
+        : voiceNode(selected.voice, text)
     const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${selected.locale}">${content}</speak>`
 
     let response: Response
