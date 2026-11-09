@@ -120,6 +120,9 @@ jobs:
       - name: Verify bundled First Day intro staging and mandatory playback gate
         run: node --test tests/ui/class1-bundled-firstday-intro.test.mjs
         working-directory: client
+      - name: Verify Class 1 visible poem pairs use authenticated Azure recitation
+        run: node --test tests/ui/class1-poem-azure-replay.test.mjs
+        working-directory: client
       - name: Verify Class 1 poem UI and existing voice loop contracts
         run: node --test tests/ui/class1-poem-recitation.test.mjs
         working-directory: client
@@ -275,6 +278,12 @@ jobs:
           TALKORA_CHECKPOINT_TEST_MONGO_URI: mongodb://127.0.0.1:27017
       - name: Verify loopback HTTP Node to synthetic Python wire contract
         run: pnpm exec jest --runInBand tests/integration/syntheticTeachingWire.test.ts
+        working-directory: backend
+      - name: Guard poem AI against recorded at-at fallback in English Hindi Marathi
+        run: pnpm exec jest --runInBand tests/unit/class1PoemTeachingGuard.test.ts
+        working-directory: backend
+      - name: Verify Azure rhythmic poem recitation SSML without paid calls
+        run: pnpm exec jest --runInBand tests/unit/class1PoemAzureRecitation.test.ts
         working-directory: backend
       - name: Verify authentic Balbharati 1.1 poem pairs and whole recitation
         run: pnpm exec jest --runInBand tests/unit/class1PoemRecitation.test.ts
