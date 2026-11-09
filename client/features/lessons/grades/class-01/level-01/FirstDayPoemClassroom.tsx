@@ -119,6 +119,8 @@ type Props = {
   isAudioEnabled?: boolean
   onEnableAudio?: () => void
   onReplayJulie?: () => void
+  /** Replay exactly the displayed poem lines using authenticated Azure TTS. */
+  onReciteLines?: (text: string) => void
   onStartMic?: () => void
   onStopMic?: () => void
   step?: number
@@ -192,6 +194,7 @@ export function FirstDayPoemClassroom({
   isAudioEnabled = true,
   onEnableAudio,
   onReplayJulie,
+  onReciteLines,
   onStartMic,
   onStopMic,
   step = 1,
@@ -270,7 +273,7 @@ export function FirstDayPoemClassroom({
           </div>
           <div>
             <strong>MY FIRST DAY</strong>
-            <span>ENGLISH BALBHARATI · 1.1 · LISTEN & SING</span>
+            <span>ENGLISH BALBHARATI · 1.1 · LISTEN & CHANT</span>
           </div>
         </div>
 
@@ -538,6 +541,18 @@ export function FirstDayPoemClassroom({
             >
               <VolumeX size={19} />
               <span>Enable voice</span>
+            </button>
+          ) : null}
+
+          {/* A genuine teacher recitation, NOT a replay of a stale model hint. */}
+          {!isSpeaking && !isProcessing && !isListening && !isCompleted && !needsAudioGesture && isAudioEnabled && onReciteLines ? (
+            <button type="button"
+              className="poem-actions__button poem-actions__button--replay"
+              onClick={() => onReciteLines(LINES.slice(activeStart, activeEnd).join('\n'))}
+              aria-label={final ? 'Hear this poem recital segment' : 'Hear these two poem lines'}
+            >
+              <Volume2 size={19} />
+              <span>Hear these lines</span>
             </button>
           ) : null}
 
