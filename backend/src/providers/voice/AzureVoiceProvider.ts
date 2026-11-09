@@ -37,22 +37,32 @@ export class AzureVoiceProvider implements VoiceProvider {
     }
   }
 
-  private async generate(text: string, kindergarten = false, class1Lesson = false, language?: string): Promise<Buffer> {
+  private async generate(text: string, kindergarten = false, class1Lesson = false, language?: string, poemRecitation = false): Promise<Buffer> {
     const s = this.settings()
     if (!s.key) throw ApiError.provider('Azure Speech is not configured')
     const selected = chooseTalkoraBilingualVoice(text, s.voice, class1Lesson, language)
 
     const url = `https://${s.region}.tts.speech.microsoft.com/cognitiveservices/v1`
-    const rate = kindergarten ? (process.env.KG_AZURE_SPEECH_RATE?.trim() || "+5%") : s.rate
-    const pitch = kindergarten ? (process.env.KG_AZURE_SPEECH_PITCH?.trim() || "+6%") : s.pitch
+    // The poem is a *rhythmic spoken recitation*, not synthesized singing.
+    // The same Azure Neural voice recites every line; approved lesson context
+    // alone enables a measured tempo and line-to-line breathing pauses.
+    const rate = poemRecitation ? '-14%'
+      : kindergarten ? (process.env.KG_AZURE_SPEECH_RATE?.trim() || "+5%") : s.rate
+    const pitch = poemRecitation ? '+3%'
+      : kindergarten ? (process.env.KG_AZURE_SPEECH_PITCH?.trim() || "+6%") : s.pitch
     // A Hindi/Marathi explanation and its English target need two distinct
     // voice segments, not one Hindi/Marathi voice reading the whole sentence.
     // Azure accepts multiple voice nodes inside ONE synthesis request.
     const practice = kindergarten && (selected.locale === 'hi-IN' || selected.locale === 'mr-IN')
       ? /^(.*?)(\s+Say (?:[a-z][a-z'-]{0,26}|the letter [a-z])[.!?]?)$/is.exec(text)
       : null
-    const voiceNode = (voice: string, words: string) =>
-      `<voice name="${voice}"><prosody rate="${rate}" pitch="${pitch}">${escapeXml(words)}</prosody></voice>`
+    const voiceNode = (voice: string, words: string) => {
+      const spoken = poemRecitation
+        ? words.split(/\\r?\\n/).map(line => escapeXml(line.trim())).filter(Boolean)
+            .join('<break time="360ms"/>')
+        : escapeXml(words)
+      return `<voice name="${voice}"><prosody rate="${rate}" pitch="${pitch}">${spoken}</prosody></voice>`
+    }
     const content = practice && practice[1].trim()
       ? voiceNode(selected.voice, practice[1].trim()) + voiceNode('en-IN-NeerjaNeural', practice[2].trim())
       : voiceNode(selected.voice, text)
@@ -123,12 +133,12 @@ export class AzureVoiceProvider implements VoiceProvider {
     }
   }
 
-  async synthesizeStream(text: string, options?: { conversation?: boolean; class1Lesson?: boolean; language?: string }): Promise<VoiceStreamResult> {
+  async synthesizeStream(text: string, options?: { conversation?: boolean; class1Lesson?: boolean; language?: string; poemRecitation?: boolean }): Promise<VoiceStreamResult> {
     const normalized = text.trim()
     if (!normalized) throw ApiError.badRequest('text is required')
     if (!this.settings().key) throw ApiError.provider('Azure Speech is not configured')
 
-    const audio = await this.generate(normalized, false, options?.class1Lesson === true, options?.language)
+    const audio = await this.generate(normalized, false, options?.class1Lesson === true, options?.language, options?.poemRecitation === true)
 
     return {
       body: streamFromBuffer(audio),
