@@ -13,6 +13,7 @@ import { finalizeConversationTeacherResponse } from './conversationTurns'
 import { firstDaySceneSkills } from './first-day-evidence'
 import { guardFirstDayPoemTurn, isFirstDayPoemScene } from './class1-poem-teacher-guard'
 import { class1ExplanationLanguage } from '../providers/ai/class1-language'
+import { logger } from '../utils/logger'
 import type { AIStructuredResponse } from '../types'
 
 function detectedConcepts(message: string): string[] {
@@ -324,6 +325,8 @@ export const MissJulieService = {
       response = await getAIProvider(studentContext).generate(studentContext)
     } catch (error) {
       if (!poemActivity) throw error
+      // No transcript, student name, secret or provider response is logged.
+      logger.warn('Class 1 poem AI bridge failed; keeping authored scene lines', { sceneKey: poemKey })
       // A reviewed, syllabus-scoped fallback is preferable to making children
       // repeat "at" or wait indefinitely when Ollama cannot teach the poem.
       // Node alone still decides completion from independent transcript evidence.
