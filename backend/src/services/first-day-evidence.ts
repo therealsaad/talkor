@@ -30,7 +30,10 @@ export function firstDaySceneSkills(sceneKey: string, message: string): string[]
  * No acoustic pronunciation or comprehension scores are inferred from STT.
  */
 export function poemEvidence(sceneKey: string, text: string): string[] {
-  if (!text || /[?]|\b(?:what|why|how|help|repeat|again|meaning|i don['’]?t know|no idea)\b|क्या|मदद|मतलब|काय|म्हणजे|नाही|समजत/.test(text)) return []
+  // Direct callers (including the final teacher-voice guard) can pass raw
+  // Sarvam casing. Normalize here, not only in firstDaySceneSkills.
+  const said = text.toLowerCase().trim().normalize('NFC')
+  if (!said || /[?]|\b(?:what|why|how|help|repeat|again|meaning|i don['’]?t know|no idea)\b|क्या|मदद|मतलब|काय|म्हणजे|नाही|समजत/.test(said)) return []
   // A bare word bank response ("grin bell", "skip run", or "at at")
   // is NOT reciting both lines. Look for both authored phrase patterns with
   // modest speech-recognition tolerance for punctuation and inflections.
@@ -49,9 +52,9 @@ export function poemEvidence(sceneKey: string, text: string): string[] {
     const themes = [/\bskip\b.*\brun\b/s,/\bwalk\b.*\bgrin\b/s,
       /\bbell\b.*\bin\b/s,/\bjump\b.*\bplay\b/s,
       /\bgrade\s+(?:one|1)\b.*\b(?:hurray|hooray)\b/s]
-    return text.split(/\s+/).length >= 20 && themes.filter(re => re.test(text)).length >= 4
+    return said.split(/\s+/).length >= 20 && themes.filter(re => re.test(said)).length >= 4
       ? ['first_day_english_attempt'] : []
   }
   const pair = checks[sceneKey]
-  return pair && pair.every(re => re.test(text)) ? ['first_day_english_attempt'] : []
+  return pair && pair.every(re => re.test(said)) ? ['first_day_english_attempt'] : []
 }
