@@ -23,6 +23,9 @@ describe('Class 1 first-day poem lesson boundaries (recorded student regression)
     expect(result.xpAwarded).toBe(0)
     expect(result.memoryUpdates).toEqual([])
     expect(result.detectedSkills).toEqual([])
+    const wordsOnly = guardFirstDayPoemTurn('poem-pair-3', 'grin bell', 'English')
+    expect(wordsOnly.responseQuality).toBe('PARTIAL')
+    expect(wordsOnly.shouldRetry).toBe(true)
   })
 
   it('in Hindi and Marathi, explains the currently highlighted two lines and keeps the English poem', () => {
