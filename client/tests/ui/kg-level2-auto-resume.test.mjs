@@ -16,14 +16,14 @@ const preview = await read('../../features/lessons/grades/kg/level-02/LevelExper
 const backend = await read('../../../backend/src/controllers/kg-level2-student.controller.ts')
 const routes = await read('../../../backend/src/routes/kg-level2-student.routes.ts')
 
-test('PIN login uses the authenticated server resume route, no client-selected level or old E–J draft', () => {
+test('PIN login uses the authenticated server resume route, no client-selected level or old E–J draft', async () => {
   assert.match(login, /await loginStudentByPin\(pin\)/)
   assert.match(loginLayout, /homeForRole\(role\)/)
-  assert.match(resume, /kgAlphabetService.state\(\)/)
-  assert.match(resume, /kgLevel2StudentService.state\(\)/)
-  assert.match(resume, /level1.completed && level1.level2Available|!level1.completed \|\| !level1.level2Available/)
-  assert.match(resume, /if \(!level2\.completed\) return '\/student\/kg\/level-2'/)
-  assert.match(resume, /continuation\.nextLevel \? '\/student\/kg\/level-' \+ continuation\.nextLevel/)
+  assert.match(resume, /nextKGStudentRoute\(\)/)
+  const projection = await read('../../../backend/src/controllers/kg-continuation.controller.ts')
+  assert.match(projection, /kg1\?\.currentIndex !== 8 \? '\/student\/kg'/)
+  assert.match(projection, /kg2\?\.currentIndex !== 6 \? '\/student\/kg\/level-2'/)
+  assert.match(projection, /nextLevel \? '\/student\/kg\/level-' \+ nextLevel : '\/student\/kg\/map'/)
   assert.doesNotMatch(resume, /localStorage|sessionStorage/)
   assert.match(map, /number === 2 && kgLevel1State\?\.completed/)
   assert.match(map, /\/student\/kg\/level-2/)

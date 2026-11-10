@@ -35,7 +35,7 @@ export const VoiceWarmupService = {
     if (!env.voiceWarmupEnabled) return
     setImmediate(() => {
       void this.warmStudent(studentId).catch((error) => {
-        logger.warn('Student voice warmup failed without blocking login', { studentId, error })
+        logger.warn('Student voice warmup failed without blocking login')
       })
     })
   },
@@ -99,7 +99,7 @@ export const VoiceWarmupService = {
         language: 'en-IN',
       }, headers)
     } catch (error) {
-      logger.warn('IndicF5 lesson voice warmup unavailable', { studentId, error })
+      logger.warn('IndicF5 lesson voice warmup unavailable')
     }
   },
 }

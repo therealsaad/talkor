@@ -175,6 +175,11 @@ jobs:
       - name: Verify real KG latency report only aggregates correlated timings and cannot leak speech
         run: node --test tests/kg-turn-latency-report.node.test.mjs
         working-directory: backend
+      - name: Verify private request metrics and provider error logging
+        run: |
+          pnpm exec jest --runInBand tests/unit/requestObservability.test.ts
+          node --test tests/cors-options.node.test.cjs
+        working-directory: backend
       - name: Verify real school-lab KG PIN acceptance report resolves exact server progress
         run: node --test tests/kg-live-session-acceptance.node.test.mjs
         working-directory: backend

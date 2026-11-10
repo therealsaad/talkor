@@ -20,9 +20,8 @@ const [map, mapPage, resume, reviewPage, review, kg1, level2Route, continuationP
   ])
 
 test('student PIN login still automatically resumes the first unfinished lesson; garden map is separate', () => {
-  assert.match(resume, /kgAlphabetService\.state\(\)/)
-  assert.match(resume, /kgLevel2StudentService\.state\(\)/)
-  assert.match(resume, /kgContinuationStudentService\.overview\(\)/)
+  assert.match(resume, /nextKGStudentRoute\(\)/)
+  assert.match(continuationController, /nextStudentRoute/)
   assert.match(mapPage, /<KGAdventureMap/)
   assert.match(kg1, /My garden/)
   assert.match(level2Route, /href="\/student\/kg\/map"/)
