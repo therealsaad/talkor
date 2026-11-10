@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Play, RotateCcw, Sparkles } from 'lucide-react'
 import { requestClass1Fullscreen } from './class1-fullscreen'
 import { voiceService } from '@/services/voice-service'
+import { beginFirstDayIntro, completeFirstDayIntro } from '@/services/class1-intro-service'
 
 /** This reviewed 90-second video is delivered separately from the application. */
 export const CLASS1_FIRST_DAY_VIDEO = process.env.NEXT_PUBLIC_TALKORA_CLASS1_INTRO_URL?.trim() ||
@@ -15,11 +16,12 @@ const MIN_DURATION_SECONDS = 87
 const MAX_DURATION_SECONDS = 93
 const REQUIRED_WATCH_SECONDS = 85
 
-export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, approvedVideoUrl }: {
+export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, approvedVideoUrl, lessonId }: {
   onAvailable: () => void
   onDone: () => void
   firstDayOnly?: boolean
   approvedVideoUrl?: string
+  lessonId?: string
 }) {
   // The reviewed video source can travel with the authenticated v3/v4
   // lesson, avoiding a new Next.js build or an administrator permission gate.
@@ -41,6 +43,21 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
   const [needsTap, setNeedsTap] = useState(true)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [playbackId, setPlaybackId] = useState<string | null>(null)
+  const [introRetry, setIntroRetry] = useState(0)
+  const completing = useRef(false)
+
+  useEffect(() => {
+    if (!firstDayOnly || !sourceReady) return
+    let live = true
+    setPlaybackId(null)
+    void beginFirstDayIntro(lessonId || '').then(result => {
+      if (live) setPlaybackId(result.playbackId)
+    }).catch(() => {
+      if (live) { setError('Your story could not open. Please try again.'); setLoading(false) }
+    })
+    return () => { live = false }
+  }, [firstDayOnly, lessonId, sourceReady, introRetry])
 
   useEffect(() => {
     if (!sourceReady) {
@@ -92,12 +109,11 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
     }
     setCanPlay(true)
     setLoading(false)
-    setError('')
     onAvailable()
   }
 
   async function begin() {
-    if (!canPlay || !video.current || !frame.current) return
+    if (!canPlay || !video.current || !frame.current || (firstDayOnly && !playbackId)) return
     try {
       // Fullscreen is an enhancement; school browser policies can reject it.
       // Request it for the WHOLE lesson, so fullscreen survives the intro video.
@@ -120,15 +136,25 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
     }
   }
 
-  function finish() {
+  async function finish() {
+    if (completing.current) return
     if (video.current?.muted || watchedUntil.current < REQUIRED_WATCH_SECONDS) {
       video.current?.pause()
       setNeedsTap(true)
       setError("Let's finish the complete story with sound before we start practising.")
       return
     }
-    if (document.fullscreenElement === frame.current) void document.exitFullscreen?.().catch(() => undefined)
-    onDone()
+    completing.current = true
+    setLoading(true)
+    try {
+      if (firstDayOnly) await completeFirstDayIntro(lessonId || '', playbackId || '')
+      if (document.fullscreenElement === frame.current) void document.exitFullscreen?.().catch(() => undefined)
+      onDone()
+    } catch {
+      completing.current = false
+      setNeedsTap(true)
+      setError('Your completed story could not be saved. Please try again before we practise.')
+    } finally { setLoading(false) }
   }
 
   function retryVideo() {
@@ -137,6 +163,10 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
     setCanPlay(false)
     setLoading(true)
     setNeedsTap(true)
+    watchedUntil.current = 0
+    completing.current = false
+    setPlaybackId(null)
+    setIntroRetry(attempt => attempt + 1)
     video.current.load()
   }
 
@@ -173,9 +203,9 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
           setError("Miss Julie's First Day video could not load. Please try again after checking the internet connection.")
         }}
       />
-      {loading ? <p className="class1-intro-status" role="status">Getting Miss Julie's story ready...</p> : null}
+      {loading || (firstDayOnly && !playbackId && !error) ? <p className="class1-intro-status" role="status">Getting Miss Julie's story ready...</p> : null}
       {error ? <div className="class1-intro-error" role="alert"><p>{error}</p><button type="button" onClick={retryVideo} disabled={!sourceReady}><RotateCcw size={16} /> Try loading again</button></div> : null}
-      {needsTap && canPlay ? <div className="class1-intro-play-prompt">
+      {needsTap && canPlay && (!firstDayOnly || playbackId) ? <div className="class1-intro-play-prompt">
         <p>Watch the whole story with sound. Then we will practise school actions and English with Miss Julie.</p>
         <button type="button" onClick={() => void begin()}><Play size={18} fill="currentColor" /> Play story</button>
       </div> : null}

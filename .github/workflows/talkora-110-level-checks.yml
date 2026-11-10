@@ -48,6 +48,11 @@ jobs:
         env:
           CHROME_PATH: /usr/bin/google-chrome
         working-directory: client
+      - name: Verify Class 1 fresh and resumed visits enforce the introduction in real Chromium
+        run: node --test tests/class1-intro.browser.test.mjs
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        working-directory: client
       - name: Verify production preview endpoints are truly unavailable
         working-directory: client
         shell: bash
