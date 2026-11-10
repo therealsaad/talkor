@@ -249,10 +249,13 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     let expiryTimer: ReturnType<typeof setTimeout> | undefined
     if (!preview) {
       try {
-        const payload = getStoredToken()?.split('.')[1]
+        const sessionToken = getStoredToken()
+        const payload = sessionToken?.split('.')[1]
         const exp = payload ? JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))).exp : undefined
         if (typeof exp === 'number' && Number.isFinite(exp)) expiryTimer = setTimeout(() => {
-          endSession(); handleUnauthorizedResponse(401)
+          // A previous student's expiry clock must not log out a new PIN session.
+          if (getStoredToken() !== sessionToken) return
+          endSession(); handleUnauthorizedResponse(401, sessionToken)
         }, Math.min(2147483647, Math.max(0, exp * 1000 - Date.now())))
       } catch { /* JWT verification remains on the backend. */ }
     }

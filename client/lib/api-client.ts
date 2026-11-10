@@ -55,8 +55,13 @@ export function clearStoredToken(): void {
   }
 }
 
-export function handleUnauthorizedResponse(status: number): void {
-  if (status !== 401 || !getStoredToken() || typeof window === 'undefined') return
+/** Ignore expired responses from a previous login on a shared computer. */
+export function handleUnauthorizedResponse(status: number, requestToken?: string | null): void {
+  if (status !== 401 || typeof window === 'undefined') return
+  const activeToken = getStoredToken()
+  // An explicitly null request token is NOT an authenticated request.
+  // The optional argument keeps intentional local expiry calls compatible.
+  if (!activeToken || (requestToken !== undefined && requestToken !== activeToken)) return
   clearStoredToken()
   window.dispatchEvent(new Event(AUTH_INVALIDATED_EVENT))
 }
@@ -113,7 +118,7 @@ export async function apiClient<T = any>(
   }
 
   if (!res.ok || !data.success) {
-    handleUnauthorizedResponse(res.status)
+    handleUnauthorizedResponse(res.status, token)
 
     throw new ApiError(
       data.error?.message || `Request failed with status ${res.status}`,
@@ -139,7 +144,7 @@ export async function apiClientBlob(endpoint: string, options: RequestInit = {},
     cache: options.cache ?? 'no-store',
   })
   if (!response.ok) {
-    handleUnauthorizedResponse(response.status)
+    handleUnauthorizedResponse(response.status, token)
     const type = response.headers.get('content-type') || ''
     const error = type.includes('application/json') ? await response.json().catch(() => null) : null
     throw new ApiError(error?.error?.message || `File request failed (${response.status})`, error?.error?.code || 'FILE_REQUEST_FAILED', response.status, error?.error?.details)

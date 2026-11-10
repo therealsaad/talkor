@@ -26,7 +26,7 @@ export function ReportCsvDownload() {
         headers: { Authorization: `Bearer ${token}` }, cache: 'no-store',
       })
       if (!response.ok) {
-        handleUnauthorizedResponse(response.status)
+        handleUnauthorizedResponse(response.status, token)
         throw new Error(`Report export failed (${response.status}). Please check your permissions.`)
       }
       const blob = await response.blob()
