@@ -12,6 +12,7 @@ import { MissJulieContext } from '../providers/ai/AIProvider'
 import { ApiError } from '../utils/ApiError'
 import { CurriculumAccessService } from './curriculum-access.service'
 import { MemoryService } from './memory.service'
+import { assertFirstDayIntro } from './class1-intro-eligibility'
 
 export interface CompactTutorContext extends MissJulieContext {
   classId?: string
@@ -47,7 +48,10 @@ export const StudentContextService = {
     if (options.activityId) {
       await CurriculumAccessService.assertActivity(studentId, options.activityId)
     } else if (options.lessonId) {
-      await CurriculumAccessService.assertLesson(studentId, options.lessonId)
+      const access = await CurriculumAccessService.assertLesson(studentId, options.lessonId)
+      await assertFirstDayIntro({ studentId, schoolId: String(student.schoolId),
+        authVersion: student.authVersion || 0, grade: student.grade,
+        lessonId: options.lessonId, settings: access.lesson.settings, lessonOnly: true })
     }
 
     const klass = await CurriculumClass.findOne({ grade: student.grade }).lean()
