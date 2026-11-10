@@ -98,10 +98,12 @@ describe('Class 1 Node to Python production bridge', () => {
     env.isProd = true
     env.talkoraServiceKey = ''
     const request = jest.spyOn(globalThis, 'fetch')
+    const timer = jest.spyOn(globalThis, 'setTimeout')
     await expect(new PythonAIProvider().generate(class1Context)).rejects.toMatchObject({
       code: 'PROVIDER_ERROR',
     })
     expect(request).not.toHaveBeenCalled()
+    expect(timer).not.toHaveBeenCalled()
   })
 
   it('never switches Class 1 syllabus turns to Groq when the bridge fails', async () => {

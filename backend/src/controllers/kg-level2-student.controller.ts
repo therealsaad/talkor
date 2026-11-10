@@ -15,6 +15,7 @@ import { LEVEL2_LETTERS, LEVEL2_NARRATION, gradeLevel2Transcription } from '../k
 import { composeKGTeachingTurn, type KGTeachingLocale } from '../teaching/kg-teaching-turn'
 import { stableKGTeachingLanguage } from '../services/kg-teaching-language'
 import { ApiError } from '../utils/ApiError'
+import { KG_STUDENT_INTRO_MINIMUM_MS } from '../kg/student-intro-durations'
 import { ok } from '../utils/ApiResponse'
 import { catchAsync } from '../utils/catchAsync'
 import { logger } from '../utils/logger'
@@ -26,7 +27,7 @@ import { createTurnTimer, logTurnTiming, parseSlowTurnMs, serverTimingHeader, ty
  * A complete KG1 is the only prerequisite, NOT the homework check-in.
  */
 const INTRO_MAX_AGE_MS = 2 * 60 * 60_000
-const INTRO_MIN_ELAPSED_MS = 10_000
+const INTRO_MIN_ELAPSED_MS = KG_STUDENT_INTRO_MINIMUM_MS[2]
 const hash = (value: string) => createHash('sha256').update(value).digest('hex')
 function safeEquals(a: string, b: string): boolean {
   const left = Buffer.from(a, 'hex'), right = Buffer.from(b, 'hex')

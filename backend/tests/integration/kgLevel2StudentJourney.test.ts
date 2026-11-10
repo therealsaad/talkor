@@ -45,11 +45,25 @@ async function watchIntro(auth: string, studentId: unknown) {
   const options = { Authorization: auth, 'X-KG-Level2-Intro': id }
   await request(app).post('/api/kg-level2/intro/complete')
     .set('Authorization', auth).send({ playbackId: id, videoEnded: true }).expect(409)
-  await KGLevel2Progress.updateOne({ studentId }, { $set: { introStartedAt: new Date(Date.now() - 20_000) } })
+  await KGLevel2Progress.updateOne({ studentId }, { $set: { introStartedAt: new Date(Date.now() - 91_000) } })
   await request(app).post('/api/kg-level2/intro/complete')
     .set('Authorization', auth).send({ playbackId: id, videoEnded: true }).expect(200)
   return options
 }
+
+it('cannot acknowledge the 90-second Level 2 film after only 20 or 85 seconds', async () => {
+  const { student, auth } = await fixture()
+  const started = await request(app).post('/api/kg-level2/intro/start').set('Authorization', auth).expect(200)
+  const body = { playbackId: started.body.data.playbackId, videoEnded: true }
+  for (const elapsed of [20_000, 85_000]) {
+    await KGLevel2Progress.updateOne({ studentId: student._id }, { $set: { introStartedAt: new Date(Date.now() - elapsed) } })
+    await request(app).post('/api/kg-level2/intro/complete').set('Authorization', auth).send(body).expect(409)
+    expect((await KGLevel2Progress.findOne({ studentId: student._id }))?.introCompletedAt).toBeUndefined()
+  }
+  await KGLevel2Progress.updateOne({ studentId: student._id }, { $set: { introStartedAt: new Date(Date.now() - 91_000) } })
+  await request(app).post('/api/kg-level2/intro/complete').set('Authorization', auth).send({ ...body, videoEnded: false }).expect(409)
+  await request(app).post('/api/kg-level2/intro/complete').set('Authorization', auth).send(body).expect(200)
+})
 
 it('unlocks student E–J only after authoritative KG1 completion; keeps preview off limits', async () => {
   const { student, school, auth } = await fixture(false)

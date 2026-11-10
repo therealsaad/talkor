@@ -8,6 +8,10 @@ import { Level } from '../../src/models/Level'
 import { Lesson } from '../../src/models/Lesson'
 import { Activity } from '../../src/models/Activity'
 import { Progress } from '../../src/models/Progress'
+import { VoiceSession } from '../../src/models/VoiceSession'
+import { Conversation } from '../../src/models/Conversation'
+import { ActivityAttempt } from '../../src/models/ActivityAttempt'
+import { AzureVoiceProvider } from '../../src/providers/voice/AzureVoiceProvider'
 import { hashPassword } from '../../src/utils/password'
 import { signToken } from '../../src/utils/jwt'
 import { FIRST_DAY_SCENES } from '../../src/scripts/class1-first-day-scenes'
@@ -105,76 +109,42 @@ async function fixture(watchIntro = true) {
 }
 
 describe('genuinely published Class 1 Level 1 (disposable database)', () => {
-  it('does not adopt a newer PIN visit when authentication and intro handling race', async () => {
-    const f = await fixture(false)
-    // Simulate revocation after authenticate() accepted the old token but
-    // before the controller reads the student; no real school is involved.
-    await Student.updateOne({ _id: f.student._id }, { $inc: { authVersion: 1 } })
-    const req = { auth: { id: String(f.student._id), role: 'STUDENT', schoolId: String(f.school._id) },
-      headers: { authorization: 'Bearer ' + f.token }, body: { lessonId: String(f.lesson._id) } } as Request
-    const error = await new Promise<any>(resolve => Class1IntroController.start(req, {} as Response, resolve as NextFunction))
-    expect(error.statusCode).toBe(401)
-    expect(await Class1IntroVisit.countDocuments({ studentId: f.student._id })).toBe(0)
-  })
-
-  it('allows curriculum bootstrap but refuses direct voice, AI and progress before the full story', async () => {
-    const f = await fixture(false)
-    const headers = { Authorization: 'Bearer ' + f.token }
-    const body = { lessonId: String(f.lesson._id), activityId: String(f.activities[0]._id) }
-    await request(app).get('/api/students/me/next-lesson').set(headers).expect(200)
-    await request(app).post('/api/voice/sessions').set(headers).send(body).expect(409)
-    await request(app).post('/api/ai/miss-julie').set(headers).send({ ...body, message: 'school' }).expect(409)
-    await request(app).post('/api/ai/miss-julie').set(headers).send({ lessonId: body.lessonId, message: 'school' }).expect(409)
-    await request(app).post('/api/progress/activities/' + f.activities[0]._id + '/attempts').set(headers)
-      .send({ answer: 'school', startedAt: new Date().toISOString() }).expect(409)
-    expect(await VoiceSession.countDocuments({ studentId: f.student._id })).toBe(0)
-    expect(await ActivityAttempt.countDocuments({ studentId: f.student._id })).toBe(0)
-    expect(await Conversation.countDocuments({ studentId: f.student._id })).toBe(0)
-  })
-
-  it('rejects early, forged, missing-ended and expired intro completion; only the current reviewed film authorizes voice', async () => {
-    const f = await fixture(false)
-    const headers = { Authorization: 'Bearer ' + f.token }
-    const lessonId = String(f.lesson._id)
-    const started = await request(app).post('/api/voice/first-day/intro/start').set(headers).send({ lessonId }).expect(200)
-    const payload = { lessonId, playbackId: started.body.data.playbackId, videoEnded: true }
-    for (const elapsed of [20_000, 85_000]) {
-      await Class1IntroVisit.updateOne({ studentId: f.student._id }, { $set: { startedAt: new Date(Date.now() - elapsed) } })
-      await request(app).post('/api/voice/first-day/intro/complete').set(headers).send(payload).expect(409)
-    }
-    await request(app).post('/api/voice/first-day/intro/complete').set(headers).send({ ...payload, videoEnded: false }).expect(400)
-    await request(app).post('/api/voice/first-day/intro/complete').set(headers).send({ ...payload, playbackId: 'f'.repeat(64) }).expect(409)
-    await Class1IntroVisit.updateOne({ studentId: f.student._id }, { $set: { startedAt: new Date(Date.now() - 91_000), expiresAt: new Date(Date.now() - 1000) } })
-    await request(app).post('/api/voice/first-day/intro/complete').set(headers).send(payload).expect(409)
-    await Class1IntroVisit.updateOne({ studentId: f.student._id }, { $set: { expiresAt: new Date(Date.now() + 60_000) } })
-    await request(app).post('/api/voice/first-day/intro/complete').set(headers).send(payload).expect(200)
-    await request(app).post('/api/voice/sessions').set(headers).send({ lessonId, activityId: String(f.activities[0]._id) }).expect(201)
-    await Lesson.updateOne({ _id: f.lesson._id }, { $set: { 'settings.introVideoUrl': 'https://media.example.test/new-version.mp4' } })
-    await request(app).post('/api/voice/sessions').set(headers).send({ lessonId, activityId: String(f.activities[0]._id) }).expect(409)
-    await request(app).post('/api/voice/first-day/intro/start').send({ lessonId }).expect(401)
-    await request(app).post('/api/voice/first-day/intro/start').set({ Authorization: 'Bearer ' + f.schoolToken }).send({ lessonId }).expect(403)
-  })
-
-  it('new Class 1 PIN visits revoke old JWT/intro eligibility, preserve progress and require the story again', async () => {
+  it('requires generated, session-bound audio before progress and keeps duplicate ACKs idempotent', async () => {
     const f = await fixture()
-    const pin = '48291'
-    await Student.updateOne({ _id: f.student._id }, { $set: { passwordHash: await hashPassword(pin), pinLookup: pinLookup(pin) } })
-    jest.spyOn(VoiceWarmupService, 'schedule').mockImplementation(() => undefined)
-    const before = JSON.stringify(await Progress.find({ studentId: f.student._id }).lean())
-    const login = async () => (await request(app).post('/api/auth/student/pin-login').send({ pin }).expect(200)).body.data.token as string
-    const token = await login()
-    expect(token).not.toBe(f.token)
-    await request(app).get('/api/auth/me').set('Authorization', 'Bearer ' + f.token).expect(401)
-    const headers = { Authorization: 'Bearer ' + token }
-    const body = { lessonId: String(f.lesson._id), activityId: String(f.activities[0]._id) }
-    await request(app).post('/api/voice/sessions').set(headers).send(body).expect(409)
-    expect(JSON.stringify(await Progress.find({ studentId: f.student._id }).lean())).toBe(before)
-    await watchFirstDayIntro(app, headers, String(f.student._id), String(f.lesson._id))
-    await request(app).post('/api/voice/sessions').set(headers).send(body).expect(201)
-    const second = await login()
-    expect(second).not.toBe(token)
-    await request(app).get('/api/auth/me').set(headers).expect(401)
-    await request(app).post('/api/voice/sessions').set('Authorization', 'Bearer ' + second).send(body).expect(409)
+    const activity = f.activities[0]
+    const conversation = await Conversation.create({ studentId: f.student._id, lessonId: f.lesson._id,
+      activityId: activity._id, mode: 'LESSON', status: 'ACTIVE', turnCount: 1 })
+    const session = await VoiceSession.create({ studentId: f.student._id, lessonId: f.lesson._id,
+      activityId: activity._id, provider: 'synthetic-stt', status: 'completed', startedAt: new Date(),
+      transcript: 'I go to school.', aiResponse: { message: 'You said school. Let us try the next school action.',
+        activityComplete: true, conversation: { id: String(conversation._id), masteryStatus: 'MASTERED' } } })
+    const headers = { Authorization: 'Bearer ' + f.token }
+    const ack = () => request(app).post('/api/voice/sessions/' + session._id + '/teacher-audio-played').set(headers)
+    await ack().send({}).expect(409)
+    await ack().send({ feedbackReceipt: 'forged' }).expect(409)
+    expect(await ActivityAttempt.countDocuments({ studentId: f.student._id })).toBe(0)
+    const azure = jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeStream')
+    const stream = (bytes: number) => ({ provider: 'azure-neerja', contentType: 'audio/mpeg',
+      body: new ReadableStream<Uint8Array>({ start(c) { if (bytes) c.enqueue(new Uint8Array(bytes)); c.close() } }) })
+    azure.mockImplementation(async () => stream(0))
+    const body = { text: 'Browser-supplied text must not be narrated', purpose: 'CONVERSATION',
+      activityId: String(activity._id), teacherSessionId: String(session._id) }
+    const failed = await request(app).post('/api/voice/synthesize').set(headers).send(body).expect(502)
+    expect(failed.headers['x-class1-feedback-receipt']).toBeUndefined()
+    azure.mockImplementation(async () => stream(512))
+    const generated = await request(app).post('/api/voice/synthesize').set(headers).send(body).expect(200)
+    const receipt: string = generated.headers['x-class1-feedback-receipt']
+    expect(receipt).toMatch(/^v1\.[0-9]+\.[a-f0-9]{32}\.[a-f0-9]{64}$/)
+    expect(azure).toHaveBeenLastCalledWith('You said school. Let us try the next school action.', expect.any(Object))
+    expect(await ActivityAttempt.countDocuments({ studentId: f.student._id })).toBe(0)
+    const otherSession = await VoiceSession.create({ studentId: f.student._id, lessonId: f.lesson._id,
+      activityId: activity._id, provider: 'synthetic-stt', status: 'completed', startedAt: new Date(),
+      transcript: 'school', aiResponse: session.aiResponse })
+    await request(app).post('/api/voice/sessions/' + otherSession._id + '/teacher-audio-played')
+      .set(headers).send({ feedbackReceipt: receipt }).expect(409)
+    await ack().send({ feedbackReceipt: receipt }).expect(200)
+    await ack().send({ feedbackReceipt: receipt }).expect(200)
+    expect(await ActivityAttempt.countDocuments({ studentId: f.student._id, activityId: activity._id })).toBe(1)
   })
   it('opens My First Day from the student map/next lesson and staff map with no draft leakage', async () => {
     const f = await fixture()

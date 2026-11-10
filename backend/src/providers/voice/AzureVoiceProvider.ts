@@ -1,6 +1,7 @@
 import { ApiError } from '../../utils/ApiError'
 import { chooseTalkoraBilingualVoice } from './class1-voice-language'
 import { logger } from '../../utils/logger'
+import { errorCategory } from '../../utils/error-category'
 import type { VoiceProvider, VoiceStreamResult, VoiceSynthesisResult } from './VoiceProvider'
 
 function escapeXml(text: string): string {
@@ -86,13 +87,13 @@ export class AzureVoiceProvider implements VoiceProvider {
         signal: AbortSignal.timeout(kindergarten ? Math.max(5000, Math.min(45000, Number(process.env.KG_AZURE_TTS_TIMEOUT_MS || 25000))) : s.timeoutMs),
       })
     } catch (error) {
-      logger.warn('Azure TTS request failed', { error })
+      logger.warn('Azure TTS request failed', { errorCategory: errorCategory(error) })
       throw ApiError.provider('TTS_SERVICE_UNAVAILABLE')
     }
 
     if (!response.ok) {
-      const detail = await response.text().catch(() => '')
-      logger.warn('Azure TTS returned an error', { status: response.status, detail: detail.slice(0, 300) })
+      await response.body?.cancel().catch(() => undefined)
+      logger.warn('Azure TTS returned an error', { status: response.status })
       throw ApiError.provider('TTS_GENERATION_FAILED')
     }
 

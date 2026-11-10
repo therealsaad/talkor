@@ -5,6 +5,7 @@ import { AIProvider, MissJulieContext, unitTeachingGuidance } from './AIProvider
 import { GroqProvider } from './GroqProvider'
 import { class1ExplanationLanguage } from './class1-language'
 import { ApiError } from '../../utils/ApiError'
+import { errorCategory } from '../../utils/error-category'
 
 export class PythonAIProvider implements AIProvider {
   name = 'python-qwen'
@@ -19,7 +20,6 @@ export class PythonAIProvider implements AIProvider {
     const poemScene = context.grade === 1 && context.levelId === 'g01-l01' &&
       context.sceneKey?.startsWith('poem-') === true
     const deadlineMs = poemScene ? Math.min(env.aiServiceTimeoutMs, 2800) : env.aiServiceTimeoutMs
-    const timeout = setTimeout(() => controller.abort(), deadlineMs)
     const unitGuidance = unitTeachingGuidance(context)
     const isClass1Pilot = context.grade === 1 && context.levelId === 'g01-l01'
     const pilotEnabled = isClass1Pilot
@@ -31,6 +31,7 @@ export class PythonAIProvider implements AIProvider {
     const baseUrl = pilotEnabled && isClass1Pilot
       ? process.env.TALKORA_CLASS1_AI_URL || 'http://127.0.0.1:8002'
       : env.aiServiceUrl
+    const timeout = setTimeout(() => controller.abort(), deadlineMs)
 
     try {
       if (env.nodeEnv !== 'production') {
@@ -163,7 +164,7 @@ export class PythonAIProvider implements AIProvider {
     } catch (error) {
       console.warn(
         '[TALKORA AI] Local Qwen unavailable.',
-        error instanceof Error ? error.message : error,
+        errorCategory(error),
       )
 
       // Never route an unavailable Class 1 curriculum turn to an unrestricted
@@ -181,7 +182,7 @@ export class PythonAIProvider implements AIProvider {
         } catch (groqError) {
           console.warn(
             '[TALKORA AI] Groq fallback failed.',
-            groqError instanceof Error ? groqError.message : groqError,
+            errorCategory(groqError),
           )
         }
       }
