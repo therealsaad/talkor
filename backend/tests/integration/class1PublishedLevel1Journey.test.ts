@@ -17,9 +17,6 @@ import { signToken } from '../../src/utils/jwt'
 import { FIRST_DAY_SCENES } from '../../src/scripts/class1-first-day-scenes'
 import { watchFirstDayIntro } from './class1IntroTestUtils'
 import { Class1IntroVisit } from '../../src/models/Class1IntroVisit'
-import { VoiceSession } from '../../src/models/VoiceSession'
-import { ActivityAttempt } from '../../src/models/ActivityAttempt'
-import { Conversation } from '../../src/models/Conversation'
 import { VoiceWarmupService } from '../../src/services/voice-warmup.service'
 import { pinLookup } from '../../src/utils/student-pin'
 import { Class1IntroController } from '../../src/controllers/class1-intro.controller'
@@ -145,6 +142,77 @@ describe('genuinely published Class 1 Level 1 (disposable database)', () => {
     await ack().send({ feedbackReceipt: receipt }).expect(200)
     await ack().send({ feedbackReceipt: receipt }).expect(200)
     expect(await ActivityAttempt.countDocuments({ studentId: f.student._id, activityId: activity._id })).toBe(1)
+  })
+  it('does not adopt a newer PIN visit when authentication and intro handling race', async () => {
+    const f = await fixture(false)
+    // Simulate revocation after authenticate() accepted the old token but
+    // before the controller reads the student; no real school is involved.
+    await Student.updateOne({ _id: f.student._id }, { $inc: { authVersion: 1 } })
+    const req = { auth: { id: String(f.student._id), role: 'STUDENT', schoolId: String(f.school._id) },
+      headers: { authorization: 'Bearer ' + f.token }, body: { lessonId: String(f.lesson._id) } } as Request
+    const error = await new Promise<any>(resolve => Class1IntroController.start(req, {} as Response, resolve as NextFunction))
+    expect(error.statusCode).toBe(401)
+    expect(await Class1IntroVisit.countDocuments({ studentId: f.student._id })).toBe(0)
+  })
+
+  it('allows curriculum bootstrap but refuses direct voice, AI and progress before the full story', async () => {
+    const f = await fixture(false)
+    const headers = { Authorization: 'Bearer ' + f.token }
+    const body = { lessonId: String(f.lesson._id), activityId: String(f.activities[0]._id) }
+    await request(app).get('/api/students/me/next-lesson').set(headers).expect(200)
+    await request(app).post('/api/voice/sessions').set(headers).send(body).expect(409)
+    await request(app).post('/api/ai/miss-julie').set(headers).send({ ...body, message: 'school' }).expect(409)
+    await request(app).post('/api/ai/miss-julie').set(headers).send({ lessonId: body.lessonId, message: 'school' }).expect(409)
+    await request(app).post('/api/progress/activities/' + f.activities[0]._id + '/attempts').set(headers)
+      .send({ answer: 'school', startedAt: new Date().toISOString() }).expect(409)
+    expect(await VoiceSession.countDocuments({ studentId: f.student._id })).toBe(0)
+    expect(await ActivityAttempt.countDocuments({ studentId: f.student._id })).toBe(0)
+    expect(await Conversation.countDocuments({ studentId: f.student._id })).toBe(0)
+  })
+
+  it('rejects early, forged, missing-ended and expired intro completion; only the current reviewed film authorizes voice', async () => {
+    const f = await fixture(false)
+    const headers = { Authorization: 'Bearer ' + f.token }
+    const lessonId = String(f.lesson._id)
+    const started = await request(app).post('/api/voice/first-day/intro/start').set(headers).send({ lessonId }).expect(200)
+    const payload = { lessonId, playbackId: started.body.data.playbackId, videoEnded: true }
+    for (const elapsed of [20_000, 85_000]) {
+      await Class1IntroVisit.updateOne({ studentId: f.student._id }, { $set: { startedAt: new Date(Date.now() - elapsed) } })
+      await request(app).post('/api/voice/first-day/intro/complete').set(headers).send(payload).expect(409)
+    }
+    await request(app).post('/api/voice/first-day/intro/complete').set(headers).send({ ...payload, videoEnded: false }).expect(400)
+    await request(app).post('/api/voice/first-day/intro/complete').set(headers).send({ ...payload, playbackId: 'f'.repeat(64) }).expect(409)
+    await Class1IntroVisit.updateOne({ studentId: f.student._id }, { $set: { startedAt: new Date(Date.now() - 91_000), expiresAt: new Date(Date.now() - 1000) } })
+    await request(app).post('/api/voice/first-day/intro/complete').set(headers).send(payload).expect(409)
+    await Class1IntroVisit.updateOne({ studentId: f.student._id }, { $set: { expiresAt: new Date(Date.now() + 60_000) } })
+    await request(app).post('/api/voice/first-day/intro/complete').set(headers).send(payload).expect(200)
+    await request(app).post('/api/voice/sessions').set(headers).send({ lessonId, activityId: String(f.activities[0]._id) }).expect(201)
+    await Lesson.updateOne({ _id: f.lesson._id }, { $set: { 'settings.introVideoUrl': 'https://media.example.test/new-version.mp4' } })
+    await request(app).post('/api/voice/sessions').set(headers).send({ lessonId, activityId: String(f.activities[0]._id) }).expect(409)
+    await request(app).post('/api/voice/first-day/intro/start').send({ lessonId }).expect(401)
+    await request(app).post('/api/voice/first-day/intro/start').set({ Authorization: 'Bearer ' + f.schoolToken }).send({ lessonId }).expect(403)
+  })
+
+  it('new Class 1 PIN visits revoke old JWT/intro eligibility, preserve progress and require the story again', async () => {
+    const f = await fixture()
+    const pin = '48291'
+    await Student.updateOne({ _id: f.student._id }, { $set: { passwordHash: await hashPassword(pin), pinLookup: pinLookup(pin) } })
+    jest.spyOn(VoiceWarmupService, 'schedule').mockImplementation(() => undefined)
+    const before = JSON.stringify(await Progress.find({ studentId: f.student._id }).lean())
+    const login = async () => (await request(app).post('/api/auth/student/pin-login').send({ pin }).expect(200)).body.data.token as string
+    const token = await login()
+    expect(token).not.toBe(f.token)
+    await request(app).get('/api/auth/me').set('Authorization', 'Bearer ' + f.token).expect(401)
+    const headers = { Authorization: 'Bearer ' + token }
+    const body = { lessonId: String(f.lesson._id), activityId: String(f.activities[0]._id) }
+    await request(app).post('/api/voice/sessions').set(headers).send(body).expect(409)
+    expect(JSON.stringify(await Progress.find({ studentId: f.student._id }).lean())).toBe(before)
+    await watchFirstDayIntro(app, headers, String(f.student._id), String(f.lesson._id))
+    await request(app).post('/api/voice/sessions').set(headers).send(body).expect(201)
+    const second = await login()
+    expect(second).not.toBe(token)
+    await request(app).get('/api/auth/me').set(headers).expect(401)
+    await request(app).post('/api/voice/sessions').set('Authorization', 'Bearer ' + second).send(body).expect(409)
   })
   it('opens My First Day from the student map/next lesson and staff map with no draft leakage', async () => {
     const f = await fixture()
