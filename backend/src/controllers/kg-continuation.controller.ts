@@ -17,12 +17,12 @@ import { KG_CONTINUATION_LEVELS, isKGContinuationLevel, continuationLesson, getK
 import { composeKGTeachingTurn, type KGTeachingLocale } from '../teaching/kg-teaching-turn'
 import { stableKGTeachingLanguage } from '../services/kg-teaching-language'
 import { ApiError } from '../utils/ApiError'
+import { KG_STUDENT_INTRO_MINIMUM_MS } from '../kg/student-intro-durations'
 import { ok } from '../utils/ApiResponse'
 import { catchAsync } from '../utils/catchAsync'
 import { logger } from '../utils/logger'
 import { createTurnTimer, logTurnTiming, parseSlowTurnMs, serverTimingHeader, type TurnTimer } from '../services/kg-turn-timing'
 
-const INTRO_MIN_MS = 10_000
 const INTRO_VALID_MS = 2 * 60 * 60_000
 const hash = (value: string) => createHash('sha256').update(value).digest('hex')
 function safeSame(a: string, b: string) {
@@ -191,7 +191,7 @@ export const KGContinuationController = {
     const id = req.body?.playbackId
     const elapsed = progress.introStartedAt ? Date.now() - progress.introStartedAt.getTime() : 0
     if (typeof id !== 'string' || !/^[a-f0-9]{64}$/.test(id) || !progress.introTicketHash ||
-        !safeSame(progress.introTicketHash, hash(id)) || elapsed < INTRO_MIN_MS || elapsed > INTRO_VALID_MS ||
+        !safeSame(progress.introTicketHash, hash(id)) || elapsed < KG_STUDENT_INTRO_MINIMUM_MS[level] || elapsed > INTRO_VALID_MS ||
         req.body?.videoEnded !== true) throw ApiError.conflict('Finish the full introduction before the speaking practice')
     await KGContinuationProgress.updateOne({ studentId, schoolId, level, introTicketHash: progress.introTicketHash },
       { $set: { introCompletedAt: new Date() } })
