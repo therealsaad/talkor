@@ -67,6 +67,38 @@ const clipCache = new Map<string, ClipCacheEntry>()
 const MAX_CLIPS = 20
 const MISSING_CLIP_TTL_MS = 60_000
 
+// A single live KG1 state read can be shared across simultaneous mounts.
+ // Never persist a completed snapshot: feedback acknowledgements and re-login
+ // must fetch current server-owned progress. Bind in-flight work to the token
+ // because school lab browsers can switch students while a request is pending.
+let pendingState: Promise<KGAlphabetState> | null = null
+let pendingStateStudentToken: string | null = null
+
+function readKGState(): Promise<KGAlphabetState> {
+  const token = getStoredToken()
+  if (pendingState && pendingStateStudentToken === token) return pendingState
+  let request: Promise<KGAlphabetState>
+  request = apiClient<KGAlphabetState>('/kg-alphabet/state', { cache: 'no-store' })
+    .then((state) => {
+      // A delayed result from student A must not install A's manifest or
+      // overwrite the screen after student B signs in on the same computer.
+      if (getStoredToken() !== token) {
+        throw new Error('KG lesson state belongs to a previous login. Please reopen your garden.')
+      }
+      rememberManifest(state)
+      return state
+    })
+    .finally(() => {
+      if (pendingState === request) {
+        pendingState = null
+        pendingStateStudentToken = null
+      }
+    })
+  pendingState = request
+  pendingStateStudentToken = token
+  return request
+}
+
 // Tab-memory-only. A fresh watch ticket is required for every KG Level 1 entry.
 let playbackId: string | null = null
 // Bind completed tickets to the login that created them, not only pending starts.
@@ -183,7 +215,7 @@ async function playAudioUrl(url: string, audio: HTMLAudioElement, signal?: Abort
 }
 
 export const kgAlphabetService = {
-  state: () => apiClient<KGAlphabetState>('/kg-alphabet/state', { cache: 'no-store' }).then((state) => { rememberManifest(state); return state }),
+  state: readKGState,
   /** Resumes only the most recent current-activity attempt without another STT pass. */
   pendingFeedback: () => apiClient<{ pending: KGAttemptResponse | null }>('/kg-alphabet/pending-feedback', {
     cache: 'no-store', headers: introTicketHeaders(),
