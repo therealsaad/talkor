@@ -66,6 +66,7 @@ test('Azure KG synthesis is transient: no AudioCacheService read/write, and XML 
   }
   process.env.AZURE_SPEECH_KEY = 'unit-test-only'
   const { AzureVoiceProvider } = loadTS('providers/voice/AzureVoiceProvider.ts', {
+    '../../utils/error-category': loadTS('utils/error-category.ts', {}),
     '../../utils/ApiError': { ApiError: { badRequest: (m) => new Error(m), provider: (m) => new Error(m) } },
     '../../utils/logger': { logger: { warn() {} } },
     './class1-voice-language': { chooseTalkoraBilingualVoice: () => ({ voice: 'en-IN-NeerjaNeural', locale: 'en-IN' }) },
