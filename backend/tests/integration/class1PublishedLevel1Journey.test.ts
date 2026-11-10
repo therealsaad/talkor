@@ -8,6 +8,10 @@ import { Level } from '../../src/models/Level'
 import { Lesson } from '../../src/models/Lesson'
 import { Activity } from '../../src/models/Activity'
 import { Progress } from '../../src/models/Progress'
+import { VoiceSession } from '../../src/models/VoiceSession'
+import { Conversation } from '../../src/models/Conversation'
+import { ActivityAttempt } from '../../src/models/ActivityAttempt'
+import { AzureVoiceProvider } from '../../src/providers/voice/AzureVoiceProvider'
 import { hashPassword } from '../../src/utils/password'
 import { signToken } from '../../src/utils/jwt'
 import { FIRST_DAY_SCENES } from '../../src/scripts/class1-first-day-scenes'
@@ -24,6 +28,7 @@ const oldNodeEnv = process.env.NODE_ENV
 beforeAll(async () => connectTestDatabase())
 afterAll(async () => disconnectTestDatabase())
 afterEach(async () => {
+  jest.restoreAllMocks()
   if (oldNodeEnv === undefined) delete process.env.NODE_ENV
   else process.env.NODE_ENV = oldNodeEnv
   delete process.env.TALKORA_CLASS1_STUDENT_DEMO
@@ -94,6 +99,43 @@ async function fixture() {
 }
 
 describe('genuinely published Class 1 Level 1 (disposable database)', () => {
+  it('requires generated, session-bound audio before progress and keeps duplicate ACKs idempotent', async () => {
+    const f = await fixture()
+    const activity = f.activities[0]
+    const conversation = await Conversation.create({ studentId: f.student._id, lessonId: f.lesson._id,
+      activityId: activity._id, mode: 'LESSON', status: 'ACTIVE', turnCount: 1 })
+    const session = await VoiceSession.create({ studentId: f.student._id, lessonId: f.lesson._id,
+      activityId: activity._id, provider: 'synthetic-stt', status: 'completed', startedAt: new Date(),
+      transcript: 'I go to school.', aiResponse: { message: 'You said school. Let us try the next school action.',
+        activityComplete: true, conversation: { id: String(conversation._id), masteryStatus: 'MASTERED' } } })
+    const headers = { Authorization: 'Bearer ' + f.token }
+    const ack = () => request(app).post('/api/voice/sessions/' + session._id + '/teacher-audio-played').set(headers)
+    await ack().send({}).expect(409)
+    await ack().send({ feedbackReceipt: 'forged' }).expect(409)
+    expect(await ActivityAttempt.countDocuments({ studentId: f.student._id })).toBe(0)
+    const azure = jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeStream')
+    const stream = (bytes: number) => ({ provider: 'azure-neerja', contentType: 'audio/mpeg',
+      body: new ReadableStream<Uint8Array>({ start(c) { if (bytes) c.enqueue(new Uint8Array(bytes)); c.close() } }) })
+    azure.mockImplementation(async () => stream(0))
+    const body = { text: 'Browser-supplied text must not be narrated', purpose: 'CONVERSATION',
+      activityId: String(activity._id), teacherSessionId: String(session._id) }
+    const failed = await request(app).post('/api/voice/synthesize').set(headers).send(body).expect(502)
+    expect(failed.headers['x-class1-feedback-receipt']).toBeUndefined()
+    azure.mockImplementation(async () => stream(512))
+    const generated = await request(app).post('/api/voice/synthesize').set(headers).send(body).expect(200)
+    const receipt: string = generated.headers['x-class1-feedback-receipt']
+    expect(receipt).toMatch(/^v1\.[0-9]+\.[a-f0-9]{32}\.[a-f0-9]{64}$/)
+    expect(azure).toHaveBeenLastCalledWith('You said school. Let us try the next school action.', expect.any(Object))
+    expect(await ActivityAttempt.countDocuments({ studentId: f.student._id })).toBe(0)
+    const otherSession = await VoiceSession.create({ studentId: f.student._id, lessonId: f.lesson._id,
+      activityId: activity._id, provider: 'synthetic-stt', status: 'completed', startedAt: new Date(),
+      transcript: 'school', aiResponse: session.aiResponse })
+    await request(app).post('/api/voice/sessions/' + otherSession._id + '/teacher-audio-played')
+      .set(headers).send({ feedbackReceipt: receipt }).expect(409)
+    await ack().send({ feedbackReceipt: receipt }).expect(200)
+    await ack().send({ feedbackReceipt: receipt }).expect(200)
+    expect(await ActivityAttempt.countDocuments({ studentId: f.student._id, activityId: activity._id })).toBe(1)
+  })
   it('opens My First Day from the student map/next lesson and staff map with no draft leakage', async () => {
     const f = await fixture()
     // A stale development flag must not redirect a student back into draft.

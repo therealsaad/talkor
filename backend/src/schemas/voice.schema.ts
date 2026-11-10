@@ -78,6 +78,7 @@ export const synthesizeVoiceSchema =
   z.object({
     body:
       z.object({
+        teacherSessionId: z.string().regex(/^[a-f0-9]{24}$/i).optional(),
         text:
           z.string()
             .trim()

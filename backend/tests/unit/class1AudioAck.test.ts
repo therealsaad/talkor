@@ -20,12 +20,17 @@ import { Conversation } from '../../src/models/Conversation'
 import { CurriculumAccessService } from '../../src/services/curriculum-access.service'
 import { ProgressService } from '../../src/services/progress.service'
 import { Types } from 'mongoose'
+import { AzureVoiceProvider } from '../../src/providers/voice/AzureVoiceProvider'
+import { issueClass1FeedbackReceipt, verifyClass1FeedbackReceipt } from '../../src/services/class1-feedback-receipt'
 
 const studentId = '64b000000000000000000001'
 const activityId = '64b000000000000000000002'
 const sessionId = '64b000000000000000000003'
 const lessonId = '64b000000000000000000004'
 const conversationId = '64b000000000000000000005'
+const visit = { schoolId: '64b000000000000000000006', authVisitHash: 'a'.repeat(64) }
+const scope = (session = validSession()) => ({ ...visit, studentId, sessionId, activityId, text: session.aiResponse.message })
+const receipt = () => issueClass1FeedbackReceipt(scope())
 
 const validSession = () => ({
   _id: new Types.ObjectId(sessionId), studentId: new Types.ObjectId(studentId),
@@ -38,6 +43,7 @@ const validSession = () => ({
 })
 
 beforeEach(() => {
+  jest.restoreAllMocks()
   jest.resetAllMocks()
   ;(CurriculumAccessService.assertActivity as jest.Mock).mockResolvedValue({
     activity: { activityKey: 'class1-l01-v3-skip-bunny' },
@@ -64,7 +70,7 @@ test('pending final Qwen turn is recoverable without awarding progress', async (
 test('authenticated acknowledgment awards progress only for completed v3 speech', async () => {
   const session = validSession()
   ;(VoiceSession.findOne as jest.Mock).mockResolvedValue(session)
-  await expect(VoiceService.acknowledgeTeacherAudio(studentId, sessionId))
+  await expect(VoiceService.acknowledgeTeacherAudio(studentId, sessionId, receipt(), visit))
     .resolves.toEqual({ complete: true, acknowledged: true })
   expect(ProgressService.submitAttempt).toHaveBeenCalledWith(
     expect.objectContaining({
@@ -102,6 +108,56 @@ test('replaying an already acknowledged response is idempotent', async () => {
   const session = validSession()
   session.metadata.teacherAudioAcknowledgedAt = new Date()
   ;(VoiceSession.findOne as jest.Mock).mockResolvedValue(session)
-  await VoiceService.acknowledgeTeacherAudio(studentId, sessionId)
+  await VoiceService.acknowledgeTeacherAudio(studentId, sessionId, receipt(), visit)
   expect(ProgressService.submitAttempt).not.toHaveBeenCalled()
 })
+
+test.each([
+  ['missing', () => undefined],
+  ['forged', () => 'v1.123.fake.signature'],
+  ['expired', () => issueClass1FeedbackReceipt(scope(), Date.now() - 16 * 60_000)],
+  ['other learner', () => issueClass1FeedbackReceipt({ ...scope(), studentId: '64b000000000000000000099' })],
+  ['other session', () => issueClass1FeedbackReceipt({ ...scope(), sessionId: '64b000000000000000000099' })],
+  ['other activity', () => issueClass1FeedbackReceipt({ ...scope(), activityId: '64b000000000000000000099' })],
+  ['other login', () => issueClass1FeedbackReceipt({ ...scope(), authVisitHash: 'b'.repeat(64) })],
+  ['altered text', () => issueClass1FeedbackReceipt({ ...scope(), text: 'Different teacher response' })],
+])('%s receipt cannot award Class 1 progress', async (_name, makeReceipt) => {
+  ;(VoiceSession.findOne as jest.Mock).mockResolvedValue(validSession())
+  await expect(VoiceService.acknowledgeTeacherAudio(studentId, sessionId, makeReceipt(), visit)).rejects.toMatchObject({ code: 'CONFLICT' })
+  expect(ProgressService.submitAttempt).not.toHaveBeenCalled()
+})
+
+const audio = (bytes = 512, contentType = 'audio/mpeg') => ({
+  body: new ReadableStream<Uint8Array>({ start(controller) { if (bytes) controller.enqueue(new Uint8Array(bytes)); controller.close() } }),
+  contentType, provider: 'azure-neerja', metadata: {},
+})
+
+test('only generated complete audio for the frozen teacher turn receives a signed receipt', async () => {
+  ;(VoiceSession.findOne as jest.Mock).mockResolvedValue(validSession())
+  const azure = jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeStream').mockResolvedValue(audio())
+  const generated = await VoiceService.streamSynthesize('Ignore this forged browser text', {
+    studentId, activityId, teacherSessionId: sessionId, ...visit,
+  })
+  expect(azure).toHaveBeenCalledWith(validSession().aiResponse.message, expect.objectContaining({ class1Lesson: true, language: 'en-IN' }))
+  expect(verifyClass1FeedbackReceipt(generated?.metadata?.['X-Class1-Feedback-Receipt'], scope())).toBe(true)
+  expect(ProgressService.submitAttempt).not.toHaveBeenCalled()
+})
+
+test('malformed saved teacher text cannot trigger speech or mint a receipt', async () => {
+  const session = validSession()
+  Object.assign(session.aiResponse, { message: { unsafe: 'not a teacher sentence' } })
+  ;(VoiceSession.findOne as jest.Mock).mockResolvedValue(session)
+  const azure = jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeStream')
+  await expect(VoiceService.streamSynthesize('Caption', { studentId, activityId, teacherSessionId: sessionId, ...visit })).rejects.toMatchObject({ code: 'CONFLICT' })
+  expect(azure).not.toHaveBeenCalled()
+})
+
+test.each([[0, 'audio/mpeg'], [100, 'audio/mpeg'], [512, 'text/html']])(
+  'invalid audio (%s bytes, %s) never returns a playback receipt', async (bytes, contentType) => {
+    ;(VoiceSession.findOne as jest.Mock).mockResolvedValue(validSession())
+    jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeStream').mockResolvedValue(audio(bytes, contentType))
+    await expect(VoiceService.streamSynthesize('Teacher turn', { studentId, activityId, teacherSessionId: sessionId, ...visit }))
+      .rejects.toMatchObject({ code: 'PROVIDER_ERROR' })
+    expect(ProgressService.submitAttempt).not.toHaveBeenCalled()
+  },
+)

@@ -12,7 +12,7 @@ export function buildCorsOptions(input: { clientUrl: string; extraClientUrls?: s
   return {
     origin: Array.from(new Set([input.clientUrl, ...extra, ...(input.isProd ? [] : ['http://localhost:3000'])])),
     credentials: true,
-    exposedHeaders: ['X-KG-Feedback-Receipt'],
+    exposedHeaders: ['X-KG-Feedback-Receipt', 'X-Class1-Feedback-Receipt'],
     maxAge: PREFLIGHT_MAX_AGE_SECONDS,
   }
 }

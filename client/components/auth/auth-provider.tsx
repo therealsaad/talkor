@@ -131,6 +131,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => { window.clearInterval(interval); events.forEach(event => window.removeEventListener(event, activity)) }
   }, [session?.role, clearSession])
 
+  useEffect(() => { voiceService.resetForSession(session?.token ?? null) }, [session?.token])
+
   const value = useMemo<AuthContextValue>(() => ({
     status,
     session,

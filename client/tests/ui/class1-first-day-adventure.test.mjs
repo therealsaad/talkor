@@ -73,7 +73,7 @@ test('Marathi/Hindi STT locale reaches Azure voice choice without another STT re
   const azure = await load('../../../backend/src/providers/voice/AzureVoiceProvider.ts')
   assert.match(engine, /voiceLanguage: detectedLanguage/)
   assert.match(engine, /turn\.voiceLanguage/)
-  assert.match(hook, /voiceService\.speak\(text, onState, turnId, priority, activityId, language\)/)
+  assert.match(hook, /voiceService\.speak\(text, onState, turnId, priority, activityId, language, teacherSessionId\)/)
   assert.match(client, /language: language \|\| detectVoiceLanguage\(text\)/)
   // Azure now also receives the authenticated v4 poem-recitation flag.
   // Keep checking the language handoff without relying on one-line formatting.

@@ -18,6 +18,7 @@ import { AzureVoiceProvider } from '../providers/voice/AzureVoiceProvider'
 import { PythonVoiceProvider } from '../providers/voice/PythonVoiceProvider'
 import { S3Service } from './S3Service'
 import { class1SupportFromSarvam } from '../providers/ai/class1-stt-language'
+import { issueClass1FeedbackReceipt, verifyClass1FeedbackReceipt, type Class1AudioVisit } from './class1-feedback-receipt'
 import class1VoiceManifest from '../scripts/class1-level1-ai4bharat-lines.json'
 import firstDayVoices from '../scripts/class1-first-day-voice-v3.json'
 
@@ -38,6 +39,16 @@ const STATIC_AUDIO_MAX_ITEMS = 16
 const STATIC_AUDIO_MAX_ITEM_BYTES = 2 * 1024 * 1024
 const STATIC_AUDIO_TTL_MS = 5 * 60 * 1000
 type StaticAudio = { audio: Buffer; contentType: string; provider: string }
+
+function teacherFeedbackText(response: unknown): string {
+  const ai = response as { message?: string; followUpQuestion?: string } | undefined
+  if (typeof ai?.message !== 'string' || (ai.followUpQuestion != null && typeof ai.followUpQuestion !== 'string')) {
+    throw ApiError.conflict('The saved teacher response is unavailable')
+  }
+  const text = [ai?.message, ai?.followUpQuestion].filter(Boolean).join(' ').trim().slice(0, 1800)
+  if (!text) throw ApiError.conflict('The saved teacher response is unavailable')
+  return text
+}
 const staticAudioCache = new Map<string, { value: StaticAudio; expiresAt: number }>()
 const staticAudioInFlight = new Map<string, Promise<StaticAudio | null>>()
 
@@ -286,7 +297,7 @@ export const VoiceService = {
     }
   },
 
-  async acknowledgeTeacherAudio(studentId: string, sessionId: string) {
+  async acknowledgeTeacherAudio(studentId: string, sessionId: string, feedbackReceipt?: unknown, visit?: Class1AudioVisit) {
     if (!Types.ObjectId.isValid(sessionId)) throw ApiError.badRequest('Invalid session ID')
     const session = await VoiceSession.findOne({ _id: sessionId, studentId })
     if (!session || !session.activityId || !session.lessonId || session.status !== 'completed') {
@@ -301,6 +312,10 @@ export const VoiceService = {
     if (!ai?.activityComplete || !ai.conversation?.id || !session.transcript) {
       throw ApiError.conflict('This scene still needs an English speaking attempt')
     }
+    const text = teacherFeedbackText(session.aiResponse)
+    if (!visit || !verifyClass1FeedbackReceipt(feedbackReceipt, {
+      studentId, sessionId, activityId: String(session.activityId), text, ...visit,
+    })) throw ApiError.conflict('Listen to the complete teacher audio before continuing')
     if (session.metadata?.teacherAudioAcknowledgedAt) return { complete: true, acknowledged: true }
     const score = ai.conversation.masteryStatus === 'MASTERED' ? 90 : 75
     await ProgressService.submitAttempt({
@@ -344,8 +359,48 @@ export const VoiceService = {
 
   async streamSynthesize(
     text: string,
-    options: { studentId?: string; purpose?: VoicePurpose; language?: string; activityId?: string } = {},
+    options: { studentId?: string; purpose?: VoicePurpose; language?: string; activityId?: string;
+      teacherSessionId?: string; schoolId?: string; authVisitHash?: string } = {},
   ) {
+    if (options.teacherSessionId) {
+      if (!options.studentId || !options.schoolId || !options.authVisitHash ||
+          !Types.ObjectId.isValid(options.teacherSessionId)) throw ApiError.badRequest('Invalid teacher audio scope')
+      const session = await VoiceSession.findOne({ _id: options.teacherSessionId, studentId: options.studentId })
+      const ai = session?.aiResponse as { activityComplete?: boolean; conversation?: { id?: string } } | undefined
+      if (!session?.activityId || session.status !== 'completed' || !ai?.activityComplete || !ai.conversation?.id || !session.transcript) {
+        throw ApiError.conflict('No completed First Day teacher turn to play')
+      }
+      const access = await CurriculumAccessService.assertActivity(options.studentId, String(session.activityId))
+      if (!/^class1-l01-v(?:3|4)-/.test(access.activity.activityKey || '') ||
+          (options.activityId && options.activityId !== String(session.activityId))) throw ApiError.forbidden()
+      // The saved turn, rather than client-provided text/language, is spoken.
+      const text = teacherFeedbackText(session.aiResponse)
+      const language = ['en-IN', 'hi-IN', 'mr-IN'].includes(String(session.metadata?.detectedLanguage))
+        ? String(session.metadata?.detectedLanguage) : 'en-IN'
+      const stream = await new AzureVoiceProvider().synthesizeStream(text, {
+        conversation: true, class1Lesson: true, language,
+        poemRecitation: access.activity.activityKey?.startsWith('class1-l01-v4-poem-') === true,
+      })
+      const reader = stream.body.getReader()
+      const chunks: Buffer[] = []
+      let bytes = 0
+      try {
+        while (true) {
+          const next = await reader.read()
+          if (next.done) break
+          bytes += next.value.byteLength
+          if (bytes > 8 * 1024 * 1024) { await reader.cancel(); throw ApiError.provider('Teacher audio is too large') }
+          chunks.push(Buffer.from(next.value))
+        }
+      } finally { reader.releaseLock() }
+      if (bytes < 256 || !/^audio\/(mpeg|wav|x-wav|ogg)$/.test(stream.contentType)) throw ApiError.provider('Teacher audio is unavailable')
+      const receipt = issueClass1FeedbackReceipt({ studentId: options.studentId,
+        schoolId: options.schoolId, authVisitHash: options.authVisitHash,
+        sessionId: options.teacherSessionId, activityId: String(session.activityId), text })
+      return { ...stream, body: streamFromBuffer(Buffer.concat(chunks)), metadata: {
+        ...stream.metadata, 'X-Class1-Feedback-Receipt': receipt,
+      } }
+    }
     const purpose = options.purpose ?? 'LESSON'
 
     // Only serve a Class 1 static clip if its approved script is exactly the

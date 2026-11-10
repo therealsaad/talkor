@@ -1,4 +1,5 @@
 import { Request, Response } from 'express'
+import { createHash } from 'node:crypto'
 import { catchAsync } from '../utils/catchAsync'
 import { ok } from '../utils/ApiResponse'
 import { VoiceService } from '../services/voice.service'
@@ -31,7 +32,9 @@ export const VoiceController = {
 
   teacherAudioPlayed: catchAsync(async (req: Request, res: Response) => {
     if (!req.auth || req.auth.role !== 'STUDENT') throw ApiError.forbidden()
-    ok(res, await VoiceService.acknowledgeTeacherAudio(req.auth.id, req.params.sessionId))
+    ok(res, await VoiceService.acknowledgeTeacherAudio(req.auth.id, req.params.sessionId, req.body?.feedbackReceipt, {
+      schoolId: req.auth.schoolId, authVisitHash: createHash('sha256').update(req.get('Authorization') || '').digest('hex'),
+    }))
   }),
 
   cancel: catchAsync(async (req: Request, res: Response) => {
@@ -41,8 +44,11 @@ export const VoiceController = {
 
   synthesize: catchAsync(async (req: Request, res: Response) => {
     if (!req.auth || req.auth.role !== 'STUDENT') throw ApiError.forbidden()
-    const { text, purpose, language, activityId } = req.body
-    const stream = await VoiceService.streamSynthesize(text, { studentId: req.auth.id, purpose, language, activityId })
+    const { text, purpose, language, activityId, teacherSessionId } = req.body
+    const stream = await VoiceService.streamSynthesize(text, { studentId: req.auth.id, purpose, language, activityId,
+      ...(teacherSessionId ? { teacherSessionId, schoolId: req.auth.schoolId,
+        authVisitHash: createHash('sha256').update(req.get('Authorization') || '').digest('hex') } : {}),
+    })
     if (stream) {
       res.status(200)
       res.setHeader('Content-Type', stream.contentType)
