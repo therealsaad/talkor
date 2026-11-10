@@ -125,6 +125,7 @@ type TeacherTurn = {
   voicePriority?: VoicePriority
   staticAudioActivityId?: string
   voiceLanguage?: 'en-IN' | 'hi-IN' | 'mr-IN'
+  teacherAudioSessionId?: string
 }
 type StudentTurn = { id: string; text: string; source: 'microphone' | 'typed' | 'choice'; transcriptConfidence?: number; durationMs?: number; status: 'captured' | 'transcribing' | 'evaluating' | 'accepted' | 'retry' }
 type HistoryTurn = { id: string; role: 'teacher' | 'student'; text: string }
@@ -274,6 +275,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
                 text: pending.text, requiresStudentResponse: false,
                 activityComplete: true, emotion: 'encouraging',
                 voicePriority: 'CONVERSATION', voiceLanguage: pending.language,
+                teacherAudioSessionId: pending.sessionId,
               }
               const spoken = await commitTeacherTurn(recovered, 'julie_text_ready')
               if (spoken && !stopped) await acknowledgeFirstDayTeacherAudio()
@@ -349,6 +351,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       memoryUpdates: result?.conversation ? [] : baseTurn?.memoryUpdates,
       staticAudioActivityId: experienceId === 'g01-l01' ? activity?.id : undefined,
       voiceLanguage: baseTurn?.voiceLanguage,
+      teacherAudioSessionId: baseTurn?.teacherAudioSessionId,
       voicePriority:
         result && (isConversation || Boolean(result.conversation))
           ? 'CONVERSATION'
@@ -389,7 +392,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         setExperience('julie_audio_pending')
         // One unique playback ID per teacher turn. The promise resolves
         // "spoken" only from HTMLAudioElement.onended in voice-service.
-        const playback = await julie.speak(turn.text, `${turn.id}:${++teacherSequence.current}`, turn.voicePriority || 'LESSON', turn.staticAudioActivityId, turn.voiceLanguage)
+        const playback = await julie.speak(turn.text, `${turn.id}:${++teacherSequence.current}`, turn.voicePriority || 'LESSON', turn.staticAudioActivityId, turn.voiceLanguage, turn.teacherAudioSessionId)
         if (generation !== playbackGeneration.current) return false
         if (playback !== 'spoken') {
           setAudioBlocked(true)
@@ -930,6 +933,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         modelSentence: ai?.modelSentence || ai?.correction?.corrected || undefined,
         voiceLanguage: detectedLanguage,
         activityComplete: complete,
+        teacherAudioSessionId: /^class1-l01-v(?:3|4)-/.test(activity?.activityKey || '') && complete ? id : undefined,
       })
 
       setTeacherText(normalizedTurn.text)
