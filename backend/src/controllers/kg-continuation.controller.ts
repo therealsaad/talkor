@@ -165,8 +165,13 @@ export const KGContinuationController = {
       return { level, title: continuationLesson(level).title, status, currentIndex: record?.currentIndex ?? 0,
         totalActivities: continuationLesson(level).letters.length }
     })
+    // Reuse the same fresh, authenticated progress projection for PIN resume.
+    // Never make the browser fetch KG1 and KG2 before asking for this overview.
+    const nextStudentRoute = kg1?.currentIndex !== 8 ? '/student/kg'
+      : kg2?.currentIndex !== 6 ? '/student/kg/level-2'
+        : nextLevel ? '/student/kg/level-' + nextLevel : '/student/kg/map'
     res.setHeader('Cache-Control', 'private, no-store')
-    ok(res, { nextLevel, levels, unavailableLevels: [6, 7, 8, 9, 10] })
+    ok(res, { nextLevel, nextStudentRoute, levels, unavailableLevels: [6, 7, 8, 9, 10] })
   }),
   getState: catchAsync(async (req: Request, res: Response) => {
     const { studentId, schoolId, level } = await access(req)

@@ -48,7 +48,7 @@ test('five distinct KG6–10 drafts have 8 original safe activities each and sta
 
 test('KG6–10 authorship never bypasses the authenticated 3–5 student pilot catalog', () => {
   assert.match(kgCatalog, /KG_CONTINUATION_LEVELS = \[3, 4, 5\]/)
-  assert.match(studentResume, /kgContinuationStudentService\.overview\(\)/)
+  assert.match(studentResume, /nextKGStudentRoute\(\)/)
   assert.doesNotMatch(kgCatalog, /KG_CONTINUATION_LEVELS = \[3, 4, 5, 6/)
 })
 
