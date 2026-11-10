@@ -1,0 +1,124 @@
+✔ first auth render is identical on server and client (1.307971ms)
+✔ after hydration, cached sessions are restored then validated via backend (0.167525ms)
+✔ role-gated educator and student layouts remain protected (0.263182ms)
+✔ the hydration change never persists shared-computer PIN sessions (0.328534ms)
+✔ auth restore keeps the existing unauthenticated and outage behavior (0.289933ms)
+✔ late API 401 from student A never signs out student B (100.658945ms)
+✔ the current login still signs out on a real API 401 (20.821635ms)
+✔ a pre-login anonymous 401 never invalidates a newly authenticated student (17.124957ms)
+✔ late binary audio 401 cannot invalidate a different student session (17.555569ms)
+✔ other direct-fetch callers bind unauthorized responses to the initiating token (1.193855ms)
+✖ auth restore shares concurrent reads only for the current token and always reads fresh after settling (56.922648ms)
+✖ late restore success cannot mutate B credentials or React auth state (19.829118ms)
+✖ late restore 401 cannot mutate B credentials or React auth state (14.632027ms)
+✖ late restore network cannot mutate B credentials or React auth state (16.389018ms)
+✔ same-session restore 401 still clears login; a network failure can be retried (15.463932ms)
+✖ delayed logout cannot clear the next student credentials or React session (15.436724ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 11
+ℹ fail 5
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 660.015598
+
+✖ failing tests:
+
+test at tests/ui/auth-hydration-contract.test.mjs:225:1
+✖ auth restore shares concurrent reads only for the current token and always reads fresh after settling (56.922648ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+
+  1 !== 2
+
+      at TestContext.<anonymous> (file:///workspace/scratch/3d6540fc17c4/talkor/client/tests/ui/auth-hydration-contract.test.mjs:231:10)
+      at Test.runInAsyncScope (node:async_hooks:227:14)
+      at Test.run (node:internal/test_runner/test:1402:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:974:18)
+      at Test.postRun (node:internal/test_runner/test:1542:19)
+      at Test.run (node:internal/test_runner/test:1467:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/ui/auth-hydration-contract.test.mjs:245:3
+✖ late restore success cannot mutate B credentials or React auth state (19.829118ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'student-A'
+  - 'student-B'
+             ^
+
+      at TestContext.<anonymous> (file:///workspace/scratch/3d6540fc17c4/talkor/client/tests/ui/auth-hydration-contract.test.mjs:255:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'student-A',
+    expected: 'student-B',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/ui/auth-hydration-contract.test.mjs:245:3
+✖ late restore 401 cannot mutate B credentials or React auth state (14.632027ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + null
+  - 'student-B'
+
+      at TestContext.<anonymous> (file:///workspace/scratch/3d6540fc17c4/talkor/client/tests/ui/auth-hydration-contract.test.mjs:254:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: 'student-B',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/ui/auth-hydration-contract.test.mjs:245:3
+✖ late restore network cannot mutate B credentials or React auth state (16.389018ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + 'unauthenticated'
+  - 'authenticated'
+
+      at TestContext.<anonymous> (file:///workspace/scratch/3d6540fc17c4/talkor/client/tests/ui/auth-hydration-contract.test.mjs:256:12)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 'unauthenticated',
+    expected: 'authenticated',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at tests/ui/auth-hydration-contract.test.mjs:274:1
+✖ delayed logout cannot clear the next student credentials or React session (15.436724ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  + actual - expected
+
+  + null
+  - 'student-B'
+
+      at TestContext.<anonymous> (file:///workspace/scratch/3d6540fc17c4/talkor/client/tests/ui/auth-hydration-contract.test.mjs:282:10)
+      at async Test.run (node:internal/test_runner/test:1409:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:974:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: null,
+    expected: 'student-B',
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

@@ -1,0 +1,16 @@
+✔ real teacher-turn normalization preserves the final session ID and Sarvam language for signed playback (93.021151ms)
+✔ Class 1 sends the server session ID; ACK is impossible until audio ended (63.740101ms)
+✔ missing signed receipt cannot start audio or acknowledge a final turn (31.960172ms)
+✔ error cannot create heard evidence, including a late ended event (22.103307ms)
+✔ abort cannot create heard evidence, including a late ended event (22.568542ms)
+✔ mute cannot create heard evidence, including a late ended event (23.348305ms)
+✔ delayed A audio cannot play in B login; B never inherits replay, cache or receipts (18.66271ms)
+✔ switching accounts during playback stops the teacher and rejects old ended evidence (18.075304ms)
+ℹ tests 8
+ℹ suites 0
+ℹ pass 8
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 625.610251
