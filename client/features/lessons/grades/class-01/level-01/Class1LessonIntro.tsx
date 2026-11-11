@@ -40,7 +40,8 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
   const watchedUntil = useRef(0)
   const fullscreenActive = useRef(false)
   const [canPlay, setCanPlay] = useState(false)
-  const [needsTap, setNeedsTap] = useState(true)
+  // Show a tap only when the browser actually blocks sound-on autoplay.
+  const [needsTap, setNeedsTap] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [playbackId, setPlaybackId] = useState<string | null>(null)
@@ -112,6 +113,32 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
     onAvailable()
   }
 
+  // Begin as soon as BOTH the reviewed 90-second media and this visit's
+  // server-owned intro ticket are ready. No native autoPlay attribute: that
+  // could start before duration validation or intro authorization finishes.
+  // Browsers may refuse unmuted autoplay; never mute or bypass the story to
+  // fake success. In that case, a real tap is still required.
+  useEffect(() => {
+    if (!sourceReady || !canPlay || error || (firstDayOnly && !playbackId)) return
+    const player = video.current
+    if (!player) return
+    if (document.hidden) {
+      setNeedsTap(true)
+      return
+    }
+    let cancelled = false
+    player.muted = false
+    player.volume = 1
+    void player.play().then(() => {
+      if (!cancelled && !player.paused && !document.hidden) setNeedsTap(false)
+    }).catch(() => {
+      // A play() rejection can also occur when the component is replaced,
+      // e.g. a new school-login visit. Do not resurrect a stale prompt.
+      if (!cancelled && player.paused) setNeedsTap(true)
+    })
+    return () => { cancelled = true }
+  }, [canPlay, error, firstDayOnly, playbackId, sourceReady, videoSource, introRetry])
+
   async function begin() {
     if (!canPlay || !video.current || !frame.current || (firstDayOnly && !playbackId)) return
     try {
@@ -162,7 +189,7 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
     setError('')
     setCanPlay(false)
     setLoading(true)
-    setNeedsTap(true)
+    setNeedsTap(false)
     watchedUntil.current = 0
     completing.current = false
     setPlaybackId(null)
@@ -180,7 +207,7 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
         ref={video}
         className="class1-intro-video"
         src={videoSource || undefined}
-        playsInline preload="metadata" controls={false}
+        playsInline preload="auto" controls={false}
         disablePictureInPicture controlsList="nodownload noplaybackrate noremoteplayback"
         aria-label="Reviewed 90-second Balbharati My First Day introduction"
         onLoadedMetadata={validateVideo}
@@ -206,8 +233,8 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
       {loading || (firstDayOnly && !playbackId && !error) ? <p className="class1-intro-status" role="status">Getting Miss Julie's story ready...</p> : null}
       {error ? <div className="class1-intro-error" role="alert"><p>{error}</p><button type="button" onClick={retryVideo} disabled={!sourceReady}><RotateCcw size={16} /> Try loading again</button></div> : null}
       {needsTap && canPlay && (!firstDayOnly || playbackId) ? <div className="class1-intro-play-prompt">
-        <p>Watch the whole story with sound. Then we will practise school actions and English with Miss Julie.</p>
-        <button type="button" onClick={() => void begin()}><Play size={18} fill="currentColor" /> Play story</button>
+        <p>Your browser needs one tap to play Miss Julie's story with sound. We will practise English after the whole story.</p>
+        <button type="button" onClick={() => void begin()}><Play size={18} fill="currentColor" /> Start with sound</button>
       </div> : null}
     </div>
   </div>
