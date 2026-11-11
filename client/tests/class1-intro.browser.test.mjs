@@ -38,11 +38,11 @@ before(async () => {
     await new Promise(resolve => setTimeout(resolve, 100))
   }
   browser = await puppeteer.launch({ executablePath: process.env.CHROME_PATH || '/usr/bin/google-chrome',
-    headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage', '--no-proxy-server'] })
+    headless: true, args: ['--no-sandbox', '--disable-dev-shm-usage', '--no-proxy-server', '--autoplay-policy=no-user-gesture-required'] })
 })
 after(async () => { await browser?.close(); server?.kill('SIGTERM') })
 
-async function fixture({ resumed = false, failStart = false } = {}) {
+async function fixture({ resumed = false, failStart = false, blockAutoplay = false } = {}) {
   const context = await browser.createBrowserContext()
   const page = await context.newPage()
   await page.setViewport({ width: 1366, height: 768 })
@@ -52,10 +52,23 @@ async function fixture({ resumed = false, failStart = false } = {}) {
   let signedIn = false, starts = 0
   const calls = [], errors = []
   page.on('pageerror', error => errors.push(error.message))
-  await page.evaluateOnNewDocument(() => {
+  await page.evaluateOnNewDocument((blockFirstPlay) => {
     window.__introMicCalls = 0
+    window.__introAutoplayAttempts = 0
     navigator.mediaDevices.getUserMedia = async () => { window.__introMicCalls++; throw Error('No physical microphone in this test') }
-  })
+    const originalPlay = HTMLMediaElement.prototype.play
+    let firstBlocked = false
+    HTMLMediaElement.prototype.play = function (...args) {
+      if (this.classList?.contains('class1-intro-video')) {
+        window.__introAutoplayAttempts++
+        if (blockFirstPlay && !firstBlocked) {
+          firstBlocked = true
+          return Promise.reject(new DOMException('Synthetic browser gesture restriction', 'NotAllowedError'))
+        }
+      }
+      return originalPlay.apply(this, args)
+    }
+  }, blockAutoplay)
   await page.setRequestInterception(true)
   page.on('request', async request => {
     try {
@@ -95,18 +108,20 @@ async function fixture({ resumed = false, failStart = false } = {}) {
 }
 
 for (const resumed of [false, true]) {
-  test(`${resumed ? 'saved-progress resume' : 'fresh PIN visit'} waits for the complete Class 1 story without starting speech`, { timeout: 60000 }, async () => {
+  test(`${resumed ? 'saved-progress resume' : 'fresh PIN visit'} auto-starts the full Class 1 story with sound before speech`, { timeout: 60000 }, async () => {
     const f = await fixture({ resumed })
     try {
       await f.page.goto(base + '/login/student', { waitUntil: 'domcontentloaded' })
       await f.page.waitForSelector('input[inputmode="numeric"]')
       await f.page.type('input[inputmode="numeric"]', '00000')
       await f.page.click('form button[type="submit"]')
-      await f.page.waitForSelector('.class1-intro-play-prompt button', { visible: true })
-      await f.page.waitForFunction(() => document.querySelector('.class1-intro-video')?.readyState >= 1)
+      await f.page.waitForFunction(() => document.querySelector('.class1-intro-video')?.currentTime > 0.3)
       assert.match(f.page.url(), new RegExp('/student/lesson/' + lessonId))
       assert.equal(f.starts(), 1)
-      assert.equal(await f.page.$eval('.class1-intro-video', v => v.paused), true)
+      assert.equal(await f.page.$eval('.class1-intro-video', v => v.paused), false)
+      assert.equal(await f.page.$eval('.class1-intro-video', v => v.muted), false)
+      assert.equal(await f.page.$('.class1-intro-play-prompt'), null)
+      assert.ok(await f.page.evaluate(() => window.__introAutoplayAttempts >= 1))
       assert.equal(await f.page.evaluate(() => window.__introMicCalls), 0)
       assert.deepEqual(f.calls.filter(p => /^\/(voice|ai|progress)\//.test(p)), ['/voice/first-day/intro/start'])
       assert.deepEqual(f.errors, [])
@@ -114,11 +129,9 @@ for (const resumed of [false, true]) {
         await mkdir(process.env.BROWSER_EVIDENCE_DIR, { recursive: true })
         await f.page.screenshot({ path: path.join(process.env.BROWSER_EVIDENCE_DIR, 'class1-resume-mandatory-intro.png') })
       }
-      // Exercise the real user gesture and actual packaged media, without
-      // accelerating the movie or fabricating a completion event.
-      await f.page.click('.class1-intro-play-prompt button')
-      await f.page.waitForFunction(() => document.querySelector('.class1-intro-video')?.currentTime > 0.3)
-      assert.equal(await f.page.$eval('.class1-intro-video', v => v.muted), false)
+      // Real packaged video, with zero additional start clicks. We never
+      // accelerate or fake its completion, even in a synthetic browser test.
+      assert.deepEqual(f.calls.filter(p => p === '/voice/first-day/intro/complete'), [])
       assert.equal(await f.page.evaluate(() => window.__introMicCalls), 0)
       assert.deepEqual(f.errors, [])
     } finally { await f.context.close() }
@@ -135,9 +148,36 @@ test('a failed intro start offers visible retry and does not enter practice', { 
     await f.page.waitForSelector('.class1-intro-error button', { visible: true })
     assert.match(await f.page.$eval('.class1-intro-error', el => el.innerText), /could not open/)
     assert.equal(await f.page.$('.class1-intro-play-prompt'), null)
+    assert.equal(await f.page.evaluate(() => window.__introAutoplayAttempts), 0, 'never play before server ticket')
     await f.page.click('.class1-intro-error button')
-    await f.page.waitForSelector('.class1-intro-play-prompt button', { visible: true })
+    await f.page.waitForFunction(() => document.querySelector('.class1-intro-video')?.currentTime > 0.3)
+    assert.equal(await f.page.$('.class1-intro-play-prompt'), null)
     assert.equal(f.starts(), 2)
+    assert.equal(await f.page.evaluate(() => window.__introMicCalls), 0)
+    assert.deepEqual(f.errors, [])
+  } finally { await f.context.close() }
+})
+
+test('a browser blocking sound-on autoplay shows one-tap recovery without skipping the story', { timeout: 60000 }, async () => {
+  const f = await fixture({ blockAutoplay: true })
+  try {
+    await f.page.goto(base + '/login/student', { waitUntil: 'domcontentloaded' })
+    await f.page.waitForSelector('input[inputmode="numeric"]')
+    await f.page.type('input[inputmode="numeric"]', '00000')
+    await f.page.click('form button[type="submit"]')
+    await f.page.waitForSelector('.class1-intro-play-prompt button', { visible: true })
+    assert.equal(f.starts(), 1)
+    assert.equal(await f.page.evaluate(() => window.__introAutoplayAttempts), 1)
+    assert.equal(await f.page.$eval('.class1-intro-video', v => v.paused), true)
+    assert.equal(await f.page.$eval('.class1-intro-video', v => v.muted), false)
+    assert.equal(await f.page.evaluate(() => window.__introMicCalls), 0)
+    assert.equal(f.calls.some(p => p.endsWith('/intro/complete')), false)
+
+    await f.page.click('.class1-intro-play-prompt button')
+    await f.page.waitForFunction(() => document.querySelector('.class1-intro-video')?.currentTime > 0.3)
+    assert.equal(await f.page.$eval('.class1-intro-video', v => v.paused), false)
+    assert.equal(await f.page.$eval('.class1-intro-video', v => v.muted), false)
+    assert.equal(await f.page.$('.class1-intro-play-prompt'), null)
     assert.equal(await f.page.evaluate(() => window.__introMicCalls), 0)
     assert.deepEqual(f.errors, [])
   } finally { await f.context.close() }
