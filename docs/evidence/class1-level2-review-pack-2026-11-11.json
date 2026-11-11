@@ -1,0 +1,27 @@
+{
+  "lessonKey": "g01-l02",
+  "status": "DRAFT_REVIEW_ONLY",
+  "activities": 30,
+  "modelPractices": 5,
+  "educatorCheckpoints": 19,
+  "supplementaryPractices": 6,
+  "chapterExercises": {
+    "1.2": 3,
+    "1.3": 3,
+    "1.4": 4,
+    "1.5": 3,
+    "1.6": 6
+  },
+  "educatorApprovalClaimed": false,
+  "sourceEditionVerifiedByThisTool": false,
+  "runtimeIntegrated": false,
+  "studentPlayable": false,
+  "gates": {
+    "educator": "PENDING",
+    "language": "PENDING",
+    "media": "UNVERIFIED",
+    "runtime": "NOT_ENABLED",
+    "physicalVoice": "UNVERIFIED",
+    "publication": "LOCKED"
+  }
+}

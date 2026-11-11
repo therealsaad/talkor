@@ -10,7 +10,16 @@
  */
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import ts from 'typescript'
+import { createRequire } from 'node:module'
+
+// Both CI jobs audit the same source. Each installs its own existing pinned
+// TypeScript dependency; reading authoring data must not require a second install.
+let ts
+try { ts = createRequire(import.meta.url)('typescript') }
+catch (error) {
+  if (error.code !== 'MODULE_NOT_FOUND' || !error.message.includes("'typescript'")) throw error
+  ts = createRequire(new URL('../../backend/package.json', import.meta.url))('typescript')
+}
 
 const base = new URL('../features/lessons/grades/class-01/level-02/', import.meta.url)
 const expectedExerciseCounts = Object.freeze({
@@ -21,8 +30,9 @@ const expectedPages = Object.freeze({
 })
 
 function getVariableInitializer(path, name) {
-  const content = readFileSync(fileURLToPath(new URL(path, base)), 'utf8')
-  const source = ts.createSourceFile(path, content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS)
+  const filename = fileURLToPath(new URL(path, base))
+  const content = readFileSync(filename, 'utf8')
+  const source = ts.createSourceFile(filename, content, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS)
   const declarations = []
   function visit(node) {
     if (ts.isVariableDeclaration(node) && node.name.getText(source) === name) {
@@ -46,24 +56,56 @@ function unwrap(node) {
 function getProperty(obj, name) {
   obj = unwrap(obj)
   if (!ts.isObjectLiteralExpression(obj)) throw new Error('Expected original authoring object')
-  const match = obj.properties.find(prop =>
+  const matches = obj.properties.filter(prop =>
     ts.isPropertyAssignment(prop) && (
       (ts.isIdentifier(prop.name) || ts.isStringLiteral(prop.name)) && prop.name.text === name
     ))
-  if (!match || !ts.isPropertyAssignment(match)) {
-    throw new Error('Required authoring property missing: ' + name)
+  if (matches.length !== 1 || !ts.isPropertyAssignment(matches[0])) {
+    throw new Error('Required authoring property missing or duplicate: ' + name)
   }
-  return unwrap(match.initializer)
+  return unwrap(matches[0].initializer)
 }
 
 function literal(node) {
   node = unwrap(node)
   if (ts.isStringLiteral(node) || ts.isNumericLiteral(node)) {
-    return ts.isNumericLiteral(node) ? Number(node.text) : node.text
+    if (ts.isStringLiteral(node)) return node.text
+    const number = Number(node.text)
+    if (!Number.isFinite(number)) throw new Error('Authoring numbers must be finite')
+    return number
   }
   if (node.kind === ts.SyntaxKind.TrueKeyword) return true
   if (node.kind === ts.SyntaxKind.FalseKeyword) return false
+  if (node.kind === ts.SyntaxKind.NullKeyword) return null
+  if (ts.isArrayLiteralExpression(node)) return [...node.elements].map(literal)
+  if (ts.isObjectLiteralExpression(node)) {
+    const entries = []
+    const seen = new Set()
+    for (const property of node.properties) {
+      if (!ts.isPropertyAssignment(property) ||
+          !(ts.isIdentifier(property.name) || ts.isStringLiteral(property.name)))
+        throw new Error('Authoring objects require explicit literal properties')
+      const key = property.name.text
+      if (seen.has(key) || ['__proto__', 'prototype', 'constructor'].includes(key))
+        throw new Error('Duplicate or unsafe authoring property')
+      seen.add(key)
+      entries.push([key, literal(property.initializer)])
+    }
+    return Object.fromEntries(entries)
+  }
   throw new Error('Class 1 Level 2 release audit accepts only authored literal values')
+}
+
+/** Data extraction, never import/eval/execute authored TypeScript. This permits
+ * a review pack to reuse the real draft without inventing a second curriculum. */
+export function readAuthoringLiteral(path, name, properties = []) {
+  let node = getVariableInitializer(path, name)
+  for (const property of properties) node = getProperty(node, property)
+  return literal(node)
+}
+
+export function readAuthoringComposition(path, name) {
+  return array(getVariableInitializer(path, name)).map(node => node.getText().replace(/\s+/g, ''))
 }
 
 function array(node) {

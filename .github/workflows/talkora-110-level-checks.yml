@@ -57,12 +57,12 @@ jobs:
         working-directory: client
         shell: bash
         run: |
-          pnpm exec next start -p 3100 > /tmp/talkora-preview-next.log 2>&1 &
+          pnpm exec next start -p 3100 --hostname 127.0.0.1 > /tmp/talkora-preview-next.log 2>&1 &
           next_pid=$!
           trap 'kill "$next_pid" 2>/dev/null || true' EXIT
           code="000"
           for attempt in {1..45}; do
-            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3100/classroom-preview || true)
+            code=$(curl -s -o /dev/null -w '%{http_code}' --connect-timeout 2 --max-time 5 http://127.0.0.1:3100/classroom-preview || true)
             if [ "$code" != "000" ]; then break; fi
             sleep 1
           done
@@ -71,7 +71,7 @@ jobs:
             echo "Expected 404 for classroom-preview, got $code"
             exit 1
           fi
-          static_code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3100/classroom-preview.html || true)
+          static_code=$(curl -s -o /dev/null -w '%{http_code}' --connect-timeout 2 --max-time 5 http://127.0.0.1:3100/classroom-preview.html || true)
           test "$static_code" = "404"
       - name: Verify stable SSR hydration for student and school authentication
         run: node --test tests/ui/auth-hydration-contract.test.mjs
@@ -116,7 +116,7 @@ jobs:
         run: node --test tests/ui/grade0-to10-sequential-resume.test.mjs
         working-directory: client
       - name: Verify Class 1 Level 2 chapter-order, bilingual voice-model and 19 exercise coverage
-        run: node --test tests/ui/class1-level2-release-readiness.test.mjs
+        run: node --test tests/ui/class1-level2-release-readiness.test.mjs tests/ui/class1-review-authoring-literals.test.mjs
         working-directory: client
       - name: Verify KG6–10 and Class 1 L2 teacher drafts stay complete but locked from students
         run: node --test tests/ui/kg6-10-class1-l2-editorial-drafts.test.mjs
@@ -333,6 +333,13 @@ jobs:
         working-directory: backend
       - name: Verify Class 1 release staging and remote media safety contracts
         run: pnpm exec jest --runInBand tests/unit/class1ProductionStaging.test.ts
+        working-directory: backend
+      - name: Verify source-bound Class 1 Level 2 review pack and reject false publication
+        shell: bash
+        run: |
+          pnpm exec jest --runInBand tests/unit/lessonReviewPack.test.ts
+          node --test tests/class1-review-pack.node.test.mjs
+          node scripts/class1-level2-review-pack.mjs --check
         working-directory: backend
       - name: Guard real Class 1 Sarvam to Qwen to Azure smoke route
         run: pnpm exec jest --runInBand tests/unit/class1LiveSmokeContract.test.ts

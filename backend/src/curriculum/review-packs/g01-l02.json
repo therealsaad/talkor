@@ -1,0 +1,596 @@
+{
+  "schemaVersion": 1,
+  "status": "DRAFT_REVIEW_ONLY",
+  "grade": 1,
+  "level": 2,
+  "lessonKey": "g01-l02",
+  "title": "Action Beats & Rainbow Words",
+  "objective": "Listen, act and connect letters with familiar words.",
+  "studentPlayable": false,
+  "syllabusVerified": false,
+  "source": {
+    "book": "English Balbharati Standard One (2025; reprint 2026)",
+    "edition": null,
+    "reference": "https://ebooks.ebalbharati.in/pdfs/103050001.pdf",
+    "reviewStatus": "UNVERIFIED_FOR_RELEASE"
+  },
+  "authoringSources": [
+    {
+      "path": "client/features/lessons/grades/class-01/balbharati-curriculum.ts",
+      "sha256": "dc1d81ff20d0e389aa813508a538cebc13d56e895f4d6466a79ac8279bc64d83"
+    },
+    {
+      "path": "client/features/lessons/grades/class-01/level-02/teaching-plan.ts",
+      "sha256": "536dbdf8e1f4cafc176f876c73989b9229201acb7e7bc7e752a1948d48476c9a"
+    },
+    {
+      "path": "client/features/lessons/grades/class-01/level-02/exercise-checkpoints.ts",
+      "sha256": "761240de9f5411bce5c4b56bfbc7afa0fc082d535c042844011ad485dd387d95"
+    },
+    {
+      "path": "client/features/lessons/grades/class-01/level-02/config.ts",
+      "sha256": "27c7ca439a2cbe1967b03cc3a084ac34f7fb6d02f124ab11ba62734cdd0d7d20"
+    },
+    {
+      "path": "client/features/lessons/grades/class-01/level-02/activities.ts",
+      "sha256": "f0056f91b9ffb2d16e8b962e80021fd2cd78fc102b0c56f122766b7c1b58389d"
+    }
+  ],
+  "chapters": [
+    {
+      "code": "1.2",
+      "title": "Clap your hands.",
+      "objective": "Listen to an action word and say clap",
+      "pageStart": 2,
+      "numberedExercisesExpected": 3
+    },
+    {
+      "code": "1.3",
+      "title": "I know my alphabet.",
+      "objective": "Recognize an English letter by listening",
+      "pageStart": 3,
+      "numberedExercisesExpected": 3
+    },
+    {
+      "code": "1.4",
+      "title": "Let us read.",
+      "objective": "Blend familiar letters to make a short word",
+      "pageStart": 5,
+      "numberedExercisesExpected": 4
+    },
+    {
+      "code": "1.5",
+      "title": "Fun with Special Letters",
+      "objective": "Identify vowels a, e, i, o, u in simple words",
+      "pageStart": 7,
+      "numberedExercisesExpected": 3
+    },
+    {
+      "code": "1.6",
+      "title": "The Rainbow",
+      "objective": "Identify and describe an illustrated colour",
+      "pageStart": 8,
+      "numberedExercisesExpected": 6
+    }
+  ],
+  "gates": {
+    "educator": "PENDING",
+    "language": "PENDING",
+    "media": "UNVERIFIED",
+    "runtime": "NOT_ENABLED",
+    "physicalVoice": "UNVERIFIED",
+    "publication": "LOCKED"
+  },
+  "activities": [
+    {
+      "id": "class1-l02-1-2",
+      "prompt": "Clap two times. Now say clap with Miss Julie.",
+      "mode": "repeat-after-julie",
+      "approved": false,
+      "evidence": {
+        "kind": "PRACTICE_REVIEW_REQUIRED",
+        "description": "Learner attempts the action word after modeling."
+      },
+      "kind": "MODEL_PRACTICE",
+      "chapter": "1.2",
+      "exerciseNumber": null,
+      "teaching": {
+        "teacherQuestion": "Miss Julie claps two times. Listen: clap. Now say clap!",
+        "targets": [
+          "clap"
+        ],
+        "lineIds": [
+          "class1-l02-1-2:model-1"
+        ],
+        "modelLines": [
+          "I can clap."
+        ],
+        "hints": {
+          "en": "Clap means bringing your hands together.",
+          "hi": "Clap मतलब ताली बजाना। अब कहो clap.",
+          "mr": "Clap म्हणजे टाळी वाजवणे. आता clap म्हण."
+        },
+        "retryEnglish": "Listen: clap. Now say clap.",
+        "expectedEvidence": "Child attempts the English word clap, with no demand to clap physically."
+      }
+    },
+    {
+      "id": "class1-l02-1-3",
+      "prompt": "Listen to the letter B. Find B from A, B and D.",
+      "mode": "listen-and-find",
+      "approved": false,
+      "evidence": {
+        "kind": "PRACTICE_REVIEW_REQUIRED",
+        "description": "Learner distinguishes the named letter from distractors."
+      },
+      "kind": "MODEL_PRACTICE",
+      "chapter": "1.3",
+      "exerciseNumber": null,
+      "teaching": {
+        "teacherQuestion": "Look at A, B and D. Listen closely. Point to B.",
+        "targets": [
+          "B"
+        ],
+        "lineIds": [
+          "class1-l02-1-3:model-1"
+        ],
+        "modelLines": [
+          "This is the letter B."
+        ],
+        "hints": {
+          "en": "B is one letter of the English alphabet.",
+          "hi": "यह letter B है। सुनो और B चुनो.",
+          "mr": "हे B अक्षर आहे. ऐक आणि B निवड."
+        },
+        "retryEnglish": "Listen to B. Try saying B.",
+        "expectedEvidence": "Child identifies the heard letter B from mixed positions."
+      }
+    },
+    {
+      "id": "class1-l02-1-4",
+      "prompt": "Put c, a and t together. What word did we make?",
+      "mode": "word-builder",
+      "approved": false,
+      "evidence": {
+        "kind": "PRACTICE_REVIEW_REQUIRED",
+        "description": "Learner builds cat and attempts to say it."
+      },
+      "kind": "MODEL_PRACTICE",
+      "chapter": "1.4",
+      "exerciseNumber": null,
+      "teaching": {
+        "teacherQuestion": "We have c, a and t. Say the word with me: cat.",
+        "targets": [
+          "cat"
+        ],
+        "lineIds": [
+          "class1-l02-1-4:model-1"
+        ],
+        "modelLines": [
+          "I see a cat."
+        ],
+        "hints": {
+          "en": "We can join c, a and t to make cat.",
+          "hi": "C, A, T साथ में cat बनता है।",
+          "mr": "C, A, T मिळून cat हा शब्द होतो."
+        },
+        "retryEnglish": "Listen: c, a, t. Together: cat.",
+        "expectedEvidence": "Child sequences c a t or says cat after a model; do not score unassisted literacy before review."
+      }
+    },
+    {
+      "id": "class1-l02-1-5",
+      "prompt": "Listen: a, e, i, o, u are vowels. Find the vowel a in cat.",
+      "mode": "listen-and-find",
+      "approved": false,
+      "evidence": {
+        "kind": "PRACTICE_REVIEW_REQUIRED",
+        "description": "Learner identifies a vowel in a familiar word; written missing-vowel work remains teacher-led."
+      },
+      "kind": "MODEL_PRACTICE",
+      "chapter": "1.5",
+      "exerciseNumber": null,
+      "teaching": {
+        "teacherQuestion": "A, E, I, O and U are vowels. Look at cat. Find the vowel a.",
+        "targets": [
+          "a"
+        ],
+        "lineIds": [
+          "class1-l02-1-5:model-1"
+        ],
+        "modelLines": [
+          "The vowel a is in cat."
+        ],
+        "hints": {
+          "en": "The five vowel letters are a, e, i, o and u.",
+          "hi": "A, E, I, O, U vowels हैं। Cat में a चुनो।",
+          "mr": "A, E, I, O, U हे स्वर आहेत. Cat मध्ये a निवड."
+        },
+        "retryEnglish": "Find the letter a in cat.",
+        "expectedEvidence": "Child identifies a in cat; adult-led written missing-vowel exercises remain required."
+      }
+    },
+    {
+      "id": "class1-l02-1-6",
+      "prompt": "Look at three colour cards. Which one is red?",
+      "mode": "picture-choice",
+      "approved": false,
+      "evidence": {
+        "kind": "PRACTICE_REVIEW_REQUIRED",
+        "description": "Learner selects or names a presented colour."
+      },
+      "kind": "MODEL_PRACTICE",
+      "chapter": "1.6",
+      "exerciseNumber": null,
+      "teaching": {
+        "teacherQuestion": "Our rainbow picture has red and blue. Point to red.",
+        "targets": [
+          "red"
+        ],
+        "lineIds": [
+          "class1-l02-1-6:model-1"
+        ],
+        "modelLines": [
+          "It is red."
+        ],
+        "hints": {
+          "en": "Red is a colour of the rainbow.",
+          "hi": "Red मतलब लाल। उस कार्ड को चुनो.",
+          "mr": "Red म्हणजे लाल. ते कार्ड निवड."
+        },
+        "retryEnglish": "Look at the red card. Say red.",
+        "expectedEvidence": "Child identifies red against a colour and shape distractor."
+      }
+    },
+    {
+      "id": "class1-l02-clap-say-again",
+      "prompt": "Miss Julie claps once. Can you say clap without me?",
+      "mode": "repeat-after-julie",
+      "approved": false,
+      "evidence": {
+        "kind": "PRACTICE_REVIEW_REQUIRED",
+        "description": "Independent spoken English attempt at clap, with a model on request."
+      },
+      "kind": "SUPPLEMENTARY_PRACTICE",
+      "chapter": null,
+      "exerciseNumber": null,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-letter-b-mixed",
+      "prompt": "Listen for B. Find B after the letters move to new places.",
+      "mode": "listen-and-find",
+      "approved": false,
+      "evidence": {
+        "kind": "PRACTICE_REVIEW_REQUIRED",
+        "description": "Locates B in a new randomized visible order."
+      },
+      "kind": "SUPPLEMENTARY_PRACTICE",
+      "chapter": null,
+      "exerciseNumber": null,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-cat-in-speech",
+      "prompt": "Miss Julie points to an original cat picture. Say: I see a cat.",
+      "mode": "guided-dialogue",
+      "approved": false,
+      "evidence": {
+        "kind": "PRACTICE_REVIEW_REQUIRED",
+        "description": "An English word or short model phrase about the pictured cat; no accent score."
+      },
+      "kind": "SUPPLEMENTARY_PRACTICE",
+      "chapter": null,
+      "exerciseNumber": null,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-vowel-a-find",
+      "prompt": "Listen: a is a vowel. Find a in cat, then try finding e in pen.",
+      "mode": "listen-and-find",
+      "approved": false,
+      "evidence": {
+        "kind": "PRACTICE_REVIEW_REQUIRED",
+        "description": "Identifies a and e as vowels in two new authored word cards."
+      },
+      "kind": "SUPPLEMENTARY_PRACTICE",
+      "chapter": null,
+      "exerciseNumber": null,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-rainbow-say-red",
+      "prompt": "Miss Julie holds a red colour card. Say: It is red.",
+      "mode": "guided-dialogue",
+      "approved": false,
+      "evidence": {
+        "kind": "PRACTICE_REVIEW_REQUIRED",
+        "description": "Attempts red or the supported short sentence in English."
+      },
+      "kind": "SUPPLEMENTARY_PRACTICE",
+      "chapter": null,
+      "exerciseNumber": null,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-homework",
+      "prompt": "Tiny homework: Find one colour around you later and say its English name.",
+      "mode": "speaking-reflection",
+      "approved": false,
+      "evidence": {
+        "kind": "PRACTICE_REVIEW_REQUIRED",
+        "description": "Receives short spoken offline homework; no family recording, upload or XP grant."
+      },
+      "kind": "SUPPLEMENTARY_PRACTICE",
+      "chapter": null,
+      "exerciseNumber": null,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-ex-1-2-01",
+      "prompt": "Let us practise counting to five with gentle actions. Listen, then say one action word with me.",
+      "mode": "repeat-after-julie",
+      "approved": false,
+      "evidence": {
+        "kind": "HUMAN_REVIEW_REQUIRED",
+        "description": "Teacher observes the five-count action sequence or accessible alternatives, not just microphone speech."
+      },
+      "kind": "EDUCATOR_CHECKPOINT",
+      "chapter": "1.2",
+      "exerciseNumber": 1,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-ex-1-2-02",
+      "prompt": "Try a different movement in our own action game. Can you say wave, sing, touch or blink?",
+      "mode": "guided-dialogue",
+      "approved": false,
+      "evidence": {
+        "kind": "HUMAN_REVIEW_REQUIRED",
+        "description": "Teacher checks the complete set of action substitutions and safe access needs."
+      },
+      "kind": "EDUCATOR_CHECKPOINT",
+      "chapter": "1.2",
+      "exerciseNumber": 2,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-ex-1-2-03",
+      "prompt": "Listen: knee. Find the knee picture. We will also learn bend, floor, turn and the other action words.",
+      "mode": "listen-and-find",
+      "approved": false,
+      "evidence": {
+        "kind": "HUMAN_REVIEW_REQUIRED",
+        "description": "Teacher checks every target vocabulary item from the printed activity, not this sample word alone."
+      },
+      "kind": "EDUCATOR_CHECKPOINT",
+      "chapter": "1.2",
+      "exerciseNumber": 3,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-ex-1-3-01",
+      "prompt": "Look at a big letter and its small partner. Find them together; trace them with your teacher.",
+      "mode": "listen-and-find",
+      "approved": false,
+      "evidence": {
+        "kind": "HUMAN_REVIEW_REQUIRED",
+        "description": "Teacher checks all 26 uppercase/lowercase pairings and actual tracing work."
+      },
+      "kind": "EDUCATOR_CHECKPOINT",
+      "chapter": "1.3",
+      "exerciseNumber": 1,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-ex-1-3-02",
+      "prompt": "Imagine two letter cards looking for partners. Say a letter as your teacher helps you match it.",
+      "mode": "guided-dialogue",
+      "approved": false,
+      "evidence": {
+        "kind": "HUMAN_REVIEW_REQUIRED",
+        "description": "Teacher observes physical letter-card matching or an accessible alternative."
+      },
+      "kind": "EDUCATOR_CHECKPOINT",
+      "chapter": "1.3",
+      "exerciseNumber": 2,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-ex-1-3-03",
+      "prompt": "Listen for the middle sound e in pen. Choose the matching picture as your teacher checks the path.",
+      "mode": "listen-and-find",
+      "approved": false,
+      "evidence": {
+        "kind": "HUMAN_REVIEW_REQUIRED",
+        "description": "Teacher verifies each word choice along the full middle-e picture maze."
+      },
+      "kind": "EDUCATOR_CHECKPOINT",
+      "chapter": "1.3",
+      "exerciseNumber": 3,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-ex-1-4-01",
+      "prompt": "Hear short words like am, be, in and up. Read and write the full two-letter set with your teacher.",
+      "mode": "repeat-after-julie",
+      "approved": false,
+      "evidence": {
+        "kind": "HUMAN_REVIEW_REQUIRED",
+        "description": "Teacher checks all assigned two-letter groups and notebook writing."
+      },
+      "kind": "EDUCATOR_CHECKPOINT",
+      "chapter": "1.4",
+      "exerciseNumber": 1,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-ex-1-4-02",
+      "prompt": "Try making a word from the an family. Next practise en, in, op and un in your notebook.",
+      "mode": "word-builder",
+      "approved": false,
+      "evidence": {
+        "kind": "HUMAN_REVIEW_REQUIRED",
+        "description": "Teacher verifies each word family and written examples, not just the initial word."
+      },
+      "kind": "EDUCATOR_CHECKPOINT",
+      "chapter": "1.4",
+      "exerciseNumber": 2,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-ex-1-4-03",
+      "prompt": "Study the picture and choose the sound that completes its word; write the letters with your teacher.",
+      "mode": "picture-choice",
+      "approved": false,
+      "evidence": {
+        "kind": "HUMAN_REVIEW_REQUIRED",
+        "description": "Teacher confirms all picture-letter choices and legible completed written words."
+      },
+      "kind": "EDUCATOR_CHECKPOINT",
+      "chapter": "1.4",
+      "exerciseNumber": 3,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-ex-1-4-04",
+      "prompt": "Listen: sun, Sunday. Which little word begins the longer word? Try the other pairs too.",
+      "mode": "word-builder",
+      "approved": false,
+      "evidence": {
+        "kind": "HUMAN_REVIEW_REQUIRED",
+        "description": "Teacher checks man/mango, pen/pencil, win/window, pop/popcorn and sun/Sunday."
+      },
+      "kind": "EDUCATOR_CHECKPOINT",
+      "chapter": "1.4",
+      "exerciseNumber": 4,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-ex-1-5-01",
+      "prompt": "Listen to the five vowel letters: a, e, i, o, u. Say them slowly with Miss Julie.",
+      "mode": "repeat-after-julie",
+      "approved": false,
+      "evidence": {
+        "kind": "HUMAN_REVIEW_REQUIRED",
+        "description": "Teacher confirms the vowel-versus-consonant distinction; no accent scoring."
+      },
+      "kind": "EDUCATOR_CHECKPOINT",
+      "chapter": "1.5",
+      "exerciseNumber": 1,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-ex-1-5-02",
+      "prompt": "Find the vowel in ball, then practise with dog, cup, ice, tree, onion, zebra and umbrella.",
+      "mode": "listen-and-find",
+      "approved": false,
+      "evidence": {
+        "kind": "HUMAN_REVIEW_REQUIRED",
+        "description": "Teacher checks vowel identification across all eight pictured word examples."
+      },
+      "kind": "EDUCATOR_CHECKPOINT",
+      "chapter": "1.5",
+      "exerciseNumber": 2,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-ex-1-5-03",
+      "prompt": "A letter is missing in s_n. Which vowel belongs there? Complete the remaining words on paper.",
+      "mode": "word-builder",
+      "approved": false,
+      "evidence": {
+        "kind": "HUMAN_REVIEW_REQUIRED",
+        "description": "Teacher checks written missing vowels in sun, cat, fish, egg and owl."
+      },
+      "kind": "EDUCATOR_CHECKPOINT",
+      "chapter": "1.5",
+      "exerciseNumber": 3,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-ex-1-6-01",
+      "prompt": "What colours do you notice in our original rainbow? Share a question, then sing with your teacher.",
+      "mode": "guided-dialogue",
+      "approved": false,
+      "evidence": {
+        "kind": "HUMAN_REVIEW_REQUIRED",
+        "description": "Teacher observes discussion and the textbook poem separately using permitted classroom materials."
+      },
+      "kind": "EDUCATOR_CHECKPOINT",
+      "chapter": "1.6",
+      "exerciseNumber": 1,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-ex-1-6-02",
+      "prompt": "Find violet on the rainbow. Now locate all seven colours, including indigo.",
+      "mode": "listen-and-find",
+      "approved": false,
+      "evidence": {
+        "kind": "HUMAN_REVIEW_REQUIRED",
+        "description": "Teacher verifies recognition of all seven colour words."
+      },
+      "kind": "EDUCATOR_CHECKPOINT",
+      "chapter": "1.6",
+      "exerciseNumber": 2,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-ex-1-6-03",
+      "prompt": "Listen to the word sky. Say it, then write the full dictation list with your teacher.",
+      "mode": "repeat-after-julie",
+      "approved": false,
+      "evidence": {
+        "kind": "HUMAN_REVIEW_REQUIRED",
+        "description": "Teacher checks rainbow, sky, peeping, clouds, orange and indigo in a notebook."
+      },
+      "kind": "EDUCATOR_CHECKPOINT",
+      "chapter": "1.6",
+      "exerciseNumber": 3,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-ex-1-6-04",
+      "prompt": "Look at an original sky picture. Complete a short phrase with a word from the picture.",
+      "mode": "sentence-builder",
+      "approved": false,
+      "evidence": {
+        "kind": "HUMAN_REVIEW_REQUIRED",
+        "description": "Teacher checks both printed phrases and corresponding written answers."
+      },
+      "kind": "EDUCATOR_CHECKPOINT",
+      "chapter": "1.6",
+      "exerciseNumber": 4,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-ex-1-6-05",
+      "prompt": "Listen: an apple, a cat and the sun. Notice how we choose a, an or the.",
+      "mode": "guided-dialogue",
+      "approved": false,
+      "evidence": {
+        "kind": "HUMAN_REVIEW_REQUIRED",
+        "description": "Teacher checks all printed article examples and explains introductory sound-based usage."
+      },
+      "kind": "EDUCATOR_CHECKPOINT",
+      "chapter": "1.6",
+      "exerciseNumber": 5,
+      "teaching": null
+    },
+    {
+      "id": "class1-l02-ex-1-6-06",
+      "prompt": "Choose a, an or the for a practice picture. Complete the remaining workbook blanks with your teacher.",
+      "mode": "sentence-builder",
+      "approved": false,
+      "evidence": {
+        "kind": "HUMAN_REVIEW_REQUIRED",
+        "description": "Teacher signs off all twelve article blanks on printed page 9; one speaking answer is not enough."
+      },
+      "kind": "EDUCATOR_CHECKPOINT",
+      "chapter": "1.6",
+      "exerciseNumber": 6,
+      "teaching": null
+    }
+  ]
+}
