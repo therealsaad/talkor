@@ -100,14 +100,14 @@ describe('Class 1 poem: Azure is the actual teacher voice, not a generic word cl
       const body = String(init?.body)
       // Mimic Azure's documented SSML hierarchy. Only voice nodes are legal
       // direct children of speak; breaks belong inside prosody/voice nodes.
-      if (/<\\/voice>\\s*<break\\b/.test(body)) return new Response('Malformed SSML', { status: 400 })
+      if (/<\/voice>\s*<break\b/.test(body)) return new Response('Malformed SSML', { status: 400 })
       if (!body.includes('<prosody') || !body.includes('<break time="360ms"/>')) {
         return new Response('Missing poem pauses', { status: 400 })
       }
       return new Response(new Uint8Array(512), { status: 200 })
     })
     await expect(new AzureVoiceProvider().synthesizeStream(
-      'See me skip.\\nSee me run.\\nI’m going to school like everyone.',
+      'See me skip.\nSee me run.\nI’m going to school like everyone.',
       { class1Lesson: true, poemRecitation: true, language: 'en-IN' },
     )).resolves.toMatchObject({ contentType: 'audio/mpeg', provider: 'azure-neerja' })
     expect(azureRequest).toHaveBeenCalledTimes(1)
