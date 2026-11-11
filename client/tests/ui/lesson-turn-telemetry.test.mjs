@@ -195,7 +195,7 @@ test('Class 1 frontend instrumentation stays opt-in and preserves the voice/prog
   const hook = await readFile(new URL('../../hooks/use-miss-julie-voice.ts', import.meta.url), 'utf8')
   for (const stage of ['recorderStop', 'requestStart', 'sttDone', 'teachingStart', 'teachingDone',
     'apiResponse', 'audioRequestStart', 'audioPlaying', 'audioEnded', 'ackDone']) {
-    assert.match(lesson, new RegExp("mark(?:For)?\([^\n]*'" + stage + "'"), stage)
+    assert.match(lesson, new RegExp("mark(?:For)?\\([^\\n]*'" + stage + "'"), stage)
   }
   assert.match(lesson, /isTelemetryRequested\(window\.location\.search\)/)
   assert.match(lesson, /setTelemetrySession\(\(\) => getStoredToken\(\)\)/)
