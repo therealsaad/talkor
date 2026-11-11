@@ -233,7 +233,7 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
       {loading || (firstDayOnly && !playbackId && !error) ? <p className="class1-intro-status" role="status">Getting Miss Julie's story ready...</p> : null}
       {error ? <div className="class1-intro-error" role="alert"><p>{error}</p><button type="button" onClick={retryVideo} disabled={!sourceReady}><RotateCcw size={16} /> Try loading again</button></div> : null}
       {needsTap && canPlay && (!firstDayOnly || playbackId) ? <div className="class1-intro-play-prompt">
-        <p>Your browser needs one tap to play Miss Julie's story with sound. We will practise English after the whole story.</p>
+        <p>Your browser needs one tap to play Miss Julie's story with sound. Then we will practise school actions and English with Miss Julie.</p>
         <button type="button" onClick={() => void begin()}><Play size={18} fill="currentColor" /> Start with sound</button>
       </div> : null}
     </div>
