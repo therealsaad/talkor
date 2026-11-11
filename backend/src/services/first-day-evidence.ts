@@ -1,3 +1,5 @@
+import { FIRST_DAY_POEM_STEPS } from '../curriculum/class1-first-day-poem'
+
 /** Small, auditable evidence gate for active Balbharati 1.1 scenes.
  * A word detected in Sarvam text is NOT a pronunciation assessment. The
  * student can learn/continue with one appropriate English attempt, including
@@ -25,8 +27,6 @@ export function firstDaySceneSkills(sceneKey: string, message: string): string[]
   }
   return evidence[sceneKey]?.test(text) ? ['first_day_english_attempt'] : []
 }
-
-import { FIRST_DAY_POEM_STEPS } from '../curriculum/class1-first-day-poem'
 
 /** Only transcript evidence of both taught lines is enough to progress.
  * No acoustic pronunciation or comprehension scores are inferred from STT.
