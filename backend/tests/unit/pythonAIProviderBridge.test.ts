@@ -2,6 +2,8 @@ import { PythonAIProvider } from '../../src/providers/ai/PythonAIProvider'
 import { GroqProvider } from '../../src/providers/ai/GroqProvider'
 import { env } from '../../src/config/env'
 import type { MissJulieContext } from '../../src/providers/ai/AIProvider'
+import teachingFixture from '../fixtures/class1-teaching-context-v1.json'
+import { lessonTeachingContextSchema } from '../../src/services/lesson-teaching-context'
 
 const class1Context: MissJulieContext = {
   studentName: 'Synthetic Demo',
@@ -102,6 +104,22 @@ describe('Class 1 Node to Python production bridge', () => {
     await expect(new PythonAIProvider().generate(class1Context)).rejects.toMatchObject({
       code: 'PROVIDER_ERROR',
     })
+    expect(request).not.toHaveBeenCalled()
+    expect(timer).not.toHaveBeenCalled()
+  })
+
+  it('rejects a mismatched or malformed teaching projection before starting a timer or provider request', async () => {
+    const request = jest.spyOn(globalThis, 'fetch')
+    const timer = jest.spyOn(globalThis, 'setTimeout')
+    const valid: MissJulieContext = { ...class1Context, sceneKey: teachingFixture.sceneKey,
+      activityTarget: teachingFixture.currentQuestion, allowedVocabulary: teachingFixture.allowedVocabulary,
+      teachingContext: lessonTeachingContextSchema.parse(teachingFixture.teachingContext) }
+    for (const overrides of [
+      { activityTarget: 'Say at' }, { sceneKey: 'poem-pair-1' }, { grade: 2 },
+      { allowedVocabulary: ['at'] },
+      { teachingContext: { ...valid.teachingContext!, version: 2 } as unknown as typeof valid.teachingContext },
+    ]) await expect(new PythonAIProvider().generate({ ...valid, ...overrides }))
+      .rejects.toMatchObject({ code: 'PROVIDER_ERROR' })
     expect(request).not.toHaveBeenCalled()
     expect(timer).not.toHaveBeenCalled()
   })

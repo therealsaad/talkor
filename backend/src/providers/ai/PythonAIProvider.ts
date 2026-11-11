@@ -6,6 +6,7 @@ import { GroqProvider } from './GroqProvider'
 import { class1ExplanationLanguage } from './class1-language'
 import { ApiError } from '../../utils/ApiError'
 import { errorCategory } from '../../utils/error-category'
+import { lessonTeachingContextSchema } from '../../services/lesson-teaching-context'
 
 export class PythonAIProvider implements AIProvider {
   name = 'python-qwen'
@@ -31,6 +32,13 @@ export class PythonAIProvider implements AIProvider {
     const baseUrl = pilotEnabled && isClass1Pilot
       ? process.env.TALKORA_CLASS1_AI_URL || 'http://127.0.0.1:8002'
       : env.aiServiceUrl
+    if (context.teachingContext) {
+      const checked = lessonTeachingContextSchema.safeParse(context.teachingContext)
+      if (!isClass1Pilot || !checked.success || checked.data.sceneKey !== context.sceneKey ||
+          checked.data.teacherQuestion !== context.activityTarget ||
+          JSON.stringify([...checked.data.vocabulary].sort()) !== JSON.stringify([...(context.allowedVocabulary || [])].sort()))
+        throw ApiError.provider('LESSON_TEACHING_CONTEXT_MISMATCH')
+    }
     const timeout = setTimeout(() => controller.abort(), deadlineMs)
 
     try {
@@ -63,6 +71,7 @@ export class PythonAIProvider implements AIProvider {
             activityTitle: context.activityTitle || '',
             // Resolved from an authorized MongoDB activity, never from browser speech.
             ...(isClass1Pilot && context.sceneKey ? { sceneKey: context.sceneKey } : {}),
+            ...(isClass1Pilot && context.teachingContext ? { teachingContext: context.teachingContext } : {}),
             digitalType: context.digitalType || '',
             julieProfile: context.julieProfile || {},
             currentQuestion: context.activityTarget || context.activityTitle || '',

@@ -25,6 +25,7 @@ import { Lesson } from '../models/Lesson'
 import { Activity } from '../models/Activity'
 import { Progress } from '../models/Progress'
 import { FIRST_DAY_SCENES } from './class1-first-day-scenes'
+import { FIRST_DAY_TEACHING_SOURCE } from '../curriculum/first-day-teaching-source'
 import manifest from './class1-first-day-voice-v3.json'
 import {
   CLASS1_DEMO_VERSION, CLASS1_FIRST_DAY_PARALLEL_REVISION,
@@ -179,6 +180,8 @@ async function main() {
         metadata: {
           conversationMode: 'OPEN', digitalType: 'FIRST_DAY_VOICE_SCENE',
           sceneKey: scene.key, allowedVocabulary: [...scene.vocabulary],
+          teaching: { ...FIRST_DAY_TEACHING_SOURCE,
+            objective: 'Understand and use ' + scene.focus.toLowerCase() + ' in a short English school sentence.' },
           languageSupport: ['English', 'Hindi', 'Marathi'],
         },
         source: {
