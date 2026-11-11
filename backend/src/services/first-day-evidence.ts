@@ -1,3 +1,5 @@
+import { FIRST_DAY_POEM_STEPS } from '../curriculum/class1-first-day-poem'
+
 /** Small, auditable evidence gate for active Balbharati 1.1 scenes.
  * A word detected in Sarvam text is NOT a pronunciation assessment. The
  * student can learn/continue with one appropriate English attempt, including
@@ -38,23 +40,14 @@ export function poemEvidence(sceneKey: string, text: string): string[] {
   // is NOT reciting both lines. Look for both authored phrase patterns with
   // modest speech-recognition tolerance for punctuation and inflections.
   // This is textual evidence, never an accent/pitch pronunciation score.
-  const checks: Record<string, RegExp[]> = {
-    'poem-pair-1': [/\bsee\s+me\s+skip(?:ping)?\b/, /\bsee\s+me\s+run(?:ning)?\b/],
-    'poem-pair-2': [/\bgoing\s+to\s+school\b/, /\bsee\s+me\s+walk(?:ing)?\b/],
-    'poem-pair-3': [
-      /\bsee\s+me\s+(?:grin|smile|smiling)\b/,
-      /\bbell\s+(?:rings?|ringing)\b[\s\S]*\b(?:go\s+in|go\s+inside)\b/,
-    ],
-    'poem-pair-4': [/\bsee\s+me\s+jump(?:ing)?\b/, /\bsee\s+me\s+play(?:ing)?\b/],
-    'poem-pair-5': [/\b(?:i['’]?m|i\s+am)\s+in\s+grade\s+(?:one|1)\b/, /\b(?:hurray|hooray)\b/],
-  }
-  if (sceneKey === 'poem-full') {
-    const themes = [/\bskip\b.*\brun\b/s,/\bwalk\b.*\bgrin\b/s,
-      /\bbell\b.*\bin\b/s,/\bjump\b.*\bplay\b/s,
-      /\bgrade\s+(?:one|1)\b.*\b(?:hurray|hooray)\b/s]
-    return said.split(/\s+/).length >= 20 && themes.filter(re => re.test(said)).length >= 4
+  const step = FIRST_DAY_POEM_STEPS.find(candidate => candidate.key === sceneKey)
+  if (!step) return []
+  if ('recital' in step) {
+    const { minWords, minThemes, themes } = step.recital
+    return said.split(/\s+/).length >= minWords &&
+      themes.filter(re => re.test(said)).length >= minThemes
       ? ['first_day_english_attempt'] : []
   }
-  const pair = checks[sceneKey]
-  return pair && pair.every(re => re.test(said)) ? ['first_day_english_attempt'] : []
+  return step.expectedLinePatterns.every(re => re.test(said))
+    ? ['first_day_english_attempt'] : []
 }
