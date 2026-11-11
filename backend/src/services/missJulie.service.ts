@@ -13,6 +13,7 @@ import { finalizeConversationTeacherResponse } from './conversationTurns'
 import { firstDaySceneSkills } from './first-day-evidence'
 import { guardFirstDayPoemTurn, isFirstDayPoemScene } from './class1-poem-teacher-guard'
 import { class1ExplanationLanguage } from '../providers/ai/class1-language'
+import { scaffoldFirstDayPractice } from './first-day-practice-scaffold'
 import { logger } from '../utils/logger'
 import type { AIStructuredResponse } from '../types'
 
@@ -194,6 +195,20 @@ export const MissJulieService = {
       preferredExplanationLanguage?: 'English' | 'Hindi' | 'Marathi'
     },
   ) {
+    // An ID-only resume inherits the saved curriculum scope before any context
+    // is built. It cannot evade a new PIN visit's introduction/access gates.
+    let existingConversation: IConversation | null = null
+    if (input.conversationId) {
+      if (!Types.ObjectId.isValid(input.conversationId)) throw ApiError.badRequest('Invalid conversation ID')
+      existingConversation = await Conversation.findOne({
+        _id: new Types.ObjectId(input.conversationId), studentId: new Types.ObjectId(studentId),
+      })
+      if (!existingConversation) throw ApiError.notFound('Conversation not found')
+      input = { ...input,
+        lessonId: input.lessonId || existingConversation.lessonId?.toString(),
+        activityId: input.activityId || existingConversation.activityId?.toString(),
+      }
+    }
     const studentContext = await StudentContextService.buildContext(studentId, {
       message: input.message,
       lessonId: input.lessonId,
@@ -204,27 +219,25 @@ export const MissJulieService = {
     })
 
     const activity = input.activityId ? await Activity.findById(input.activityId).lean() : null
+    // Legacy activity-only conversations predate a saved lessonId. The activity
+    // has just passed authorization and intro enforcement through buildContext.
+    if (input.conversationId && activity && !input.lessonId)
+      input = { ...input, lessonId: activity.lessonId.toString() }
 
     // Load active conversation
-    let existingConversation: IConversation | null = null
-    if (input.conversationId) {
-      existingConversation = await Conversation.findOne({
-        _id: new Types.ObjectId(input.conversationId),
-        studentId: new Types.ObjectId(studentId),
-      })
-    } else if (input.activityId) {
+    if (!input.conversationId && input.activityId) {
       existingConversation = await Conversation.findOne({
         studentId: new Types.ObjectId(studentId),
         activityId: new Types.ObjectId(input.activityId),
         status: 'ACTIVE',
       })
-    } else if (input.lessonId) {
+    } else if (!input.conversationId && input.lessonId) {
       existingConversation = await Conversation.findOne({
         studentId: new Types.ObjectId(studentId),
         lessonId: new Types.ObjectId(input.lessonId),
         status: 'ACTIVE',
       }).sort('-updatedAt')
-    } else {
+    } else if (!input.conversationId) {
       existingConversation = await Conversation.findOne({
         studentId: new Types.ObjectId(studentId),
         status: 'ACTIVE',
@@ -234,6 +247,11 @@ export const MissJulieService = {
     if (existingConversation && existingConversation.status !== 'ACTIVE') {
       throw ApiError.conflict('Conversation is complete. Start a new practice session.')
     }
+    if (existingConversation && (
+      (input.activityId && String(existingConversation.activityId) !== input.activityId) ||
+      (input.lessonId && String(existingConversation.lessonId ||
+        (String(existingConversation.activityId) === String(activity?._id) ? activity?.lessonId : undefined)) !== input.lessonId)
+    )) throw ApiError.curriculumAccess()
 
     if (
       input.activityId &&
@@ -337,6 +355,15 @@ export const MissJulieService = {
       response = guardFirstDayPoemTurn(
         poemKey, input.message, class1ExplanationLanguage(studentContext), response)
     }
+    const priorPractice = priorRetry?.practiceScaffold
+    const practice = isFirstDayScene && !finalTurn ? scaffoldFirstDayPractice({
+      context: studentContext.teachingContext, transcript: input.message,
+      language: class1ExplanationLanguage(studentContext), response,
+      previous: priorRetry && { waiting: priorRetry.waiting, attempt: priorRetry.attempt,
+        practiceScaffold: priorPractice && { version: priorPractice.version, contentHash: priorPractice.contentHash,
+          stage: priorPractice.stage, lineIndex: priorPractice.lineIndex, misses: priorPractice.misses } },
+    }) : undefined
+    if (practice) response = practice.response
     response = finalizeConversationTeacherResponse(response, finalTurn)
     if (lessonConversation || freeTalkConversation) response.activityComplete = finalTurn
     const teacherContent = [response.message, response.followUpQuestion].filter(Boolean).join(' ')
@@ -376,7 +403,7 @@ export const MissJulieService = {
         requiresRemediation,
     )
 
-    const retryState = nextRetryState({
+    const nextRetry = nextRetryState({
       previous: priorRetry,
       shouldRetry,
       hintLevel: response.hintLevel,
@@ -387,6 +414,8 @@ export const MissJulieService = {
       originalUtterance: input.message,
       modelSentence: response.modelSentence,
     })
+    const retryState = nextRetry && practice
+      ? { ...nextRetry, practiceScaffold: practice.state } : nextRetry
 
     const freeTalkSummary = finalFreeTalkTurn
       ? `Student conversed for ${nextTurn} turns. Key topics discussed: ${[

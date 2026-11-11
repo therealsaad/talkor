@@ -1,4 +1,5 @@
 import { Schema, model, Document, Types } from 'mongoose'
+import type { FirstDayPracticeState } from '../services/first-day-practice-scaffold'
 
 export interface IConversationMessage {
   role: 'student' | 'missJulie'
@@ -30,6 +31,7 @@ export interface IConversation extends Document {
     hintLevel: number
     originalUtterance: string
     modelSentence?: string
+    practiceScaffold?: FirstDayPracticeState
   }
   masteryStatus: 'IN_PROGRESS' | 'MASTERED' | 'COMPLETED_WITH_SUPPORT' | 'NEEDS_PRACTICE'
   summary?: string
@@ -49,6 +51,14 @@ const conversationMessageSchema = new Schema<IConversationMessage>(
   },
   { _id: false },
 )
+
+const practiceScaffoldSchema = new Schema<FirstDayPracticeState>({
+  version: { type: Number, enum: [1], required: true },
+  contentHash: { type: String, match: /^[a-f0-9]{64}$/, required: true },
+  stage: { type: String, enum: ['LINE', 'WORD', 'JOIN'], required: true },
+  lineIndex: { type: Number, min: 0, max: 9, required: true },
+  misses: { type: Number, min: 0, max: 3, required: true },
+}, { _id: false })
 
 const conversationSchema = new Schema<IConversation>(
   {
@@ -73,6 +83,7 @@ const conversationSchema = new Schema<IConversation>(
       hintLevel: { type: Number, default: 0 },
       originalUtterance: { type: String, default: '' },
       modelSentence: { type: String },
+      practiceScaffold: { type: practiceScaffoldSchema, default: undefined },
     },
     masteryStatus: { type: String, enum: ['IN_PROGRESS', 'MASTERED', 'COMPLETED_WITH_SUPPORT', 'NEEDS_PRACTICE'], default: 'IN_PROGRESS' },
     summary: { type: String, trim: true, maxlength: 1000 },
