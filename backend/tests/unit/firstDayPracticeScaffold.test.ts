@@ -37,6 +37,30 @@ test('practice moves one line at a time, then invites the same complete pair', (
   expect(complete).toBeUndefined() // Only the unchanged whole-scene gate can complete this turn.
 })
 
+test.each([
+  ['poem-pair-1', 0, 'See me skipping.'], ['poem-pair-1', 1, 'See me running.'],
+  ['poem-pair-2', 0, 'I am going to school like everyone.'], ['poem-pair-2', 1, 'See me walking.'],
+  ['poem-pair-3', 0, 'See me smiling.'], ['poem-pair-3', 1, 'When the bell ringing, I go inside.'],
+  ['poem-pair-4', 0, 'See me jumping.'], ['poem-pair-4', 1, 'See me playing.'],
+  ['poem-pair-5', 0, 'I am in Grade 1.'], ['poem-pair-5', 1, 'Hip hip hooray!'],
+] as const)('practice preserves existing STT word-form tolerance for %s line %s', (key, index, transcript) => {
+  const step = FIRST_DAY_POEM_STEPS.find(item => item.key === key)!
+  const current = buildLessonTeachingContext({ grade: 1, lessonKey: 'g01-l01',
+    support: selectLessonSupport({ attempts: [] }), activity: {
+      activityKey: 'class1-l01-v4-' + key, prompt: 'Recite the current lines.',
+      content: { poemLines: FIRST_DAY_POEM_LINES.slice(step.start, step.end) }, metadata: { sceneKey: key },
+    } })!
+  const apply = (said: string, state?: FirstDayPracticeState) => scaffoldFirstDayPractice({
+    context: current, response, language: 'English', transcript: said, previous: retry(state),
+  })!
+  let turn = apply('um')
+  if (index === 1) turn = apply(current.modelLines[0], turn.state)
+  const next = apply(transcript, turn.state)
+  expect(next.state).toMatchObject(index === 0 ? { stage: 'LINE', lineIndex: 1 } : { stage: 'JOIN' })
+  expect(next.response.activityComplete).toBe(false)
+  expect(next.response.modelSentence).toBe(current.modelLines.join('\n'))
+})
+
 test('three more unclear line tries offer one approved word, then return to its line', () => {
   let turn = run('um')
   for (let i = 0; i < 3; i++) turn = run('um', turn.state)

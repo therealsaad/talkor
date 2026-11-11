@@ -15,8 +15,12 @@ export type FirstDayPracticeState = z.infer<typeof practiceSchema>
 type Language = 'English' | 'Hindi' | 'Marathi'
 
 function normalized(value: string): string {
+  const variants: Record<string, string> = { skipping: 'skip', running: 'run', walking: 'walk',
+    smiling: 'smile', jumping: 'jump', playing: 'play', ringing: 'ring', rings: 'ring' }
   return value.normalize('NFKC').toLowerCase().replace(/\bi['’]m\b/g, 'i am')
+    .replace(/\b(skipping|running|walking|smiling|jumping|playing|ringing|rings)\b/g, word => variants[word])
     .replace(/\bgrin\b/g, 'smile').replace(/\bhurray\b/g, 'hooray')
+    .replace(/\bgo\s+inside\b/g, 'go in').replace(/\bgrade\s+1\b/g, 'grade one')
     .replace(/[^a-z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim()
 }
 

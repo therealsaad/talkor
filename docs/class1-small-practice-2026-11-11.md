@@ -39,7 +39,10 @@ utterances; this is not an acoustic assessment or a diagnosis of ability.
 Unsubmitted silence is handled by the existing microphone UI and still needs
 physical-device verification. Unknown text, questions, negation and injected
 instructions cannot advance the small practice cursor. Normalized practice
-allows the existing grin/smile, hurray/hooray and I'm/I am variants.
+allows the existing grin/smile, hurray/hooray, I'm/I am, school-action
+inflections, bell ring/rings/ringing, go in/inside and Grade One/1 variants.
+These remain text tolerances for practice, not an acoustic score or a change
+to the whole-scene evaluator.
 
 The current complete `modelSentence` remains unchanged. Only the spoken
 invitation becomes smaller, through the existing message/follow-up audio path.
