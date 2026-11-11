@@ -12,6 +12,7 @@ import type { ActivityItem } from '@/services/curriculum-service'
 import { voiceService, type VoiceAIResponse, type VoicePriority } from '@/services/voice-service'
 import { useMissJulieVoice } from '@/hooks/use-miss-julie-voice'
 import { LessonHud } from '@/components/student/lesson/lesson-hud'
+import { LatencyReportButton } from '@/components/latency-report-button'
 import { LessonWorld, TalkoraWorldLoader } from '@/components/student/lesson/lesson-world'
 import type { ActivityResponsePhase } from '@/components/student/lesson/activity-response'
 import { resolveStageLabel, resolveWorldForLevel } from '@/components/student/worlds/world-config'
@@ -1226,6 +1227,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
           />
         )
       ) : null}
+      {experienceId === 'g01-l01' ? <LatencyReportButton /> : null}
     </LessonWorld>
   )
 }
