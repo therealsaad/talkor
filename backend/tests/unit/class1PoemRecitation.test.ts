@@ -33,6 +33,23 @@ describe('English Balbharati 1.1 poem curriculum from user-provided PDF page 11'
   ])('requires both line meanings on %s', (key,said)=>{
     expect(firstDaySceneSkills(key,said)).toEqual(['first_day_english_attempt'])
   })
+  test('each authored line pair passes its own checks, but no single line or word-bank item advances',()=>{
+    for (const step of FIRST_DAY_POEM_STEPS.filter(step => step.key !== 'poem-full')) {
+      const lines = FIRST_DAY_POEM_LINES.slice(step.start,step.end)
+      expect(lines).toHaveLength(2)
+      expect(poemEvidence(step.key,lines.join(' '))).toEqual(['first_day_english_attempt'])
+      for (const line of lines) expect(poemEvidence(step.key,line)).toEqual([])
+      for (const word of FIRST_DAY_POEM_WORD_BANK)
+        expect(poemEvidence(step.key,word)).toEqual([])
+      expect(poemEvidence(step.key,step.target)).toEqual([])
+    }
+  })
+  test('the exact approved full recital passes its own check and single words do not',()=>{
+    expect(poemEvidence('poem-full',FIRST_DAY_POEM_LINES.join(' ')))
+      .toEqual(['first_day_english_attempt'])
+    for (const word of FIRST_DAY_POEM_WORD_BANK)
+      expect(poemEvidence('poem-full',word)).toEqual([])
+  })
   test('full finale requires independent multi-stanza transcript evidence',()=>{
     const full='See me skip See me run I am going to school like everyone '+
       'See me walk See me grin When the bell rings I go in '+
