@@ -1,4 +1,5 @@
 import { AIStructuredResponse } from '../../types'
+import type { LessonTeachingContext } from '../../services/lesson-teaching-context'
 
 export interface MissJulieContext {
   studentName: string
@@ -33,6 +34,8 @@ export interface MissJulieContext {
   recentJulieOpeners?: string[]
   digitalType?: string
   julieProfile?: Record<string, string>
+  /** Bounded projection of authorized curriculum + current-activity support. */
+  teachingContext?: LessonTeachingContext
 }
 
 export function unitTeachingGuidance(

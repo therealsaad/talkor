@@ -20,6 +20,7 @@ import { CLASS1_DEMO_VERSION, CLASS1_DEMO_LESSON_FILTER,
   CLASS1_FIRST_DAY_POEM_REVISION } from '../services/class1-demo-access'
 import { FIRST_DAY_POEM_LINES, FIRST_DAY_POEM_FULL, FIRST_DAY_POEM_STEPS,
   FIRST_DAY_POEM_WORD_BANK } from '../curriculum/class1-first-day-poem'
+import { FIRST_DAY_TEACHING_SOURCE } from '../curriculum/first-day-teaching-source'
 import { CLASS1_BUNDLED_FIRST_DAY_INTRO, chooseClass1IntroSource,
   isAllowedClass1IntroSource } from './class1-first-day-intro-url'
 
@@ -155,6 +156,9 @@ async function main() {
         conversationGoal:{requiredConcepts:['first_day_english_attempt'],minTurns:1,maxTurns:8},
         metadata:{conversationMode:'OPEN',digitalType:'FIRST_DAY_VOICE_SCENE',
           sceneKey:step.key,poemPairIndex:i,poemLineStart:step.start,poemLineEnd:step.end,
+          teaching:{...FIRST_DAY_TEACHING_SOURCE,
+            objective:'Listen to and recite the current English poem lines in order.',
+            hints:{en:null,hi:step.hintHi,mr:step.hintMr}},
           languageSupport:['English','Hindi','Marathi'],allowedVocabulary:[...FIRST_DAY_POEM_WORD_BANK]},
         source:{sourceType:'SYLLABUS' as const,
           pdf:'https://ebooks.ebalbharati.in/pdfs/103050001.pdf',pageStart:1,pageEnd:1,
