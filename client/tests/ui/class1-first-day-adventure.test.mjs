@@ -73,7 +73,10 @@ test('Marathi/Hindi STT locale reaches Azure voice choice without another STT re
   const azure = await load('../../../backend/src/providers/voice/AzureVoiceProvider.ts')
   assert.match(engine, /voiceLanguage: detectedLanguage/)
   assert.match(engine, /turn\.voiceLanguage/)
-  assert.match(hook, /voiceService\.speak\(text, onState, turnId, priority, activityId, language, teacherSessionId\)/)
+  // The optional timing observer may wrap onState, but must never drop the language/session arguments.
+  assert.match(hook, /voiceService\.speak\(text, \(nextState, message\) => \{/)
+  assert.match(hook, /onState\(nextState, message\)/)
+  assert.match(hook, /\}, turnId, priority, activityId, language, teacherSessionId\)/)
   assert.match(client, /language: language \|\| detectVoiceLanguage\(text\)/)
   // Azure now also receives the authenticated v4 poem-recitation flag.
   // Keep checking the language handoff without relying on one-line formatting.
@@ -109,7 +112,9 @@ test('First Day Qwen completion requires media-ended server acknowledgment and i
   const pedagogy = await load('../../../backend/src/services/missJulie.service.ts')
   assert.match(engine, /const firstDayV3 = \/\^class1-l01-v\(\?:3\|4\)-\//)
   assert.match(engine, /pendingTeacherAck\.current = id/)
-  assert.match(engine, /if \(firstDayV3 && complete && spoken\) await acknowledgeFirstDayTeacherAudio\(\)/)
+  // Progress ACK remains after successful onended playback; the new telemetry only observes it.
+  assert.match(engine, /if \(firstDayV3 && complete && spoken\) \{\s*const acknowledged = await acknowledgeFirstDayTeacherAudio\(\)/)
+  assert.match(engine, /if \(acknowledged && telemetryTurnId\) lessonTurnTelemetry\.markFor\(telemetryTurnId, 'ackDone'\)/)
   assert.match(engine, /await voiceService\.pendingTeacherAudio\(activity\.id\)/)
   assert.match(engine, /await voiceService\.acknowledgeTeacherAudio\(pendingId\)/)
   assert.match(client, /\/teacher-audio-played/)

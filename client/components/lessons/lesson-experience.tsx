@@ -3,6 +3,8 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { watchVoiceActivity } from '@/lib/voice-activity'
+import { getStoredToken } from '@/lib/api-client'
+import { isTelemetryRequested, lessonTurnTelemetry, setTelemetrySession } from '@/lib/lesson-turn-telemetry'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { Award, BookOpen, RotateCcw, Sparkles, Trophy } from 'lucide-react'
@@ -10,6 +12,7 @@ import type { ActivityItem } from '@/services/curriculum-service'
 import { voiceService, type VoiceAIResponse, type VoicePriority } from '@/services/voice-service'
 import { useMissJulieVoice } from '@/hooks/use-miss-julie-voice'
 import { LessonHud } from '@/components/student/lesson/lesson-hud'
+import { LatencyReportButton } from '@/components/latency-report-button'
 import { LessonWorld, TalkoraWorldLoader } from '@/components/student/lesson/lesson-world'
 import type { ActivityResponsePhase } from '@/components/student/lesson/activity-response'
 import { resolveStageLabel, resolveWorldForLevel } from '@/components/student/worlds/world-config'
@@ -163,6 +166,10 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
   const [introAvailable, setIntroAvailable] = useState(false)
   const [introReplayRequest, setIntroReplayRequest] = useState(0)
   const [homeworkSaved, setHomeworkSaved] = useState(false)
+  // One memory-only login owner; timestamps never go to a provider, API or persistent store.
+  useEffect(() => {
+    if (experienceId === 'g01-l01') setTelemetrySession(() => getStoredToken())
+  }, [experienceId])
   useEffect(() => {
     // The Class 1 final homework is mandatory: never route before its
     // server-persisted spoken submission, or before Julie's closing voice.
@@ -359,16 +366,16 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     }
   }
 
-  async function commitTeacherTurn(input: TeacherTurn, afterState?: ExperienceState): Promise<boolean> {
+  async function commitTeacherTurn(input: TeacherTurn, afterState?: ExperienceState, telemetryTurnId?: string): Promise<boolean> {
     const turn = { ...input, text: personalizeLessonText(input.text, studentName), id: input.id || `teacher-${activity?.id || index}-${++teacherSequence.current}` }
     setTeacherTurn(turn)
     setTeacherText(turn.text)
     currentTeacherTurnRef.current = turn
     setHistory((current) => [...current, { id: turn.id, role: 'teacher', text: turn.text } satisfies HistoryTurn].slice(-8))
-    return speakTeacherTurn(turn, afterState)
+    return speakTeacherTurn(turn, afterState, telemetryTurnId)
   }
 
-  async function speakTeacherTurn(turn: TeacherTurn, afterState?: ExperienceState): Promise<boolean> {
+  async function speakTeacherTurn(turn: TeacherTurn, afterState?: ExperienceState, telemetryTurnId?: string): Promise<boolean> {
     if (!turn.text.trim()) return false
     const generation = playbackGeneration.current
     const class1 = experienceId === 'g01-l01'
@@ -392,7 +399,10 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         setExperience('julie_audio_pending')
         // One unique playback ID per teacher turn. The promise resolves
         // "spoken" only from HTMLAudioElement.onended in voice-service.
-        const playback = await julie.speak(turn.text, `${turn.id}:${++teacherSequence.current}`, turn.voicePriority || 'LESSON', turn.staticAudioActivityId, turn.voiceLanguage, turn.teacherAudioSessionId)
+        if (telemetryTurnId) lessonTurnTelemetry.markFor(telemetryTurnId, 'audioRequestStart')
+        const playback = await julie.speak(turn.text, `${turn.id}:${++teacherSequence.current}`, turn.voicePriority || 'LESSON', turn.staticAudioActivityId, turn.voiceLanguage, turn.teacherAudioSessionId,
+          (state) => { if (telemetryTurnId && state === 'speaking') lessonTurnTelemetry.markFor(telemetryTurnId, 'audioPlaying') })
+        if (telemetryTurnId && playback === 'spoken') lessonTurnTelemetry.markFor(telemetryTurnId, 'audioEnded')
         if (generation !== playbackGeneration.current) return false
         if (playback !== 'spoken') {
           setAudioBlocked(true)
@@ -643,6 +653,16 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         const currentSessionId =
           activeRecordingSessionId.current || sessionId.current
 
+        // A fresh anonymous browser-only ID, never a Mongo voice-session ID or PIN.
+        // Record only actual Class 1 speech turns during a supervised ?latency=1 pilot.
+        const telemetryTurnId = experienceId === 'g01-l01' && !voiceChoiceMode && currentSessionId &&
+          isTelemetryRequested(window.location.search) ? globalThis.crypto?.randomUUID?.() : undefined
+        if (telemetryTurnId) {
+          lessonTurnTelemetry.mark('recorderStop', 'g01-l01', stoppedAt)
+          lessonTurnTelemetry.bind(telemetryTurnId)
+          lessonTurnTelemetry.markFor(telemetryTurnId, 'requestStart')
+        }
+
         resetRecorder()
 
         if (!currentSessionId && !voiceChoiceMode) {
@@ -691,6 +711,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
           const voiceResult = experienceId === 'g01-l01'
             ? await voiceService.transcribeAudioDetailed(blob, durationMs, 'en-IN')
             : { transcript: await voiceService.transcribeAudio(blob, durationMs, 'en-IN'), languageCode: undefined }
+          if (telemetryTurnId) lessonTurnTelemetry.markFor(telemetryTurnId, 'sttDone')
 
           let normalizedText = voiceResult.transcript.trim()
 
@@ -806,7 +827,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
             setPose('encouraging')
             return
           }
-          await submit(normalizedText, currentSessionId, 'MIC', voiceResult.languageCode)
+          await submit(normalizedText, currentSessionId, 'MIC', voiceResult.languageCode, telemetryTurnId)
 
           activeRecordingSessionId.current = null
           sessionId.current = null
@@ -829,7 +850,8 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       recordingStartedAt.current = performance.now()
       activeRecorder.start()
       startingMic.current = false
-      stopVoiceWatcher.current = watchVoiceActivity(mediaStream, () => {
+      stopVoiceWatcher.current = watchVoiceActivity(mediaStream, (info) => {
+        if (experienceId === 'g01-l01' && info?.heardVoice) lessonTurnTelemetry.mark('speechEnd', 'g01-l01', info.lastVoiceAt)
         if (activeRecorder.state === 'recording') activeRecorder.stop()
       }, {
         silenceMs: 1350, minimumSpeechMs: 420, noSpeechTimeoutMs: 8000,
@@ -910,11 +932,17 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     id: string,
     inputMode: 'MIC' | 'TEXT' | 'OPTION' = 'MIC',
     detectedLanguage?: 'en-IN' | 'hi-IN' | 'mr-IN',
+    telemetryTurnId?: string,
   ) {
     setExperience('julie_thinking')
     setPose('thinking')
     try {
+      if (telemetryTurnId) lessonTurnTelemetry.markFor(telemetryTurnId, 'teachingStart')
       const result = await voiceService.submitTranscript(id, text, inputMode, detectedLanguage)
+      if (telemetryTurnId) {
+        lessonTurnTelemetry.markFor(telemetryTurnId, 'teachingDone')
+        lessonTurnTelemetry.markFor(telemetryTurnId, 'apiResponse')
+      }
       const ai = result.aiResponse
       const fallbackText = result.evaluation?.feedback || 'Thank you for sharing that.'
       const retryRequired = Boolean(ai?.shouldRetry || ai?.conversation?.retryState?.waiting)
@@ -955,8 +983,11 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       if (additions.length) setEvidence((current) => uniqueEvidence([...current, ...additions]))
       if (firstDayV3 && complete) pendingTeacherAck.current = id
       const spoken = await commitTeacherTurn(normalizedTurn,
-        firstDayV3 && complete ? 'julie_text_ready' : complete ? 'activity_complete' : retryRequired ? 'retry_required' : 'waiting_for_student')
-      if (firstDayV3 && complete && spoken) await acknowledgeFirstDayTeacherAudio()
+        firstDayV3 && complete ? 'julie_text_ready' : complete ? 'activity_complete' : retryRequired ? 'retry_required' : 'waiting_for_student', telemetryTurnId)
+      if (firstDayV3 && complete && spoken) {
+        const acknowledged = await acknowledgeFirstDayTeacherAudio()
+        if (acknowledged && telemetryTurnId) lessonTurnTelemetry.markFor(telemetryTurnId, 'ackDone')
+      }
     } catch (error) {
       setFeedback(error instanceof Error ? error.message : 'Miss Julie could not check that turn.')
       setExperience('recoverable_error')
@@ -1196,6 +1227,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
           />
         )
       ) : null}
+      {experienceId === 'g01-l01' ? <LatencyReportButton /> : null}
     </LessonWorld>
   )
 }

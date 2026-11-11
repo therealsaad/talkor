@@ -134,7 +134,7 @@ test('the report carries only times and labels, never anything about the child',
   const metricNames = new Set(METRICS.map((m) => m.name))
   for (const key of Object.keys(report.turns[0].metrics)) assert.ok(metricNames.has(key), key)
   assert.ok(!/token|pin|transcript|audio\b|name/i.test(Object.keys(report.turns[0]).join(' ')))
-  assert.equal(STAGES.length, 9)
+  assert.equal(STAGES.length, 12)
 })
 
 test('the login fingerprint is only used for comparison and never contains the token', () => {
@@ -157,6 +157,53 @@ test('the 200-turn cap drops the oldest turn first', () => {
   const ids = r.t.report().turns.map((x) => x.submissionId)
   assert.equal(ids.length, 200)
   assert.equal(ids[0], 't5')
+})
+
+
+test('Class 1 voice measures STT, teaching, and real browser playback on one monotonic clock', () => {
+  const r = rig()
+  r.t.mark('speechEnd', 'g01-l01')
+  r.tick(1350)
+  r.t.mark('recorderStop', 'g01-l01')
+  r.t.bind('anonymous-class1-turn')
+  r.t.markFor('anonymous-class1-turn', 'requestStart')
+  r.tick(500)
+  r.t.markFor('anonymous-class1-turn', 'sttDone')
+  r.t.markFor('anonymous-class1-turn', 'teachingStart')
+  r.tick(680)
+  r.t.markFor('anonymous-class1-turn', 'teachingDone')
+  r.t.markFor('anonymous-class1-turn', 'apiResponse')
+  r.t.markFor('anonymous-class1-turn', 'audioRequestStart')
+  r.tick(1000)
+  r.t.markFor('anonymous-class1-turn', 'audioPlaying')
+  r.tick(1600)
+  r.t.markFor('anonymous-class1-turn', 'audioEnded')
+  r.tick(80)
+  r.t.markFor('anonymous-class1-turn', 'ackDone')
+  const [entry] = r.t.report().turns
+  assert.equal(entry.level, 'g01-l01')
+  assert.equal(entry.complete, true)
+  assert.deepEqual(plain(entry.metrics), {
+    silenceWait: 1350, attemptRequest: 1180, speechToText: 500, aiTeaching: 680,
+    toAudioStart: 1000, childWait: 3530, recorderToAudio: 2180, ackWait: 80,
+  })
+  assert.ok(!('audioDownload' in entry.metrics), 'no invented download stage for Class 1')
+})
+
+test('Class 1 frontend instrumentation stays opt-in and preserves the voice/progress protocol', async () => {
+  const lesson = await readFile(new URL('../../components/lessons/lesson-experience.tsx', import.meta.url), 'utf8')
+  const hook = await readFile(new URL('../../hooks/use-miss-julie-voice.ts', import.meta.url), 'utf8')
+  for (const stage of ['recorderStop', 'requestStart', 'sttDone', 'teachingStart', 'teachingDone',
+    'apiResponse', 'audioRequestStart', 'audioPlaying', 'audioEnded', 'ackDone']) {
+    assert.match(lesson, new RegExp("mark(?:For)?\\([^\\n]*'" + stage + "'"), stage)
+  }
+  assert.match(lesson, /isTelemetryRequested\(window\.location\.search\)/)
+  assert.match(lesson, /setTelemetrySession\(\(\) => getStoredToken\(\)\)/)
+  assert.match(lesson, /globalThis\.crypto\?\.randomUUID\?\.\(\)/)
+  assert.match(lesson, /<LatencyReportButton \/>/)
+  assert.match(hook, /onPlaybackState\?\.\(nextState\)/)
+  assert.match(lesson, /if \(acknowledged && telemetryTurnId\) lessonTurnTelemetry\.markFor/)
+  assert.doesNotMatch(lesson, /sendBeacon\(|localStorage\.setItem\('latency'/)
 })
 
 test('wiring: it only observes, clears on page close, and does not touch the silence decision', async () => {

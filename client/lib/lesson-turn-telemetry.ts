@@ -17,7 +17,10 @@
 export const STAGES = [
   'speechEnd',        // last moment the child was heard (estimate from the silence watcher)
   'recorderStop',     // the recorder finished
-  'requestStart',     // the attempt upload began
+  'requestStart',     // the attempt upload began (Class 1: speech-to-text request)
+  'sttDone',          // Class 1 received the recognized speech
+  'teachingStart',    // Class 1 submitted its recognized answer for authorized teaching
+  'teachingDone',     // Class 1 received the teaching response
   'apiResponse',      // the attempt answer arrived
   'audioRequestStart',// the feedback audio download began
   'audioDownloaded',  // the feedback audio finished downloading
@@ -30,7 +33,9 @@ export type Stage = (typeof STAGES)[number]
 /** Each metric is "to - from", in milliseconds, and only exists when both moments were recorded. */
 export const METRICS = [
   { name: 'silenceWait', from: 'speechEnd', to: 'recorderStop', meaning: 'Speech end to recorder stop: waiting for silence' },
-  { name: 'attemptRequest', from: 'requestStart', to: 'apiResponse', meaning: 'Upload, speech-to-text and feedback on the server' },
+  { name: 'attemptRequest', from: 'requestStart', to: 'apiResponse', meaning: 'Upload, speech-to-text and feedback on the server (Class 1: STT then teaching)' },
+  { name: 'speechToText', from: 'requestStart', to: 'sttDone', meaning: 'Class 1 microphone-upload and speech recognition' },
+  { name: 'aiTeaching', from: 'teachingStart', to: 'teachingDone', meaning: 'Class 1 authorized answer submission and teacher response' },
   { name: 'audioDownload', from: 'audioRequestStart', to: 'audioDownloaded', meaning: 'Feedback audio download' },
   { name: 'toAudioStart', from: 'apiResponse', to: 'audioPlaying', meaning: 'Answer arrived to sound starting' },
   { name: 'childWait', from: 'speechEnd', to: 'audioPlaying', meaning: 'Child-perceived wait: speech end to Miss Julie speaking' },
