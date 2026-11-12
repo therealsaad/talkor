@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { watchVoiceActivity } from '@/lib/voice-activity'
+import { isClass1NoSpeechError, class1SilenceRecovery } from '@/lib/class1-microphone-recovery'
 import { getStoredToken } from '@/lib/api-client'
 import { isTelemetryRequested, lessonTurnTelemetry, setTelemetrySession } from '@/lib/lesson-turn-telemetry'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -192,6 +193,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
   const ignoreRecordingResult = useRef(false)
   const recordingTimeout = useRef<number | null>(null)
   const recordingStartedAt = useRef<number | null>(null)
+  const noSpeechMisses = useRef(0)
   const activeRecordingSessionId = useRef<string | null>(null)
   const teacherSequence = useRef(0)
   const spokenTurnIds = useRef(new Set<string>())
@@ -256,6 +258,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     setConversationTurn(0)
     setStudentTurn(null)
     setRetryAttempt(0)
+    noSpeechMisses.current = 0
     setSpokenWarmupAnswer(null)
     setAudioBlocked(false)
     setPoemRecitalChunk(0)
@@ -714,6 +717,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
           if (telemetryTurnId) lessonTurnTelemetry.markFor(telemetryTurnId, 'sttDone')
 
           let normalizedText = voiceResult.transcript.trim()
+          if (normalizedText) noSpeechMisses.current = 0
 
           if (!normalizedText) {
             throw new Error('I could not hear that clearly. Try once more.')
@@ -832,17 +836,23 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
           activeRecordingSessionId.current = null
           sessionId.current = null
         } catch (error) {
-          setFeedback(
-            error instanceof Error
-              ? error.message
-              : 'I could not hear that clearly.',
-          )
-          setExperience('recoverable_error')
-          setPose('encouraging')
-
+          // Do not spend another Sarvam/Qwen/Azure turn or advance any lesson
+          // after an empty microphone recording. Cancel the unused session
+          // before re-opening the mic, so the next session cannot be cancelled.
           activeRecordingSessionId.current = currentSessionId
           sessionId.current = currentSessionId
           await cancelActiveVoiceSession()
+          if (experienceId === 'g01-l01' && isClass1NoSpeechError(error)) {
+            const recovery = class1SilenceRecovery(noSpeechMisses.current)
+            noSpeechMisses.current = recovery.misses
+            setFeedback(recovery.feedback)
+            setPose('encouraging')
+            setExperience(recovery.autoListen ? 'waiting_for_student' : 'recoverable_error')
+            return
+          }
+          setFeedback(error instanceof Error ? error.message : 'I could not hear that clearly.')
+          setExperience('recoverable_error')
+          setPose('encouraging')
         }
       }
 
@@ -854,7 +864,10 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
         if (experienceId === 'g01-l01' && info?.heardVoice) lessonTurnTelemetry.mark('speechEnd', 'g01-l01', info.lastVoiceAt)
         if (activeRecorder.state === 'recording') activeRecorder.stop()
       }, {
-        silenceMs: 1350, minimumSpeechMs: 420, noSpeechTimeoutMs: 8000,
+        // Two authored poem lines need a little more space for a child's breath
+        // between "See me skip" and "See me run". Other lessons stay fast.
+        silenceMs: activity.activityKey?.startsWith('class1-l01-v4-poem-') ? 1900 : 1350,
+        minimumSpeechMs: 420, noSpeechTimeoutMs: 8000,
         speechThreshold: 0.012, resumeContext: true,
         onUnavailable: () => {
           if (process.env.NODE_ENV !== 'production') console.warn('[MIC] WebAudio voice activity unavailable; hard recorder timeout active')
@@ -904,7 +917,8 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
   useEffect(() => {
     if (!wantsMic || activityComplete || julie.isSpeaking || julie.state === 'loading') return
     if (experience !== 'waiting_for_student' && experience !== 'retry_required') return
-    const timer = window.setTimeout(() => { void startMic() }, 420)
+    const delay = experienceId === 'g01-l01' && noSpeechMisses.current > 0 ? 1400 : 420
+    const timer = window.setTimeout(() => { void startMic() }, delay)
     return () => window.clearTimeout(timer)
     // startMic closes over the current activity; it is intentionally re-bound.
     // eslint-disable-next-line react-hooks/exhaustive-deps
