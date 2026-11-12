@@ -1,4 +1,4 @@
-import { firstDaySceneSkills } from '../../src/services/first-day-evidence'
+import { firstDaySceneSkills, normalizeFirstDayPoemRecognition, poemEvidence } from '../../src/services/first-day-evidence'
 
 describe('First Day conversational mastery evidence', () => {
   it.each([
@@ -25,5 +25,25 @@ describe('First Day conversational mastery evidence', () => {
   it('does not treat grade or other scenes as permission to advance', () => {
     expect(firstDaySceneSkills('run-race', 'I can skip')).toEqual([])
     expect(firstDaySceneSkills('unapproved', 'skip')).toEqual([])
+  })
+})
+
+describe('Class 1 poem: bounded STT tolerance without false mastery', () => {
+  it('recognizes the connected sound “semi” as “see me” only with an authored poem action', () => {
+    expect(normalizeFirstDayPoemRecognition('Semi skip. Semi run.')).toBe('see me skip. see me run.')
+    expect(poemEvidence('poem-pair-1', 'Semi skip. See me run.')).toEqual(['first_day_english_attempt'])
+    expect(poemEvidence('poem-pair-1', 'See me skip. Semi run.')).toEqual(['first_day_english_attempt'])
+    expect(poemEvidence('poem-pair-1', 'See me skipping. See me running.')).toEqual(['first_day_english_attempt'])
+  })
+
+  it('never invents a missed second line, infers voice pronunciation or changes other scenes', () => {
+    for (const said of ['Semi skip.', 'Semi run.', 'semi?', 'Semi skip?', 'What is semi skip?',
+      'skip run', 'अच्छा जी', '', 'semi cat', 'semi skip, help please']) {
+      expect(poemEvidence('poem-pair-1', said)).toEqual([])
+    }
+    expect(firstDaySceneSkills('skip-bunny', 'Semi skip')).toEqual([])
+    expect(poemEvidence('poem-pair-3', 'semi grin')).toEqual([])
+    expect(normalizeFirstDayPoemRecognition('Semiconductor skip')).toBe('semiconductor skip')
+    expect(poemEvidence('poem-pair-1', 'Semi skip and see me run')).toEqual(['first_day_english_attempt'])
   })
 })
