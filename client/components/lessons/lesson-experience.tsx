@@ -847,6 +847,33 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
             noSpeechMisses.current = recovery.misses
             setFeedback(recovery.feedback)
             setPose('encouraging')
+            // One short, fixed Azure sentence: no Qwen request and no attempt
+            // or XP is recorded. Wait for real audio completion before a new
+            // mic, otherwise Miss Julie's voice would overlap the child.
+            const generation = playbackGeneration.current
+            setExperience('julie_audio_pending')
+            let playback: 'spoken' | 'autoplay-blocked' | 'unavailable' = 'unavailable'
+            if (audioEnabled) {
+              try {
+                playback = await julie.speak(
+                  recovery.autoListen
+                    ? 'I did not hear you. Let us try that line again.'
+                    : 'I am here. Tap the microphone when you are ready.',
+                  `class1-silence-${activity.id}-${Date.now()}`,
+                  'FEEDBACK', activity.id, 'en-IN',
+                )
+              } catch {
+                playback = 'unavailable'
+              }
+            }
+            if (generation !== playbackGeneration.current) return
+            if (playback !== 'spoken') {
+              setAudioBlocked(true)
+              setFeedback('Miss Julie could not speak. Please enable sound and try again.')
+              setExperience('recoverable_error')
+              return
+            }
+            setAudioBlocked(false)
             setExperience(recovery.autoListen ? 'waiting_for_student' : 'recoverable_error')
             return
           }
