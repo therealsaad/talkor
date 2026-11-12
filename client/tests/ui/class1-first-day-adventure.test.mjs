@@ -76,6 +76,7 @@ test('Class 1 poem records both lines, retries silence without a second STT call
   assert.match(engine, /setExperience\(recovery\.autoListen \? 'waiting_for_student' : 'recoverable_error'\)/)
   assert.match(engine, /const delay = experienceId === 'g01-l01' && noSpeechMisses\.current > 0 \? 1400 : 420/)
   assert.match(engine, /if \(normalizedText\) noSpeechMisses\.current = 0/)
+  assert.match(engine, /if \(experienceId === 'g01-l01'\) setStudentTurn\(null\)/)
   assert.match(engine, /await cancelActiveVoiceSession\(\)\s+if \(experienceId === 'g01-l01' && isClass1NoSpeechError\(error\)\)/)
   assert.match(engine, /await submit\(normalizedText, currentSessionId, 'MIC', voiceResult\.languageCode, telemetryTurnId\)/)
   assert.match(engine, /if \(playback !== 'spoken'\)/)
