@@ -1,6 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import vm from 'node:vm'
+import ts from 'typescript'
 const load = file => readFile(new URL(file, import.meta.url), 'utf8')
 
 test('Class 1 First Day uses the illustrated board with live teacher text', async () => {
@@ -35,6 +37,44 @@ test('the Class 1 mic tolerates quiet voices with no extra STT requests', async 
   const engine = await load('../../components/lessons/lesson-experience.tsx')
   assert.match(engine, /speechThreshold: 0\.012/)
   assert.match(engine, /noSpeechTimeoutMs: 8000/)
+})
+
+test('Class 1 gives one automatic no-speech retry, then a safe manual recovery', async () => {
+  const source = await load('../../lib/class1-microphone-recovery.ts')
+  const module = { exports: {} }
+  vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText,
+    { module, exports: module.exports, Error })
+  const { class1SilenceRecovery, isClass1NoSpeechError } = module.exports
+  assert.equal(isClass1NoSpeechError(new Error('No speech was detected. Please try again.')), true)
+  assert.equal(isClass1NoSpeechError(new Error('I could not hear enough. Please try again.')), true)
+  for (const message of ['Azure TTS 502', 'Microphone permission denied',
+    'Speech recognition is temporarily unavailable', 'The teacher audio is unavailable']) {
+    assert.equal(isClass1NoSpeechError(new Error(message)), false)
+  }
+  const first = class1SilenceRecovery(0)
+  assert.equal(first.misses, 1)
+  assert.equal(first.autoListen, true)
+  assert.match(first.feedback, /listen once more/)
+  const second = class1SilenceRecovery(first.misses)
+  assert.equal(second.misses, 2)
+  assert.equal(second.autoListen, false)
+  assert.match(second.feedback, /Tap the microphone/)
+  const repeat = class1SilenceRecovery(second.misses)
+  assert.equal(repeat.autoListen, false)
+})
+
+test('Class 1 poem records both lines, retries silence without a second STT call or fake completion', async () => {
+  const engine = await load('../../components/lessons/lesson-experience.tsx')
+  assert.match(engine, /silenceMs: activity\.activityKey\?\.startsWith\('class1-l01-v4-poem-'\) \? 1900 : 1350/)
+  assert.match(engine, /speechThreshold: 0\.012/)
+  assert.match(engine, /const recovery = class1SilenceRecovery\(noSpeechMisses\.current\)/)
+  assert.match(engine, /setExperience\(recovery\.autoListen \? 'waiting_for_student' : 'recoverable_error'\)/)
+  assert.match(engine, /const delay = experienceId === 'g01-l01' && noSpeechMisses\.current > 0 \? 1400 : 420/)
+  assert.match(engine, /if \(normalizedText\) noSpeechMisses\.current = 0/)
+  assert.match(engine, /await cancelActiveVoiceSession\(\)\s+if \(experienceId === 'g01-l01' && isClass1NoSpeechError\(error\)\)/)
+  assert.match(engine, /await submit\(normalizedText, currentSessionId, 'MIC', voiceResult\.languageCode, telemetryTurnId\)/)
+  assert.match(engine, /if \(playback !== 'spoken'\)/)
+  assert.match(engine, /await acknowledgeFirstDayTeacherAudio\(\)/)
 })
 
 test('First Day route uses school-action homework and hides v3 fullscreen button', async () => {
