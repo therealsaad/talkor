@@ -4,11 +4,15 @@ import { useEffect, useState } from 'react'
 import { useAuth } from '@/components/auth/auth-provider'
 import { kgAlphabetService, type KGAlphabetState } from '@/features/lessons/grades/kg/level-01/services/kg-alphabet-service'
 import { KGAdventureMap } from '@/components/student/kg-adventure-map'
+import { kgLevel2StudentService, type KGLevel2State } from '@/features/lessons/grades/kg/level-02/services/kg-level2-student-service'
+import { kgContinuationStudentService, type KGContinuationOverview } from '@/features/lessons/grades/kg/continuation/continuation-service'
 
 /** Lightweight Grade 0 map; avoids loading the legacy 10,000-line jungle map. */
 export default function KGAlphabetMapPage() {
   const { student } = useAuth()
   const [kgLevel1State, setKgLevel1State] = useState<KGAlphabetState | null>(null)
+  const [kgLevel2State, setKgLevel2State] = useState<KGLevel2State | null>(null)
+  const [continuation, setContinuation] = useState<KGContinuationOverview | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [requestVersion, setRequestVersion] = useState(0)
@@ -18,6 +22,8 @@ export default function KGAlphabetMapPage() {
   useEffect(() => {
     let active = true
     setKgLevel1State(null)
+    setKgLevel2State(null)
+    setContinuation(null)
     setError('')
     setHomeworkError('')
 
@@ -29,8 +35,17 @@ export default function KGAlphabetMapPage() {
 
     setLoading(true)
     kgAlphabetService.state()
-      .then((state) => {
-        if (active) setKgLevel1State(state)
+      .then(async (state) => {
+        if (!active) return
+        setKgLevel1State(state)
+        if (state.completed && state.level2Available) {
+          const level2 = await kgLevel2StudentService.state()
+          if (active) setKgLevel2State(level2)
+          if (level2.completed) {
+            const next = await kgContinuationStudentService.overview()
+            if (active) setContinuation(next)
+          }
+        }
       })
       .catch((cause: unknown) => {
         console.error('Failed to load KG garden progress', cause)
@@ -64,6 +79,8 @@ export default function KGAlphabetMapPage() {
   return (
     <KGAdventureMap
       kgLevel1State={kgLevel1State}
+      kgLevel2State={kgLevel2State}
+      kgContinuation={continuation}
       loading={loading}
       error={error}
       onRetry={() => setRequestVersion((version) => version + 1)}

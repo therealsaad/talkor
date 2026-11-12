@@ -1,5 +1,13 @@
 import { z } from 'zod'
 
+export const startClass1IntroSchema = z.object({ body: z.object({
+  lessonId: z.string().regex(/^[a-f0-9]{24}$/i),
+}).strict() })
+export const completeClass1IntroSchema = z.object({ body: z.object({
+  lessonId: z.string().regex(/^[a-f0-9]{24}$/i),
+  playbackId: z.string().regex(/^[a-f0-9]{64}$/), videoEnded: z.literal(true),
+}).strict() })
+
 const supportedAudioMimeTypes = new Set([
   'audio/flac',
   'audio/m4a',
@@ -58,6 +66,12 @@ export const submitVoiceTranscriptSchema =
           ])
           .optional()
           .default('MIC'),
+
+        // Advisory Sarvam detection; never used as evidence of correctness.
+        // Old clients may omit it. Other language values are rejected.
+        detectedLanguage:
+          z.enum(['en-IN', 'hi-IN', 'mr-IN'])
+            .optional(),
       })
       .strict(),
 
@@ -72,6 +86,7 @@ export const synthesizeVoiceSchema =
   z.object({
     body:
       z.object({
+        teacherSessionId: z.string().regex(/^[a-f0-9]{24}$/i).optional(),
         text:
           z.string()
             .trim()

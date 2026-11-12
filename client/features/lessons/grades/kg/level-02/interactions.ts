@@ -2,9 +2,7 @@ import type { LevelInteractionConfig } from '../../../types'
 
 export const interactions: LevelInteractionConfig = {
   "allowedModes": [
-    "tap-picture",
-    "repeat-after-julie",
-    "listen-and-find"
+    "repeat-after-julie"
   ],
   "requireMicrophone": true,
   "disableMusicDuringSpeech": true,

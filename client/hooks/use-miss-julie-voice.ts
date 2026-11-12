@@ -13,9 +13,12 @@ export function useMissJulieVoice() {
     setError(message || '')
   }, [])
 
-  const speak = useCallback(async (text: string, turnId?: string, priority?: VoicePriority, activityId?: string): Promise<VoicePlaybackResult> => {
+  const speak = useCallback(async (text: string, turnId?: string, priority?: VoicePriority, activityId?: string, language?: 'en-IN' | 'hi-IN' | 'mr-IN', teacherSessionId?: string, onPlaybackState?: (state: VoicePlaybackState) => void): Promise<VoicePlaybackResult> => {
     lastTextRef.current = text
-    return voiceService.speak(text, onState, turnId, priority, activityId)
+    return voiceService.speak(text, (nextState, message) => {
+      onState(nextState, message)
+      onPlaybackState?.(nextState)
+    }, turnId, priority, activityId, language, teacherSessionId)
   }, [onState])
 
   const replay = useCallback(async (): Promise<VoicePlaybackResult> => {

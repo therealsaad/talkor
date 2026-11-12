@@ -4,6 +4,8 @@ import type { LevelDesignConfig } from './types'
 export interface LevelExperienceProps {
   preview?: boolean
   previewStartIndex?: number
+  previewStartLetter?: 'K' | 'L' | 'M' | 'N' | 'O' | 'P'
+  previewStartLevel5Letter?: 'W' | 'X' | 'Y' | 'Z'
   onPreviewBack?: () => void
 }
 export interface LevelWorkspace { config:LevelDesignConfig; LevelExperience:ComponentType<LevelExperienceProps> }

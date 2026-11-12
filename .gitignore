@@ -3,3 +3,4 @@
 talkora-kg1-backup-*/
 .venv/
 **/.venv/
+*.tsbuildinfo

@@ -13,7 +13,6 @@ import { Activity } from '../../src/models/Activity'
 import { CurriculumAccessService } from '../../src/services/curriculum-access.service'
 import { VoiceService } from '../../src/services/voice.service'
 import { getSpeechProvider } from '../../src/providers/speech'
-import { GroqSpeechProvider } from '../../src/providers/speech/GroqSpeechProvider'
 
 const studentId = '64b000000000000000000001'
 const lessonId = '64b000000000000000000002'
@@ -54,26 +53,22 @@ describe('KG pilot voice sessions', () => {
     expect(Activity.findById).not.toHaveBeenCalled()
   })
 
-  it('uses Groq Whisper for the authenticated KG pilot and keeps configured STT for other grades', async () => {
-    const groqTranscribe = jest.spyOn(GroqSpeechProvider.prototype, 'transcribe').mockResolvedValue({ transcript: 'apple', available: true, provider: 'groq-whisper' } as never)
-    const configuredTranscribe = jest.fn().mockResolvedValue({ transcript: 'book', available: true, provider: 'azure-speech' })
-    ;(getSpeechProvider as jest.Mock).mockReturnValue({ name: 'azure-speech', transcribe: configuredTranscribe })
+  it('uses configured Sarvam STT for KG, Class 1 and other grades alike', async () => {
+    const configuredTranscribe = jest.fn().mockResolvedValue({ transcript: 'apple', available: true, provider: 'sarvam' })
+    ;(getSpeechProvider as jest.Mock).mockReturnValue({ name: 'sarvam', transcribe: configuredTranscribe })
     ;(CurriculumAccessService.context as jest.Mock).mockResolvedValue({ isKGPilot: true })
 
     const pilotResult = await VoiceService.transcribeAudio({ audioBase64: 'YXVkaW8=' }, studentId)
-    expect(groqTranscribe).toHaveBeenCalledWith({ audioBase64: 'YXVkaW8=' })
-    expect(pilotResult).toMatchObject({ provider: 'groq-whisper' })
-    expect(configuredTranscribe).not.toHaveBeenCalled()
+    expect(configuredTranscribe).toHaveBeenCalledWith({ audioBase64: 'YXVkaW8=' })
+    expect(pilotResult).toMatchObject({ provider: 'sarvam' })
 
     ;(CurriculumAccessService.context as jest.Mock).mockResolvedValue({ isKGPilot: false, isClass1Demo: true })
     await VoiceService.transcribeAudio({ audioBase64: 'Y2xhc3Mx' }, studentId)
-    expect(groqTranscribe).toHaveBeenCalledWith({ audioBase64: 'Y2xhc3Mx' })
+    expect(configuredTranscribe).toHaveBeenCalledWith({ audioBase64: 'Y2xhc3Mx' })
 
     ;(CurriculumAccessService.context as jest.Mock).mockResolvedValue({ isKGPilot: false, isClass1Demo: false })
     const regularResult = await VoiceService.transcribeAudio({ audioBase64: 'YXVkaW8=' }, '64b000000000000000000004')
     expect(configuredTranscribe).toHaveBeenCalledWith({ audioBase64: 'YXVkaW8=' })
-    expect(regularResult).toMatchObject({ provider: 'azure-speech' })
-
-    groqTranscribe.mockRestore()
+    expect(regularResult).toMatchObject({ provider: 'sarvam' })
   })
 })

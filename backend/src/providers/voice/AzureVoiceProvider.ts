@@ -1,6 +1,7 @@
 import { ApiError } from '../../utils/ApiError'
+import { chooseTalkoraBilingualVoice } from './class1-voice-language'
 import { logger } from '../../utils/logger'
-import { AudioCacheService } from '../../services/AudioCacheService'
+import { errorCategory } from '../../utils/error-category'
 import type { VoiceProvider, VoiceStreamResult, VoiceSynthesisResult } from './VoiceProvider'
 
 function escapeXml(text: string): string {
@@ -37,14 +38,42 @@ export class AzureVoiceProvider implements VoiceProvider {
     }
   }
 
-  private async generate(text: string, kindergarten = false): Promise<Buffer> {
+  private async generate(text: string, kindergarten = false, class1Lesson = false, language?: string, poemRecitation = false): Promise<Buffer> {
     const s = this.settings()
     if (!s.key) throw ApiError.provider('Azure Speech is not configured')
+    const selected = chooseTalkoraBilingualVoice(text, s.voice, class1Lesson, language)
 
     const url = `https://${s.region}.tts.speech.microsoft.com/cognitiveservices/v1`
-    const rate = kindergarten ? (process.env.KG_AZURE_SPEECH_RATE?.trim() || "+5%") : s.rate
-    const pitch = kindergarten ? (process.env.KG_AZURE_SPEECH_PITCH?.trim() || "+6%") : s.pitch
-    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-IN"><voice name="${s.voice}"><prosody rate="${rate}" pitch="${pitch}">${escapeXml(text)}</prosody></voice></speak>`
+    // The poem is a *rhythmic spoken recitation*, not synthesized singing.
+    // The same Azure Neural voice recites every line; approved lesson context
+    // alone enables a measured tempo and line-to-line breathing pauses.
+    const rate = poemRecitation ? '-14%'
+      : kindergarten ? (process.env.KG_AZURE_SPEECH_RATE?.trim() || "+5%") : s.rate
+    const pitch = poemRecitation ? '+3%'
+      : kindergarten ? (process.env.KG_AZURE_SPEECH_PITCH?.trim() || "+6%") : s.pitch
+    // A Hindi/Marathi explanation and its English target need two distinct
+    // voice segments, not one Hindi/Marathi voice reading the whole sentence.
+    // Azure accepts multiple voice nodes inside ONE synthesis request.
+    const practice = kindergarten && (selected.locale === 'hi-IN' || selected.locale === 'mr-IN')
+      ? /^(.*?)(\s+Say (?:[a-z][a-z'-]{0,26}|the letter [a-z])[.!?]?)$/is.exec(text)
+      : null
+    // Azure SSML requires pauses inside a <voice> (or its <prosody>),
+    // never as a direct child of <speak>. An orphan <break> causes HTTP 400
+    // for the multi-line First Day poem, even with valid credentials.
+    const voiceNode = (voice: string, words: string, pauseBefore = false) =>
+      `<voice name="${voice}"><prosody rate="${rate}" pitch="${pitch}">${pauseBefore ? '<break time="360ms"/>' : ''}${escapeXml(words)}</prosody></voice>`
+    // Voice-code hints come from verified Sarvam/Node; actual English poem
+    // lines ALWAYS use the English Neural voice. Devanagari support lines
+    // switch to the chosen Hindi/Marathi Neural voice in the same SSML call.
+    const content = poemRecitation
+      ? text.split(/\r?\n/).map(line => line.trim()).filter(Boolean)
+          .map((line, index) =>
+            voiceNode(/[\u0900-\u097F]/u.test(line) ? selected.voice : s.voice, line, index > 0))
+          .join('')
+      : practice && practice[1].trim()
+        ? voiceNode(selected.voice, practice[1].trim()) + voiceNode('en-IN-NeerjaNeural', practice[2].trim())
+        : voiceNode(selected.voice, text)
+    const ssml = `<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="${selected.locale}">${content}</speak>`
 
     let response: Response
     try {
@@ -60,41 +89,38 @@ export class AzureVoiceProvider implements VoiceProvider {
         signal: AbortSignal.timeout(kindergarten ? Math.max(5000, Math.min(45000, Number(process.env.KG_AZURE_TTS_TIMEOUT_MS || 25000))) : s.timeoutMs),
       })
     } catch (error) {
-      logger.warn('Azure TTS request failed', { error })
+      logger.warn('Azure TTS request failed', { errorCategory: errorCategory(error) })
       throw ApiError.provider('TTS_SERVICE_UNAVAILABLE')
     }
 
     if (!response.ok) {
-      const detail = await response.text().catch(() => '')
-      logger.warn('Azure TTS returned an error', { status: response.status, detail: detail.slice(0, 300) })
+      await response.body?.cancel().catch(() => undefined)
+      logger.warn('Azure TTS returned an error', { status: response.status })
       throw ApiError.provider('TTS_GENERATION_FAILED')
     }
 
-    return Buffer.from(await response.arrayBuffer())
+    const audio = Buffer.from(await response.arrayBuffer())
+    // A 200 response is not enough: an empty payload produces a silent student
+    // screen even though the provider appears healthy in API/network logs.
+    if (audio.byteLength < 256) {
+      logger.warn('Azure TTS returned empty or truncated audio', { bytes: audio.byteLength })
+      throw ApiError.provider('TTS_EMPTY_AUDIO')
+    }
+    return audio
   }
 
   private contentType(): string {
     return this.settings().format.startsWith('audio-') ? 'audio/mpeg' : 'audio/wav'
   }
 
-  /** KG speech is transient: no MongoDB, no S3, no persistent audio cache. */
-  async synthesizeUncached(text: string): Promise<{ audio: Buffer; contentType: string }> {
+  /** KG speech is transient: no MongoDB, no S3, no persistent audio cache.
+   * Honor a server-verified Sarvam language hint for Hindi/Marathi teaching
+   * replies, including Romanized child words. English stays the default.
+   */
+  async synthesizeUncached(text: string, options?: { language?: 'en-IN' | 'hi-IN' | 'mr-IN' }): Promise<{ audio: Buffer; contentType: string }> {
     const normalized = text.replace(/\s+/g, ' ').trim()
     if (!normalized || normalized.length > 320) throw ApiError.badRequest('KG voice text must be 1–320 characters')
-    return { audio: await this.generate(normalized, true), contentType: this.contentType() }
-  }
-
-  private identity(text: string) {
-    const s = this.settings()
-    return {
-      text,
-      provider: 'azure',
-      voice: s.voice,
-      rate: s.rate,
-      pitch: s.pitch,
-      format: s.format,
-      version: s.version,
-    }
+    return { audio: await this.generate(normalized, true, true, options?.language), contentType: this.contentType() }
   }
 
   async synthesize(text: string): Promise<VoiceSynthesisResult> {
@@ -102,21 +128,9 @@ export class AzureVoiceProvider implements VoiceProvider {
     if (!normalized) throw ApiError.badRequest('text is required')
     if (!this.settings().key) throw ApiError.provider('Azure Speech is not configured')
 
-    const identity = this.identity(normalized)
-    const cached = await AudioCacheService.get(identity)
-    if (cached) {
-      return {
-        audioUrl: null,
-        audioBase64: cached.audio.toString('base64'),
-        contentType: cached.contentType,
-        available: true,
-        provider: this.name,
-      }
-    }
-
+    // Live Class 1+ replies are ephemeral. Only human-reviewed curriculum
+    // narration is uploaded to S3; do not persist per-student corrections.
     const audio = await this.generate(normalized)
-    await AudioCacheService.put(identity, audio, this.contentType())
-
     return {
       audioUrl: null,
       audioBase64: audio.toString('base64'),
@@ -126,39 +140,20 @@ export class AzureVoiceProvider implements VoiceProvider {
     }
   }
 
-  async synthesizeStream(text: string): Promise<VoiceStreamResult> {
+  async synthesizeStream(text: string, options?: { conversation?: boolean; class1Lesson?: boolean; language?: string; poemRecitation?: boolean }): Promise<VoiceStreamResult> {
     const normalized = text.trim()
     if (!normalized) throw ApiError.badRequest('text is required')
     if (!this.settings().key) throw ApiError.provider('Azure Speech is not configured')
 
-    const identity = this.identity(normalized)
-    const cached = await AudioCacheService.get(identity)
-    if (cached) {
-      return {
-        body: streamFromBuffer(cached.audio),
-        contentType: cached.contentType,
-        provider: this.name,
-        metadata: {
-          'x-talkora-cache': 'HIT',
-          'x-talkora-voice-id': this.settings().voice,
-        },
-      }
-    }
-
-    const audio = await this.generate(normalized)
-    // Do not hold up a child's first audio response while uploading the cache
-    // to Atlas/S3. A later request can still use the persistent cache.
-    void AudioCacheService.put(identity, audio, this.contentType()).catch((error) => {
-      logger.warn('Azure TTS cache write failed', { error })
-    })
+    const audio = await this.generate(normalized, false, options?.class1Lesson === true, options?.language, options?.poemRecitation === true)
 
     return {
       body: streamFromBuffer(audio),
       contentType: this.contentType(),
       provider: this.name,
       metadata: {
-        'x-talkora-cache': 'MISS',
-        'x-talkora-voice-id': this.settings().voice,
+        'x-talkora-cache': 'BYPASS',
+        'x-talkora-voice-id': chooseTalkoraBilingualVoice(text, this.settings().voice, options?.class1Lesson === true, options?.language).voice,
       },
     }
   }

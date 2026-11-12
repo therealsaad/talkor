@@ -2,10 +2,20 @@
 import { useState } from 'react'
 import type { CSSProperties } from 'react'
 import type { LevelDesignConfig, LevelActivity, LevelInteractionConfig, SuggestedActivity } from './types'
+import { Class1TeachingPreview } from './grades/class-01/Class1TeachingPreview'
 import styles from './level-studio.module.css'
 
 /** Staff design preview only: no fake microphone scores, API calls, or student progression. */
 export function LevelDraftPreview({config,activities,suggestedActivities,interactions}:{config:LevelDesignConfig;activities:LevelActivity[];suggestedActivities:SuggestedActivity[];interactions:LevelInteractionConfig}) {
+  // Class 1's authored chapter drafts get a teacher-and-board rehearsal stage.
+  // No other grade (or the existing Class 1 Level 1 runtime) is affected.
+  if (config.grade === 1 && config.level >= 2 && config.staffOnlyPreview && !config.studentPlayable) {
+    return <Class1TeachingPreview config={config} activities={activities} />
+  }
+  return <GenericLevelDraftPreview config={config} activities={activities} suggestedActivities={suggestedActivities} interactions={interactions} />
+}
+
+function GenericLevelDraftPreview({config,activities,suggestedActivities,interactions}:{config:LevelDesignConfig;activities:LevelActivity[];suggestedActivities:SuggestedActivity[];interactions:LevelInteractionConfig}) {
   const [selected,setSelected] = useState(0)
   const color = config.experience.palette
   const vars = {'--studio-bg':color.background,'--studio-bg-deep':color.backgroundDeep,'--studio-primary':color.primary,'--studio-secondary':color.secondary,'--studio-accent':color.accent,'--studio-ink':color.ink} as CSSProperties

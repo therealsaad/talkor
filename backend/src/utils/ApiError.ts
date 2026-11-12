@@ -15,6 +15,10 @@ export type ErrorCode =
   | 'ACTIVITY_NOT_AVAILABLE'
   | 'CONVERSATION_NOT_ACTIVE'
   | 'ACTIVITY_ALREADY_COMPLETED'
+  | 'KG_AUDIO_MISSING'
+  | 'KG_AUDIO_STORAGE_ACCESS_DENIED'
+  | 'KG_AUDIO_STORAGE_UNAVAILABLE'
+  | 'TTS_SERVICE_UNAVAILABLE'
 
 export class ApiError extends Error {
   public readonly statusCode: number

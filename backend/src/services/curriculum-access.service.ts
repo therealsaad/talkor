@@ -29,11 +29,14 @@ import {
 } from './kg-pilot-access'
 import { isMissingKGPilotPicture } from './kg-pilot-presentation'
 import {
+  CLASS1_DEMO_LESSON_FILTER,
   CLASS1_DEMO_VERSION,
   isAuthorizedClass1DemoStudent,
   isClass1DemoActivity,
+  isClass1DemoLesson,
   isClass1DemoLevel,
 } from './class1-demo-access'
+import { assertFirstDayIntro } from './class1-intro-eligibility'
 
 /** Controlled, one-student demo; never opens draft Class 1 to the general student population. */
 export { CLASS1_DEMO_VERSION }
@@ -53,7 +56,7 @@ export const CurriculumAccessService = {
         studentId,
       )
         .select(
-          'grade schoolId status className fullName',
+          'grade schoolId status className fullName authVersion',
         )
         .lean()
 
@@ -90,23 +93,24 @@ export const CurriculumAccessService = {
         : ApiError.notFound(this.unpublishedCurriculumMessage(student.grade))
     }
 
-    // Draft access is limited to the explicitly allowlisted Grade 0 student
-    // and this exact pilot version. Ordinary students retain published-only access.
+    // Draft access is available only in development to the configured student,
+    // or to all active Class 1 students when the explicit all-students flag is on.
+    // Production students retain published-only access.
     const isKGPilot = pilotAllowlisted && curriculumClass.status === 'draft'
-    const isClass1Demo = class1DemoAllowlisted && curriculumClass.status === 'draft'
-    if (isClass1Demo) {
-      // Fail closed unless this is our exact seed and its reviewed demo marker.
-      const demoLevel = await Level.findOne({
-        classId: curriculumClass._id,
-        number: 1,
-        curriculumVersion: CLASS1_DEMO_VERSION,
-        status: 'draft',
-        availability: 'UPCOMING',
-      }).select('_id').lean()
-      const demoLesson = demoLevel && await Lesson.exists({
+    // After Level 1 is genuinely published, development allowlist flags must
+    // not force the student back into the retired draft-only resolver.
+    const demoLevel = class1DemoAllowlisted && await Level.findOne({
+      classId: curriculumClass._id,
+      number: 1,
+      curriculumVersion: CLASS1_DEMO_VERSION,
+      status: 'draft',
+      availability: 'UPCOMING',
+    }).select('_id').lean()
+    const isClass1Demo = Boolean(demoLevel)
+    if (demoLevel) {
+      const demoLesson = await Lesson.exists({
         levelId: demoLevel._id,
-        status: 'draft',
-        'settings.talkoraDemoDraft': true,
+        ...CLASS1_DEMO_LESSON_FILTER,
       })
       if (!demoLesson) throw ApiError.businessRule('Class 1 demonstration lesson is not ready.')
     }
@@ -219,7 +223,7 @@ export const CurriculumAccessService = {
         lesson.levelId.toString(),
       )
 
-    if (access.isClass1Demo && lesson.settings?.talkoraDemoDraft !== true) {
+    if (access.isClass1Demo && !isClass1DemoLesson(lesson)) {
       throw ApiError.activityUnavailable('This lesson is not part of the approved Class 1 demo')
     }
 
@@ -267,6 +271,10 @@ export const CurriculumAccessService = {
         studentId,
         activity.lessonId.toString(),
       )
+
+    await assertFirstDayIntro({ studentId, schoolId: String(access.student.schoolId),
+      authVersion: access.student.authVersion || 0, grade: access.student.grade,
+      lessonId: String(lesson._id), settings: lesson.settings, activityKey: activity.activityKey })
 
     return {
       activity,

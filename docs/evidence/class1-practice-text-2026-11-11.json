@@ -1,0 +1,207 @@
+{
+  "scope": "Local synthetic Node policy; JavaScript UTF-16 character counts",
+  "providerCalls": 0,
+  "audioTested": false,
+  "latencyMeasured": false,
+  "productionTested": false,
+  "cases": [
+    {
+      "sceneKey": "poem-pair-1",
+      "language": "English",
+      "lessonLines": 2,
+      "practiceLines": 1,
+      "beforeSpokenTextCharacters": 106,
+      "afterSpokenTextCharacters": 51,
+      "modelUnchanged": true,
+      "activityComplete": false,
+      "xpAwarded": 0
+    },
+    {
+      "sceneKey": "poem-pair-1",
+      "language": "Hindi",
+      "lessonLines": 2,
+      "practiceLines": 1,
+      "beforeSpokenTextCharacters": 146,
+      "afterSpokenTextCharacters": 92,
+      "modelUnchanged": true,
+      "activityComplete": false,
+      "xpAwarded": 0
+    },
+    {
+      "sceneKey": "poem-pair-1",
+      "language": "Marathi",
+      "lessonLines": 2,
+      "practiceLines": 1,
+      "beforeSpokenTextCharacters": 136,
+      "afterSpokenTextCharacters": 102,
+      "modelUnchanged": true,
+      "activityComplete": false,
+      "xpAwarded": 0
+    },
+    {
+      "sceneKey": "poem-pair-2",
+      "language": "English",
+      "lessonLines": 2,
+      "practiceLines": 1,
+      "beforeSpokenTextCharacters": 130,
+      "afterSpokenTextCharacters": 74,
+      "modelUnchanged": true,
+      "activityComplete": false,
+      "xpAwarded": 0
+    },
+    {
+      "sceneKey": "poem-pair-2",
+      "language": "Hindi",
+      "lessonLines": 2,
+      "practiceLines": 1,
+      "beforeSpokenTextCharacters": 168,
+      "afterSpokenTextCharacters": 113,
+      "modelUnchanged": true,
+      "activityComplete": false,
+      "xpAwarded": 0
+    },
+    {
+      "sceneKey": "poem-pair-2",
+      "language": "Marathi",
+      "lessonLines": 2,
+      "practiceLines": 1,
+      "beforeSpokenTextCharacters": 151,
+      "afterSpokenTextCharacters": 116,
+      "modelUnchanged": true,
+      "activityComplete": false,
+      "xpAwarded": 0
+    },
+    {
+      "sceneKey": "poem-pair-3",
+      "language": "English",
+      "lessonLines": 2,
+      "practiceLines": 1,
+      "beforeSpokenTextCharacters": 125,
+      "afterSpokenTextCharacters": 51,
+      "modelUnchanged": true,
+      "activityComplete": false,
+      "xpAwarded": 0
+    },
+    {
+      "sceneKey": "poem-pair-3",
+      "language": "Hindi",
+      "lessonLines": 2,
+      "practiceLines": 1,
+      "beforeSpokenTextCharacters": 161,
+      "afterSpokenTextCharacters": 88,
+      "modelUnchanged": true,
+      "activityComplete": false,
+      "xpAwarded": 0
+    },
+    {
+      "sceneKey": "poem-pair-3",
+      "language": "Marathi",
+      "lessonLines": 2,
+      "practiceLines": 1,
+      "beforeSpokenTextCharacters": 142,
+      "afterSpokenTextCharacters": 89,
+      "modelUnchanged": true,
+      "activityComplete": false,
+      "xpAwarded": 0
+    },
+    {
+      "sceneKey": "poem-pair-4",
+      "language": "English",
+      "lessonLines": 2,
+      "practiceLines": 1,
+      "beforeSpokenTextCharacters": 107,
+      "afterSpokenTextCharacters": 51,
+      "modelUnchanged": true,
+      "activityComplete": false,
+      "xpAwarded": 0
+    },
+    {
+      "sceneKey": "poem-pair-4",
+      "language": "Hindi",
+      "lessonLines": 2,
+      "practiceLines": 1,
+      "beforeSpokenTextCharacters": 142,
+      "afterSpokenTextCharacters": 87,
+      "modelUnchanged": true,
+      "activityComplete": false,
+      "xpAwarded": 0
+    },
+    {
+      "sceneKey": "poem-pair-4",
+      "language": "Marathi",
+      "lessonLines": 2,
+      "practiceLines": 1,
+      "beforeSpokenTextCharacters": 131,
+      "afterSpokenTextCharacters": 96,
+      "modelUnchanged": true,
+      "activityComplete": false,
+      "xpAwarded": 0
+    },
+    {
+      "sceneKey": "poem-pair-5",
+      "language": "English",
+      "lessonLines": 2,
+      "practiceLines": 1,
+      "beforeSpokenTextCharacters": 117,
+      "afterSpokenTextCharacters": 57,
+      "modelUnchanged": true,
+      "activityComplete": false,
+      "xpAwarded": 0
+    },
+    {
+      "sceneKey": "poem-pair-5",
+      "language": "Hindi",
+      "lessonLines": 2,
+      "practiceLines": 1,
+      "beforeSpokenTextCharacters": 171,
+      "afterSpokenTextCharacters": 112,
+      "modelUnchanged": true,
+      "activityComplete": false,
+      "xpAwarded": 0
+    },
+    {
+      "sceneKey": "poem-pair-5",
+      "language": "Marathi",
+      "lessonLines": 2,
+      "practiceLines": 1,
+      "beforeSpokenTextCharacters": 159,
+      "afterSpokenTextCharacters": 120,
+      "modelUnchanged": true,
+      "activityComplete": false,
+      "xpAwarded": 0
+    },
+    {
+      "sceneKey": "poem-full",
+      "language": "English",
+      "lessonLines": 10,
+      "practiceLines": 1,
+      "beforeSpokenTextCharacters": 269,
+      "afterSpokenTextCharacters": 51,
+      "modelUnchanged": true,
+      "activityComplete": false,
+      "xpAwarded": 0
+    },
+    {
+      "sceneKey": "poem-full",
+      "language": "Hindi",
+      "lessonLines": 10,
+      "practiceLines": 1,
+      "beforeSpokenTextCharacters": 297,
+      "afterSpokenTextCharacters": 97,
+      "modelUnchanged": true,
+      "activityComplete": false,
+      "xpAwarded": 0
+    },
+    {
+      "sceneKey": "poem-full",
+      "language": "Marathi",
+      "lessonLines": 10,
+      "practiceLines": 1,
+      "beforeSpokenTextCharacters": 290,
+      "afterSpokenTextCharacters": 91,
+      "modelUnchanged": true,
+      "activityComplete": false,
+      "xpAwarded": 0
+    }
+  ]
+}

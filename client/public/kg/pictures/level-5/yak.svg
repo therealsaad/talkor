@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 280" role="img" aria-labelledby="title desc">
+  <title id="title">Yak</title>
+  <desc id="desc">A friendly shaggy brown yak with long fur and curved ivory horns.</desc>
+  <defs>
+    <linearGradient id="coat" x1="0" y1="0" x2="0.9" y2="1"><stop stop-color="#9b6648"/><stop offset=".58" stop-color="#744633"/><stop offset="1" stop-color="#563c34"/></linearGradient>
+    <linearGradient id="muzzle" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#efc7a6"/><stop offset="1" stop-color="#d89c7b"/></linearGradient>
+    <linearGradient id="horn" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff7dc"/><stop offset="1" stop-color="#ddc59b"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="7" stdDeviation="6" flood-color="#47352f" flood-opacity=".2"/></filter>
+  </defs>
+  <ellipse cx="178" cy="248" rx="125" ry="13" fill="#e6d9cd"/>
+  <g filter="url(#shadow)" stroke="#5b4035" stroke-width="5" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M62 149c2-42 33-72 82-74 37-2 69 14 90 44 31 2 51 16 58 38l-12 37-19-1-8-30c-19 10-42 13-67 10l-14 35-20-1-5-33c-31 7-61 4-83-5l-7 37-20 1-3-40Z" fill="url(#coat)"/>
+    <path d="M76 157c-15 18-20 41-17 63l19 2 12-52m51-14c-9 21-10 42-4 62l19 1 8-57m50-8c-5 21-3 42 7 60l18-1 3-56" fill="#684633"/>
+    <path d="M87 128c4-36 25-59 57-61 32-1 54 21 57 55l-12 49c-12 26-35 41-61 31-31-11-46-36-41-74Z" fill="url(#coat)"/>
+    <path d="M100 79c-22-18-43-14-55 1 16-2 28 7 37 25m114-21c21-21 42-19 55-4-17-1-28 10-36 28" fill="url(#horn)"/>
+    <path d="M105 87c-8-24-21-29-34-22 13 12 19 24 20 39m116-14c10-24 23-28 36-19-14 11-21 23-23 38" fill="#f3d9b8"/>
+    <path d="M106 113c10-8 20-7 28 1m33 0c9-8 19-8 28 0" fill="none" stroke-width="7"/>
+    <ellipse cx="121" cy="116" rx="4" ry="6" fill="#2f2826" stroke="none"/>
+    <ellipse cx="179" cy="116" rx="4" ry="6" fill="#2f2826" stroke="none"/>
+    <path d="M121 145c15-19 45-23 67-8l-5 26c-13 19-42 21-57 5Z" fill="url(#muzzle)"/>
+    <ellipse cx="144" cy="151" rx="4" ry="3" fill="#68483e" stroke="none"/>
+    <ellipse cx="164" cy="151" rx="4" ry="3" fill="#68483e" stroke="none"/>
+    <path d="M150 161c4 6 10 6 14 0m-7 3v6" fill="none" stroke-width="3"/>
+    <path d="M88 127c-7 17-3 42 10 58m108-65c9 20 7 40-4 58m-85-7 3 35m76-31 8 34" fill="none" stroke="#b37c55" stroke-width="5"/>
+    <path d="M80 167c17 3 30 1 42-7m-39 19c15 4 28 3 40-3m72 4c14 2 27 0 39-6" fill="none" stroke="#c28c63" stroke-width="4"/>
+    <path d="M74 197c-7 15-3 25 8 29m89-23c-7 13-5 22 5 29m59-30c-4 13 0 20 11 24" fill="none" stroke="#4c382f" stroke-width="6"/>
+  </g>
+</svg>

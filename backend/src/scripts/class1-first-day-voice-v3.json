@@ -1,0 +1,311 @@
+{
+  "levelId": "g01-l01",
+  "syllabus": "English Balbharati Grade One, Unit 1.1 My First Day, page 1",
+  "revision": "v3",
+  "status": "UNREVIEWED_NOT_PUBLISHED",
+  "notTextbookQuotation": true,
+  "englishNarration": "8001 existing AI4Bharat/Priya",
+  "homeLanguageNarration": "optional one-time Azure then reviewed S3; live reply Azure",
+  "lines": [
+    {
+      "scene": "hello-school",
+      "id": "hello-school-en",
+      "language": "en-IN",
+      "text": "Hello, Grade One! I am Miss Julie. Welcome to our school adventure. Can you tell me how you feel today?",
+      "source": "python-8001",
+      "format": "wav",
+      "s3Key": "class-01/level-01/v3/hello-school-en.wav",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "hello-school",
+      "id": "hello-school-hi",
+      "language": "hi-IN",
+      "text": "स्कूल में हम सीखते और दोस्तों के साथ खेलते हैं। बोलो: I am happy at school.",
+      "source": "azure-one-time",
+      "format": "mp3",
+      "s3Key": "class-01/level-01/v3/hello-school-hi.mp3",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "hello-school",
+      "id": "hello-school-mr",
+      "language": "mr-IN",
+      "text": "शाळेत आपण शिकतो आणि मित्रांसोबत खेळतो. म्हण: I am happy at school.",
+      "source": "azure-one-time",
+      "format": "mp3",
+      "s3Key": "class-01/level-01/v3/hello-school-mr.mp3",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "skip-bunny",
+      "id": "skip-bunny-en",
+      "language": "en-IN",
+      "text": "A bunny goes hop, hop, hop! I can skip. Can your fingers skip along with mine?",
+      "source": "python-8001",
+      "format": "wav",
+      "s3Key": "class-01/level-01/v3/skip-bunny-en.wav",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "skip-bunny",
+      "id": "skip-bunny-hi",
+      "language": "hi-IN",
+      "text": "स्किप मतलब उछलकर छोटे-छोटे कदम लेना। बोलो: I can skip.",
+      "source": "azure-one-time",
+      "format": "mp3",
+      "s3Key": "class-01/level-01/v3/skip-bunny-hi.mp3",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "skip-bunny",
+      "id": "skip-bunny-mr",
+      "language": "mr-IN",
+      "text": "स्किप म्हणजे उड्या मारत चालणे. म्हण: I can skip.",
+      "source": "azure-one-time",
+      "format": "mp3",
+      "s3Key": "class-01/level-01/v3/skip-bunny-mr.mp3",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "run-race",
+      "id": "run-race-en",
+      "language": "en-IN",
+      "text": "Ready, steady, go! My fingers are running like rockets. Say it with me: I can run.",
+      "source": "python-8001",
+      "format": "wav",
+      "s3Key": "class-01/level-01/v3/run-race-en.wav",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "run-race",
+      "id": "run-race-hi",
+      "language": "hi-IN",
+      "text": "रन मतलब तेज़ भागना। चलो बोलें: I can run.",
+      "source": "azure-one-time",
+      "format": "mp3",
+      "s3Key": "class-01/level-01/v3/run-race-hi.mp3",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "run-race",
+      "id": "run-race-mr",
+      "language": "mr-IN",
+      "text": "रन म्हणजे पळणे. चला म्हणू: I can run.",
+      "source": "azure-one-time",
+      "format": "mp3",
+      "s3Key": "class-01/level-01/v3/run-race-mr.mp3",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "walk-school",
+      "id": "walk-school-en",
+      "language": "en-IN",
+      "text": "Tip, tap, tip, tap! We are walking to school. Can you say: I walk to school?",
+      "source": "python-8001",
+      "format": "wav",
+      "s3Key": "class-01/level-01/v3/walk-school-en.wav",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "walk-school",
+      "id": "walk-school-hi",
+      "language": "hi-IN",
+      "text": "वॉक मतलब पैदल चलना। बोलो: I walk to school.",
+      "source": "azure-one-time",
+      "format": "mp3",
+      "s3Key": "class-01/level-01/v3/walk-school-hi.mp3",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "walk-school",
+      "id": "walk-school-mr",
+      "language": "mr-IN",
+      "text": "वॉक म्हणजे चालणे. म्हण: I walk to school.",
+      "source": "azure-one-time",
+      "format": "mp3",
+      "s3Key": "class-01/level-01/v3/walk-school-mr.mp3",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "big-grin",
+      "id": "big-grin-en",
+      "language": "en-IN",
+      "text": "Show me your biggest, funniest smile! Even a sleepy elephant can grin. Say: I can smile.",
+      "source": "python-8001",
+      "format": "wav",
+      "s3Key": "class-01/level-01/v3/big-grin-en.wav",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "big-grin",
+      "id": "big-grin-hi",
+      "language": "hi-IN",
+      "text": "ग्रिन मतलब बड़ी सी मुस्कान। बोलो: I can smile.",
+      "source": "azure-one-time",
+      "format": "mp3",
+      "s3Key": "class-01/level-01/v3/big-grin-hi.mp3",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "big-grin",
+      "id": "big-grin-mr",
+      "language": "mr-IN",
+      "text": "ग्रिन म्हणजे मोठं हसू. म्हण: I can smile.",
+      "source": "azure-one-time",
+      "format": "mp3",
+      "s3Key": "class-01/level-01/v3/big-grin-mr.mp3",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "school-bell",
+      "id": "school-bell-en",
+      "language": "en-IN",
+      "text": "Ding, dong! Did you hear the school bell? My ears are dancing! Say: I hear a bell.",
+      "source": "python-8001",
+      "format": "wav",
+      "s3Key": "class-01/level-01/v3/school-bell-en.wav",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "school-bell",
+      "id": "school-bell-hi",
+      "language": "hi-IN",
+      "text": "स्कूल की घंटी बजती है। बोलो: I hear a bell.",
+      "source": "azure-one-time",
+      "format": "mp3",
+      "s3Key": "class-01/level-01/v3/school-bell-hi.mp3",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "school-bell",
+      "id": "school-bell-mr",
+      "language": "mr-IN",
+      "text": "शाळेची घंटा वाजते. म्हण: I hear a bell.",
+      "source": "azure-one-time",
+      "format": "mp3",
+      "s3Key": "class-01/level-01/v3/school-bell-mr.mp3",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "jump-frog",
+      "id": "jump-frog-en",
+      "language": "en-IN",
+      "text": "Ribbit, ribbit! Miss Julie is a jumping frog. Make jumping fingers and say: I can jump.",
+      "source": "python-8001",
+      "format": "wav",
+      "s3Key": "class-01/level-01/v3/jump-frog-en.wav",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "jump-frog",
+      "id": "jump-frog-hi",
+      "language": "hi-IN",
+      "text": "जम्प मतलब ऊपर उछलना। बोलो: I can jump.",
+      "source": "azure-one-time",
+      "format": "mp3",
+      "s3Key": "class-01/level-01/v3/jump-frog-hi.mp3",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "jump-frog",
+      "id": "jump-frog-mr",
+      "language": "mr-IN",
+      "text": "जम्प म्हणजे उडी मारणे. म्हण: I can jump.",
+      "source": "azure-one-time",
+      "format": "mp3",
+      "s3Key": "class-01/level-01/v3/jump-frog-mr.mp3",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "play-friends",
+      "id": "play-friends-en",
+      "language": "en-IN",
+      "text": "Bounce, bounce! The ball wants to play with us. What can you play at school?",
+      "source": "python-8001",
+      "format": "wav",
+      "s3Key": "class-01/level-01/v3/play-friends-en.wav",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "play-friends",
+      "id": "play-friends-hi",
+      "language": "hi-IN",
+      "text": "हम दोस्तों के साथ खेलते हैं। बोलो: I can play.",
+      "source": "azure-one-time",
+      "format": "mp3",
+      "s3Key": "class-01/level-01/v3/play-friends-hi.mp3",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "play-friends",
+      "id": "play-friends-mr",
+      "language": "mr-IN",
+      "text": "आपण मित्रांसोबत खेळतो. म्हण: I can play.",
+      "source": "azure-one-time",
+      "format": "mp3",
+      "s3Key": "class-01/level-01/v3/play-friends-mr.mp3",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "enter-class",
+      "id": "enter-class-en",
+      "language": "en-IN",
+      "text": "Ding, dong! The bell is ringing. We walk into our classroom. Where do we go now?",
+      "source": "python-8001",
+      "format": "wav",
+      "s3Key": "class-01/level-01/v3/enter-class-en.wav",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "enter-class",
+      "id": "enter-class-hi",
+      "language": "hi-IN",
+      "text": "घंटी बजे तो हम कक्षा में जाते हैं। बोलो: I go into my classroom.",
+      "source": "azure-one-time",
+      "format": "mp3",
+      "s3Key": "class-01/level-01/v3/enter-class-hi.mp3",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "enter-class",
+      "id": "enter-class-mr",
+      "language": "mr-IN",
+      "text": "घंटा वाजली की आपण वर्गात जातो. म्हण: I go into my classroom.",
+      "source": "azure-one-time",
+      "format": "mp3",
+      "s3Key": "class-01/level-01/v3/enter-class-mr.mp3",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "grade-one",
+      "id": "grade-one-en",
+      "language": "en-IN",
+      "text": "Hooray, Grade One! We walked, skipped, ran, smiled and played. What was your favourite school action?",
+      "source": "python-8001",
+      "format": "wav",
+      "s3Key": "class-01/level-01/v3/grade-one-en.wav",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "grade-one",
+      "id": "grade-one-hi",
+      "language": "hi-IN",
+      "text": "वाह! तुम पहली कक्षा में हो। बोलो: I am in Grade One.",
+      "source": "azure-one-time",
+      "format": "mp3",
+      "s3Key": "class-01/level-01/v3/grade-one-hi.mp3",
+      "approval": "teacher-review-required"
+    },
+    {
+      "scene": "grade-one",
+      "id": "grade-one-mr",
+      "language": "mr-IN",
+      "text": "वा! तू पहिलीत आहेस. म्हण: I am in Grade One.",
+      "source": "azure-one-time",
+      "format": "mp3",
+      "s3Key": "class-01/level-01/v3/grade-one-mr.mp3",
+      "approval": "teacher-review-required"
+    }
+  ]
+}

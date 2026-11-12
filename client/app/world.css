@@ -2739,7 +2739,22 @@
     height: 100%;
     object-fit: contain;
     width: 100%;
+    transition: opacity .16s ease-out;
 }
+
+.miss-julie-animation {
+    height: 100%;
+    inset: 0;
+    object-fit: contain;
+    opacity: 0;
+    pointer-events: none;
+    position: absolute;
+    transition: opacity .16s ease-out;
+    width: 100%;
+}
+
+.miss-julie-character.has-transparent-animation img { opacity: 0; }
+.miss-julie-character.has-transparent-animation .miss-julie-animation { opacity: 1; }
 
 .miss-julie-character:hover {
     animation: miss-excited .55s ease-in-out infinite alternate;

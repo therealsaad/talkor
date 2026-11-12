@@ -1,4 +1,4 @@
-import { AUDIO_IDS, AUDIO_LINES, AUDIO_MANIFEST, LETTERS, activityAt, audioKey, evaluateKGSpeech } from '../../src/kg/alphabet-content'
+import { AUDIO_IDS, AUDIO_LINES, AUDIO_MANIFEST, CURRICULUM_STATIC_AUDIO_MANIFEST, ACTIVITY_AUDIO_IDS, LETTERS, activityAt, audioKey, evaluateKGSpeech } from '../../src/kg/alphabet-content'
 
 describe('KG alphabet lesson v1', () => {
   it('teaches exactly A B C D, then tests four picture taps', () => {
@@ -44,5 +44,15 @@ describe('KG alphabet lesson v1', () => {
     expect(byId.get('find-a')?.activityIds).toContain('find-a')
     expect(byId.get('try-again')?.activityIds).toContain('say-a')
     expect(new Set(AUDIO_MANIFEST.map((line) => line.id)).size).toBe(AUDIO_MANIFEST.length)
+  })
+
+  it('classifies fixed teaching separately from live feedback while preserving bridge-c activity mapping', () => {
+    const byId = new Map(AUDIO_MANIFEST.map((line) => [line.id, line]))
+    expect(CURRICULUM_STATIC_AUDIO_MANIFEST).toHaveLength(20)
+    expect(byId.get('word-cat')?.kind).toBe('curriculum_static')
+    expect(byId.get('say-c')?.kind).toBe('curriculum_static')
+    expect(byId.get('bridge-c')?.kind).toBe('dynamic_tts')
+    expect(ACTIVITY_AUDIO_IDS['say-c']).toContain('say-c')
+    expect(byId.get('bridge-c')?.activityIds).toEqual(['say-c'])
   })
 })

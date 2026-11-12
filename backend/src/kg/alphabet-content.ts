@@ -10,7 +10,7 @@ export const LETTERS = [
 export type Letter = typeof LETTERS[number]['letter']
 export type ActivityId = `say-${Lowercase<Letter>}` | `find-${Lowercase<Letter>}`
 
-/** Authoritative KG script lines: prerecorded S3 mode or uncached Azure live synthesis. */
+/** Authoritative, server-controlled KG utterances. Dynamic lines never accept client text. */
 export const AUDIO_LINES = {
   'welcome': 'Hello, superstar! Welcome to our ABCD adventure!',
   'how-to-play': 'Listen to me, then say the word. I am listening!',
@@ -36,6 +36,17 @@ export const AUDIO_LINES = {
   'try-again': 'Nice try! Listen once more and try again!',
   'repeat': 'I did not hear clearly. Can you say it again?',
   'silence': 'I am still listening. Take your time, then say it for me!',
+  'picture-support': 'Lovely work, beta ji! You found the picture! We will practice the English word together again soon!',
+  // Reviewed, server-owned coaching lines. They use live Python/Priya TTS and
+  // are not required to have an S3 object.
+  'bridge-a': 'Achha, seb! Bilkul sahi, beta ji! English mein seb ko apple kehte hain. Mere saath bolo, apple!',
+  'bridge-b': 'Achha, gend! Bilkul sahi, beta ji! English mein gend ko ball kehte hain. Mere saath bolo, ball!',
+  'bridge-c': 'Achha, billi! Bilkul sahi, beta ji! English mein billi ko cat kehte hain. Mere saath bolo, cat!',
+  'bridge-d': 'Achha, kutta! Bilkul sahi, beta ji! English mein kutte ko dog kehte hain. Mere saath bolo, dog!',
+  'model-a': 'Nice try, beta ji! Listen: apple. A for apple. Now you say apple!',
+  'model-b': 'Nice try, beta ji! Listen: ball. B for ball. Now you say ball!',
+  'model-c': 'Nice try, beta ji! Listen: cat. C for cat. Now you say cat!',
+  'model-d': 'Nice try, beta ji! Listen: dog. D for dog. Now you say dog!',
   'celebrate': 'Hooray! You know A, B, C, and D! You are a superstar!',
   'level-complete': 'You finished Level 1! You learned A, B, C, and D. Hooray!',
   'homework-abcd': 'Your tiny homework: at home, point to an apple, a ball, a cat or a dog picture. Say its English name and tell someone its first letter. Do your best! See you soon!',
@@ -47,8 +58,27 @@ export type AudioId = keyof typeof AUDIO_LINES
 export const AUDIO_IDS = Object.keys(AUDIO_LINES) as AudioId[]
 export const audioKey = (id: AudioId) => `kg/level-1/miss-julie/${KG_AUDIO_VERSION}/${id}.mp3`
 
-/** Each activity points at the voice clips that teach or prompt it. Shared feedback and
- * navigation clips are tied to every relevant activity instead of copied into a second script. */
+export type KGAudioKind = 'curriculum_static' | 'dynamic_tts'
+
+/**
+ * Static lines are fixed teaching narration or approved pronunciation models.
+ * Feedback and transitions are contextual speech and use the existing live
+ * Priya service. In particular, bridge-c is selected after a child answers
+ * with the Hindi word "billi", so it is coaching feedback, not curriculum audio.
+ */
+const DYNAMIC_TTS_IDS = new Set<AudioId>([
+  // The FIRST teaching instruction for each letter must be spoken by local
+  // Priya. Azure is the reliable fallback. The other approved fixed
+  // narration remains immutable and reusable from S3.
+  'say-a', 'say-b', 'say-c', 'say-d',
+  'welcome', 'great', 'try-again', 'repeat', 'silence', 'picture-support',
+  'bridge-a', 'bridge-b', 'bridge-c', 'bridge-d',
+  'model-a', 'model-b', 'model-c', 'model-d',
+  'celebrate', 'level-complete', 'navigation-map', 'replay-intro', 'replay-level',
+])
+
+/** Each activity points at its teaching and feedback utterance IDs. Shared feedback and
+ * navigation lines are tied to every relevant activity instead of copied into another script. */
 export const ACTIVITY_AUDIO_IDS: Record<ActivityId, AudioId[]> = {
   'say-a': ['letter-a', 'word-apple', 'say-a'],
   'say-b': ['letter-b', 'word-ball', 'say-b'],
@@ -60,7 +90,7 @@ export const ACTIVITY_AUDIO_IDS: Record<ActivityId, AudioId[]> = {
   'find-d': ['recognize-intro', 'puzzle-intro', 'find-d'],
 }
 
-const SHARED_FEEDBACK_IDS: AudioId[] = ['great', 'try-again', 'repeat', 'silence']
+const SHARED_FEEDBACK_IDS: AudioId[] = ['great', 'try-again', 'repeat', 'silence', 'picture-support']
 const COMMON_NAVIGATION_IDS: AudioId[] = ['welcome', 'how-to-play', 'level-complete', 'navigation-map', 'replay-intro', 'replay-level', 'celebrate', 'homework-abcd']
 
 export const AUDIO_MANIFEST = AUDIO_IDS.map((id) => {
@@ -68,9 +98,11 @@ export const AUDIO_MANIFEST = AUDIO_IDS.map((id) => {
     .filter(([, ids]) => ids.includes(id))
     .map(([activityId]) => activityId)
   if (SHARED_FEEDBACK_IDS.includes(id)) activityIds = Object.keys(ACTIVITY_AUDIO_IDS) as ActivityId[]
+  if (id.startsWith('bridge-') || id.startsWith('model-')) activityIds = [`say-${id.slice(-1)}` as ActivityId]
   return {
     id,
     text: AUDIO_LINES[id],
+    kind: DYNAMIC_TTS_IDS.has(id) ? 'dynamic_tts' as const : 'curriculum_static' as const,
     activityIds,
     scope: activityIds.length ? 'activity' as const : COMMON_NAVIGATION_IDS.includes(id) ? 'level' as const : 'feedback' as const,
     output: `${id}.mp3`,
@@ -79,12 +111,22 @@ export const AUDIO_MANIFEST = AUDIO_IDS.map((id) => {
   }
 })
 
+/** Only these fixed teaching clips are generated, uploaded, and verified in S3. */
+export const CURRICULUM_STATIC_AUDIO_MANIFEST = AUDIO_MANIFEST.filter((line) => line.kind === 'curriculum_static')
+
 export const ACTIVITY_AUDIO_MANIFEST = Object.fromEntries(
   Object.entries(ACTIVITY_AUDIO_IDS).map(([activityId, audioIds]) => [
     activityId,
-    [...audioIds, ...SHARED_FEEDBACK_IDS].map((id) => ({ id, text: AUDIO_LINES[id], s3Key: audioKey(id) })),
+    [...audioIds, ...SHARED_FEEDBACK_IDS, ...(
+      activityId.startsWith('say-') ? [`bridge-${activityId.slice(-1)}`, `model-${activityId.slice(-1)}`] as AudioId[] : []
+    )].map((id) => ({
+      id,
+      text: AUDIO_LINES[id],
+      kind: DYNAMIC_TTS_IDS.has(id) ? 'dynamic_tts' as const : 'curriculum_static' as const,
+      s3Key: audioKey(id),
+    })),
   ]),
-) as Record<ActivityId, Array<{ id: AudioId; text: string; s3Key: string }>>
+) as Record<ActivityId, Array<{ id: AudioId; text: string; kind: KGAudioKind; s3Key: string }>>
 
 /**
  * KG recognises the INTENDED word, not a phonetic examination.
@@ -99,11 +141,20 @@ const CHILD_WORD_ALIASES: Record<Letter, readonly string[]> = {
   D: ['dhog', 'dawg', 'daug', 'dogg', 'doggy', 'dohg', 'dug'],
 }
 
-const HINDI_WORDS: Record<string, string> = {
+const SCRIPT_WORDS: Record<string, string> = {
   'एप्पल': 'apple', 'ऐप्पल': 'apple', 'ऐपल': 'apple', 'एपल': 'apple',
   'बॉल': 'ball', 'कैट': 'cat', 'डॉग': 'dog', 'डाग': 'dog',
   'ए': 'a', 'बी': 'b', 'सी': 'c', 'डी': 'd',
   'सेब': 'seb',
+  'सफरचंद': 'safarchand', 'गेंद': 'gend', 'चेंडू': 'chendu',
+  'बिल्ली': 'billi', 'मांजर': 'manjar', 'कुत्ता': 'kutta', 'कुत्रा': 'kutra',
+}
+
+const BILINGUAL_BRIDGES: Record<Letter, readonly string[]> = {
+  A: ['seb', 'saib', 'sayb', 'seib', 'safarchand'],
+  B: ['gend', 'genda', 'chendu'],
+  C: ['billi', 'billy', 'manjar', 'maanjar'],
+  D: ['kutta', 'kuta', 'kutra', 'kutraa'],
 }
 
 const LETTER_ALIASES: Record<Letter, readonly string[]> = {
@@ -113,7 +164,7 @@ const LETTER_ALIASES: Record<Letter, readonly string[]> = {
 
 function normalizeKGWords(raw: string): string[] {
   const text = raw.slice(0, 240)
-    .replace(/\p{L}[\p{L}\p{M}]*/gu, (token) => HINDI_WORDS[token] || token)
+    .replace(/\p{L}[\p{L}\p{M}]*/gu, (token) => SCRIPT_WORDS[token] || token)
     .toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^a-z\s]/g, ' ').replace(/\s+/g, ' ').trim()
   if (!text) return []
@@ -125,19 +176,48 @@ function matchesWord(token: string, letter: Letter): boolean {
   const expected = LETTERS.find((item) => item.letter === letter)!.word
   // Stretching consonants and vowels should not make an otherwise clear apple wrong.
   if (letter === 'A' && /^a+p+l+e+$/.test(token) && token.length >= 4 && token.length <= 20) return true
+  // Preschool stretching happens on EVERY word, not just apple: "baall", "caatt",
+  // "doog" are the same enthusiastic attempt as "aaaple". Each pattern below is
+  // anchored on the word's true first sound and only allows stretched vowels and
+  // doubled endings, so unrelated words (fall, bowl, cap, dig, fog) still fail.
+  if (letter === 'A' && (/^a+p+(a|u|o)+l+$/.test(token) || /^a?p+a+l+e*$/.test(token)) && token.length <= 20) return true
+  if (letter === 'B' && /^(b+(a|o)+l+l*|b+a+w+l+)$/.test(token) && token.length <= 20) return true
+  if (letter === 'C' && /^[kc]+a+t+s?$/.test(token) && token.length <= 20) return true
+  if (letter === 'D' && /^(d+o+g+(g|s|y|gy)?|d+h?o+g+|d+a+(u|w)?g+)$/.test(token) && token.length <= 20) return true
   return token === expected || CHILD_WORD_ALIASES[letter].includes(token)
 }
 
-/** Hindi "seb/saib/sayb" expresses the right MEANING, not an English "apple" pronunciation. */
+/** Hindi/Marathi meaning is supported comprehension, never an English pronunciation pass. */
 export function isKGBilingualBridge(raw: string, letter: Letter): boolean {
-  if (letter !== 'A') return false
   const tokens = normalizeKGWords(raw)
-  if (!tokens.length || tokens.length > 6) return false
+  if (!tokens.length || tokens.length > 8) return false
   if (tokens.some((token) => ['no', 'not', 'never', 'dont', 'wrong'].includes(token))) return false
   if (LETTERS.some(({ letter: other }) => other !== letter && tokens.some((token) => matchesWord(token, other)))) return false
-  const bridge = tokens.filter((token) => ['seb', 'saib', 'sayb', 'seib'].includes(token))
+  const target = BILINGUAL_BRIDGES[letter]
+  const bridge = tokens.filter((token) => target.includes(token))
   if (bridge.length !== 1) return false
-  return tokens.every((token) => ['seb', 'saib', 'sayb', 'seib', 'i', 'said', 'say', 'it', 'is', 'a', 'the', 'this'].includes(token))
+  const otherTranslations = (Object.entries(BILINGUAL_BRIDGES) as [Letter, readonly string[]][])
+    .filter(([candidate]) => candidate !== letter).flatMap(([, words]) => words)
+  if (tokens.some((token) => otherTranslations.includes(token))) return false
+  return tokens.every((token) => target.includes(token) || ['i', 'said', 'say', 'it', 'is', 'a', 'the', 'this'].includes(token))
+}
+
+/**
+ * A verified translation is stronger evidence for the explanation language
+ * than a generic STT locale guess. Sarvam and other STT providers sometimes
+ * label short Romanized Hindi/Marathi words as en-IN (or return no locale).
+ *
+ * This only returns a language for an exact, permitted bilingual bridge for
+ * this lesson word; never turn a partial/uncertain guess into English mastery.
+ * The language is for voice/feedback only, not grading or student identity.
+ */
+export function kgBilingualBridgeLanguage(raw: string, letter: Letter): 'hi-IN' | 'mr-IN' | undefined {
+  if (!isKGBilingualBridge(raw, letter)) return undefined
+  const tokens = normalizeKGWords(raw)
+  const recognized = BILINGUAL_BRIDGES[letter].find((word) => tokens.includes(word))
+  if (!recognized) return undefined
+  return ['safarchand', 'chendu', 'manjar', 'maanjar', 'kutra', 'kutraa'].includes(recognized)
+    ? 'mr-IN' : 'hi-IN'
 }
 
 export function evaluateKGSpeech(raw: string, letter: Letter, target: 'word' | 'letter' | 'either' = 'either'): 'correct' | 'incorrect' | 'unclear' {

@@ -1,8 +1,8 @@
 {
   "levelId": "g00-l02",
-  "status": "authored-assets-pending",
+  "status": "staff-preview",
   "assetsRoot": "/lessons/kg/level-02/",
-  "introVideo": null,
+  "introVideo": "/lessons/kg/level-02/level-2-e-to-j.mp4",
   "images": [],
   "animations": [],
   "audio": [],
@@ -12,5 +12,5 @@
     "dynamicFeedback": "azure-uncached",
     "preauthoredTTS": "S3 CDN"
   },
-  "note": "Do not add placeholders pointing at missing assets. Upload approved optimized media here."
+  "note": "The intro video is present. No letter pictures or local narration assets are referenced; preview narration is synthesized by the authenticated backend."
 }

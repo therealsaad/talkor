@@ -5,14 +5,18 @@ describe('KG child-friendly word recognition', () => {
   it.each([
     ['aaaaaaappleee', 'A'], ['aaaapple', 'A'], ['appppple', 'A'], ['aaapppple', 'A'], ['aaple', 'A'],
     ['aple', 'A'], ['epple', 'A'], ['appul', 'A'], ['एप्पल', 'A'],
+    ['appal', 'A'], ['aapal', 'A'], ['apul', 'A'],
     ['bol', 'B'], ['bawl', 'B'], ['boll', 'B'], ['kat', 'C'], ['kaat', 'C'],
     ['dhog', 'D'], ['dawg', 'D'], ['dogg', 'D'], ['doggy', 'D'], ['dug', 'D'],
-    ['I said dhog!', 'D'], ['I said aaaapple!', 'A'],
+    ['baall', 'B'], ['baaall', 'B'], ['baal', 'B'],
+    ['caatt', 'C'], ['caaatt', 'C'], ['katt', 'C'],
+    ['doog', 'D'], ['doooog', 'D'], ['dawgg', 'D'], ['dhoog', 'D'],
+    ['I said dhog!', 'D'], ['I said aaaapple!', 'A'], ['I said baall!', 'B'], ['I said doog!', 'D'],
   ] as const)('accepts child pronunciation %s for %s', (transcript, letter) => {
     expect(evaluateKGSpeech(transcript, letter, 'word')).toBe('correct')
   })
 
-  it.each(['fall', 'bell', 'fog', 'dig', 'dot', 'hat', 'cap', 'cut', 'kit', 'apply'])(
+  it.each(['fall', 'bell', 'fog', 'dig', 'dot', 'hat', 'cap', 'cut', 'kit', 'apply', 'bowl', 'belly', 'bola'])(
     'does not blindly pass a different English word %s', (word) => {
       expect(evaluateKGSpeech(word, 'A', 'word')).not.toBe('correct')
       expect(evaluateKGSpeech(word, 'B', 'word')).not.toBe('correct')

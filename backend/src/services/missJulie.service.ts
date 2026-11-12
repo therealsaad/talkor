@@ -10,6 +10,12 @@ import { MemoryService } from './memory.service'
 import { MistakeService } from './mistake.service'
 import { StudentContextService } from './student-context.service'
 import { finalizeConversationTeacherResponse } from './conversationTurns'
+import { firstDaySceneSkills } from './first-day-evidence'
+import { guardFirstDayPoemTurn, isFirstDayPoemScene } from './class1-poem-teacher-guard'
+import { class1ExplanationLanguage } from '../providers/ai/class1-language'
+import { scaffoldFirstDayPractice } from './first-day-practice-scaffold'
+import { logger } from '../utils/logger'
+import type { AIStructuredResponse } from '../types'
 
 function detectedConcepts(message: string): string[] {
   const text = message.toLowerCase()
@@ -186,38 +192,52 @@ export const MissJulieService = {
       context?: string
       inputMode?: 'OPTION' | 'MIC' | 'TEXT'
       currentTarget?: string
+      preferredExplanationLanguage?: 'English' | 'Hindi' | 'Marathi'
     },
   ) {
+    // An ID-only resume inherits the saved curriculum scope before any context
+    // is built. It cannot evade a new PIN visit's introduction/access gates.
+    let existingConversation: IConversation | null = null
+    if (input.conversationId) {
+      if (!Types.ObjectId.isValid(input.conversationId)) throw ApiError.badRequest('Invalid conversation ID')
+      existingConversation = await Conversation.findOne({
+        _id: new Types.ObjectId(input.conversationId), studentId: new Types.ObjectId(studentId),
+      })
+      if (!existingConversation) throw ApiError.notFound('Conversation not found')
+      input = { ...input,
+        lessonId: input.lessonId || existingConversation.lessonId?.toString(),
+        activityId: input.activityId || existingConversation.activityId?.toString(),
+      }
+    }
     const studentContext = await StudentContextService.buildContext(studentId, {
       message: input.message,
       lessonId: input.lessonId,
       activityId: input.activityId,
       promptContext: input.context || 'conversation',
       currentTarget: input.currentTarget,
+      preferredExplanationLanguage: input.preferredExplanationLanguage,
     })
 
     const activity = input.activityId ? await Activity.findById(input.activityId).lean() : null
+    // Legacy activity-only conversations predate a saved lessonId. The activity
+    // has just passed authorization and intro enforcement through buildContext.
+    if (input.conversationId && activity && !input.lessonId)
+      input = { ...input, lessonId: activity.lessonId.toString() }
 
     // Load active conversation
-    let existingConversation: IConversation | null = null
-    if (input.conversationId) {
-      existingConversation = await Conversation.findOne({
-        _id: new Types.ObjectId(input.conversationId),
-        studentId: new Types.ObjectId(studentId),
-      })
-    } else if (input.activityId) {
+    if (!input.conversationId && input.activityId) {
       existingConversation = await Conversation.findOne({
         studentId: new Types.ObjectId(studentId),
         activityId: new Types.ObjectId(input.activityId),
         status: 'ACTIVE',
       })
-    } else if (input.lessonId) {
+    } else if (!input.conversationId && input.lessonId) {
       existingConversation = await Conversation.findOne({
         studentId: new Types.ObjectId(studentId),
         lessonId: new Types.ObjectId(input.lessonId),
         status: 'ACTIVE',
       }).sort('-updatedAt')
-    } else {
+    } else if (!input.conversationId) {
       existingConversation = await Conversation.findOne({
         studentId: new Types.ObjectId(studentId),
         status: 'ACTIVE',
@@ -227,6 +247,11 @@ export const MissJulieService = {
     if (existingConversation && existingConversation.status !== 'ACTIVE') {
       throw ApiError.conflict('Conversation is complete. Start a new practice session.')
     }
+    if (existingConversation && (
+      (input.activityId && String(existingConversation.activityId) !== input.activityId) ||
+      (input.lessonId && String(existingConversation.lessonId ||
+        (String(existingConversation.activityId) === String(activity?._id) ? activity?.lessonId : undefined)) !== input.lessonId)
+    )) throw ApiError.curriculumAccess()
 
     if (
       input.activityId &&
@@ -241,10 +266,13 @@ export const MissJulieService = {
     }
 
     const priorGoals = existingConversation?.goalState || []
+    const isFirstDayScene = activity?.metadata?.digitalType === 'FIRST_DAY_VOICE_SCENE'
     const isGoldEpisode = Array.isArray(activity?.metadata?.masteryEvidence)
-    const turnSkills = isGoldEpisode
-      ? detectStudentSkills(input.message)
-      : detectedConcepts(input.message)
+    const turnSkills = isFirstDayScene
+      ? firstDaySceneSkills(String(activity?.metadata?.sceneKey || ''), input.message)
+      : isGoldEpisode
+        ? detectStudentSkills(input.message)
+        : detectedConcepts(input.message)
     const goalState = [...new Set([...priorGoals, ...turnSkills])]
     const nextTurn = (existingConversation?.turnCount || 0) + 1
 
@@ -272,7 +300,11 @@ export const MissJulieService = {
       input.lessonId &&
       input.activityId,
     )
-    const minTurns = Math.max(1, goal?.minTurns || 2)
+    // In a voice-first beginner scene, the first demonstrated English word
+    // counts. Keeping a child for two mandatory turns after a correct answer
+    // feels like the teacher ignored them. Other grades keep their original
+    // conversation pacing and mastery requirements.
+    const minTurns = isFirstDayScene ? 1 : Math.max(1, goal?.minTurns || 2)
     const maxTurns = Math.max(minTurns, goal?.maxTurns || activity?.maxConversationTurns || 5)
     const demonstratedRequiredSkills = required.length === 0
       ? nextTurn >= minTurns
@@ -281,7 +313,14 @@ export const MissJulieService = {
         : required.every((item) => goalState.includes(item))
     const finalLessonTurn = Boolean(
       lessonConversation &&
-      ((nextTurn >= minTurns && demonstratedRequiredSkills) || nextTurn >= maxTurns),
+      ((nextTurn >= minTurns && demonstratedRequiredSkills &&
+        // For the First Day pilot, an earlier English word plus a final
+        // request for help cannot be mistaken for a successful answer.
+        (!isFirstDayScene || turnSkills.includes('first_day_english_attempt'))) ||
+        // A First Day scene never passes just because a child has spent four
+        // turns silent, asking for help or answering only in a home language.
+        (nextTurn >= maxTurns && (!isFirstDayScene ||
+          (demonstratedRequiredSkills && turnSkills.includes('first_day_english_attempt'))))),
     )
 
     const freeTalkConversation = !input.lessonId && !input.activityId && (!existingConversation || existingConversation.mode === 'FREE_TALK')
@@ -290,8 +329,41 @@ export const MissJulieService = {
 
     // All student turns honor the same explicit AI_PROVIDER setting. This
     // avoids free-talk silently requiring a second, unconfigured provider.
-    const provider = getAIProvider(studentContext)
-    let response = await provider.generate(studentContext)
+    // The canonical poem scene MUST win over stale two-letter-word defaults
+    // from an outdated Python 8002 process. Reject broken Mongo scene identity
+    // rather than showing a published poem while teaching an unrelated word.
+    const poemKey = String(activity?.metadata?.sceneKey || '')
+    const poemActivity = String(activity?.activityKey || '').startsWith('class1-l01-v4-poem-')
+    if (poemActivity && (!isFirstDayPoemScene(poemKey) ||
+      activity?.activityKey !== 'class1-l01-v4-' + poemKey)) {
+      throw ApiError.provider('FIRST_DAY_POEM_SCENE_NOT_AUTHORED')
+    }
+    let response: AIStructuredResponse
+    try {
+      response = await getAIProvider(studentContext).generate(studentContext)
+    } catch (error) {
+      if (!poemActivity) throw error
+      // No transcript, student name, secret or provider response is logged.
+      logger.warn('Class 1 poem AI bridge failed; keeping authored scene lines', { sceneKey: poemKey })
+      // A reviewed, syllabus-scoped fallback is preferable to making children
+      // repeat "at" or wait indefinitely when Ollama cannot teach the poem.
+      // Node alone still decides completion from independent transcript evidence.
+      response = guardFirstDayPoemTurn(
+        poemKey, input.message, class1ExplanationLanguage(studentContext))
+    }
+    if (poemActivity) {
+      response = guardFirstDayPoemTurn(
+        poemKey, input.message, class1ExplanationLanguage(studentContext), response)
+    }
+    const priorPractice = priorRetry?.practiceScaffold
+    const practice = isFirstDayScene && !finalTurn ? scaffoldFirstDayPractice({
+      context: studentContext.teachingContext, transcript: input.message,
+      language: class1ExplanationLanguage(studentContext), response,
+      previous: priorRetry && { waiting: priorRetry.waiting, attempt: priorRetry.attempt,
+        practiceScaffold: priorPractice && { version: priorPractice.version, contentHash: priorPractice.contentHash,
+          stage: priorPractice.stage, lineIndex: priorPractice.lineIndex, misses: priorPractice.misses } },
+    }) : undefined
+    if (practice) response = practice.response
     response = finalizeConversationTeacherResponse(response, finalTurn)
     if (lessonConversation || freeTalkConversation) response.activityComplete = finalTurn
     const teacherContent = [response.message, response.followUpQuestion].filter(Boolean).join(' ')
@@ -301,7 +373,8 @@ export const MissJulieService = {
 
     const calculatedMasteryStatus = isGoldEpisode
       ? masteryFor(required, skillEvidence, bounded)
-      : required.length > 0 && required.every((item) => goalState.includes(item)) && nextTurn >= (goal?.minTurns || 1)
+      : required.length > 0 && required.every((item) => goalState.includes(item)) &&
+        nextTurn >= (isFirstDayScene ? 1 : (goal?.minTurns || 1))
         ? 'MASTERED'
         : bounded && required.length > 0
           ? 'NEEDS_PRACTICE'
@@ -330,7 +403,7 @@ export const MissJulieService = {
         requiresRemediation,
     )
 
-    const retryState = nextRetryState({
+    const nextRetry = nextRetryState({
       previous: priorRetry,
       shouldRetry,
       hintLevel: response.hintLevel,
@@ -341,6 +414,8 @@ export const MissJulieService = {
       originalUtterance: input.message,
       modelSentence: response.modelSentence,
     })
+    const retryState = nextRetry && practice
+      ? { ...nextRetry, practiceScaffold: practice.state } : nextRetry
 
     const freeTalkSummary = finalFreeTalkTurn
       ? `Student conversed for ${nextTurn} turns. Key topics discussed: ${[
@@ -391,8 +466,8 @@ export const MissJulieService = {
             originalUtterance: '',
           },
           masteryStatus,
-          status: completed ? 'COMPLETED' : 'ACTIVE',
-          ...(completed ? { completedAt: new Date() } : {}),
+          status: completed && !isFirstDayScene ? 'COMPLETED' : 'ACTIVE',
+          ...(completed && !isFirstDayScene ? { completedAt: new Date() } : {}),
           ...(freeTalkSummary ? { summary: freeTalkSummary } : {}),
         },
       },
@@ -400,7 +475,7 @@ export const MissJulieService = {
     )
 
     // Complete lesson activity attempt if applicable
-    if (completed && activity && input.activityId && input.lessonId) {
+    if (completed && !isFirstDayScene && activity && input.activityId && input.lessonId) {
       const score = masteryStatus === 'MASTERED' ? 90 : masteryStatus === 'COMPLETED_WITH_SUPPORT' ? 75 : 55
       await ProgressService.submitAttempt({
         studentId,

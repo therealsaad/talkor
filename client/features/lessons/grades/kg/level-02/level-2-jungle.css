@@ -1,0 +1,224 @@
+.kg-level2-play {
+  background: linear-gradient(180deg, #9ddcf3 0%, #d5f2dc 43%, #8fc879 100%) !important;
+}
+
+.kg-level2-jungle {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.kg-level2-jungle__sun {
+  position: absolute;
+  top: clamp(50px, 8vh, 90px);
+  right: clamp(40px, 8vw, 120px);
+  width: clamp(58px, 7vw, 86px);
+  aspect-ratio: 1;
+  border: 10px solid rgba(255, 243, 161, .58);
+  border-radius: 50%;
+  background: #ffd867;
+}
+
+.kg-level2-jungle__hill {
+  position: absolute;
+  right: -8%;
+  bottom: -72px;
+  left: -8%;
+  height: 28%;
+  border-radius: 50% 50% 0 0;
+}
+.kg-level2-jungle__hill--back { bottom: -20px; left: -20%; height: 23%; background: #77b66d; opacity: .9; }
+.kg-level2-jungle__hill--front { background: linear-gradient(180deg, #8bc57a, #5d9d58); }
+
+.kg-level2-jungle__tree {
+  position: absolute;
+  bottom: 7%;
+  width: clamp(58px, 7vw, 94px);
+  height: clamp(180px, 28vh, 280px);
+  border-radius: 60px 60px 18px 18px;
+  background: linear-gradient(90deg, #916442, #b47b50 55%, #8a603f);
+  transform-origin: bottom center;
+  animation: kg-level2-tree 8s ease-in-out infinite alternate;
+}
+.kg-level2-jungle__tree--left { left: clamp(-10px, 2vw, 28px); }
+.kg-level2-jungle__tree--right { right: clamp(-14px, 1vw, 20px); animation-delay: -4s; }
+.kg-level2-jungle__tree i { position: absolute; width: clamp(88px, 10vw, 132px); height: clamp(66px, 8vw, 105px); border-radius: 50%; background: #3f965e; }
+.kg-level2-jungle__tree i:nth-child(1) { top: -12%; left: -58%; }
+.kg-level2-jungle__tree i:nth-child(2) { top: -4%; right: -68%; background: #58a968; }
+.kg-level2-jungle__tree i:nth-child(3) { top: 14%; left: -44%; background: #2f8554; }
+.kg-level2-jungle__tree i:nth-child(4) { top: 22%; right: -54%; }
+
+.kg-level2-jungle__leaves { position: absolute; bottom: 5%; display: flex; gap: 0; opacity: .72; }
+.kg-level2-jungle__leaves--left { left: 8%; }
+.kg-level2-jungle__leaves--right { right: 9%; }
+.kg-level2-jungle__leaves i { width: clamp(28px, 3vw, 44px); height: clamp(70px, 8vw, 104px); border-radius: 100% 0 100% 0; background: linear-gradient(145deg, #6dbd69, #2f8d57); transform-origin: bottom; }
+.kg-level2-jungle__leaves i:nth-child(even) { transform: rotate(28deg); }
+.kg-level2-jungle__leaves i:nth-child(odd) { transform: rotate(-20deg); }
+
+.kg-level2-jungle__monkey, .kg-level2-jungle__toucan { position: absolute; z-index: 1; font-size: clamp(34px, 4vw, 58px); filter: drop-shadow(0 7px 6px rgba(45, 96, 65, .18)); }
+.kg-level2-jungle__monkey { bottom: 13%; left: 11%; transform: rotate(-8deg); }
+.kg-level2-jungle__toucan { top: 22%; right: 4%; transform: rotate(8deg); }
+
+.kg-level2-jungle__butterfly { position: absolute; color: #f8a9b8; font-size: 18px; animation: kg-level2-butterfly 7s ease-in-out infinite alternate; }
+.kg-level2-jungle__butterfly--one { top: 32%; left: 12%; }
+.kg-level2-jungle__butterfly--two { top: 20%; left: 31%; color: #ffe17d; animation-delay: -3s; }
+.kg-level2-jungle__leaf { position: absolute; width: 11px; height: 22px; border-radius: 100% 0; background: #5fac68; animation: kg-level2-leaf 5s ease-in-out infinite; }
+.kg-level2-jungle__leaf--one { top: 38%; left: 18%; }
+.kg-level2-jungle__leaf--two { top: 48%; right: 18%; animation-delay: -2.5s; }
+
+@keyframes kg-level2-tree { from { transform: rotate(-.7deg); } to { transform: rotate(.7deg); } }
+@keyframes kg-level2-butterfly { to { transform: translate3d(16px, -12px, 0) rotate(10deg); } }
+@keyframes kg-level2-leaf { 50% { transform: translate3d(8px, 12px, 0) rotate(35deg); } }
+
+@media (max-width: 760px) {
+  .kg-level2-jungle__tree { bottom: 12%; opacity: .72; }
+  .kg-level2-jungle__monkey { left: 4%; bottom: 16%; }
+  .kg-level2-jungle__toucan { top: 16%; right: 2%; }
+  .kg-level2-jungle__leaves { bottom: 4%; opacity: .5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .kg-level2-jungle * { animation: none !important; }
+}
+
+/* Level 2 learning card geometry: scoped to this level and kept independent of
+   the shared Level 3 presentation. */
+.kg-level2-play .kg-level2-letter-word-picture {
+  grid-template-columns: minmax(120px, .55fr) minmax(170px, .85fr) minmax(250px, 1fr);
+  align-items: center;
+  column-gap: clamp(16px, 2.5vw, 34px);
+}
+.kg-level2-play .kg-level2-letter-word-picture .kg-letter-word-picture__letter {
+  justify-self: start;
+  width: clamp(118px, 12vw, 178px);
+}
+.kg-level2-play .kg-level2-letter-word-picture .kg-letter-word-picture__copy {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-width: 0;
+  height: 100%;
+}
+.kg-level2-play .kg-level2-letter-word-picture .kg-letter-word-picture__copy strong {
+  max-width: 100%;
+  white-space: nowrap;
+  line-height: 1.05;
+  overflow-wrap: normal;
+}
+.kg-level2-play .kg-level2-letter-word-picture .kg-letter-word-picture__picture {
+  width: min(100%, 320px);
+  aspect-ratio: 4 / 3;
+  max-height: 300px;
+  height: auto;
+  padding: clamp(12px, 1.5vw, 18px);
+  justify-self: center;
+  overflow: visible;
+}
+.kg-level2-play .kg-level2-letter-word-picture .kg-letter-word-picture__image {
+  width: 100%;
+  height: 100%;
+  max-height: none;
+  aspect-ratio: auto;
+  object-fit: contain;
+  object-position: center;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  animation: kg-level2-elephant-breathe 4.8s ease-in-out infinite;
+}
+@keyframes kg-level2-elephant-breathe { 50% { transform: translateY(-3px); } }
+
+@media (max-width: 760px) {
+  .kg-level2-play .kg-level2-letter-word-picture {
+    grid-template-columns: minmax(92px, .7fr) minmax(0, 1.3fr);
+    column-gap: 10px;
+    row-gap: 14px;
+  }
+  .kg-level2-play .kg-level2-letter-word-picture .kg-letter-word-picture__letter {
+    width: min(34vw, 150px);
+    justify-self: center;
+  }
+  .kg-level2-play .kg-level2-letter-word-picture .kg-letter-word-picture__copy strong { font-size: clamp(26px, 8vw, 34px); }
+  .kg-level2-play .kg-level2-letter-word-picture .kg-letter-word-picture__picture {
+    grid-column: 1 / -1;
+    width: min(70vw, 250px);
+    max-height: none;
+  }
+}
+
+/* Final Level 2 presentation geometry. The full presentation is constrained
+   by this card; the illustration must never be positioned beyond it. */
+.kg-level2-play__board {
+  box-sizing: border-box;
+  min-width: 0;
+  overflow: hidden;
+}
+.kg-level2-play .kg-level2-letter-word-picture {
+  grid-template-columns: minmax(96px, .48fr) minmax(150px, .78fr) minmax(190px, 1fr);
+  align-items: center;
+  width: 100%;
+  max-width: 760px;
+  margin-inline: auto;
+  column-gap: clamp(12px, 2vw, 28px);
+}
+.kg-level2-play .kg-letter-word-picture__letter {
+  justify-self: center;
+  width: clamp(96px, 10vw, 158px);
+  max-width: 100%;
+}
+.kg-level2-play .kg-letter-word-picture__copy {
+  justify-content: center;
+  width: 100%;
+  text-align: center;
+}
+.kg-level2-play .kg-letter-word-picture__copy strong {
+  width: auto;
+  max-width: 100%;
+  font-size: clamp(26px, 3vw, 44px);
+  white-space: nowrap;
+}
+.kg-level2-play .kg-letter-word-picture__picture {
+  position: static;
+  width: 100%;
+  max-width: 280px;
+  aspect-ratio: 4 / 3;
+  max-height: 210px;
+  margin: 0;
+  justify-self: center;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+.kg-level2-play .kg-letter-word-picture__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+@media (max-width: 900px) and (min-width: 761px) {
+  .kg-level2-play .kg-level2-letter-word-picture {
+    grid-template-columns: minmax(88px, .45fr) minmax(140px, .75fr) minmax(170px, 1fr);
+    column-gap: 10px;
+  }
+  .kg-level2-play .kg-letter-word-picture__letter { width: clamp(88px, 12vw, 130px); }
+  .kg-level2-play .kg-letter-word-picture__copy strong { font-size: clamp(24px, 3.5vw, 34px); }
+}
+
+@media (max-width: 760px) {
+  .kg-level2-play__board { overflow: hidden; }
+  .kg-level2-play .kg-level2-letter-word-picture {
+    grid-template-columns: minmax(84px, .7fr) minmax(0, 1.3fr);
+    max-width: 100%;
+    column-gap: 8px;
+    row-gap: 12px;
+  }
+  .kg-level2-play .kg-letter-word-picture__letter { width: min(31vw, 128px); }
+  .kg-level2-play .kg-letter-word-picture__copy strong { font-size: clamp(23px, 7.5vw, 32px); }
+  .kg-level2-play .kg-letter-word-picture__picture {
+    grid-column: 1 / -1;
+    width: min(66vw, 230px);
+    max-height: 178px;
+  }
+}

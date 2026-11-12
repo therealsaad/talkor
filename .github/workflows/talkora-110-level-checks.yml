@@ -1,5 +1,7 @@
 name: Talkora Level Studio and Build Checks
 on:
+  push:
+    branches: [main]
   pull_request:
     branches: [main]
   workflow_dispatch:
@@ -11,6 +13,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Guard shared staff preview structural verification against regressions
+        run: node --test tools/tests/staff-preview-boundaries.test.cjs
+      - name: Verify the local CI runner reads this workflow completely
+        run: node --test tools/tests/run-ci-locally.test.mjs
+      - name: Keep lesson videos and images light for slow connections
+        run: node tools/check-asset-budget.mjs
       - name: Validate all 110 level workspaces and mapping boundaries
         run: node tools/verify-110-levels.cjs
   frontend:
@@ -29,8 +37,132 @@ jobs:
         working-directory: client
       - run: pnpm build
         working-directory: client
+      - name: Guard development-only classroom preview and static asset
+        run: node --test tests/ui/classroom-preview-production-gate.test.mjs
+        working-directory: client
+      - name: Verify shared staff curriculum explorer and student boundaries
+        run: node --test tests/curriculum-explorer.test.mjs tests/lesson-registry.test.mjs tests/frontend-safety-contract.test.mjs tests/ui/school-curriculum-map-page.test.mjs
+        working-directory: client
+      - name: Verify staff login, filters, coverage and student restrictions in real Chromium
+        run: node --test tests/staff-explorer.browser.test.mjs
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        working-directory: client
+      - name: Verify Class 1 fresh and resumed visits enforce the introduction in real Chromium
+        run: node --test tests/class1-intro.browser.test.mjs
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        working-directory: client
+      - name: Verify production preview endpoints are truly unavailable
+        working-directory: client
+        shell: bash
+        run: |
+          pnpm exec next start -p 3100 --hostname 127.0.0.1 > /tmp/talkora-preview-next.log 2>&1 &
+          next_pid=$!
+          trap 'kill "$next_pid" 2>/dev/null || true' EXIT
+          code="000"
+          for attempt in {1..45}; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --connect-timeout 2 --max-time 5 http://127.0.0.1:3100/classroom-preview || true)
+            if [ "$code" != "000" ]; then break; fi
+            sleep 1
+          done
+          if [ "$code" != "404" ]; then
+            cat /tmp/talkora-preview-next.log
+            echo "Expected 404 for classroom-preview, got $code"
+            exit 1
+          fi
+          static_code=$(curl -s -o /dev/null -w '%{http_code}' --connect-timeout 2 --max-time 5 http://127.0.0.1:3100/classroom-preview.html || true)
+          test "$static_code" = "404"
+      - name: Verify stable SSR hydration for student and school authentication
+        run: node --test tests/ui/auth-hydration-contract.test.mjs
+        working-directory: client
+      - name: Verify KG1 authenticated feedback audio and playback ticket are forwarded
+        run: node --test tests/ui/kg-ticket-feedback-headers.test.mjs
+        working-directory: client
+      - name: Verify KG intro session isolation with concurrent requests
+        run: node --test tests/ui/kg-intro-session-ownership.test.mjs
+        working-directory: client
+      - name: Guard KG1 replayable Azure coaching and a single retry CTA
+        run: node --test tests/ui/kg-audio-feedback-retry.test.mjs
+        working-directory: client
+      - name: Verify end-of-speech silence policy keeps a safe floor
+        run: node --test tests/ui/silence-policy.test.mjs
+        working-directory: client
+      - name: Verify lesson latency telemetry is opt-in, anonymous and isolated per student
+        run: node --test tests/ui/lesson-turn-telemetry.test.mjs
+        working-directory: client
+      - name: Verify KG2 to KG5 latency telemetry measures each stage and keeps students apart
+        run: node --test tests/ui/lesson-turn-telemetry-kg2-5.test.mjs
+        working-directory: client
+      - name: Verify the device audio cache only keeps fixed lesson clips
+        run: node --test tests/ui/device-audio-cache.test.mjs
+        working-directory: client
+      - name: Verify KG playback receipt only follows audio ended and isolates lab sessions
+        run: node --test tests/ui/kg-feedback-receipt.test.mjs
+        working-directory: client
+      - name: Verify KG refresh recovery waits for full intro and never resubmits a stored recording
+        run: node --test tests/ui/kg-pending-feedback-recovery.test.mjs
+        working-directory: client
+      - name: Verify KG Level 2 stone, PIN auto-resume, full intro, and signed played-audio safeguards
+        run: node --test tests/ui/kg-level2-auto-resume.test.mjs
+        working-directory: client
+      - name: Verify student map remains visible but locked when curriculum is unpublished
+        run: node --test tests/ui/student-map-fallback.test.mjs
+        working-directory: client
+      - name: Verify completed KG map stones open safe read-only revision while PIN resumes automatically
+        run: node --test tests/ui/kg-completed-level-map-review.test.mjs
+        working-directory: client
+      - name: "Guard all 110 levels: next KG letter journey, published-grade locking and session resume"
+        run: node --test tests/ui/grade0-to10-sequential-resume.test.mjs
+        working-directory: client
+      - name: Verify Class 1 Level 2 chapter-order, bilingual voice-model and 19 exercise coverage
+        run: node --test tests/ui/class1-level2-release-readiness.test.mjs tests/ui/class1-review-authoring-literals.test.mjs
+        working-directory: client
+      - name: Verify KG6–10 and Class 1 L2 teacher drafts stay complete but locked from students
+        run: node --test tests/ui/kg6-10-class1-l2-editorial-drafts.test.mjs
+        working-directory: client
+      - name: Verify Class 1 hands-free audio and landscape contracts
+        run: node --test tests/ui/class1-voice-runtime-contract.test.mjs
+        working-directory: client
+      - name: Verify Class 1 signed feedback waits for complete playback and isolates logins
+        run: node --test tests/ui/class1-feedback-receipt.test.mjs
+        working-directory: client
+      - name: Verify bundled First Day intro staging and mandatory playback gate
+        run: node --test tests/ui/class1-bundled-firstday-intro.test.mjs
+        working-directory: client
+      - name: Verify Class 1 visible poem pairs use authenticated Azure recitation
+        run: node --test tests/ui/class1-poem-azure-replay.test.mjs
+        working-directory: client
+      - name: Verify Class 1 poem UI and existing voice loop contracts
+        run: node --test tests/ui/class1-poem-recitation.test.mjs
+        working-directory: client
+      - name: Verify Class 1 Level 1 curriculum/map is the real ten-scene First Day
+        run: node --test tests/ui/class1-level1-experience.test.mjs
+        working-directory: client
+      - name: Verify illustrated v3 First Day speaking classroom
+        run: node --test tests/ui/class1-first-day-adventure.test.mjs
+        working-directory: client
+      - name: Enforce Azure-only dynamic voice and audible turn-before-next frame
+        run: node --test tests/ui/class1-azure-next-frame.test.mjs
+        working-directory: client
+      - name: Verify Class 1 v3 staging smoke checks target First Day only
+        run: node --test tests/ui/class1-v3-staging-contract.test.mjs
+        working-directory: client
+      - name: Verify TTS generator uses real 8001 voice ID and safe errors
+        run: node --test tests/ui/class1-priya-generation-contract.test.mjs
+        working-directory: client
   backend:
     runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:7.0
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --quiet --eval 'db.adminCommand({ ping: 1 }).ok'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: pnpm/action-setup@v4
@@ -44,4 +176,177 @@ jobs:
       - run: pnpm install --frozen-lockfile
         working-directory: backend
       - run: pnpm build
+        working-directory: backend
+      - name: Verify real KG latency report only aggregates correlated timings and cannot leak speech
+        run: node --test tests/kg-turn-latency-report.node.test.mjs
+        working-directory: backend
+      - name: Verify private request metrics and provider error logging
+        run: |
+          pnpm exec jest --runInBand tests/unit/requestObservability.test.ts
+          node --test tests/cors-options.node.test.cjs
+        working-directory: backend
+      - name: Verify real school-lab KG PIN acceptance report resolves exact server progress
+        run: node --test tests/kg-live-session-acceptance.node.test.mjs
+        working-directory: backend
+      - name: Verify optional KG Azure S3 cache offline without credentials
+        run: pnpm run test:kg-azure-audio
+        working-directory: backend
+      - name: Verify KG fixed-line TTS audio cache privacy, early warm, and offline voice fallbacks
+        run: node --test tests/kg-feedback-audio.node.test.cjs tests/kg-live-voice.node.test.cjs
+        working-directory: backend
+      - name: Guard KG paid warmup behind explicit reviewed content digest
+        run: pnpm exec jest --runInBand tests/unit/kgAzurePrewarmApproval.test.ts
+        working-directory: backend
+      - name: Guard opt-in KG fixed narration controller and student progress
+        run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'opt-in KG fixed narration'
+        working-directory: backend
+      - name: Guard staff KG Level 2–5 narration and reject untrusted content
+        run: pnpm exec jest --runInBand tests/integration/kgAzurePreviewOptin.test.ts
+        working-directory: backend
+      - name: Refuse invalid placeholder Class 1 intro URL before media staging
+        run: pnpm exec jest --runInBand tests/unit/class1IntroUrl.test.ts
+        working-directory: backend
+      - name: Verify First Day v3 never takes over historic v2 progress early
+        run: pnpm exec jest --runInBand tests/unit/class1DemoAccess.test.ts
+        working-directory: backend
+      - name: Verify authenticated student can open v3 from a historic Class 1 link
+        run: pnpm exec jest --runInBand tests/integration/class1DemoAccess.test.ts
+        working-directory: backend
+      - name: Verify KG1 live Azure Hindi/Marathi language selection
+        run: pnpm exec jest --runInBand tests/unit/kgAzureBilingualLocale.test.ts
+        working-directory: backend
+      - name: Verify shared KG1–5 multilingual teacher, draft isolation, Hindi/Marathi bridges and Azure SSML
+        run: pnpm exec jest --runInBand tests/unit/kgSharedTeachingTurn.test.ts
+        working-directory: backend
+      - name: Verify rule-first KG Qwen fallback and session-stable Sarvam language
+        run: pnpm exec jest --runInBand tests/unit/kgFeedbackRouting.test.ts tests/unit/kgTeachingLanguage.test.ts
+        working-directory: backend
+      - name: Verify persisted KG feedback locale and idempotent voice replay
+        run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'keeps the saved voice locale stable'
+        working-directory: backend
+      - name: Verify KG signed audio feedback receipt against session switching and expiration
+        run: pnpm exec jest --runInBand tests/unit/kgFeedbackReceipt.test.ts
+        working-directory: backend
+      - name: Verify KG1 audio receipt is required before correct-answer progress
+        run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'requires generated voice receipt'
+        working-directory: backend
+      - name: Verify KG1 frozen Qwen feedback survives retries, process crashes, and resumed lab sessions
+        run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'blocks duplicate submission|recovers an orphaned|never overwrites a recovered|resumes only the current unacknowledged|does not resume stale'
+        working-directory: backend
+      - name: Verify disposable KG PIN-to-homework HTTP/Mongo pilot journey and logout ticket revocation
+        run: pnpm exec jest --runInBand tests/integration/kgFullPilotJourney.test.ts
+        working-directory: backend
+      - name: Verify KG Level 1 to Level 2 student unlock, intro, saved speech, next-login resume and audio receipts
+        run: pnpm exec jest --runInBand tests/integration/kgLevel2StudentJourney.test.ts
+        working-directory: backend
+      - name: Verify completed KG garden review does not alter Mongo progress or bypass locks
+        run: pnpm exec jest --runInBand tests/integration/kgCompletedLevelReview.test.ts
+        working-directory: backend
+      - name: Verify KG2→3→4→5 student continuation, school-level authorization and audio receipts
+        run: pnpm exec jest --runInBand tests/integration/kgContinuationSequence.test.ts
+        working-directory: backend
+      - name: Verify fresh PIN visits revoke KG2-5 intro without losing signed-ACK progress
+        run: pnpm exec jest --runInBand tests/integration/kgNextVisitPinResume.test.ts
+        working-directory: backend
+      - name: Verify all Class 1–10 published levels unlock strictly in order without URL bypass
+        run: pnpm exec jest --runInBand tests/integration/sequential110Levels.test.ts
+        working-directory: backend
+      - name: Verify shared-school-IP student PIN success and layered brute-force throttles
+        run: pnpm exec jest --runInBand tests/integration/studentPinLabThrottle.test.ts
+        working-directory: backend
+      - name: Verify MongoDB-backed cross-replica atomic limits and signed student budgets
+        run: pnpm exec jest --runInBand tests/integration/mongoRateLimits.test.ts
+        working-directory: backend
+        env:
+          TALKORA_SHARED_RATE_LIMITS: 'true'
+      - name: Verify KG1 Sarvam locale survives Qwen and Azure feedback
+        run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'preserves Sarvam Hindi detection'
+        working-directory: backend
+      - name: Verify KG child saying billi or manjar gets the right Azure coaching voice, never English mastery
+        run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'verifies KG bilingual cat bridge'
+        working-directory: backend
+      - name: Guard KG1 S3 static sample against live Priya opening
+        run: pnpm exec jest --runInBand tests/unit/kgFixedAudioSample.test.ts
+        working-directory: backend
+      - name: Verify approved KG static S3 audio can fail over to Azure without publishing
+        run: pnpm exec jest --runInBand tests/unit/kgS3AzureFallbackContract.test.ts tests/integration/kgAlphabetAudio.test.ts -t 'static|missing|S3|Azure'
+        working-directory: backend
+      - name: Verify KG1 feedback 409 is resolved with valid authenticated intro ticket
+        run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'KG1 409 only when the intro ticket'
+        working-directory: backend
+      - name: Verify KG1 feedback text is stable across audio retries
+        run: pnpm exec jest --runInBand tests/integration/kgAlphabetAudio.test.ts -t 'KG1 caches each Qwen teacher reply once'
+        working-directory: backend
+      - name: Test Class 1 Node-Python bridge security
+        run: pnpm exec jest --runInBand tests/unit/pythonAIProviderBridge.test.ts tests/unit/class1StaticAudio.test.ts
+        working-directory: backend
+      - name: Verify authorized DB lesson context, current-activity adaptation and bridge bounds
+        run: |
+          node --check scripts/verify-class1-teaching-wire.mjs
+          pnpm exec jest --runInBand tests/unit/lessonTeachingContext.test.ts tests/integration/lessonTeachingContext.test.ts
+        working-directory: backend
+      - name: Verify third-reply practice, conversation isolation and unchanged signed-ACK completion
+        run: |
+          node --check scripts/report-first-day-practice.mjs
+          pnpm exec jest --runInBand tests/unit/firstDayPracticeScaffold.test.ts tests/integration/firstDayPracticeScaffold.test.ts
+        working-directory: backend
+      - name: Guard synthetic-only Node to Python advisory teaching contract
+        run: pnpm run test:synthetic-teaching-harness
+        working-directory: backend
+      - name: Verify isolated version-scoped teaching checkpoints are idempotent and give no XP
+        run: pnpm exec jest --runInBand tests/unit/teachingCheckpointService.test.ts
+        working-directory: backend
+      - name: Verify real MongoDB checkpoint persistence, restart, races, and isolated retries
+        run: pnpm exec jest --runInBand tests/integration/teachingCheckpointMongo.test.ts
+        working-directory: backend
+        env:
+          TALKORA_CHECKPOINT_TEST_MONGO_URI: mongodb://127.0.0.1:27017
+      - name: Verify loopback HTTP Node to synthetic Python wire contract
+        run: pnpm exec jest --runInBand tests/integration/syntheticTeachingWire.test.ts
+        working-directory: backend
+      - name: Guard poem AI against recorded at-at fallback in English Hindi Marathi
+        run: pnpm exec jest --runInBand tests/unit/class1PoemTeachingGuard.test.ts
+        working-directory: backend
+      - name: Verify Azure rhythmic poem recitation SSML without paid calls
+        run: pnpm exec jest --runInBand tests/unit/class1PoemAzureRecitation.test.ts
+        working-directory: backend
+      - name: Verify authentic Balbharati 1.1 poem pairs and whole recitation
+        run: pnpm exec jest --runInBand tests/unit/class1PoemRecitation.test.ts
+        working-directory: backend
+      - name: Verify real First Day spoken-word progress, corrections and home-language retries
+        run: pnpm exec jest --runInBand tests/unit/firstDayEvidence.test.ts
+        working-directory: backend
+      - name: Verify server-side First Day voice acknowledgment and no premature progress
+        run: pnpm exec jest --runInBand tests/unit/class1AudioAck.test.ts
+        working-directory: backend
+      - name: Verify audio stream, Azure payload and audio-format regression tests
+        run: pnpm exec jest --runInBand tests/voice-response-stream.test.ts tests/class1-azure-audio.test.ts tests/voice-audio-format.test.ts
+        working-directory: backend
+      - name: Verify Hindi and Marathi Azure voice routing for reviewed First Day clips
+        run: pnpm exec jest --runInBand tests/unit/class1FirstDayAzureLocale.test.ts
+        working-directory: backend
+      - name: Verify real Mongo Class 1 published Level 1 map, resume and Level 2 lock
+        run: pnpm exec jest --runInBand tests/integration/class1PublishedLevel1Journey.test.ts
+        working-directory: backend
+      - name: Guard Class 1 First Day release against false publishing and historical progress
+        run: pnpm exec jest --runInBand tests/unit/class1Level1Publication.test.ts
+        working-directory: backend
+      - name: Verify Class 1 release staging and remote media safety contracts
+        run: pnpm exec jest --runInBand tests/unit/class1ProductionStaging.test.ts
+        working-directory: backend
+      - name: Verify source-bound Class 1 Level 2 review pack and reject false publication
+        shell: bash
+        run: |
+          pnpm exec jest --runInBand tests/unit/lessonReviewPack.test.ts
+          node --test tests/class1-review-pack.node.test.mjs
+          node scripts/class1-level2-review-pack.mjs --check
+        working-directory: backend
+      - name: Guard real Class 1 Sarvam to Qwen to Azure smoke route
+        run: pnpm exec jest --runInBand tests/unit/class1LiveSmokeContract.test.ts
+        working-directory: backend
+      - name: Verify First Day teacher voice pack manifest and review gates
+        run: pnpm exec jest --runInBand tests/class1-first-day-voice-manifest.test.ts
+        working-directory: backend
+      - name: Verify local Priya voice preflight and model/hardware readiness
+        run: pnpm exec jest --runInBand tests/priya-tts-health.test.ts
         working-directory: backend

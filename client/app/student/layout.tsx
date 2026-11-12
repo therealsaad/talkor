@@ -17,8 +17,10 @@ export default function StudentLayout({
   const pathname = usePathname()
 
   const { status, role, student } = useAuth()
-  const isKGLessonRoute = pathname === '/student/kg' || pathname.startsWith('/student/kg/')
-  const mustKeepKGStudentInGarden = status === 'authenticated' && role === 'STUDENT' && student?.grade === 0 && !isKGLessonRoute
+  // The KG garden is a voluntary review/dashboard destination. It must not
+  // intercept the PIN -> /student/continue -> /student/kg lesson flow.
+  const isKGGardenHub = pathname === '/student/home' || pathname === '/student/levels'
+  const showKGGardenHub = status === 'authenticated' && role === 'STUDENT' && student?.grade === 0 && isKGGardenHub
 
   useEffect(() => {
     if (status === 'unauthenticated') {
@@ -26,12 +28,12 @@ export default function StudentLayout({
       router.replace(`/login/student?next=${next}`)
     } else if (status === 'authenticated' && role !== 'STUDENT') {
       router.replace(role === 'TEACHER' || role === 'SCHOOL_ADMIN' ? '/school/dashboard' : '/login/student')
-    } else if (mustKeepKGStudentInGarden) {
+    } else if (showKGGardenHub) {
       router.replace('/student/kg/map')
     }
-  }, [mustKeepKGStudentInGarden, pathname, role, router, status])
+  }, [showKGGardenHub, pathname, role, router, status])
 
-  if (mustKeepKGStudentInGarden) return <TalkoraLoader message="Miss Julie is opening your letter garden..." />
+  if (showKGGardenHub) return <TalkoraLoader message="Miss Julie is opening your letter garden..." />
 
   if (status === 'loading') {
     return (

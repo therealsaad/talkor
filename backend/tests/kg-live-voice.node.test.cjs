@@ -62,24 +62,26 @@ test('Azure KG synthesis is transient: no AudioCacheService read/write, and XML 
     calls.fetch++
     assert.match(options.body, /&lt;there&gt;/)
     assert.match(options.body, /prosody rate="\+5%" pitch="\+6%"/)
-    return { ok: true, arrayBuffer: async () => Uint8Array.from([1,2,3]).buffer }
+    return { ok: true, arrayBuffer: async () => new Uint8Array(512).fill(1).buffer }
   }
   process.env.AZURE_SPEECH_KEY = 'unit-test-only'
   const { AzureVoiceProvider } = loadTS('providers/voice/AzureVoiceProvider.ts', {
+    '../../utils/error-category': loadTS('utils/error-category.ts', {}),
     '../../utils/ApiError': { ApiError: { badRequest: (m) => new Error(m), provider: (m) => new Error(m) } },
     '../../utils/logger': { logger: { warn() {} } },
+    './class1-voice-language': { chooseTalkoraBilingualVoice: () => ({ voice: 'en-IN-NeerjaNeural', locale: 'en-IN' }) },
     '../../services/AudioCacheService': { AudioCacheService: { get: async () => { calls.get++; throw Error('should not read persistent cache') }, put: async () => { calls.put++; throw Error('should not write persistent cache') } } },
   })
   try {
     const value = await new AzureVoiceProvider().synthesizeUncached('Hi <there>!')
-    assert.equal(value.audio.length, 3)
+    assert.equal(value.audio.length, 512)
     assert.equal(value.contentType, 'audio/mpeg')
     assert.deepEqual(calls, { get: 0, put: 0, fetch: 1 })
   } finally { globalThis.fetch = original; delete process.env.AZURE_SPEECH_KEY }
 })
 
-test('staff preview routes real captured audio through STT and returns Azure-spoken correction, no progress writes', async () => {
-  const calls = { stt: 0, azure: 0, db: 0 }
+test('staff preview routes audio through STT and returns manifest-selected Priya feedback, no progress writes', async () => {
+  const calls = { stt: 0, priya: 0, db: 0 }
   const blockDatabase = new Proxy({}, { get() { calls.db++; throw new Error('Preview must not access student MongoDB') } })
   const { KGAlphabetController } = loadTS('controllers/kg-alphabet.controller.ts', {
     'node:crypto': require('node:crypto'),
@@ -87,21 +89,33 @@ test('staff preview routes real captured audio through STT and returns Azure-spo
     '../utils/catchAsync': { catchAsync: (fn) => fn },
     '../utils/ApiResponse': { ok: (res, payload) => { res.payload = payload; return payload } },
     '../utils/ApiError': { ApiError: { badRequest: (m) => new Error(m), provider: (m) => new Error(m) } },
+    '../utils/logger': { logger: { info() {}, warn() {} } },
+    '../services/kg-turn-timing': require('./helpers/load-ts.cjs').loadTS('services/kg-turn-timing.ts'),
     '../models/Student': { Student: blockDatabase },
     '../models/KGAlphabetProgress': { KGAlphabetProgress: blockDatabase },
     '../models/KGAlphabetAttempt': { KGAlphabetAttempt: blockDatabase },
     '../models/KGAlphabetSubmission': { KGAlphabetSubmission: blockDatabase },
     '../models/KGIntroPlayback': { KGIntroPlayback: blockDatabase },
     '../kg/alphabet-content': {
-      AUDIO_IDS: ['say-a'], AUDIO_LINES: { 'say-a': 'Say apple!' }, LETTERS: [{ letter: 'A', word: 'apple' }],
+      AUDIO_IDS: ['say-a', 'model-a'], AUDIO_LINES: { 'say-a': 'Say apple!', 'model-a': 'Nice try, beta ji! Listen: apple.' }, LETTERS: [{ letter: 'A', word: 'apple' }],
+      AUDIO_MANIFEST: [{ id: 'say-a', text: 'Say apple!', kind: 'curriculum_static' }, { id: 'model-a', text: 'Nice try, beta ji! Listen: apple.', kind: 'dynamic_tts' }],
       audioKey: () => '', KG_ALPHABET_VERSION: 'v1', KG_AUDIO_VERSION: 'v1',
       activityAt: (i) => i === 0 ? { id: 'say-a', letter: 'A', mode: 'speak' } : null,
       evaluateKGSpeech: (transcript) => transcript === 'apple' ? 'correct' : 'incorrect',
     },
+    '../kg/kg-child-grading': { gradeKGTranscription: ({ transcript }) => transcript === 'apple' ? 'correct' : 'incorrect' },
+    '../teaching/kg-teaching-turn': { classifyKGTeachingTurn: () => ({ kind: 'wrong_word', language: 'en-IN' }) },
     '../services/kg-pilot-access': { isAuthorizedKGAlphabetStudent: () => true },
     '../services/kg-static-audio-cache': { getKGStaticAudio: async () => null },
-    '../services/kg-feedback.service': { generateKGFeedback: async () => ({ text: 'Good try! Apple begins with A. Say apple!', source: 'groq' }) },
-    '../providers/voice/AzureVoiceProvider': { AzureVoiceProvider: class { async synthesizeUncached() { calls.azure++; return { audio: Buffer.from([9,8,7]), contentType: 'audio/mpeg' } } } },
+    '../services/kg-azure-narration.service': { getKGAzureNarrationAudio: async () => null },
+    '../providers/voice/AzureVoiceProvider': { AzureVoiceProvider: class { async synthesizeUncached() { throw new Error('Preview must not synthesize live audio') } } },
+    '../services/kg-qwen-feedback.service': { KGQwenFeedbackService: { compose: async () => ({ text: 'Good try! Listen and say apple.', source: 'guided' }) } },
+    '../services/kg-feedback-audio.service': { KGFeedbackAudioService: { synthesize: async () => null, warm: () => {} } },
+    '../services/kg-teaching-language': { stableKGTeachingLanguage: (detected) => detected || 'en-IN' },
+    '../services/kg-feedback.service': { safeKGFeedback: () => 'Say apple!' },
+    '../services/kg-feedback-receipt': { issueKGFeedbackReceipt: () => 'receipt', verifyKGFeedbackReceipt: () => true },
+    '../services/voice-audio-format': { hasExpectedAudioHeader: () => true },
+    '../providers/voice/PythonVoiceProvider': { PythonVoiceProvider: class { async synthesize() { calls.priya++; return { audioBase64: 'CQgH', contentType: 'audio/mpeg', available: true } } } },
     '../services/kg-speech.service': { KGSpeechService: { transcribe: async () => { calls.stt++; return { available: true, transcript: 'banana', provider: 'groq' } } } },
     '../services/kg-teaching-hint': { kgTeachingHint: () => 'Say apple!' },
     '../config/env': { env: { sttTimeoutMs: 18000 } },
@@ -113,6 +127,8 @@ test('staff preview routes real captured audio through STT and returns Azure-spo
   assert.equal(res.payload.outcome, 'incorrect')
   assert.equal(res.payload.transcript, 'banana')
   assert.equal(res.payload.feedbackVoice, 'azure')
-  assert.equal(res.payload.feedbackAudioBase64, Buffer.from([9,8,7]).toString('base64'))
-  assert.deepEqual(calls, { stt: 1, azure: 1, db: 0 })
+  assert.equal(res.payload.feedbackAudioId, 'model-a')
+  assert.equal(res.payload.feedbackAudioBase64, null)
+  assert.equal(res.payload.advance, false)
+  assert.deepEqual(calls, { stt: 1, priya: 0, db: 0 })
 })

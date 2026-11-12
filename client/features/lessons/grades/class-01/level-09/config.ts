@@ -9,10 +9,12 @@ export const config = {
   "title": "My Day",
   "editorialStatus": "draft",
   "studentPlayable": false,
-  "description": "My Day — a distinct forest village adventure for Class 1 learners.",
+  "description": "Original voice-first Balbharati activities for chapters 4.1–4.6, with English practice and optional Hindi/Marathi support. Educator sign-off pending.",
   "syllabus": {
     "objectives": [
-      "Recognize, hear, and speak language connected to my day."
+      "Speak about movement, animals, music and an imaginary journey.",
+      "Explain one step in Hindi or Marathi when requested; always return to short English speaking.",
+      "Use modeled feedback for repeated difficulty and extend only when the student is ready."
     ],
     "skills": [
       "listening",
@@ -20,8 +22,8 @@ export const config = {
       "reading"
     ],
     "boardReviewRequired": true,
-    "sourceBook": null,
-    "sourcePages": [],
+    "sourceBook": "English Balbharati Standard One (2025; 2026 reprint)",
+    "sourcePages": [61, 63, 65, 66, 67, 69],
     "syllabusVerified": false
   },
   "experience": {

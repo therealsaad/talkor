@@ -67,7 +67,7 @@ export interface StudentRosterResponse {
   }
 }
 
-let getMeInFlight: Promise<AuthSession | null> | null = null
+let getMeInFlight: { token: string | null; request: Promise<AuthSession | null> } | null = null
 
 function buildSchoolSession(data: {
   token: string
@@ -227,11 +227,14 @@ export const authService = {
   },
 
   getMe(): Promise<AuthSession | null> {
-    if (getMeInFlight) return getMeInFlight
-    getMeInFlight = this.loadCurrentSession().finally(() => {
-      getMeInFlight = null
+    const token = getStoredToken()
+    if (getMeInFlight?.token === token) return getMeInFlight.request
+    const request = this.loadCurrentSession().finally(() => {
+      // Finishing A must not release B's newer in-flight request.
+      if (getMeInFlight?.request === request) getMeInFlight = null
     })
-    return getMeInFlight
+    getMeInFlight = { token, request }
+    return request
   },
 
   async loadCurrentSession(): Promise<AuthSession | null> {
@@ -252,6 +255,8 @@ export const authService = {
         teacher?: any
       }>('/auth/me', { signal: AbortSignal.timeout(8_000) })
 
+      if (getStoredToken() !== token) throw new Error('Session response belongs to a previous login')
+
       const session = data.role === 'STUDENT'
         ? buildStudentSession({ token, student: data.student, school: data.school })
         : data.role === 'TEACHER'
@@ -262,9 +267,13 @@ export const authService = {
       return session
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
-        clearStoredToken()
+        // apiClient may already have invalidated this same login. A newer
+        // non-null token must survive both layers of 401 handling.
+        if (getStoredToken() && getStoredToken() !== token) throw new Error('Session response belongs to a previous login')
+        if (getStoredToken() === token) clearStoredToken()
         return null
       }
+      if (getStoredToken() !== token) throw new Error('Session response belongs to a previous login')
 
       // A temporary network/server failure is not proof that the JWT is invalid.
       throw error
@@ -283,8 +292,9 @@ export const authService = {
   },
 
   async logout(): Promise<void> {
+    const token = getStoredToken()
     try {
-      if (getStoredToken()) {
+      if (token) {
         await apiClient('/auth/logout', {
           method: 'POST',
         })
@@ -292,7 +302,7 @@ export const authService = {
     } catch {
       // Local cleanup still has to happen even if the server is offline.
     } finally {
-      clearStoredToken()
+      if (getStoredToken() === token) clearStoredToken()
     }
   },
 }

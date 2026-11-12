@@ -5,11 +5,13 @@ import { askEducatorGemini } from '../src/providers/ai/EducatorGeminiProvider'
 const originalFetch = globalThis.fetch
 const originalGeminiKey = env.geminiApiKey
 const originalGeminiModel = env.geminiModel
+const originalGeminiFallbackModel = env.geminiFallbackModel
 
 afterEach(() => {
   globalThis.fetch = originalFetch
   env.geminiApiKey = originalGeminiKey
   env.geminiModel = originalGeminiModel
+  env.geminiFallbackModel = originalGeminiFallbackModel
 })
 
 test('educator assistant sends general questions to Gemini using the server key and model', async () => {
@@ -44,6 +46,8 @@ test('educator assistant sends general questions to Gemini using the server key 
 
 test('educator assistant reports Gemini quota exhaustion clearly', async () => {
   env.geminiApiKey = 'test-gemini-key'
+  // Pin the model list so this test does not depend on a developer's .env.
+  env.geminiModel = 'gemini-flash-latest'
   globalThis.fetch = async () => new Response(JSON.stringify({
     error: { code: 429, status: 'RESOURCE_EXHAUSTED', message: 'Quota exceeded.' },
   }), { status: 429, headers: { 'content-type': 'application/json' } })
@@ -57,6 +61,7 @@ test('educator assistant reports Gemini quota exhaustion clearly', async () => {
 test('educator assistant falls back to the stable Gemini Flash model after transient 503 errors', async () => {
   env.geminiApiKey = 'test-gemini-key'
   env.geminiModel = 'gemini-flash-latest'
+  env.geminiFallbackModel = 'gemini-3.5-flash'
 
   const requestUrls: string[] = []
   globalThis.fetch = async (input) => {

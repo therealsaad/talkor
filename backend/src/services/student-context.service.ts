@@ -1,8 +1,5 @@
 import { Student } from '../models/Student'
 import { CurriculumClass } from '../models/CurriculumClass'
-import { Level } from '../models/Level'
-import { Lesson } from '../models/Lesson'
-import { Activity } from '../models/Activity'
 import { Progress } from '../models/Progress'
 import { MistakeRecord } from '../models/MistakeRecord'
 import { Conversation } from '../models/Conversation'
@@ -12,6 +9,8 @@ import { MissJulieContext } from '../providers/ai/AIProvider'
 import { ApiError } from '../utils/ApiError'
 import { CurriculumAccessService } from './curriculum-access.service'
 import { MemoryService } from './memory.service'
+import { assertFirstDayIntro } from './class1-intro-eligibility'
+import { buildLessonTeachingContext, selectLessonSupport } from './lesson-teaching-context'
 
 export interface CompactTutorContext extends MissJulieContext {
   classId?: string
@@ -38,16 +37,32 @@ export const StudentContextService = {
       activityId?: string
       promptContext?: string
       currentTarget?: string
+      preferredExplanationLanguage?: 'English' | 'Hindi' | 'Marathi'
     } = {},
   ): Promise<CompactTutorContext> {
     const student = await Student.findById(studentId).lean()
     if (!student) throw ApiError.notFound('Student not found')
 
+    // Reuse the authorized records instead of querying an independently supplied
+    // lesson and activity again. A caller cannot mix two lesson identities.
+    let access: Awaited<ReturnType<typeof CurriculumAccessService.assertLesson>> | null = null
+    let activity: Awaited<ReturnType<typeof CurriculumAccessService.assertActivity>>['activity'] | undefined
     if (options.activityId) {
-      await CurriculumAccessService.assertActivity(studentId, options.activityId)
+      const authorized = await CurriculumAccessService.assertActivity(studentId, options.activityId)
+      access = authorized
+      activity = authorized.activity
     } else if (options.lessonId) {
-      await CurriculumAccessService.assertLesson(studentId, options.lessonId)
+      access = await CurriculumAccessService.assertLesson(studentId, options.lessonId)
     }
+    if (access && options.lessonId && String(access.lesson._id) !== options.lessonId)
+      throw ApiError.curriculumAccess()
+    if (access && !options.activityId) {
+      await assertFirstDayIntro({ studentId, schoolId: String(student.schoolId),
+        authVersion: student.authVersion || 0, grade: student.grade,
+        lessonId: String(access.lesson._id), settings: access.lesson.settings, lessonOnly: true })
+    }
+    const lesson = access?.lesson
+    const level = access?.level
 
     const klass = await CurriculumClass.findOne({ grade: student.grade }).lean()
 
@@ -61,73 +76,72 @@ export const StudentContextService = {
     let allowedVocabulary: string[] = []
     let learningObjectives: string[] = []
     let requiredConcepts: string[] = []
+    let sceneKey: string | undefined
     let digitalType: string | undefined
     let julieProfile: Record<string, string> | undefined
 
-    if (options.lessonId) {
-      const lesson = await Lesson.findById(options.lessonId).lean()
-      if (lesson) {
-        lessonTitle = lesson.title
-        const level = await Level.findById(lesson.levelId).lean()
-        if (level) {
-          levelTitle = level.title
-          // Use the actual authorized MongoDB lesson's level; never infer from grade alone.
-          if (student.grade === 1 && level.number === 1 && String(level.classId) === String(klass?._id)) {
-            canonicalLevelId = 'g01-l01'
-          }
-          unitNumber = level.unitNumber || level.number
-          learningObjectives = level.learningObjectives || []
+    if (lesson) {
+      lessonTitle = lesson.title
+      if (level) {
+        levelTitle = level.title
+        // Use the actual authorized MongoDB lesson's level; never infer from grade alone.
+        if (student.grade === 1 && level.number === 1 && String(level.classId) === String(klass?._id)) {
+          canonicalLevelId = 'g01-l01'
         }
+        unitNumber = level.unitNumber || level.number
+        learningObjectives = level.learningObjectives || []
       }
     }
 
-    if (options.activityId) {
-      const activity = await Activity.findById(options.activityId)
-        .select('-answer -answerConfig')
-        .lean()
-      if (activity) {
-        activityTitle = activity.title
-        const conversationTypes = new Set([
-          'CONVERSATION',
-          'OPEN_CONVERSATION',
-          'FOLLOW_UP_CONVERSATION',
-          'FINAL_CONVERSATION',
-        ])
-        const isOpenConversation =
-          activity.metadata?.conversationMode === 'OPEN' ||
-          conversationTypes.has(String(activity.type || ''))
-        const fixedTtsText =
-          typeof activity.metadata?.ttsText === 'string'
-            ? activity.metadata.ttsText.trim()
-            : ''
+    if (activity) {
+      activityTitle = activity.title
+      sceneKey = typeof activity.metadata?.sceneKey === 'string' ? activity.metadata.sceneKey : undefined
+      const conversationTypes = new Set([
+        'CONVERSATION',
+        'OPEN_CONVERSATION',
+        'FOLLOW_UP_CONVERSATION',
+        'FINAL_CONVERSATION',
+      ])
+      const isOpenConversation =
+        activity.metadata?.conversationMode === 'OPEN' ||
+        conversationTypes.has(String(activity.type || ''))
+      const fixedTtsText =
+        typeof activity.metadata?.ttsText === 'string'
+          ? activity.metadata.ttsText.trim()
+          : ''
 
-        // For a live conversation, the question visible to the learner is the
-        // source of truth for Qwen too. Never let a stale pronunciation target
-        // or a pre-generated TTS line silently change what Miss Julie teaches.
-        activityTarget = isOpenConversation
-          ? activity.teacherPrompt?.trim() || activity.prompt?.trim() || activity.target?.trim()
-          : fixedTtsText || activity.teacherPrompt?.trim() || activity.target?.trim() || activity.prompt?.trim()
-        stage = activity.stage
-        allowedVocabulary = Array.isArray(activity.metadata?.allowedVocabulary)
-          ? (activity.metadata.allowedVocabulary as string[])
-          : []
-        requiredConcepts = activity.conversationGoal?.requiredConcepts || []
-        digitalType =
-          typeof activity.metadata?.digitalType === 'string'
-            ? activity.metadata.digitalType
-            : undefined
-        const profile = activity.metadata?.julieProfile
-        if (profile && typeof profile === 'object' && !Array.isArray(profile)) {
-          julieProfile = Object.fromEntries(
-            Object.entries(profile as Record<string, unknown>)
-              .filter(([, value]) => typeof value === 'string')
-              .map(([key, value]) => [key, String(value)]),
-          )
-        }
+      // For a live conversation, the question visible to the learner is the
+      // source of truth for Qwen too. Never let a stale pronunciation target
+      // or a pre-generated TTS line silently change what Miss Julie teaches.
+      activityTarget = isOpenConversation
+        ? activity.teacherPrompt?.trim() || activity.prompt?.trim() || activity.target?.trim()
+        : fixedTtsText || activity.teacherPrompt?.trim() || activity.target?.trim() || activity.prompt?.trim()
+      stage = activity.stage
+      allowedVocabulary = Array.isArray(activity.metadata?.allowedVocabulary)
+        ? (activity.metadata.allowedVocabulary as string[])
+        : []
+      requiredConcepts = activity.conversationGoal?.requiredConcepts || []
+      digitalType =
+        typeof activity.metadata?.digitalType === 'string'
+          ? activity.metadata.digitalType
+          : undefined
+      const profile = activity.metadata?.julieProfile
+      if (profile && typeof profile === 'object' && !Array.isArray(profile)) {
+        julieProfile = Object.fromEntries(
+          Object.entries(profile as Record<string, unknown>)
+            .filter(([, value]) => typeof value === 'string')
+            .map(([key, value]) => [key, String(value)]),
+        )
       }
     }
 
-    if (options.currentTarget?.trim()) {
+    const scopedTeaching = canonicalLevelId === 'g01-l01' &&
+      /^class1-l01-v[34]-/.test(activity?.activityKey || '')
+
+    // An OPEN poem scene has a full teacher prompt, not a one-word pronunciation
+    // target. The old voice-session target (e.g. 'grin') must never replace
+    // the actual two-line poem question when building the Python AI context.
+    if (options.currentTarget?.trim() && !sceneKey?.startsWith('poem-') && !scopedTeaching) {
       activityTarget = options.currentTarget.trim()
     }
 
@@ -137,7 +151,8 @@ export const StudentContextService = {
       MistakeRecord.find({ studentId, resolved: false }).sort('-lastOccurredAt').limit(5).lean(),
       MemoryService.relevantPersonalFacts(studentId, requiredConcepts.length ? requiredConcepts : ['favourite_sport', 'favourite_food', 'favourite_subject']),
       MemoryService.relevantLearningEvidence(studentId, requiredConcepts),
-      ActivityAttempt.find({ studentId }).sort('-createdAt').limit(8).select('score correct').lean(),
+      ActivityAttempt.find({ studentId, ...(scopedTeaching ? { activityId: activity!._id } : {}) })
+        .sort('-createdAt').limit(8).select('score correct hintsUsed').lean(),
     ])
     // This coaching band is invisible to the child and never changes their grade.
     const average = recentAttempts.length
@@ -189,6 +204,11 @@ export const StudentContextService = {
 
     const recentMessages = (conversation?.messages || []).slice(-8)
     const achievedConcepts = conversation?.goalState || []
+    const teachingContext = buildLessonTeachingContext({
+      grade: student.grade, lessonKey: canonicalLevelId, activity,
+      settings: lesson?.settings,
+      support: selectLessonSupport({ attempts: recentAttempts, retry: conversation?.retryState }),
+    })
 
     const recentJulieOpeners = (conversation?.messages || [])
       .filter((msg) => msg.role === 'missJulie')
@@ -220,7 +240,9 @@ export const StudentContextService = {
       levelTitle,
       lessonTitle,
       activityTitle,
+      sceneKey,
       activityTarget,
+      teachingContext,
       recentMistakes: recentMistakes.map(
         (m) => `${m.skill}: expected "${m.expected}", said "${m.actual}"`,
       ),
@@ -233,6 +255,7 @@ export const StudentContextService = {
           .map((item) => `${item.skill}: ${item.support.toLowerCase()}`),
       ].slice(-8),
       promptContext: options.promptContext || 'conversation',
+      preferredExplanationLanguage: options.preferredExplanationLanguage,
       studentMessage: options.message || '',
       unitNumber,
       stage,

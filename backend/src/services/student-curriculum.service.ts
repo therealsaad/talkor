@@ -22,6 +22,14 @@ import {
   KG_CURRICULUM_VERSION,
 } from './kg-pilot-access'
 import { isMissingKGPilotPicture, presentKGPilotActivity } from './kg-pilot-presentation'
+import {
+  CLASS1_DEMO_ACTIVITY_FILTER,
+  CLASS1_DEMO_LESSON_FILTER,
+  CLASS1_DEMO_VERSION,
+  CLASS1_FIRST_DAY_PARALLEL_REVISION,
+  CLASS1_FIRST_DAY_POEM_REVISION,
+  preferClass1FirstDayLesson,
+} from './class1-demo-access'
 
 /* =========================================================
    STUDENT CURRICULUM SERVICE
@@ -97,7 +105,7 @@ export const StudentCurriculumService = {
         ...(isKGPilot
           ? { curriculumVersion: KG_CURRICULUM_VERSION, availability: 'UPCOMING' }
           : isClass1Demo
-            ? { curriculumVersion: 'talkora-class1-l01-demo-draft-v1', number: 1, availability: 'UPCOMING' }
+            ? { curriculumVersion: CLASS1_DEMO_VERSION, number: 1, availability: 'UPCOMING' }
             : {}),
       })
         .sort({
@@ -115,7 +123,7 @@ export const StudentCurriculumService = {
           unit._id,
       )
 
-    const lessons =
+    const lessonCandidates =
       unitIds.length >
       0
         ? await Lesson.find({
@@ -124,9 +132,7 @@ export const StudentCurriculumService = {
                 unitIds,
             },
 
-            status:
-              contentStatus,
-            ...(isClass1Demo ? { 'settings.talkoraDemoDraft': true } : {}),
+            ...(isClass1Demo ? CLASS1_DEMO_LESSON_FILTER : { status: contentStatus }),
           })
             .sort({
               levelId: 1,
@@ -135,6 +141,9 @@ export const StudentCurriculumService = {
             })
             .lean()
         : []
+    const lessons = isClass1Demo
+      ? preferClass1FirstDayLesson(lessonCandidates)
+      : lessonCandidates
 
     /* =====================================================
        ACTIVITIES
@@ -155,8 +164,8 @@ export const StudentCurriculumService = {
                 lessonIds,
             },
 
-            status:
-              contentStatus,
+            ...(isClass1Demo ? CLASS1_DEMO_ACTIVITY_FILTER : { status: contentStatus }),
+            ...(isClass1Demo ? { core: { $ne: false }, required: { $ne: false } } : {}),
           })
             /*
              * Student curriculum must never expose answer keys.
@@ -266,7 +275,7 @@ export const StudentCurriculumService = {
       if (isKGPilot
         ? unit.curriculumVersion !== KG_CURRICULUM_VERSION || unit.status !== 'draft' || unit.availability !== 'UPCOMING'
         : isClass1Demo
-          ? unit.curriculumVersion !== 'talkora-class1-l01-demo-draft-v1' || unit.number !== 1 || unit.status !== 'draft' || unit.availability !== 'UPCOMING'
+          ? unit.curriculumVersion !== CLASS1_DEMO_VERSION || unit.number !== 1 || unit.status !== 'draft' || unit.availability !== 'UPCOMING'
           : unit.availability !== 'PUBLISHED') {
         continue
       }
@@ -399,7 +408,7 @@ export const StudentCurriculumService = {
           if (isKGPilot
             ? unit.curriculumVersion !== KG_CURRICULUM_VERSION || unit.status !== 'draft' || unit.availability !== 'UPCOMING'
             : isClass1Demo
-              ? unit.curriculumVersion !== 'talkora-class1-l01-demo-draft-v1' || unit.number !== 1 || unit.status !== 'draft' || unit.availability !== 'UPCOMING'
+              ? unit.curriculumVersion !== CLASS1_DEMO_VERSION || unit.number !== 1 || unit.status !== 'draft' || unit.availability !== 'UPCOMING'
               : unit.availability !== 'PUBLISHED') {
             status =
               'UPCOMING'
@@ -424,6 +433,15 @@ export const StudentCurriculumService = {
              LESSON SUMMARY
              =============================================== */
 
+          // The published First Day lesson retains its syllabus/map identity
+          // after the development-only demo flag is no longer in effect.
+          const isClass1Level1 = student.grade === 1 && unit.number === 1
+          const hasPoem = (isClass1Demo || isClass1Level1) && unitLessons.some(
+            lesson => lesson.settings?.lessonPlanRevision === CLASS1_FIRST_DAY_POEM_REVISION,
+          )
+          const hasFirstDay = (isClass1Demo || isClass1Level1) && unitLessons.some(
+            lesson => [CLASS1_FIRST_DAY_PARALLEL_REVISION, CLASS1_FIRST_DAY_POEM_REVISION].includes(String(lesson.settings?.lessonPlanRevision || '')),
+          )
           const lessonSummary =
             unitLessons.map(
               (lesson) => {
@@ -478,13 +496,13 @@ export const StudentCurriculumService = {
              * Curriculum title remains authoritative.
              */
             title:
-              unit.title,
+              hasPoem ? 'My First Day — English Poem' : hasFirstDay ? 'My First Day — School Adventure' : unit.title,
 
             /*
              * Product world label stays separate.
              */
             worldName:
-              unit.place,
+              hasPoem ? 'Poem Garden' : hasFirstDay ? 'School Garden' : unit.place,
 
             term:
               unit.term,
@@ -527,12 +545,14 @@ export const StudentCurriculumService = {
               unit.badge,
 
             learningObjectives:
-              unit.learningObjectives ??
-              [],
+              hasFirstDay
+                ? (hasPoem ? ['Listen and recite My First Day in two-line pairs and as a full poem'] : ['Listen to and speak the First Day school actions in English'])
+                : (unit.learningObjectives ?? []),
 
             speakingGoals:
-              unit.speakingGoals ??
-              [],
+              hasFirstDay
+                ? (hasPoem ? ['Say each two-line poem part and recite all three stanzas'] : ['Speak about school, walk, run, skip, jump, grin, bell and play'])
+                : (unit.speakingGoals ?? []),
 
             lessonCount:
               unitLessons.length,
@@ -581,7 +601,7 @@ export const StudentCurriculumService = {
         curriculumClass.name,
 
       curriculumVersion:
-        (isKGPilot ? KG_CURRICULUM_VERSION : isClass1Demo ? 'talkora-class1-l01-demo-draft-v1' : progress.curriculumVersion) ??
+        (isKGPilot ? KG_CURRICULUM_VERSION : isClass1Demo ? CLASS1_DEMO_VERSION : progress.curriculumVersion) ??
         currentUnit
           ?.curriculumVersion ??
         result.find(
@@ -677,19 +697,20 @@ export const StudentCurriculumService = {
        ===================================================== */
 
     const contentStatus = access.isKGPilot || access.isClass1Demo ? 'draft' : 'active'
-    const lessons =
+    const lessonCandidates =
       await Lesson.find({
         levelId:
           currentUnit.id,
 
-        status:
-          contentStatus,
-        ...(access.isClass1Demo ? { 'settings.talkoraDemoDraft': true } : {}),
+        ...(access.isClass1Demo ? CLASS1_DEMO_LESSON_FILTER : { status: contentStatus }),
       })
         .sort({
           order: 1,
         })
         .lean()
+    const lessons = access.isClass1Demo
+      ? preferClass1FirstDayLesson(lessonCandidates)
+      : lessonCandidates
 
     /* =====================================================
        ACTIVITIES
@@ -710,8 +731,8 @@ export const StudentCurriculumService = {
                 lessonIds,
             },
 
-            status:
-              contentStatus,
+            ...(access.isClass1Demo ? CLASS1_DEMO_ACTIVITY_FILTER : { status: contentStatus }),
+            ...(access.isClass1Demo ? { core: { $ne: false }, required: { $ne: false } } : {}),
           })
             .select(
               '-answer -answerConfig',

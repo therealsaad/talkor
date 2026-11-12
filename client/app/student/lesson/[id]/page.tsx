@@ -6,6 +6,7 @@ import { ActivityEngine } from '@/components/lessons/activity-engine'
 import { TalkoraLoader } from '@/components/student/talkora-loader'
 import { useAuth } from '@/components/auth/auth-provider'
 import { curriculumService, type FastLessonPackage } from '@/services/curriculum-service'
+import { Class1Immersion } from '@/features/lessons/grades/class-01/level-01/Class1Immersion'
 
 /** A single grade-authoritative request replaces the old five-request waterfall.
  * The server checks student grade and unit unlock status; URL parameters never
@@ -48,7 +49,23 @@ export default function StudentLessonPage() {
       <button type="button" onClick={() => router.replace('/student/home')}>Back to classroom</button>
     </main>
   }
-  return <ActivityEngine
+  const firstDayV3 = lesson.experienceId === 'g01-l01' &&
+    lesson.activities.length === 10 &&
+    lesson.activities.every(activity => activity.activityKey?.startsWith('class1-l01-v3-'))
+  const firstDayPoem = lesson.experienceId === 'g01-l01' &&
+    lesson.activities.length === 6 &&
+    lesson.activities.every(activity => activity.activityKey?.startsWith('class1-l01-v4-poem-'))
+  const firstDayReady = firstDayV3 || firstDayPoem
+  // The old two-letter-word draft is NOT Balbharati 1.1. Do not put a child
+  // through the outdated intro or award credit for the wrong chapter.
+  if (lesson.experienceId === 'g01-l01' && !firstDayReady) {
+    return <main className="talkora-error" role="alert" style={{ minHeight: '75vh', display: 'grid', placeContent: 'center', gap: 18, textAlign: 'center', padding: 32 }}>
+      <h1>Miss Julie is preparing your First Day adventure</h1>
+      <p>This lesson is not installed on Talkora yet. Your earlier learning and progress are safely preserved.</p>
+      <button type="button" onClick={() => router.replace('/student/continue')}>Back to my lessons</button>
+    </main>
+  }
+  const experience = <ActivityEngine
     key={`${lesson.level.id}:${lesson.lesson.id}`}
     activities={lesson.activities}
     levelTitle={lesson.level.place || lesson.level.title}
@@ -57,17 +74,34 @@ export default function StudentLessonPage() {
     avatarType={session.student.avatarType}
     studentName={student?.fullName?.trim() || 'Explorer'}
     completedActivityIds={lesson.completedActivityIds}
-    backgroundSrc={lesson.experienceId === 'g01-l01'
+    experienceId={lesson.experienceId}
+    backgroundSrc={lesson.experienceId === 'g01-l01' && !firstDayReady
       ? '/lessons/class-01/level-01/two-letter-word-meadow.webp'
       : undefined}
     completionMessage={lesson.experienceId === 'g01-l01'
-      ? `You did it, ${student?.fullName?.trim() || 'Explorer'}! You listened, built, read, and spoke small English words. Your progress is saved.`
+      ? firstDayPoem
+        ? 'Hurray! You listened to, practised and recited My First Day, the Grade One poem.'
+        : firstDayV3
+        ? 'Wonderful! You learnt about skipping, running, walking, smiling, the school bell, jumping and playing on your first day at school.'
+        : `You did it, ${student?.fullName?.trim() || 'Explorer'}! You practised am, an, at, in, is, it, on, and up, then began learning about your first day at school. Your progress is saved.`
       : undefined}
     homeworkMessage={lesson.experienceId === 'g01-l01'
-      ? 'Homework: say “I am Sam” and “Look at me” with someone at home.'
+      ? firstDayPoem
+        ? 'Homework: recite the My First Day poem with actions for someone at home.'
+        : firstDayV3
+        ? 'Homework: tell someone at home: I can walk, I can play, and I am in Grade One.'
+        : 'Homework: say “It is up” and “I walk to school” with someone at home.'
       : undefined}
-    introVideoKey={lesson.grade === 0 && typeof lesson.lesson.settings?.lessonKey === 'string'
-      ? lesson.lesson.settings.lessonKey
+    class1IntroVideoUrl={firstDayReady && typeof lesson.lesson.settings?.introVideoUrl === 'string'
+      ? lesson.lesson.settings.introVideoUrl
       : undefined}
+    introVideoKey={lesson.experienceId === 'g01-l01' && (firstDayReady || lesson.completedActivityIds.length === 0)
+      ? 'class1-g01-l01'
+      : lesson.grade === 0 && typeof lesson.lesson.settings?.lessonKey === 'string'
+        ? lesson.lesson.settings.lessonKey
+        : undefined}
   />
+  return lesson.experienceId === 'g01-l01'
+    ? <Class1Immersion voiceOnly={firstDayReady}>{experience}</Class1Immersion>
+    : experience
 }

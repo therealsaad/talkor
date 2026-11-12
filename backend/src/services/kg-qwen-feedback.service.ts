@@ -1,0 +1,83 @@
+import { env } from '../config/env'
+import { safeKGFeedback, type KGFeedbackInput } from './kg-feedback.service'
+import { classifyKGTeachingTurn, composeKGTeachingTurn } from '../teaching/kg-teaching-turn'
+
+/** The backend grades KG speech. Qwen may choose *wording*, never the verdict,
+ * the next activity, a child's level, or pronunciation mastery. */
+export const KGQwenFeedbackService = {
+  async compose(input: KGFeedbackInput): Promise<{ text: string; source: 'qwen-8002' | 'guided' }> {
+    const target = { A: 'apple', B: 'ball', C: 'cat', D: 'dog' }[input.letter]
+    const guided = safeKGFeedback(input)
+    // No LLM may turn a translation, silence or a supported-picture answer
+    // into independent English evidence. Keep those short, concrete and safe.
+    // Correct answers, known translations, silence, unclear audio and picture
+    // taps are deterministic. Qwen is reserved for genuine unexpected speech.
+    if (input.outcome !== 'incorrect' || input.mode !== 'speak' ||
+        input.noSpeech || !input.transcript?.trim()) return { text: guided, source: 'guided' }
+    // Unexpected child questions use the SAME KG teaching policy as Levels 2–5.
+    // Keep normal KG1 answers, known translations, silence and brief wrong words
+    // on their existing fast/reviewed path; the shared builder never grades XP.
+    const classification = classifyKGTeachingTurn({
+      level: 1, letter: input.letter, transcript: input.transcript,
+      outcome: input.outcome, detectedLanguage: input.languageCode,
+    })
+    if (classification.kind === 'question_or_offtopic') {
+      const turn = await composeKGTeachingTurn({
+        level: 1, letter: input.letter, transcript: input.transcript,
+        outcome: input.outcome, detectedLanguage: input.languageCode,
+        existingFeedbackText: guided,
+      })
+      return { text: turn.feedbackText, source: turn.source }
+    }
+    const key = env.talkoraServiceKey.trim()
+    if (env.isProd && key.length < 32) return { text: guided, source: 'guided' }
+    try {
+      const configuredTimeout = Number(process.env.TALKORA_KG_QWEN_TIMEOUT_MS || 1800)
+      const timeoutMs = Number.isFinite(configuredTimeout) ? Math.min(2500, Math.max(500, configuredTimeout)) : 1800
+      const baseUrl = (process.env.TALKORA_KG1_AI_URL || 'http://127.0.0.1:8002').replace(/\/$/, '')
+      const spoken = input.transcript?.slice(0, 160).trim() || (input.selected ? `I selected ${input.selected.slice(0, 16)}` : 'I am trying.')
+      const response = await fetch(`${baseUrl}/v1/brain/respond`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(key ? { 'X-Talkora-Service-Key': key } : {}),
+        },
+        signal: AbortSignal.timeout(timeoutMs),
+        body: JSON.stringify({
+          grade: 0,
+          levelId: 'g00-l01',
+          studentName: 'Learner',
+          activityTitle: `KG ABCD: ${input.letter} for ${target}`,
+          currentQuestion: input.mode === 'speak' ? `Say the English word ${target}` : `Find the picture of ${target}`,
+          learningObjectives: [`Understand and say ${target} in English; a Hindi/Marathi translation is NOT English speaking mastery`],
+          allowedVocabulary: [target, input.letter],
+          recentMistakes: [],
+          conversationHistory: [],
+          preferredExplanationLanguage: input.languageCode === 'hi-IN' ? 'Hindi'
+            : input.languageCode === 'mr-IN' ? 'Marathi' : 'English',
+          waitingForRetry: true,
+          hintLevel: 1,
+          studentMessage: spoken,
+        }),
+      })
+      if (!response.ok) return { text: guided, source: 'guided' }
+      const payload = await response.json() as { message?: unknown; followUpQuestion?: unknown }
+      const message = typeof payload.message === 'string' ? payload.message.replace(/\s+/g, ' ').trim() : ''
+      const question = typeof payload.followUpQuestion === 'string' ? payload.followUpQuestion.replace(/\s+/g, ' ').trim() : ''
+      const text = [message, question].filter(Boolean).join(' ').slice(0, 280)
+      // Strict deterministic guard: Qwen cannot praise a wrong attempt as
+      // correct, skip the word, or introduce arbitrary lessons/identifying asks.
+      if (text.length < 12 || text.length > 240 || !new RegExp(`\\b${target}\\b`, 'i').test(text) ||
+          /[<>\\[\\]{}]|https?:|www\.|password|phone number|your address/i.test(text) ||
+          /you got it|exactly right|correct answer|perfect|well done/i.test(text) ||
+          ((input.languageCode === 'hi-IN' || input.languageCode === 'mr-IN') && !/[\u0900-\u097f]/.test(text))) {
+        return { text: guided, source: 'guided' }
+      }
+      return { text, source: 'qwen-8002' }
+    } catch {
+      // Qwen is a coaching enhancement, not a license to fake success.
+      // The guarded local teacher line still teaches the correct target.
+      return { text: guided, source: 'guided' }
+    }
+  },
+}

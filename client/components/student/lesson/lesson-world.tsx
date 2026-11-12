@@ -22,6 +22,7 @@ interface LessonWorldProps {
   syllabusName?: string
   levelNumber?: number
   backgroundSrc?: string
+  experienceId?: string
 }
 
 type PointerState = {
@@ -42,6 +43,7 @@ export function LessonWorld({
   syllabusName = 'My Favourite Things',
   levelNumber = 1,
   backgroundSrc: requestedBackground,
+  experienceId,
 }: LessonWorldProps) {
   const [
     pointer,
@@ -112,6 +114,7 @@ export function LessonWorld({
   return (
     <div
       className="tk-lesson-world"
+      data-experience-id={experienceId}
       data-lesson-stage={
         stage
       }

@@ -4,7 +4,8 @@ export const interactions: LevelInteractionConfig = {
   "allowedModes": [
     "tap-picture",
     "repeat-after-julie",
-    "listen-and-find"
+    "listen-and-find",
+    "guided-dialogue"
   ],
   "requireMicrophone": true,
   "disableMusicDuringSpeech": true,

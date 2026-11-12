@@ -1,10 +1,11 @@
 // TALKORA_CLASS1_STUDENT_DEMO_ROUTE_V1
 import { VoiceSession } from '../models/VoiceSession'
+import { Conversation } from '../models/Conversation'
 import { getSpeechProvider } from '../providers/speech'
-import { GroqSpeechProvider } from '../providers/speech/GroqSpeechProvider'
 import { getVoiceProvider } from '../providers/voice'
 import { getPronunciationProvider } from '../providers/pronunciation'
 import { ApiError } from '../utils/ApiError'
+import { Types } from 'mongoose'
 import { Activity } from '../models/Activity'
 import { ProgressService } from './progress.service'
 import { ActivityAttempt } from '../models/ActivityAttempt'
@@ -16,10 +17,103 @@ import { GroqVoiceProvider } from '../providers/voice/GroqVoiceProvider'
 import { AzureVoiceProvider } from '../providers/voice/AzureVoiceProvider'
 import { PythonVoiceProvider } from '../providers/voice/PythonVoiceProvider'
 import { S3Service } from './S3Service'
+import { class1SupportFromSarvam } from '../providers/ai/class1-stt-language'
+import { issueClass1FeedbackReceipt, verifyClass1FeedbackReceipt, type Class1AudioVisit } from './class1-feedback-receipt'
+import class1VoiceManifest from '../scripts/class1-level1-ai4bharat-lines.json'
+import firstDayVoices from '../scripts/class1-first-day-voice-v3.json'
 
 
 
 export type VoicePurpose = 'PAGE_GUIDANCE' | 'LESSON' | 'CONVERSATION' | 'FEEDBACK'
+
+// A lesson's reviewed S3 key must use the immutable class/level/version layout.
+// Never accept arbitrary bucket paths from a curriculum activity.
+const APPROVED_LESSON_AUDIO_KEY = /^class-(?:0[1-9]|10)\/level-(?:0[1-9]|10)\/v[1-9]\d*\/[a-z0-9][a-z0-9_-]*\.(?:mp3|wav)$/
+
+// Only these immutable, human-reviewed Class 1 narration keys can be shared
+// across students. A browser-provided activityId or purpose is never sufficient.
+const CLASS1_STATIC_LINES = new Map(
+  [...class1VoiceManifest.lines, ...firstDayVoices.lines].map((line) => [line.s3Key, line.text] as const),
+)
+const STATIC_AUDIO_MAX_ITEMS = 16
+const STATIC_AUDIO_MAX_ITEM_BYTES = 2 * 1024 * 1024
+const STATIC_AUDIO_TTL_MS = 5 * 60 * 1000
+type StaticAudio = { audio: Buffer; contentType: string; provider: string }
+
+function teacherFeedbackText(response: unknown): string {
+  const ai = response as { message?: string; followUpQuestion?: string } | undefined
+  if (typeof ai?.message !== 'string' || (ai.followUpQuestion != null && typeof ai.followUpQuestion !== 'string')) {
+    throw ApiError.conflict('The saved teacher response is unavailable')
+  }
+  const text = [ai?.message, ai?.followUpQuestion].filter(Boolean).join(' ').trim().slice(0, 1800)
+  if (!text) throw ApiError.conflict('The saved teacher response is unavailable')
+  return text
+}
+const staticAudioCache = new Map<string, { value: StaticAudio; expiresAt: number }>()
+const staticAudioInFlight = new Map<string, Promise<StaticAudio | null>>()
+
+function sameNarration(left: string, right: string): boolean {
+  return left.normalize('NFC').replace(/\s+/g, ' ').trim() ===
+    right.normalize('NFC').replace(/\s+/g, ' ').trim()
+}
+
+function getStaticAudio(key: string, text: string): Promise<StaticAudio | null> {
+  const cacheKey = [key, process.env.TALKORA_CLASS1_STATIC_AUDIO_APPROVED === 'true' ? 'reviewed' : 'pending',
+    process.env.AZURE_VOICE_PROFILE_VERSION || 'v2-mp3',
+    process.env.AZURE_SPEECH_VOICE || 'en-IN-NeerjaNeural'].join(':')
+  const existing = staticAudioCache.get(cacheKey)
+  if (existing && existing.expiresAt > Date.now()) return Promise.resolve(existing.value)
+  if (existing) staticAudioCache.delete(cacheKey)
+  const pending = staticAudioInFlight.get(cacheKey)
+  if (pending) return pending
+
+  const loader = (async (): Promise<StaticAudio | null> => {
+    let saved: Buffer | null = null
+    // Uploading a WAV is not the same as educator approval. Pilot defaults to
+    // Azure fixed-line fallback until the S3 narration is explicitly reviewed.
+    if (process.env.TALKORA_CLASS1_STATIC_AUDIO_APPROVED === 'true') {
+      try {
+        saved = await S3Service.getAudio(key)
+      } catch (error) {
+        logger.warn('Class 1 static audio lookup unavailable', { key, error })
+      }
+    }
+    if (saved?.length) {
+      return { audio: saved, provider: 'ai4bharat-s3', contentType: key.endsWith('.mp3') ? 'audio/mpeg' : 'audio/wav' }
+    }
+    if (key.startsWith('class-01/level-01/v3/')) {
+      // Never spend a surprise Azure credit when a promised reviewed S3
+      // First Day clip is missing or not approved. Fail explicitly instead.
+      throw ApiError.provider('CLASS1_FIRST_DAY_APPROVED_AUDIO_MISSING')
+    }
+    // Fixed, manifest-verified line only. Never cache student transcripts, names,
+    // personalised feedback, or free-form LLM replies.
+    try {
+      const voice = await new AzureVoiceProvider().synthesize(text)
+      if (!voice.audioBase64) return null
+      return {
+        audio: Buffer.from(voice.audioBase64, 'base64'),
+        provider: voice.provider || 'azure-neerja',
+        contentType: voice.contentType || 'audio/mpeg',
+      }
+    } catch (error) {
+      logger.warn('Class 1 fixed narration Azure fallback unavailable', { key, error })
+      return null
+    }
+  })().then((result) => {
+    if (result && result.audio.length && result.audio.length <= STATIC_AUDIO_MAX_ITEM_BYTES) {
+      if (staticAudioCache.size >= STATIC_AUDIO_MAX_ITEMS) {
+        const oldest = staticAudioCache.keys().next().value
+        if (oldest) staticAudioCache.delete(oldest)
+      }
+      staticAudioCache.set(cacheKey, { value: result, expiresAt: Date.now() + STATIC_AUDIO_TTL_MS })
+    }
+    return result
+  }).finally(() => staticAudioInFlight.delete(cacheKey))
+
+  staticAudioInFlight.set(cacheKey, loader)
+  return loader
+}
 
 function streamFromBuffer(audio: Buffer): ReadableStream<Uint8Array> {
   return new ReadableStream<Uint8Array>({
@@ -31,9 +125,9 @@ function streamFromBuffer(audio: Buffer): ReadableStream<Uint8Array> {
 }
 
 async function tryStream(
-  provider: { name: string; synthesizeStream?: (text: string, options?: { conversation?: boolean }) => Promise<VoiceStreamResult> },
+  provider: { name: string; synthesizeStream?: (text: string, options?: { conversation?: boolean; class1Lesson?: boolean; language?: string; poemRecitation?: boolean }) => Promise<VoiceStreamResult> },
   text: string,
-  options?: { conversation?: boolean },
+  options?: { conversation?: boolean; class1Lesson?: boolean; language?: string; poemRecitation?: boolean },
 ): Promise<VoiceStreamResult | null> {
   if (!provider.synthesizeStream) return null
   try {
@@ -64,7 +158,7 @@ function evaluateOpenResponse(transcript: string) {
 
 export const VoiceService = {
   async startSession(studentId: string, input: { lessonId?: string; activityId?: string; expectedPhrase?: string }) {
-    let sessionProvider: string | undefined
+    let authoritativeExpectedPhrase: string | undefined
     if (input.activityId) {
       // assertActivity is the authority for both ordinary published activities
       // and explicitly allowlisted KG pilot drafts. Re-fetching and requiring
@@ -72,22 +166,31 @@ export const VoiceService = {
       const access = await CurriculumAccessService.assertActivity(studentId, input.activityId)
       const expectedStatus = access.isKGPilot || access.isClass1Demo ? 'draft' : 'active'
       if (access.activity.status !== expectedStatus) throw ApiError.notFound('Activity not found')
-      // KG pilot transcriptions are routed to Groq Whisper below. Keep the
-      // persisted provider label consistent with the provider actually used.
-      if (access.isKGPilot || access.isClass1Demo) sessionProvider = 'groq-whisper'
+      // A Class 1 student may speak with an accent, but must not pick their
+      // own marking target through an API payload. Use the lesson's server
+      // target for controlled speech, keeping open conversations flexible.
+      if (access.isClass1Demo && access.activity.type !== 'CONVERSATION') {
+        authoritativeExpectedPhrase = access.activity.target?.trim()
+        if (!authoritativeExpectedPhrase) throw ApiError.badRequest('This activity is missing its approved speaking target')
+      }
     }
+    const expectedPhrase = authoritativeExpectedPhrase ?? input.expectedPhrase
     return VoiceSession.create({
       studentId,
       lessonId: input.lessonId,
       activityId: input.activityId,
       startedAt: new Date(),
-      provider: sessionProvider ?? getSpeechProvider().name,
+      provider: getSpeechProvider().name,
       status: 'active',
-      metadata: input.expectedPhrase ? { expectedPhrase: input.expectedPhrase } : undefined,
+      metadata: expectedPhrase ? { expectedPhrase } : undefined,
     })
   },
 
-  async submitTranscript(studentId: string, sessionId: string, input: { transcript: string; expected?: string }) {
+  async submitTranscript(studentId: string, sessionId: string, input: {
+    transcript: string
+    expected?: string
+    detectedLanguage?: 'en-IN' | 'hi-IN' | 'mr-IN'
+  }) {
     const session = await VoiceSession.findOne({ _id: sessionId, studentId })
     if (!session) throw ApiError.notFound('Voice session not found')
     if (session.status === 'completed') {
@@ -99,9 +202,13 @@ export const VoiceService = {
     }
     if (session.status !== 'active') throw ApiError.conflict('Voice session is no longer active')
 
-    const activity = session.activityId ? await Activity.findById(session.activityId).select('target prompt type aiEnabled metadata lessonId') : null
+    const activity = session.activityId ? await Activity.findById(session.activityId).select('target prompt type aiEnabled activityKey metadata lessonId') : null
     const sessionExpected = typeof session.metadata?.expectedPhrase === 'string' ? session.metadata.expectedPhrase : undefined
     const conversationMode = activity?.metadata?.conversationMode === 'OPEN' || activity?.type === 'CONVERSATION'
+    // The code comes from Sarvam's single existing STT request. A missing or
+    // ambiguous code leaves explicit spoken requests and conversation history
+    // in charge. Only canonical Class 1 demo tutoring uses this preference.
+    const class1Language = class1SupportFromSarvam(activity?.activityKey, input.detectedLanguage)
     const expected = sessionExpected || (typeof activity?.metadata?.expectedPhrase === 'string' ? activity.metadata.expectedPhrase : activity?.target)
     if (!conversationMode && !expected) throw ApiError.badRequest('This voice activity has no pronunciation target')
     let evaluation
@@ -154,16 +261,83 @@ export const VoiceService = {
           context: conversationMode ? 'speaking' : 'pronunciation',
           inputMode: 'MIC',
           currentTarget: expected || activity.prompt || undefined,
+          preferredExplanationLanguage: class1Language,
         })
       : undefined
 
     session.aiResponse = aiResponse
+    if (/^class1-l01-v(?:3|4)-/.test(activity?.activityKey || '')) {
+      session.metadata = { ...(session.metadata || {}), detectedLanguage: input.detectedLanguage || 'en-IN' }
+      session.markModified('metadata')
+    }
     session.xpAwarded = progressResult?.xpAwarded ?? 0
     session.conversationMode = conversationMode ? 'OPEN' : 'CONTROLLED'
     session.status = 'completed'
     await session.save()
 
     return session
+  },
+
+  async pendingTeacherAudio(studentId: string, activityId: string) {
+    if (!Types.ObjectId.isValid(activityId)) throw ApiError.badRequest('Invalid activity ID')
+    const access = await CurriculumAccessService.assertActivity(studentId, activityId)
+    if (!/^class1-l01-v(?:3|4)-/.test(access.activity.activityKey || '')) throw ApiError.forbidden()
+    const session = await VoiceSession.findOne({
+      studentId, activityId, status: 'completed',
+      'aiResponse.activityComplete': true,
+      'metadata.teacherAudioAcknowledgedAt': { $exists: false },
+    }).sort({ createdAt: -1 })
+    if (!session) return { pending: false }
+    const ai = session.aiResponse as { message?: string; followUpQuestion?: string; activityComplete?: boolean } | undefined
+    if (!ai?.activityComplete || !ai.message?.trim()) return { pending: false }
+    return {
+      pending: true, sessionId: session._id.toString(),
+      text: [ai.message, ai.followUpQuestion].filter(Boolean).join(' ').slice(0, 1800),
+      language: session.metadata?.detectedLanguage || 'en-IN',
+    }
+  },
+
+  async acknowledgeTeacherAudio(studentId: string, sessionId: string, feedbackReceipt?: unknown, visit?: Class1AudioVisit) {
+    if (!Types.ObjectId.isValid(sessionId)) throw ApiError.badRequest('Invalid session ID')
+    const session = await VoiceSession.findOne({ _id: sessionId, studentId })
+    if (!session || !session.activityId || !session.lessonId || session.status !== 'completed') {
+      throw ApiError.conflict('No completed First Day teacher turn to acknowledge')
+    }
+    const access = await CurriculumAccessService.assertActivity(studentId, session.activityId.toString())
+    if (!/^class1-l01-v(?:3|4)-/.test(access.activity.activityKey || '')) throw ApiError.forbidden()
+    const ai = session.aiResponse as {
+      activityComplete?: boolean
+      conversation?: { id?: string; masteryStatus?: string }
+    } | undefined
+    if (!ai?.activityComplete || !ai.conversation?.id || !session.transcript) {
+      throw ApiError.conflict('This scene still needs an English speaking attempt')
+    }
+    const text = teacherFeedbackText(session.aiResponse)
+    if (!visit || !verifyClass1FeedbackReceipt(feedbackReceipt, {
+      studentId, sessionId, activityId: String(session.activityId), text, ...visit,
+    })) throw ApiError.conflict('Listen to the complete teacher audio before continuing')
+    if (session.metadata?.teacherAudioAcknowledgedAt) return { complete: true, acknowledged: true }
+    const score = ai.conversation.masteryStatus === 'MASTERED' ? 90 : 75
+    await ProgressService.submitAttempt({
+      studentId,
+      activityId: session.activityId.toString(),
+      answer: session.transcript,
+      startedAt: session.startedAt,
+      hintsUsed: 0,
+      idempotencyKey: `conversation:${ai.conversation.id}`,
+      evaluation: { score, feedback: 'First Day learning attempt recorded after teacher audio ended.' },
+    })
+    await Conversation.updateOne(
+      { _id: ai.conversation.id, studentId, activityId: session.activityId, status: 'ACTIVE' },
+      { $set: { status: 'COMPLETED', completedAt: new Date() } },
+    )
+    await VoiceSession.updateOne(
+      { _id: session._id, studentId },
+      { $set: { 'metadata.teacherAudioAcknowledgedAt': new Date() } },
+    )
+    // This authenticated media-ended acknowledgement cannot prove that a
+    // child heard/understood sound. It's a delivery checkpoint, not a grade.
+    return { complete: true, acknowledged: true }
   },
 
   async cancelSession(studentId: string, sessionId: string) {
@@ -185,39 +359,123 @@ export const VoiceService = {
 
   async streamSynthesize(
     text: string,
-    options: { studentId?: string; purpose?: VoicePurpose; language?: string; activityId?: string } = {},
+    options: { studentId?: string; purpose?: VoicePurpose; language?: string; activityId?: string;
+      teacherSessionId?: string; schoolId?: string; authVisitHash?: string } = {},
   ) {
+    if (options.teacherSessionId) {
+      if (!options.studentId || !options.schoolId || !options.authVisitHash ||
+          !Types.ObjectId.isValid(options.teacherSessionId)) throw ApiError.badRequest('Invalid teacher audio scope')
+      const session = await VoiceSession.findOne({ _id: options.teacherSessionId, studentId: options.studentId })
+      const ai = session?.aiResponse as { activityComplete?: boolean; conversation?: { id?: string } } | undefined
+      if (!session?.activityId || session.status !== 'completed' || !ai?.activityComplete || !ai.conversation?.id || !session.transcript) {
+        throw ApiError.conflict('No completed First Day teacher turn to play')
+      }
+      const access = await CurriculumAccessService.assertActivity(options.studentId, String(session.activityId))
+      if (!/^class1-l01-v(?:3|4)-/.test(access.activity.activityKey || '') ||
+          (options.activityId && options.activityId !== String(session.activityId))) throw ApiError.forbidden()
+      // The saved turn, rather than client-provided text/language, is spoken.
+      const text = teacherFeedbackText(session.aiResponse)
+      const language = ['en-IN', 'hi-IN', 'mr-IN'].includes(String(session.metadata?.detectedLanguage))
+        ? String(session.metadata?.detectedLanguage) : 'en-IN'
+      const stream = await new AzureVoiceProvider().synthesizeStream(text, {
+        conversation: true, class1Lesson: true, language,
+        poemRecitation: access.activity.activityKey?.startsWith('class1-l01-v4-poem-') === true,
+      })
+      const reader = stream.body.getReader()
+      const chunks: Buffer[] = []
+      let bytes = 0
+      try {
+        while (true) {
+          const next = await reader.read()
+          if (next.done) break
+          bytes += next.value.byteLength
+          if (bytes > 8 * 1024 * 1024) { await reader.cancel(); throw ApiError.provider('Teacher audio is too large') }
+          chunks.push(Buffer.from(next.value))
+        }
+      } finally { reader.releaseLock() }
+      if (bytes < 256 || !/^audio\/(mpeg|wav|x-wav|ogg)$/.test(stream.contentType)) throw ApiError.provider('Teacher audio is unavailable')
+      const receipt = issueClass1FeedbackReceipt({ studentId: options.studentId,
+        schoolId: options.schoolId, authVisitHash: options.authVisitHash,
+        sessionId: options.teacherSessionId, activityId: String(session.activityId), text })
+      return { ...stream, body: streamFromBuffer(Buffer.concat(chunks)), metadata: {
+        ...stream.metadata, 'X-Class1-Feedback-Receipt': receipt,
+      } }
+    }
     const purpose = options.purpose ?? 'LESSON'
 
-    // Reviewed, reusable narration wins when this authenticated draft activity
-    // owns an approved S3 key. A missing object falls through to dynamic voice.
+    // Only serve a Class 1 static clip if its approved script is exactly the
+    // requested line. This prevents a child's dynamic teacher feedback being
+    // replaced with an unrelated activity clip.
+    let azureAlreadyTried = false
     if (purpose === 'LESSON' && options.studentId && options.activityId) {
       const access = await CurriculumAccessService.assertActivity(options.studentId, options.activityId)
       const key = typeof access.activity.content?.audioKey === 'string'
         ? access.activity.content.audioKey.trim()
         : ''
-      if (access.isClass1Demo && key.startsWith('class-01/level-01/v1/')) {
-        try {
-          const audio = await S3Service.getAudio(key)
-          if (audio?.length) {
-            return {
+      if (APPROVED_LESSON_AUDIO_KEY.test(key)) {
+        const class1Text = CLASS1_STATIC_LINES.get(key)
+        if (key.startsWith('class-01/level-01/')) {
+          if (class1Text && sameNarration(text, class1Text)) {
+            // The shared fallback may itself call Azure once; do not retry a
+            // failed charge through the generic Azure provider below.
+            azureAlreadyTried = true
+            const fixed = await getStaticAudio(key, class1Text)
+            if (fixed) return {
+              body: streamFromBuffer(fixed.audio),
+              contentType: fixed.contentType,
+              provider: fixed.provider,
+              metadata: { 'X-Talkora-Cache': fixed.provider === 'ai4bharat-s3' ? 'STATIC-HIT' : 'FIXED-FALLBACK' },
+            }
+          } else {
+            logger.warn('Class 1 narration text mismatch; ignoring static key', { activityId: options.activityId })
+          }
+        } else {
+          // Other grades retain their existing immutable S3 lesson lookup.
+          try {
+            const audio = await S3Service.getAudio(key)
+            if (audio?.length) return {
               body: streamFromBuffer(audio),
               contentType: key.endsWith('.mp3') ? 'audio/mpeg' : 'audio/wav',
               provider: 'ai4bharat-s3',
               metadata: { 'X-Talkora-Cache': 'STATIC-HIT' },
             }
+          } catch (error) {
+            logger.warn('Static lesson audio lookup failed; using dynamic voice fallback', { activityId: options.activityId, error })
           }
-          logger.warn('Reviewed Class 1 audio is missing; using dynamic voice fallback', { activityId: options.activityId })
-        } catch (error) {
-          logger.warn('Class 1 static audio lookup failed; using dynamic voice fallback', { activityId: options.activityId, error })
         }
       }
     }
 
-    // Azure Neerja is Talkora's primary Miss Julie voice everywhere.
-    // Groq is the fast vendor fallback and the existing Python/Priya pipeline
-    // remains the final safety net for cached/legacy lesson audio.
-    const azure = await tryStream(new AzureVoiceProvider(), text)
+    // Class 1 v3 fixed narration may never silently switch from an approved
+    // exact Priya/S3 script to unreviewed dynamic TTS.
+    if (purpose === 'LESSON' && options.studentId && options.activityId) {
+      const current = await CurriculumAccessService.assertActivity(options.studentId, options.activityId)
+      if (current.activity.activityKey?.startsWith('class1-l01-v3-')) {
+        throw ApiError.provider('CLASS1_FIRST_DAY_APPROVED_AUDIO_MISSING_OR_MISMATCHED')
+      }
+    }
+
+    // Azure is the sole voice for dynamic First Day teacher feedback, and
+    // for the v4 poem's *intro and every practice recitation* (LESSON purpose).
+    // A generic Groq/Python voice fallback could read a completely different
+    // cached word instead of the two poem lines on the child's screen.
+    const currentClass1Activity = options.studentId && options.activityId
+      ? (await CurriculumAccessService.assertActivity(options.studentId, options.activityId)).activity
+      : null
+    const isClass1Lesson = Boolean(currentClass1Activity?.activityKey?.startsWith('class1-l01-'))
+    const isFirstDayPoem = Boolean(currentClass1Activity?.activityKey?.startsWith('class1-l01-v4-poem-'))
+    const dynamicFirstDay = isClass1Lesson &&
+      (purpose === 'CONVERSATION' || purpose === 'FEEDBACK' || isFirstDayPoem)
+    if (dynamicFirstDay) {
+      const azure = await tryStream(new AzureVoiceProvider(), text, {
+        conversation: true, class1Lesson: true,
+        language: options.language, poemRecitation: isFirstDayPoem,
+      })
+      if (!azure) throw ApiError.provider('CLASS1_AZURE_DYNAMIC_VOICE_UNAVAILABLE')
+      return azure
+    }
+
+    const azure = azureAlreadyTried ? null : await tryStream(new AzureVoiceProvider(), text, { class1Lesson: isClass1Lesson })
     if (azure) return azure
 
     const groq = await tryStream(new GroqVoiceProvider(), text, {
@@ -244,12 +502,7 @@ export const VoiceService = {
     studentId?: string,
   ) {
     if (studentId) {
-      const access = await CurriculumAccessService.context(studentId)
-      if (access.isKGPilot || access.isClass1Demo) {
-        // Keep the pilot's Whisper path server-selected. The browser cannot
-        // choose a provider, and other grades retain their configured STT.
-        return new GroqSpeechProvider().transcribe(input)
-      }
+      await CurriculumAccessService.context(studentId)
     }
     return getSpeechProvider().transcribe(input)
   },

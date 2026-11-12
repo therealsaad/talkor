@@ -1,3 +1,4 @@
+import { createSilentUnlockWav } from './silent-audio-unlock'
 import {
   apiClient,
   getApiUrl,
@@ -161,7 +162,10 @@ export interface VoiceSessionData {
 
 interface TranscriptionResponse {
   transcript: string | null
+  languageCode?: 'en-IN' | 'hi-IN' | 'mr-IN'
 }
+
+export type VoiceTranscription = { transcript: string; languageCode?: 'en-IN' | 'hi-IN' | 'mr-IN' }
 
 /* =========================================================
    SYNTHESIS RESULT
@@ -193,6 +197,24 @@ export const voiceService = {
 
   lastActivityId: undefined as string | undefined,
 
+  lastLanguage: undefined as 'en-IN' | 'hi-IN' | 'mr-IN' | undefined,
+  lastTeacherSessionId: undefined as string | undefined,
+  cacheOwner: null as string | null,
+  teacherReceipts: new Map<string, { token: string; receipt: string }>(),
+
+  resetForSession(token: string | null = getStoredToken()): void {
+    if (this.cacheOwner === token) return
+    this.stop()
+    this.cacheOwner = token
+    this.audioCache.clear()
+    this.playedTurns.clear()
+    this.turnPlayback.clear()
+    this.teacherReceipts.clear()
+    this.lastText = ''
+    this.lastTurnId = ''
+    this.lastTeacherSessionId = undefined
+  },
+
   activePriority: 'PAGE_GUIDANCE' as VoicePriority,
 
   playedTurns: new Set<string>(),
@@ -222,10 +244,11 @@ export const voiceService = {
     const player =
       this.activeAudio
 
-    player.muted = true
-
-    player.src =
-      'data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA='
+    // A muted, header-only WAV can play without granting unmuted autoplay.
+    // Request a real but silent clip inside the user gesture instead.
+    const unlockUrl = URL.createObjectURL(createSilentUnlockWav())
+    player.muted = false
+    player.src = unlockUrl
 
     try {
       await player.play()
@@ -256,6 +279,10 @@ export const voiceService = {
         false
 
       return false
+    } finally {
+      player.pause()
+      if (player.src === unlockUrl) player.removeAttribute('src')
+      URL.revokeObjectURL(unlockUrl)
     }
   },
 
@@ -288,6 +315,7 @@ async submitTranscript(
   sessionId: string,
   transcript: string,
   inputMode: 'MIC' | 'TEXT' | 'OPTION',
+  detectedLanguage?: VoiceTranscription['languageCode'],
 ): Promise<VoiceSessionData> {
   return apiClient<VoiceSessionData>(
     `/voice/sessions/${sessionId}/transcript`,
@@ -298,10 +326,28 @@ async submitTranscript(
         JSON.stringify({
           transcript,
           inputMode,
+          ...(detectedLanguage ? { detectedLanguage } : {}),
         }),
     },
   )
 },
+
+  pendingTeacherAudio(activityId: string): Promise<{ pending: boolean; sessionId?: string; text?: string; language?: 'en-IN' | 'hi-IN' | 'mr-IN' }> {
+    return apiClient<{ pending: boolean; sessionId?: string; text?: string; language?: 'en-IN' | 'hi-IN' | 'mr-IN' }>(
+      `/voice/activities/${encodeURIComponent(activityId)}/pending-teacher-audio`,
+    )
+  },
+
+  async acknowledgeTeacherAudio(sessionId: string): Promise<{ complete: boolean; acknowledged: boolean }> {
+    const heard = this.teacherReceipts.get(sessionId)
+    if (!heard || heard.token !== getStoredToken()) throw new Error('Listen to the complete teacher audio before continuing.')
+    const result = await apiClient<{ complete: boolean; acknowledged: boolean }>(
+      `/voice/sessions/${encodeURIComponent(sessionId)}/teacher-audio-played`,
+      { method: 'POST', body: JSON.stringify({ feedbackReceipt: heard.receipt }) },
+    )
+    if (this.teacherReceipts.get(sessionId) === heard) this.teacherReceipts.delete(sessionId)
+    return result
+  },
 
   /* =======================================================
      CANCEL SESSION
@@ -328,6 +374,18 @@ async submitTranscript(
     _source?: string,
     mode: 'fast' | 'accurate' = 'fast',
   ): Promise<string> {
+    const result = await this.transcribeAudioDetailed(audio, durationMs, _source, mode)
+    return result.transcript
+  },
+
+  /** Same single Sarvam STT request; preserve explicit detected language only
+   * for the Class 1 tutor. Older transcript-only callers stay unchanged. */
+  async transcribeAudioDetailed(
+    audio: Blob,
+    durationMs?: number,
+    _source?: string,
+    mode: 'fast' | 'accurate' = 'fast',
+  ): Promise<VoiceTranscription> {
     if (!audio.size) throw new Error('The recording is empty. Please try again.')
     markLabSpeechActivity()
 
@@ -373,7 +431,13 @@ async submitTranscript(
     }
     const transcript = (payload.data?.transcript ?? payload.transcript)?.trim()
     if (!transcript) throw new Error('No speech was detected. Please try again.')
-    return transcript
+    const language = payload.data?.languageCode
+    return {
+      transcript,
+      languageCode: language === 'en-IN' || language === 'hi-IN' || language === 'mr-IN'
+        ? language
+        : undefined,
+    }
   },
 
   /* =======================================================
@@ -464,7 +528,10 @@ async submitTranscript(
     turnId?: string,
     priority: VoicePriority = 'LESSON',
     activityId?: string,
+    language?: 'en-IN' | 'hi-IN' | 'mr-IN',
+    teacherSessionId?: string,
   ): Promise<VoicePlaybackResult> {
+    this.resetForSession()
     if (
       typeof window ===
         'undefined' ||
@@ -480,7 +547,7 @@ async submitTranscript(
 
     this.lastTurnId = identity
 
-    if (this.playedTurns.has(identity)) {
+    if (!teacherSessionId && this.playedTurns.has(identity)) {
       if (process.env.NODE_ENV !== 'production') console.info(`[JulieVoice] turn=${identity} already played - skip`)
       return 'spoken'
     }
@@ -488,8 +555,8 @@ async submitTranscript(
     const existing = this.turnPlayback.get(identity)
     if (existing) return existing
 
-    const playback = this.speakTurn(cleanedText, identity, listener, false, priority, activityId)
-      .finally(() => this.turnPlayback.delete(identity))
+    const playback = this.speakTurn(cleanedText, identity, listener, false, priority, activityId, language, teacherSessionId)
+      .finally(() => { if (this.turnPlayback.get(identity) === playback) this.turnPlayback.delete(identity) })
     this.turnPlayback.set(identity, playback)
     return playback
   },
@@ -501,6 +568,8 @@ async submitTranscript(
     replay = false,
     priority: VoicePriority = 'LESSON',
     activityId?: string,
+    language?: 'en-IN' | 'hi-IN' | 'mr-IN',
+    teacherSessionId?: string,
   ): Promise<VoicePlaybackResult> {
 
     const hasActivePlayback = Boolean(this.activeAbort || (this.activeAudio && !this.activeAudio.paused))
@@ -518,6 +587,8 @@ async submitTranscript(
       priority
 
     this.lastActivityId = activityId
+    this.lastLanguage = language
+    this.lastTeacherSessionId = teacherSessionId
 
     this.stop()
     this.activePriority = priority
@@ -557,6 +628,8 @@ async submitTranscript(
           turnId,
           priority,
           activityId,
+          language,
+          teacherSessionId,
         )
 
       if (result === 'spoken' && !replay) this.playedTurns.add(turnId)
@@ -606,6 +679,7 @@ async submitTranscript(
   async replay(
     listener?: PlaybackListener,
   ): Promise<VoicePlaybackResult> {
+    this.resetForSession()
     if (this.lastText && this.lastTurnId && process.env.NODE_ENV !== 'production') {
       console.info(`[JulieVoice] turn=${this.lastTurnId} replay cached audio`)
     }
@@ -613,8 +687,8 @@ async submitTranscript(
     if (existing) return existing
     if (!this.lastText || !this.lastTurnId) return 'unavailable'
     const turnId = this.lastTurnId
-    const playback = this.speakTurn(this.lastText, turnId, listener, true, this.lastPriority, this.lastActivityId)
-      .finally(() => this.turnPlayback.delete(turnId))
+    const playback = this.speakTurn(this.lastText, turnId, listener, true, this.lastPriority, this.lastActivityId, this.lastLanguage, this.lastTeacherSessionId)
+      .finally(() => { if (this.turnPlayback.get(turnId) === playback) this.turnPlayback.delete(turnId) })
     this.turnPlayback.set(turnId, playback)
     return playback
   },
@@ -700,23 +774,26 @@ async submitTranscript(
     turnId = '',
     priority: VoicePriority = 'LESSON',
     activityId?: string,
+    language?: 'en-IN' | 'hi-IN' | 'mr-IN',
+    teacherSessionId?: string,
   ): Promise<VoicePlaybackResult> {
+    const playbackToken = getStoredToken()
+    let teacherReceipt = ''
     markLabSpeechActivity()
     const requestedAt =
       performance.now()
 
-    // Fixed lesson prompts repeat across students. Cache by exact text only for
-    // non-personalised lesson audio, never for live conversation/feedback.
-    const cacheKey = priority === 'LESSON'
-      ? activityId
-        ? `activity:${activityId}`
-        : `lesson:${detectVoiceLanguage(text)}:${text.trim().toLowerCase()}`
-      : turnId
+    // Do not reuse audio from a different sentence in the same activity.
+    // Open conversations/feedback can include child-specific information and
+    // must never enter this shared browser memory cache.
+    const cacheKey = !teacherSessionId && priority === 'LESSON'
+      ? `lesson:${activityId || 'generic'}:${detectVoiceLanguage(text)}:${text.trim().replace(/\s+/g, ' ')}`
+      : null
     try {
-      let audioBlob = this.audioCache.get(cacheKey)
+      let audioBlob = cacheKey ? this.audioCache.get(cacheKey) : undefined
       if (!audioBlob) {
         if (process.env.NODE_ENV !== 'production') console.info(`[JulieVoice] turn=${turnId} synthesis requested`)
-        const token = getStoredToken()
+        const token = playbackToken
         if (!token) throw new Error('Sign in to enable personalised Miss Julie voice.')
         const response = await fetch(
           getApiUrl(
@@ -741,8 +818,9 @@ async submitTranscript(
               JSON.stringify({
                 text,
                 purpose: priority,
-                language: detectVoiceLanguage(text),
+                language: language || detectVoiceLanguage(text),
                 ...(activityId ? { activityId } : {}),
+                ...(teacherSessionId ? { teacherSessionId } : {}),
               }),
 
             signal,
@@ -750,22 +828,27 @@ async submitTranscript(
         )
 
         if (!response.ok) throw await createVoiceError(response)
+        if (teacherSessionId) {
+          teacherReceipt = response.headers.get('X-Class1-Feedback-Receipt') || ''
+          if (!/^v1\.[0-9]+\.[a-f0-9]{32}\.[a-f0-9]{64}$/.test(teacherReceipt)) throw new Error('Teacher audio playback receipt is missing.')
+        }
 
         const contentType = response.headers.get('content-type') || ''
 
         if (!contentType.startsWith('audio/')) throw new Error('Miss Julie returned a non-audio response.')
 
       if (
-        requestId !==
-        this.playbackRequest
+        requestId !== this.playbackRequest || getStoredToken() !== playbackToken
       ) {
         return 'unavailable'
       }
 
         audioBlob = await response.blob()
 
+        if (getStoredToken() !== playbackToken || signal.aborted) return 'unavailable'
+
         if (!audioBlob.size) throw new Error('Miss Julie returned an empty audio response.')
-        this.audioCache.set(cacheKey, audioBlob)
+        if (cacheKey) this.audioCache.set(cacheKey, audioBlob)
         if (this.audioCache.size > 40) {
           const oldest = this.audioCache.keys().next().value
           if (oldest) this.audioCache.delete(oldest)
@@ -878,6 +961,15 @@ async submitTranscript(
                 )
               }
 
+              if (settled || requestId !== this.playbackRequest || signal.aborted || getStoredToken() !== playbackToken || audio.muted || audio.volume === 0) {
+                finish('unavailable')
+                return
+              }
+              if (teacherSessionId && playbackToken && teacherReceipt) {
+                this.teacherReceipts.set(teacherSessionId, { token: playbackToken, receipt: teacherReceipt })
+                if (this.teacherReceipts.size > 8) this.teacherReceipts.delete(this.teacherReceipts.keys().next().value!)
+              }
+
               if (
                 audio.src ===
                 objectUrl
@@ -928,7 +1020,7 @@ async submitTranscript(
           const startPlayback = () => {
             void audio.play()
               .then(() => {
-                if (requestId !== this.playbackRequest) {
+                if (requestId !== this.playbackRequest || getStoredToken() !== playbackToken) {
                   audio.pause()
                   finish('unavailable')
                   return

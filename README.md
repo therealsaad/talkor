@@ -1,10 +1,36 @@
-# Talkora — Developer Handbook & Team Onboarding
+# Talkora — for Developer  & Team Onboarding
 
 > **Talkora** is a voice-first English-learning platform for school students from **KG through Class 10**, guided by **Miss Julie**. This README explains how teammates install, run, test, contribute to, and safely deploy the existing project. **Read it before editing code or pushing to GitHub.**
 >
 > Repository: **https://github.com/therealsaad/talkor**
->
-> **Documentation accuracy:** This handbook was prepared from the project's supplied **October 2026 GitHub ZIP** (including the existing team/architecture docs), plus later developer-verified Class 1 Qwen, MongoDB and demo-patch results. The live `main` branch could not be fetched during preparation. **The files in your checkout and current `package.json` scripts are the ultimate source of truth.** Some Class 1 scripts/features mentioned below were added *after* that ZIP and must be confirmed in your branch. This file does not claim to be installed or pushed to GitHub yet.
+
+> **Class 1 Level 1 release preparation (8 November 2026):** The ten-scene Balbharati 1.1 *My First Day* v3 now has a guarded **read-only-to-transactional staging** path for an explicitly selected school database, plus hosted intro/S3 media inspection in the publisher. The old developer-only installer remains restricted to local `test`. The bundled 83 MB introductory video must be optimized and educator-reviewed before school delivery; the release preflight caps the hosted video at 28 MB. **This code does not claim that any production MongoDB has been staged or published, that teacher approvals have occurred, or that a live student's speech test passed.** Follow [the protected production release runbook](docs/class1-level1-production-release-2026-11-08.md).
+
+> **Staff curriculum explorer (November 3, 2026):** Teacher and school preview URLs now share reusable KG–Class 10 level-map, coverage, and Miss Julie teaching-flow components. Filters inspect all 110 existing addresses; Class 1 retains its full 44-chapter distribution. A separate Unit One exercise audit maps all 35 numbered tasks into the existing levels. Source gaps, draft ideas, and live lesson availability remain distinct. Local review notes do not publish curriculum or change student progress. See [implementation, coverage and verification limits](docs/staff-curriculum-explorer.md).
+
+
+> **Class 1 First Day v3 note (October 29, 2026):** The older Class 1 section below documents the v2 tiny-word pilot. A **draft-only** v3 replacement now maps ten original spoken scenes to Balbharati 1.1. It requires a new teacher-reviewed 90-second intro, a guarded development-only migration and supervised real audio acceptance. See [Class 1 live voice acceptance](docs/class1-first-day-voice-acceptance.md). Do **not** infer production readiness from passing CI, a generated Azure WAV/MP3 or a Python health check.
+
+> **Sprint 3.2 (November 1, 2026):** KG Level 1 now has a merged rule-first bilingual voice reliability patch. It stabilizes Sarvam explanation language per completed intro session, uses bounded Qwen only for unexpected speech, and emits an English practice segment after Hindi/Marathi feedback in one Azure synthesis call. **This is not a certified live school end-to-end release.** See [Sprint 3.2 checks and safety gates](docs/sprint3-2-kg-voice-reliability.md).
+
+> **Sprint 3.3 (November 1, 2026):** KG Level 1 feedback ACK is now gated on a signed, short-lived receipt issued only after the server generates feedback audio, and the client sends it after playback completes. This prevents accidental progression when a TTS request never succeeded; it **cannot prove physical hearing**. See [Sprint 3.3 release checks](docs/sprint3-3-kg-feedback-receipt.md). Merged code and CI are not substitutes for real-device audio acceptance before school use.
+
+> **Sprint 3.4 (November 1, 2026):** KG voice responses are frozen atomically before any audio receipt can be issued. A browser reload after a graded but unplayed attempt now resumes the latest saved current-activity feedback only after a new, fully completed introduction, without a duplicate STT/LLM turn. See [Sprint 3.4 verification and school rollout gates](docs/sprint3-4-kg-interrupted-turn-recovery.md). This does **not** certify live cloud voice or school-lab deployment.
+
+> **Sprint 3.5 (November 1, 2026):** Added a disposable Mongo/HTTP **PIN-to-homework KG regression** exercising mandatory intro enforcement, S3/Priya teaching boundaries, 8 server-graded turns, signed audio receipts, idempotent homework, cross-student privacy and logout intro-ticket revocation. Synthetic STT/TTS cannot certify microphone or speaker behavior: see the [Sprint 3.5 classroom acceptance checklist](docs/sprint3-5-kg-pin-to-homework-pilot.md). Do not mark school deployment ready without the supervised live trial.
+
+> **Sprint 3.6 (November 1, 2026):** Student PIN sign-in uses independent failure-only source-IP (80/15 min) and keyed PIN-candidate (5/15 min) buckets. Successful student sign-ins sharing a school IP no longer exhaust the old 20/15-minute quota. Teacher/school login throttles remain unchanged. [Sprint 3.6 security and rollout gates](docs/sprint3-6-school-lab-pin-rate-limits.md). **Process-local limiter storage is not multi-replica safe**: an atomic shared-store limit and real school lab load tests are required before scaled deployment.
+
+
+> **Project checkpoint — 1 November 2026:** Sprints 3.1–3.6 are merged into `main`, with stronger KG voice safety, recoverable feedback, synthetic PIN-to-homework coverage and shared-lab PIN protection. **Talkora is still in a controlled-pilot phase, not a school-wide production release.** Automated tests are not proof that a real child heard the teacher, that live Sarvam/Qwen/Azure stayed responsive, or that 10,000 students can be served. Read the [current status](#13-talkora-project-status--1-november-2026), [delivered engineering work](#14-what-has-shipped-in-the-codebase), [active work](#15-what-we-are-working-on-now), [roadmap](#16-product-roadmap-and-next-milestones), and [release gates](#17-definition-of-done-and-release-evidence).
+
+> **KG next-level student pilot (November 2, 2026):** Completing KG Level 1 now unlocks a protected [Level 2 E–J student lesson](docs/kg-level2-student-resume-2026-11-02.md) without a separate teacher action or homework wait. The five-digit PIN auto-resume flow loads authoritative Level 1/Level 2 progress from the backend, the map shows Level 2 status, and a secure student-only E–J voice engine saves progress across school-lab visits. The staff-only draft preview and its unverified syllabus publication flags remain unchanged; verify live audio, intro length, and academic approval before broad release.
+
+> **KG6–10 + Class 1 L2 authoring (November 3, 2026):** Five KG staff previews now contain 40 original voiced/picture-learning draft beats plus intro storyboards, measured outcomes and image briefs; Class 1 L2 contains 11 original, source-linked Balbharati 1.2–1.6 draft exercises. See [KG6–10/Class 1 Level 2 production gates](docs/kg6-10-class1-l2-content-production-gates-2026-11-03.md). This **does not unlock or publish** these levels; all activity approvals, mandatory actual media, supervised classroom acceptance and authenticated server-side progress gates remain pending.\n\n> **Real KG latency acceptance (November 3, 2026):** Every KG1–5 student attempt/voice response now reports actual server stage timings (speech-to-text, save, Azure) with only random submission IDs, durations and fixed source labels. [Supervised classroom process](docs/kg-real-latency-and-classroom-gate-2026-11-03.md) and `backend/scripts/report-kg-turn-latency.mjs` pair real backend log attempts/audio for p50/p95, redact identities and fail closed on missing samples or slow p95. **No live child session or physical microphone/speaker has been certified by these code changes.**\n\n> **KG map revision (November 2, 2026):** Five-digit PIN login still opens the next unfinished lesson immediately. Students can use **My garden** in any KG lesson after the mandatory intro to open `/student/kg/map`. A completed KG1 stone replays ABCD via the existing signed safe replay; completed KG2–5 stones open a new read-only picture + Miss Julie narration revision classroom, while unfinished/future levels stay locked. Revision uses authenticated server-owned fixed narration only; it never submits audio, awards XP/stars, resets a cursor, or bypasses a pilot prerequisite. Dedicated backend Mongo and frontend route contracts are required in CI. Live school audio remains an on-device release gate.\n\n> **Sprint 4.0 school-lab acceptance (November 2, 2026):** New PIN visits and logout now revoke KG Levels 1–5 introduction permissions without erasing saved progress. The [supervised real-device acceptance guide](docs/kg-live-school-session-acceptance-2026-11-02.md) and privacy-safe live backend checker cover actual server-resolved next level, optionally paid Sarvam/Azure gateway probes, plus an explicit teacher-run mic/video/speaker and next-day PIN sign-in gate. **The live-device gate remains unverified; passing CI is not school approval.**
+
+> **KG map revision (November 2, 2026):** Five-digit PIN login still opens the next unfinished lesson immediately. Students can use **My garden** in any KG lesson after the mandatory intro to open `/student/kg/map`. A completed KG1 stone replays ABCD via the existing signed safe replay; completed KG2–5 stones open a new read-only picture + Miss Julie narration revision classroom, while unfinished/future levels stay locked. Revision uses authenticated server-owned fixed narration only; it never submits audio, awards XP/stars, resets a cursor, or bypasses a pilot prerequisite. Dedicated backend Mongo and frontend route contracts are required in CI. Live school audio remains an on-device release gate.\n\n> **Sprint 4.0 school-lab acceptance (November 2, 2026):** New PIN visits and logout now revoke KG Levels 1–5 introduction permissions without erasing saved progress. The [supervised real-device acceptance guide](docs/kg-live-school-session-acceptance-2026-11-02.md) and privacy-safe live backend checker cover actual server-resolved next level, optionally paid Sarvam/Azure gateway probes, plus an explicit teacher-run mic/video/speaker and next-day PIN sign-in gate. **The live-device gate remains unverified; passing CI is not school approval.**
+
+> **Sequential progression KG–Class 10 (November 2, 2026):** New [server-authoritative next-level policy](docs/sequential-progression-kg-to-class10-2026-11-02.md) removes the KG Level 2 dead end by adding protected KG3 K–P / KG4 Q–V / KG5 W–Z student pilots, immediately opening the next available lesson on final voiced-feedback acknowledgement and after fresh PIN login. Classes 1–10 now strictly unlock published numbered levels in sequence and disallow deep-link bypasses. **KG6–10 and unfinished/unapproved class workspaces remain locked**, not falsely published; live school-device checks and curriculum approval remain gates for wider rollout.
 
 ## Table of contents
 
@@ -12,7 +38,7 @@
 2. [What lives where](#2-what-lives-where)
 3. [Installation and environment variables](#3-installation-and-environment-variables)
 4. [Run the Python speech service and the Qwen AI brain](#4-run-the-python-speech-service-and-the-qwen-ai-brain)
-5. [Voice architecture: AI4Bharat, S3, Azure and Groq](#5-voice-architecture-ai4bharat-s3-azure-and-groq)
+5. [Voice architecture: Priya, S3, Sarvam and Azure](#5-voice-architecture-priya-s3-sarvam-and-azure)
 6. [Generate once, reuse many times: lesson audio](#6-generate-once-reuse-many-times-lesson-audio)
 7. [Lessons, curriculum and safe publishing](#7-lessons-curriculum-and-safe-publishing)
 8. [Git and GitHub: the workflow every teammate uses](#8-git-and-github-the-workflow-every-teammate-uses)
@@ -20,8 +46,14 @@
 10. [Deployment and team safety rules](#10-deployment-and-team-safety-rules)
 11. [Troubleshooting](#11-troubleshooting)
 12. [Existing project documentation](#12-existing-project-documentation)
+13. [Talkora project status — 1 November 2026](#13-talkora-project-status--1-november-2026)
+14. [What has shipped in the codebase](#14-what-has-shipped-in-the-codebase)
+15. [What we are working on now](#15-what-we-are-working-on-now)
+16. [Product roadmap and next milestones](#16-product-roadmap-and-next-milestones)
+17. [Definition of done and release evidence](#17-definition-of-done-and-release-evidence)
 
 ---
+
 
 ## 1. Quick start: run the app
 
@@ -177,10 +209,11 @@ JWT_SECRET=<long-unique-secret-from-team-lead>
 # can override this ONLY if the latest routing patch is installed/tested.
 AI_PROVIDER=groq
 GROQ_API_KEY=<developer-key>
-SPEECH_PROVIDER=groq
-GROQ_STT_MODEL=whisper-large-v3
-GROQ_STT_ACCURATE_MODEL=whisper-large-v3
-GROQ_STT_LANGUAGE=
+SPEECH_PROVIDER=sarvam
+SARVAM_API_KEY=<developer-key>
+SARVAM_STT_MODEL=saaras:v4
+SARVAM_STT_LANGUAGE=unknown
+SARVAM_STT_MODE=codemix
 
 # Qwen pilot: separate FastAPI brain, NOT the local TTS service.
 TALKORA_CLASS1_QWEN_PILOT=true
@@ -191,7 +224,6 @@ AI_SERVICE_TIMEOUT_MS=90000
 AI_SERVICE_URL=http://127.0.0.1:8001
 VOICE_PROVIDER=azure
 CONVERSATION_VOICE_PROVIDER=azure
-KG_VOICE_PROVIDER=s3
 AZURE_SPEECH_KEY=<developer-key>
 AZURE_SPEECH_REGION=centralindia
 
@@ -295,7 +327,7 @@ The team previously saw **16 passing tests** in this Python workspace. Rerun aft
 
 ---
 
-## 5. Voice architecture: AI4Bharat, S3, Azure and Groq
+## 5. Voice architecture: Priya, S3, Sarvam and Azure
 
 **Never confuse LLM intelligence with text-to-speech (TTS).** They are different steps.
 
@@ -306,31 +338,34 @@ FIXED, HUMAN-REVIEWED LESSON LINE
   Student opens activity → authenticated Talkora backend → S3 clip → browser plays it
                           (same recording reused by many students)
 
-DYNAMIC CLASS 1 TEACHING TURN
-  Student microphone → Groq Whisper STT → authenticated Node activity context
+DYNAMIC CLASS 1+ TEACHING TURN
+  Student microphone → Sarvam Saaras v4 (English/Hindi/Marathi) → authenticated Node activity context
   → FastAPI :8002 → Ollama Qwen :11434 → structured Miss Julie coaching text
   → approved dynamic voice path (currently Azure) → browser playback
   → server-owned activity evaluation/progress (MongoDB)
 
 KG LEVEL 1
-  Scripted ABCD lesson → existing S3/static-audio system; NO Qwen required
+  Scripted ABCD lesson + positive, deterministic response after Sarvam STT
+  → reviewed Priya clips in private S3, reused between students/visits; NO Qwen required
+  Saying Hindi/Marathi meaning is praised, then English word is modeled;
+  it does not count as successful spoken English or unlock the next task.
 ```
 
 | Service | Responsibility | Rule |
 | --- | --- | --- |
 | **AI4Bharat TTS** | Generate **fixed/approved** lesson narration | Generate offline/in a controlled batch; human-review output |
 | **Amazon S3** | Store versioned narration recordings and compatible cache objects | Reuse clips; do not upload every time a student opens a level |
-| **Groq Whisper STT** | Transcribe child speech | A transcript alone is **not** proof of accurate pronunciation |
+| **Sarvam Saaras v4 STT** | Transcribe child speech in English, Hindi and Marathi | A transcript alone is **not** proof of accurate pronunciation |
 | **Qwen** | Guided Class 1 coaching and hints | Bounded to the approved lesson; never owns mastery or unlock rules |
-| **Azure voice** | Speak **new, dynamic** Miss Julie replies | Keep static and dynamic voice policies separate |
+| **Azure voice** | Speak **new, dynamic** Miss Julie replies | No persistent S3/Atlas cache for personal coaching; store only reviewed curriculum audio |
 | **MongoDB Atlas** | Curriculum, attempts, progress, voice cache metadata | Avoid destructive seeds; protect child data |
 
 The existing Node backend has `S3Service`, `AudioCacheService`, `kg-static-audio-cache` and authenticated voice/KG routes. **Reuse these services** rather than creating separate public S3 URLs or duplicating caching logic.
 
 ### Three important cache mechanisms
 
-1. **Immutable KG lesson clips:** versioned S3 objects such as `kg/level-1/miss-julie/v1/say-a.mp3`; the KG backend reads them with `S3Service.getAudio()` and a small bounded in-process cache. KG audio route: `/api/kg-alphabet/audio/{version}/{id}` for an authorized student (the same route is also mounted under `/api/v1`).
-2. **General TTS cache:** `AudioCacheService.cacheKey()` hashes normalized text + provider + voice + rate + pitch + format + version; the related MongoDB `AudioCache` record points to an S3 object. This is an existing mechanism, **not** proof that every lesson uses it today.
+1. **KG Level 1 audio:** fixed curriculum narration and approved pronunciation IDs use versioned private S3 objects such as `kg/level-1/miss-julie/v1/say-a.mp3`, read through `S3Service.getAudio()` and a bounded in-process cache. Feedback and transition IDs—including `bridge-a` through `bridge-d`, `model-a` through `model-d`, `great` and `silence`—use the existing live Python/Priya TTS service. The authenticated route is `/api/kg-alphabet/audio/{version}/{id}` (also mounted under `/api/v1`). Missing static clips report the exact S3 key; access and provider failures are distinct.
+2. **Legacy general TTS cache:** `AudioCacheService.cacheKey()` hashes normalized text + provider + voice + rate + pitch + format + version. Azure live teaching/feedback **bypasses this S3 cache** under the new policy.
 3. **Login prewarming:** the existing `SyllabusVoiceWarmupService` can send shared fixed lesson lines to `/v1/tts/prewarm`, while personalized guidance has a separate context. Only active/published lesson content is included by default. Do not confuse prewarming with creating final approved S3 files.
 
 **Access:** Treat the S3 bucket as private. The backend should authenticate a student and authorize the activity before reading/streaming its recording. If a reviewed frontend lesson requires a CDN base URL, use an explicitly authorized distribution mechanism; **never** expose AWS write credentials in `NEXT_PUBLIC_*`, and do not assume a private S3 object URL is playable in the browser.
@@ -392,7 +427,7 @@ Local generation writes under `backend/tmp/kg-level1-audio/` by default. The S3 
 kg/level-1/miss-julie/v1/<clip-id>.mp3
 ```
 
-**The lesson itself should load the existing authenticated backend audio URL**, rather than synthesize the same line again. When `KG_VOICE_PROVIDER=s3`, the KG controller retrieves the approved clip; if unavailable, inspect the current controller's fallback/error behavior and report missing recordings instead of silently claiming successful caching.
+**The lesson itself should load the existing authenticated backend audio URL.** The KG manifest classifies each line: static curriculum clips resolve from S3, while feedback and transitions use live Priya TTS. Static S3 misses are never replaced with generated teaching audio.
 
 ### B. Class 1 Level 1 — nine-line AI4Bharat manifest (integration in progress)
 
@@ -401,13 +436,13 @@ The post-ZIP Class 1 patch introduced these files **if present in your checkout*
 - `backend/src/scripts/class1-level1-ai4bharat-lines.json`
 - `backend/src/scripts/upload-class1-level1-audio.ts`
 
-The currently supplied manifest defines **nine** reviewable lines for activities such as `listen-at`, `build-at`, `listen-in`, `build-in`, encouragement and homework. The planned private S3 key shape is:
+The current manifest defines **14** lines for the eight little words, school activities, encouragement and homework. Its wording is a new immutable **v2** revision. The private S3 key shape is:
 
 ```text
-class-01/level-01/v1/<clip-id>.wav
+class-01/level-01/v2/<clip-id>.wav
 ```
 
-**No generated WAV files were included in the patch.** The voice must be generated with the approved AI4Bharat runtime and reviewed. Once files have been placed locally as `<clip-id>.wav` in one folder:
+The manifest is marked `requires-human-voice-review`; do not upload generated speech until a teacher has heard and approved every WAV. Once approved files have been placed locally as `<clip-id>.wav` in one folder:
 
 ```powershell
 cd path\to\talkor\backend
@@ -419,7 +454,7 @@ pnpm exec tsx src/scripts/upload-class1-level1-audio.ts "D:\talkora-approved-aud
 pnpm exec tsx src/scripts/upload-class1-level1-audio.ts "D:\talkora-approved-audio\class1" --upload
 ```
 
-The uploader checks WAV signatures, calls `S3Service.headAudio()` and skips keys that already exist; uploads use a no-overwrite condition. **This uploader does not make Class 1 student playback work by itself.** The existing staff preview's optional `NEXT_PUBLIC_TALKORA_CLASS1_AUDIO_BASE_URL` requires an authorized audio distribution path; the real authenticated student route still needs end-to-end verification. Never put private S3 bucket URLs into a public client environment variable.
+The uploader checks WAV signatures, calls `S3Service.headAudio()` and skips keys that already exist; uploads use a no-overwrite condition. The authenticated student voice route reads each activity's `content.audioKey` through `S3Service` and uses the existing dynamic voice fallback when a reviewed clip is unavailable. The staff preview's optional `NEXT_PUBLIC_TALKORA_CLASS1_AUDIO_BASE_URL` needs an authorized browser distribution path. Never put private S3 bucket URLs or write credentials into a public client environment variable.
 
 ### C. How to add or change a voice line safely
 
@@ -450,21 +485,23 @@ The uploader checks WAV signatures, calls `S3Service.headAudio()` and skips keys
 ### Class 1 Level 1
 
 - Canonical ID: `g01-l01`
-- Student learning goal: **two-letter English words** (`am`, `an`, `at`, `in`, `is`, `it`, `on`, `up`), with phonics and speaking practice
-- Intended sequence: **listen → recognize → build → speak → short use-in-context → guided Qwen coaching → homework**
-- Static, reviewed narration: AI4Bharat → S3 (planned/partly wired)
-- Dynamic guidance: authenticated Node provider → FastAPI `8002` → Qwen (provider bridge verified in development)
+- **Current canonical v3 goal:** ten original *My First Day* school-action scenes (school, skip, run, walk, grin, bell, jump, play, entering class and Grade One) with guided English speaking and Hindi/Marathi help. The earlier eight short words (`am`, `an`, `at`, `in`, `is`, `it`, `on`, `up`) belong to retained v2 history; they are **not** evidence of mastering the current Balbharati 1.1 level.
+- Login route: student PIN → server-selected next unfinished lesson. The first visit to the published `g01-l01` requires a reviewed 87–93-second story video before activity one, with no in-app skip. Optimize the 83 MB bundled source for school networks; see the release runbook.
+- Class 1 map art: `client/public/lessons/class-01/level-01/map.png`; place levels 1–9 on its circular pads and level 10 at the school entrance. Keep button coordinates in the same uncropped 1672×941 artwork canvas and hide the student `YOU` picture on this grade's map.
+- Miss Julie movement: use the alpha-channel WebM files from `client/public/miss-julie-animations/transparent/` across student maps and lesson stages (`idle`, `listening`, `thinking`, `speaking`, `encouraging`, `pointing`, `celebrating`); keep still-image fallbacks and respect reduced-motion settings.
+- Current v3 static narration: ten separately reviewed AI4Bharat/Priya WAVs use immutable S3 keys under `class-01/level-01/v3/`. The old v2 files are preserved, but cannot be presented as v3 approved media. A human must review the clips before upload and publication.
+- Dynamic guidance: authenticated Node provider → Python FastAPI brain `8002` → Ollama `11434` (`qwen3:4b-instruct`). The separate internal AI/TTS service on `8001` exposes `/v1/tts`; do not confuse it with the Qwen brain.
 
-**Observed during development (Oct 22, 2026):** the Class 1 pilot seed created a **draft** `CurriculumClass`, `Level`, `Lesson`, and **seven** MongoDB activities; a second seed inserted **zero duplicates**. The Node Qwen bridge passed, with a roughly 3.5-second response. At that time, the Class 1 student-authenticated lesson, voice/audio and MongoDB progress still required end-to-end validation. **Do not claim a draft is published or that a successful provider test proves student playback.** Inspect the latest Codex branch for subsequent fixes.
+**Observed during development (Oct 27, 2026):** the local Node→Python→Qwen bridge returned a successful response. This verifies provider connectivity only; it does not prove student login, mic capture, static audio, MongoDB progress or lesson completion. The local story MP4 is 90 seconds. Keep the Class 1 curriculum unpublished until the full authenticated student flow and media have been reviewed.
 
 Normal student access requires publication/access checks. Development-only access flags (if your branch implements them):
 
 ```dotenv
 TALKORA_CLASS1_STUDENT_DEMO=true
-TALKORA_CLASS1_DEMO_STUDENT_ID=<approved-24-character-test-student-object-id>
+TALKORA_CLASS1_DEMO_ALL_STUDENTS=true
 ```
 
-Use only a test account in development, with server-side identity checks; disable the demo after review. **Never bypass school/grade ownership or enable global draft access.**
+The current user-approved setup opens this specific Level 1 draft to **active Class 1 students only, in development**. Production stays published-only; the server verifies the authenticated student's grade and active status. The draft refresh preserves prior activity IDs and attempts as optional legacy history, then uses fresh IDs for the revised required lesson. Disable the demo after review. Do not broaden access to other grades or drafts.
 
 ### Syllabus and content review
 
@@ -613,6 +650,17 @@ chore: update reviewed curriculum manifest
 
 Run the tests relevant to your changes. **Do not claim the app is production-ready just because TypeScript passes.**
 
+### One command: run the same checks as CI before you push (from repository root)
+
+```powershell
+node tools/run-ci-locally.mjs --changed    # only the jobs your changes can affect
+node tools/run-ci-locally.mjs              # every job: structure, frontend, backend
+node tools/run-ci-locally.mjs --list       # show the steps without running anything
+node tools/run-ci-locally.mjs --job backend --only billi --keep-going
+```
+
+It reads `.github/workflows/talkora-110-level-checks.yml`, so it always runs exactly what CI runs and never drifts from it. It does not deploy, seed, migrate or call paid providers. Run `pnpm install --frozen-lockfile` in `client/` and `backend/` first (or pass `--install`). Steps that cannot run on your computer (for example no MongoDB on `127.0.0.1:27017`, no Chrome at the CI path, or no `bash`) are **skipped and listed**, never silently passed: CI still runs them, so a skipped list is not a green light. If it prints `CI would be RED`, fix that step before pushing.
+
 ### Shared structural checks (from repository root)
 
 ```powershell
@@ -749,3 +797,189 @@ Read these files **from your current branch** before making broad changes:
 ### The golden rule
 
 > **One Talkora app. One existing curriculum engine. One source of truth per lesson. Reviewed narration generated once and reused from S3. Qwen teaches within the activity, but the backend owns safety, progress and publication. Every change goes through a tested feature branch and reviewed PR.**
+
+---
+
+## 13. Talkora project status — 1 November 2026
+
+### Mission: help children *speak* English, not merely finish screens
+
+Talkora is being developed as a **school-first, syllabus-aligned, voice-first AI English tutor for KG through Class 10**. Miss Julie is the visible, friendly teacher: she introduces material, listens, coaches, encourages retries, and guides the child to the next small independent speaking success. The student should not need to know which LLM, speech provider, lesson controller or curriculum version is running.
+
+The objective is a reliable teaching session on ordinary shared school computers: **five-digit PIN → resume the correct class lesson → required introduction → immersive Miss Julie and smart board → explain/listen/speak/receive audible feedback → independent practice → saved progress → short spoken homework → safe logout**. Hindi and Marathi are scaffolding languages, not substitutes for demonstrated English speaking. Teachers should be able to see evidence of learning, not fictional XP or a simulated speaking animation.
+
+**Long-term scale target:** up to **10,000 students** across schools. This is a capacity/design target; it is **not a measured current concurrency guarantee**. The live school pilot, hosted AI deployment, traffic tests, abuse controls and incident procedures must prove what is safe to launch.
+
+### Snapshot: distinguish infrastructure, pilot, approval and production
+
+| Workstream | Status on 1 Nov 2026 | Evidence and limits |
+| --- | --- | --- |
+| Main React/Next.js + Express/MongoDB app | **Existing and actively developed** | Preserve existing client, backend, auth, APIs and student progress; do not rewrite the app |
+| 11 grades × 10 levels | **110 design workspaces/identifiers registered** | Placeholders/staff previews are not 110 authored, approved or published lessons |
+| KG Level 1 student journey | **Implemented with synthetic end-to-end backend regression** | PIN, intro gate, A–D speech activities, picture checks, signed audio receipts, homework and logout covered by Sprint 3.5; real classroom browser/audio acceptance pending |
+| KG Levels 2–5 and later KG | **Partial implementation and preview work** | Opt-in fixed narration/cache foundations exist; do not interpret a preview, media manifest or passing build as an approved live student lesson |
+| Class 1, Level 1, Balbharati 1.1 | **Scoped teaching pilot / draft release gates** | Teacher-reviewed intro media, curriculum authorization, actual browser voice/audio and safe publication still require verification |
+| Class 1 dual-textbook support | **Research, identities and approval controls developed** | English Balbharati and My English Book must remain separate tracks; chapter order, licensing and implementation gates remain |
+| Sarvam → Node → Qwen → Azure path | **Integrated in bounded pilots and test contracts** | Real provider latency, quality, failover and deployed Python compatibility must be measured rather than inferred from mocks |
+| Safety, idempotency, voice playback ACK, interrupted turns | **Improved in merged sprints** | Safeguards do not prove physical hearing or guarantee survival of every infrastructure failure |
+| Student five-digit PIN and shared-lab isolation | **Improved in Sprint 3.6** | In-memory rate limits are not multi-replica safe; shared atomic limiter/proxy/load validation remains |
+| Teacher/school reporting and parent communication | **Existing partial surfaces; further verification needed** | Server-confirmed completions only; parent updates are planned without requiring a separate parent dashboard |
+| School-wide production | **NOT CERTIFIED** | Human pedagogy review, consented supervised lab acceptance, observability, security/load gates and rollback not yet signed off |
+
+### Product principles that should survive every sprint
+
+- **One student lesson engine, one source of truth.** Grade-specific files may vary content and visuals, but only the authenticated backend awards mastery, progress, stars, XP and unlocks. Qwen provides advisory teaching language, never authoritative grading.
+- **Voice first, minimal clicks.** An initial browser permission/play/fullscreen gesture may be necessary; afterward the ideal lesson uses spoken prompts and responses instead of menus and repeated taps.
+- **Invisible adaptation.** Choose the next exercise and its help level from confirmed performance and the child's class/syllabus; resume automatically. Do not make KG children select technical difficulty levels.
+- **Age-appropriate, multilingual support.** For beginners, explain in English/Hindi/Marathi as appropriate, model the **English** target clearly, and require independent English evidence before marking a spoken word mastered.
+- **Privacy by design.** Short, nonpersistent shared-computer sessions, student-specific tickets/receipts, authenticated asset routes, minimal prompt context and no persistent storage of raw child voice by default.
+- **Reviewed media, reused economically.** Use approved fixed narration from Priya/AI4Bharat or an explicitly reviewed Azure/S3 workflow; generate once and reuse with immutable, versioned keys. Dynamic personal coaching should remain ephemeral.
+- **A beautiful interface cannot fake learning.** Cinematic Miss Julie states, animations and a smart board must reflect real audio and real lesson state. Staff previews remain clearly marked as demos.
+
+## 14. What has shipped in the codebase
+
+The entries below describe **merged engineering changes**, not the completion of production acceptance. GitHub PRs and the scoped documentation are the source of truth for exact behavior.
+
+### Major October foundations
+
+1. **Class 1 voice and teaching experiments:** The First Day pipeline gained scoped speech handling, bilingual Azure voice routing, correct-first-attempt progression, safety checks around intro media and a Class 1 voice-acceptance procedure. The pilot targets English Balbharati Unit 1.1; staging a draft is different from publishing it to real students. See [Class 1 voice acceptance](docs/class1-first-day-voice-acceptance.md).
+2. **Miss Julie teaching stage and smart board:** The UI gained an isolated teaching-stage component and preview protection. Simulated microphone, sample rewards and showcase states must never leak into real student XP or be presented as verified learning; see [PR #65](https://github.com/therealsaad/talkor/pull/65), [PR #69](https://github.com/therealsaad/talkor/pull/69) and [PR #71](https://github.com/therealsaad/talkor/pull/71).
+3. **Curriculum research and controls:** Dual-track Class 1 objectives, audit tooling and review gates were added, including work to flag **84 draft/unapproved objectives** and chapter-order risks. These are review artifacts, **not** approved student content: [PR #72](https://github.com/therealsaad/talkor/pull/72), [PR #76](https://github.com/therealsaad/talkor/pull/76), [PR #81](https://github.com/therealsaad/talkor/pull/81).
+4. **Fixed KG voice cache foundations:** Optional, approved static Azure/S3 narration infrastructure and offline tests were separated from unsafe controller changes. Digest/review gates protect paid prewarming. No student-personal audio or transcript should be persisted to S3: [PR #73](https://github.com/therealsaad/talkor/pull/73), [PR #75](https://github.com/therealsaad/talkor/pull/75), [PR #79](https://github.com/therealsaad/talkor/pull/79).
+5. **Node/Python teaching protocol:** A development-only synthetic teaching bridge, durable advisory checkpoints and a classroom-readiness probe were introduced in scoped PRs. They are useful *engineering evidence*, not a live AI student completion certificate: [PR #77](https://github.com/therealsaad/talkor/pull/77), [PR #80](https://github.com/therealsaad/talkor/pull/80), [PR #82](https://github.com/therealsaad/talkor/pull/82).
+
+### November reliability sprint sequence — merged into main
+
+| Sprint | Delivered change | What it does **not** claim |
+| --- | --- | --- |
+| **3.1** — [PR #83](https://github.com/therealsaad/talkor/pull/83) | Mongo-backed teaching checkpoint reliability and Node/Python wire-contract test coverage | Real pupil/browser/cloud E2E certification |
+| **3.2** — [PR #84](https://github.com/therealsaad/talkor/pull/84) | KG rule-first English/Hindi/Marathi feedback; recent Sarvam language evidence stabilizes explanation language; bounded Qwen handles unexpected transcriptions; one Azure request can deliver home-language explanation plus English target | Measured real STT/TTS latency, teacher approval or Qwen production rollout |
+| **3.3** — [PR #85](https://github.com/therealsaad/talkor/pull/85) | Short-lived signed feedback-audio receipt, bound to student, intro visit, submission and teacher sentence; browser queues ACK only after audio playback completion | Proof that physical speakers were audible or that the child listened |
+| **3.4** — [PR #86](https://github.com/therealsaad/talkor/pull/86) | Frozen first-writer-wins feedback, safe retry/lease recovery and current-activity unplayed-turn resume after a fresh required intro | Full recovery under every network or machine failure |
+| **3.5** — [PR #87](https://github.com/therealsaad/talkor/pull/87) | Disposable-Mongo HTTP regression from five-digit PIN through intro, eight graded activities, feedback ACK, 100 XP/three stars, homework, privacy and logout revocation | Genuine microphone, speaker, video, cloud or teacher-run validation |
+| **3.6** — [PR #88](https://github.com/therealsaad/talkor/pull/88) | Failure-only student PIN protections: 80 failed attempts/source IP/15 minutes and five failed attempts/keyed PIN candidate/15 minutes; legitimate successful users sharing a NAT no longer burn the former low login quota | Cross-process throttling, trusted proxy setup, WAF or a real many-device school load test |
+
+**State transitions matter:** A PIN login is not a lesson completion; a transcript is not pronunciation proof; a grade is not an audible teacher reply; a signed audio receipt is not guaranteed human hearing; a green CI build is not an approved class; and a registered level is not published curriculum.
+
+### Why the recent reliability work is important
+
+A classroom child should never have to repeat an answer merely because an app refreshed after the backend already graded it. In the new KG recovery path, the saved result and exact frozen Miss Julie feedback can be recovered for the same authenticated student and activity, after a new completed introduction. A duplicate retry must not call STT/Qwen again, issue another reward or play a conflicting teacher sentence.
+
+Likewise, if Azure or the approved fallback has not produced feedback audio, the server must not mint the signed token needed for playback ACK; an unsuccessful audio response is not permission to move forward. These behaviors have strong synthetic regression coverage but still require **actual browser, microphone, speaker and human-teacher acceptance**.
+
+See the implementation notes: [3.2 language and voice](docs/sprint3-2-kg-voice-reliability.md) · [3.3 audio receipt](docs/sprint3-3-kg-feedback-receipt.md) · [3.4 interrupted-turn recovery](docs/sprint3-4-kg-interrupted-turn-recovery.md) · [3.5 classroom journey](docs/sprint3-5-kg-pin-to-homework-pilot.md) · [3.6 rate limits](docs/sprint3-6-school-lab-pin-rate-limits.md).
+
+## 15. What we are working on now
+
+These are the **active product priorities and remaining release work**, not a claim that every item already has an assigned owner, merged PR, approved media or deployment date. Finish one safe student path before multiplying unfinished levels.
+
+### P0 — Make ONE genuine KG student session safe and uninterrupted
+
+**Success case:** an authorized student enters a five-digit PIN, sees only their own class and saved state, completes the mandatory KG Level 1 intro, hears Miss Julie through an actual speaker, answers with the real microphone, receives the correct feedback voice, completes the lesson without fake progress, hears a short homework instruction, and logs out without exposing anything to the next child.
+
+The release test must include:
+- Normal correct English attempts, mistakes, silence, unrelated questions and Hindi/Marathi help; an answer in the support language alone never earns English speaking mastery.
+- A real **Sarvam transcription → bounded Qwen for unexpected utterances (if enabled) → backend grading/feedback → Azure/Priya playable audio → browser playback ACK** journey, with per-service timings, browser/media events and review of spoken content.
+- Permission denial, muted or missing sound output, provider outages, transient 409/429/5xx, replay and tab reload **after grading but before playback**, duplicate speech submissions and eventual stable resume.
+- An account switch on the same computer: revoke the prior JWT and intro ticket; never reuse cached feedback, voice receipt, lesson identity, pending request or attempt across children.
+- Authenticated fixed S3/Priya narration with reviewed object identity, real Azure/Hindi/Marathi teacher voice quality, and the correct displayed Miss Julie speaking/listening/thinking states.
+- Written supervision, consent, teacher sign-off and anonymized evidence. **Do not log student names, PINs, recordings, speech transcripts or auth tokens** in a shared release report.
+
+The synthetic Sprint 3.5 [acceptance matrix](docs/sprint3-5-kg-pin-to-homework-pilot.md) is the starting checklist. All physical-school rows remain unverified until a real operator completes them.
+
+### P0 — Stabilize the live audio and AI service contract
+
+The long-term teaching brain is **Qwen**, not a temporary Groq chat fallback. Keep strict responsibilities:
+- **Sarvam Saaras** handles STT and optional language evidence. Language selection follows the child's speech, with short-term stability rather than a school-wide language toggle.
+- **Node** owns student/grade/track/activity authorization, correctness, independent practice evidence, attempt IDs, checkpoints, mastery, consent gates, XP and progress.
+- **Qwen via scoped FastAPI** produces bounded, child-safe, curriculum-grounded explanations/hints for unexpected or open-ended questions. Its structured response must be validated and may never bypass backend policy.
+- **Azure** speaks dynamic Miss Julie feedback, including native Hindi/Marathi scaffolding and a clear English target. **Priya/AI4Bharat + private S3** support reviewed reusable narration; exact per-level routing must be approved.
+- **Browser** reflects actual request/audio/microphone states; animation must not imply a completed teacher turn before playback.
+
+Verify the *deployed* Node↔Python schema/model/revision together with audio MIME, timeouts, fallbacks, cancellation, health checks, credentials and the real student's activity context. A FastAPI health response or generated MP3 alone cannot establish classroom readiness.
+
+### P0 — Approve the first real curriculum experiences
+
+Class 1 must not silently jump from the Balbharati 1.1 pilot to "all Unit One covered." Preserve textbook chapter order, objective-level coverage and independent speaking assessment. The Class 1 plan supports **English Balbharati** for English-medium schools and **My English Book** for other medium tracks, selected by an authorized school admin. They are distinct textbook identities; Hindi/Marathi help language does **not** choose the textbook.
+
+Human educators must approve edition, source rights, pedagogy, bilingual wording, activities, assessment and the chapter-to-level map before student publication. The 10-level experience does not require one chapter to equal one level. Keep canonical `g01-l01` compatible with current saved progress and introduce explicit book/edition/track/objective identity instead of reusing another textbook's identifiers. Do not publish research drafts or run unsafe migrations.
+
+### P1 — Safe school infrastructure and observability
+
+The school rollout requires a **shared atomic PIN limiter across Node replicas** (for example a correctly configured Redis-based store), verified reverse-proxy/IP trust, WAF/rate-limit alerting, measured school-NAT bursts and a staff-controlled recovery process. No amount of local process-memory testing proves multi-instance safety.
+
+Add end-to-end tracing with **sanitized** request/attempt IDs, stage-level p50/p95 speech latency, transcription error categories, playable TTS success and latency, ACK/recovery rates, repeat attempts, cloud cost and incident alerts. The product goal is a quick conversational response (approximately **2–3 seconds as an aspiration**, not an achieved SLA); profile real network, Qwen inference, STT, TTS and browser playback before committing to a threshold.
+
+Use staging databases and credentials; keep the frontend public HTTPS API separate from private service endpoints; require reviewed release flags, health checks, rollback and data retention/backup procedures. Scaling to 10,000 students will require measured concurrent sessions, not a student-count claim based on test fixtures.
+
+### P1 — Finish the user experience without breaking the working app
+
+Make the home page and student PIN entry production-quality, responsive and inviting; preserve separate teacher/admin flows. Use the approved friendly Miss Julie identity consistently through listening, explaining, thinking, encouraging and celebrating. Prioritize lightweight/optimized 3D art and animation states rather than large background downloads that hurt lab bandwidth.
+
+Keep the real lesson as an immersive landscape teaching stage: Miss Julie + smart board + class-specific visuals + minimal teacher-gated controls. The textbook is **source material**, not merely a PDF pasted on the board. Content, voice, visual prompts and independent checks should be designed around the approved learning objective. Support reduced motion and low-powered devices.
+
+### P1 — Reliable reporting and learning continuity
+
+Teacher and principal views should display **server-verified** completed activities, strengths, practice needs, missed work, homework and relevant class/school summaries. Parents should receive useful authorized progress summaries without forcing a separate parent-dashboard login. Reports must never treat a staff preview, simulated answer, Qwen suggestion or unacknowledged audio turn as evidence of student mastery.
+
+## 16. Product roadmap and next milestones
+
+This is a **sequenced roadmap, not a dated commitment**. Each phase has an acceptance gate; stages can overlap in development, but student publication cannot skip the gate.
+
+| Phase | Deliverable | Exit condition |
+| --- | --- | --- |
+| **0. Baseline — substantially implemented** | Existing Next.js/Node/Mongo app, role separation, 110-workspace scaffold, KG/Class 1 pilots, speech providers and review controls | Preserve backward compatibility; distinguish draft from published |
+| **1. KG Level 1 controlled release candidate — NEXT** | Real PIN → intro → Miss Julie → Sarvam → feedback voice → signed ACK → eight graded activities → homework → logout | Consented real-device teacher-supervised test, safe interruption handling, no cross-student leakage, audible response and measured timings |
+| **2. Class 1 Level 1 approved pilot** | Genuine Balbharati 1.1 First Day teaching, contextual bilingual Qwen help, board visuals, validated intro clip and independent practice | Textbook/rights approval, correct full voice chain, safe migration, educator sign-off |
+| **3. KG Levels 2–10 content completion** | Original class-appropriate objectives, reviewed narration and imagery, voice-first practice, progressive checks | Every published level has source/edition traceability, media verification, server-owned checks and a tested student session |
+| **4. Class 1 full syllabus** | Remaining English Balbharati Unit One chapters/objectives and validated broader content; optional distinct My English Book track | No chapter/objective skipped; teacher-approved track map and stable progress across versions |
+| **5. Classes 2–10 systematic rollout** | Grade-specific teaching plans and age-appropriate interaction, not 100 clones of KG | Every lesson approved, tested, age-calibrated and linked to correct grade, textbook, edition and level |
+| **6. Invisible personalization** | Resume-first sequencing, mastery-based support/review and difficulty adjustment without level-picking | Deterministic backend evidence and teacher visibility; fairness, explainability and regression tests |
+| **7. School operations at scale** | Robust multi-replica auth, cloud AI capacity, S3/versioned content, principal/teacher reporting, parent updates, deployment monitoring | Measured capacity/load, privacy/security review, incident response, school pilot and explicit go/no-go |
+| **8. AI quality improvements** | Better curriculum-grounded Qwen prompts/evaluation, optional carefully reviewed fine-tuning, multilingual support and quality benchmarking | Offline datasets and model comparisons pass child-safety, pedagogy, licensing and live evaluation gates before any model replacement |
+
+### Learning content philosophy
+
+- **KG:** hear → see → imitate → answer independently → receive encouraging feedback → review. The current KG Level 1 pilot includes A–D word speaking and picture checks, but other KG units need their own approved activities, audio, media and testing.
+- **Class 1:** Balbharati Unit 1.1 begins with context and enjoyable word/action teaching, not a dry PDF reader. Teach the correct chapter, practice in tiny speech turns, correct gently, and use a short final verbal homework prompt. Do not claim the rest of Unit One is already taught.
+- **Higher grades:** gradually move from words and short phrases to reading aloud, pronunciation practice, meaningful school-life conversations, comprehension, roleplay and confident spoken explanations, always connected to the school's assigned curriculum.
+- **Adaptation:** teachers can review progress; students see the next helpful challenge, not model scores or an elaborate level-picker. Correct independent English evidence is required to advance a speaking objective.
+- **Assessment:** accents, STT confidence and home-language meaning are not equivalent to correctness. Design age-appropriate assessment and a fair retry path before adding claims about pronunciation scoring.
+
+### What we deliberately are *not* shipping yet
+
+We are not claiming 110 finished lessons, an approved production curriculum, a trained/deployed fine-tuned Qwen model, a 10,000-concurrent-user benchmark, unrestricted AI conversation, a fully verified child pronunciation engine, or F11-style browser fullscreen that cannot be exited. A normal website cannot prevent OS/browser fullscreen escape; managed kiosk operation is a deployment decision. We will not collect real children's recordings to improve a model without explicit appropriate safeguards and approvals.
+
+## 17. Definition of done and release evidence
+
+### Engineering verification versus classroom acceptance
+
+Before merging code: scope the diff, preserve current APIs and student data, run relevant backend/frontend/Python tests, check production builds and CI, review authorization/idempotency/media contracts, confirm rollback, and ensure no private artifacts or generated binaries are committed. Disclose test skips and failures.
+
+Before enabling a real student lesson: prove published curriculum and educator approval, correct textbook/edition, content rights, validated intro/media assets, signed authentication and student-scoped requests, functioning real microphone/speaker feedback, independent grade evidence, progress recovery, teacher-observed completion, and safe next-student logout. Test on school-like hardware and networks.
+
+Before enabling multiple schools: additionally prove distributed PIN security, trusted proxy/WAF configuration, failure isolation, telemetry without sensitive child data, capacity/load at documented concurrent traffic, cost limits, backups, safe operations, support and an approved rollback/playbook.
+
+**No GO** when a teacher cannot hear Miss Julie, a child loses an already-scored turn, an unplayed/failed voice response unlocks progress, another learner can see previous state, cloud/model errors turn into fake mastery, or a draft objective is silently published.
+
+### Suggested release scorecard (record actual evidence, not guessed numbers)
+
+| Signal | Desired evidence |
+| --- | --- |
+| Real lesson completed | Anonymized PIN-to-homework walkthrough, named code revision, human reviewer sign-off |
+| Voice latency | STT, Qwen and TTS p50/p95 plus whole-turn measured on real network/devices |
+| Learning integrity | Correct/wrong/silence/support-language tests, ACK-before-advance and independent English evidence |
+| Reliability | Reload/retry/duplicate/outage results without duplicate rewards or contradictory feedback |
+| Privacy and auth | Cross-student device handoff, intro/JWT revocation, no secret or raw-voice leakage |
+| Curriculum | Exact textbook/edition/track/objective, human pedagogy and rights approval |
+| Scale | NAT-burst login, shared-store limits, measured simultaneous sessions and graceful degradation |
+| Accessibility/UX | Low-end classroom hardware, browser audio permissions, readable board, reduced-motion checks |
+
+### Ownership and contributor workflow
+
+The existing repo remains authoritative for **React/Next.js UI, Express APIs, curriculum authorization, MongoDB progress and school operations**. The separately managed AI repository/workspaces remain authoritative for **Python FastAPI/Qwen inference and voice/model experimentation**. Align both sides through versioned contracts and tests; do not copy private model weights into the main repository. Use isolated feature branches and reviewed PRs, protect school databases, and avoid breaking teammates' unpushed changes. See [Git workflow](#8-git-and-github-the-workflow-every-teammate-uses).
+
+**Next concrete decision:** advance from mock-tested KG Level 1 to a **consented, teacher-supervised, real student classroom acceptance session**; fix any audio/auth/recovery failures it exposes before treating the pilot as a release. In parallel, complete Class 1 educator-approved content and versioned Qwen integration on separate, guarded branches. Broader level generation and scaling follow that evidence, not the other way around.
+
+---
+

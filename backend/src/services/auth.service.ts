@@ -97,12 +97,21 @@ export const AuthService = {
 
   /** PIN-only sign-in. Old accounts need their PIN reset by school staff first. */
   async loginStudentByPin(pin: string) {
-    const student = await Student.findOne({ pinLookup: pinLookup(pin), status: 'active' }).select('+passwordHash')
+    let student = await Student.findOne({ pinLookup: pinLookup(pin), status: 'active' }).select('+passwordHash')
     if (!student || !(await comparePassword(pin, student.passwordHash))) throw ApiError.unauthorized('Invalid PIN')
     const school = await School.findOne({ _id: student.schoolId, status: 'active' }).select('name code')
     if (!school) throw ApiError.unauthorized('Invalid PIN')
-    student.lastLoginAt = new Date()
-    await student.save()
+    if (student.grade === 1) {
+      // A successful new PIN visit invalidates prior Class 1 intro eligibility
+      // and old JWTs atomically, even for two logins in the same second.
+      const renewed = await Student.findOneAndUpdate({ _id: student._id, schoolId: student.schoolId, status: 'active' },
+        { $inc: { authVersion: 1 }, $set: { lastLoginAt: new Date() } }, { new: true })
+      if (!renewed) throw ApiError.unauthorized('Invalid PIN')
+      student = renewed
+    } else {
+      student.lastLoginAt = new Date()
+      await student.save()
+    }
     return {
       token: signToken({ sub: student._id.toString(), role: 'STUDENT', schoolId: student.schoolId.toString(), sv: student.authVersion || 0 }),
       student: { id: student._id.toString(), fullName: student.fullName, rollNumber: student.rollNumber, grade: student.grade, className: student.className, avatar: student.avatar || `/talkora/characters/students/${(student.avatarType || 'BOY').toLowerCase()}/canonical.png`, avatarType: student.avatarType || 'BOY' },

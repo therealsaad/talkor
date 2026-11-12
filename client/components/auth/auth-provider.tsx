@@ -11,7 +11,7 @@ import {
   type ReactNode,
 } from 'react'
 
-import { AUTH_INVALIDATED_EVENT } from '@/lib/api-client'
+import { AUTH_INVALIDATED_EVENT, getStoredToken, getStoredUser } from '@/lib/api-client'
 import { KG_SESSION_END_EVENT } from '@/lib/kg-microphone'
 import {
   authService,
@@ -42,15 +42,20 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 export function homeForRole(role: AuthSession['role']): string {
-  return role === 'STUDENT' ? '/student/home' : '/school/dashboard'
+  return role === 'STUDENT' ? '/student/continue' : '/school/dashboard'
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
+  // The server cannot read local/sessionStorage. Both SSR and the first
+  // browser render must start from the same snapshot to hydrate safely.
+  // Rehydrate the cached login AFTER hydration, then verify it via /auth/me.
   const [status, setStatus] = useState<AuthStatus>('loading')
   const [session, setSession] = useState<AuthSession | null>(null)
-  const sessionRef = useRef<AuthSession | null>(null)
+  const sessionRef = useRef<AuthSession | null>(session)
+  const sessionRevision = useRef(0)
 
   const acceptSession = useCallback((next: AuthSession) => {
+    sessionRevision.current += 1
     sessionRef.current = next
     setSession(next)
     setStatus('authenticated')
@@ -58,22 +63,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const clearSession = useCallback(() => {
+    sessionRevision.current += 1
     sessionRef.current = null
     setSession(null)
     setStatus('unauthenticated')
   }, [])
 
   const restore = useCallback(async () => {
+    const revision = sessionRevision.current
+    const requestToken = getStoredToken()
     const hadSession = Boolean(sessionRef.current)
-    setStatus('loading')
+    if (!hadSession) setStatus('loading')
     try {
       const next = await authService.getMe()
+      if (sessionRevision.current !== revision) return null
+      if (next && getStoredToken() !== requestToken) return null
       if (!next) {
         clearSession()
         return null
       }
       return acceptSession(next)
     } catch {
+      if (sessionRevision.current !== revision || getStoredToken() !== requestToken) return null
       // A transient backend failure is not proof that the stored JWT is invalid.
       // Keep an already verified session usable; public routes remain available
       // when bootstrap has no session to preserve.
@@ -87,6 +98,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [acceptSession, clearSession])
 
   useEffect(() => {
+    // Preserve the existing cached-session behavior (including resilience
+    // to temporary backend outages), but never read browser storage during
+    // React's initial server/client render.
+    const cached = getStoredToken() ? getStoredUser<AuthSession>() : null
+    if (cached) {
+      sessionRef.current = cached
+      setSession(cached)
+      setStatus('authenticated')
+    }
     void restore()
 
     const invalidate = () => clearSession()
@@ -104,20 +124,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (session?.role !== 'STUDENT') return
+    const sessionToken = session.token
     const MAX_IDLE_MS = 20 * 60 * 1000
     let lastActivity = Date.now()
     const activity = () => { lastActivity = Date.now() }
     const events = ['pointerdown', 'keydown', 'touchstart', 'talkora:student-activity'] as const
     events.forEach(event => window.addEventListener(event, activity, { passive: true }))
     const interval = window.setInterval(() => {
+      if (getStoredToken() !== sessionToken) return
       if (Date.now() - lastActivity >= MAX_IDLE_MS) {
         window.dispatchEvent(new Event(KG_SESSION_END_EVENT))
         voiceService.stop()
-        void authService.logout().finally(() => { clearSession(); window.location.replace('/login/student') })
+        void authService.logout().finally(() => {
+          if (sessionRef.current?.token !== sessionToken || getStoredToken()) return
+          clearSession()
+          window.location.replace('/login/student')
+        })
       }
     }, 60_000)
     return () => { window.clearInterval(interval); events.forEach(event => window.removeEventListener(event, activity)) }
-  }, [session?.role, clearSession])
+  }, [session?.role, session?.token, clearSession])
+
+  useEffect(() => { voiceService.resetForSession(session?.token ?? null) }, [session?.token])
 
   const value = useMemo<AuthContextValue>(() => ({
     status,
@@ -138,10 +166,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return restore()
     },
     logout: async () => {
+      const revision = sessionRevision.current
       window.dispatchEvent(new Event(KG_SESSION_END_EVENT))
       voiceService.stop()
       await authService.logout()
-      clearSession()
+      if (sessionRevision.current === revision) clearSession()
     },
   }), [acceptSession, clearSession, restore, session, status])
 

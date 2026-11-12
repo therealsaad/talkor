@@ -72,7 +72,7 @@ export class PythonVoiceProvider implements VoiceProvider {
         provider: this.name,
         reason: error instanceof Error ? error.name : 'request_failed',
       })
-      throw ApiError.provider('TTS_SERVICE_UNAVAILABLE')
+      throw ApiError.provider('TTS_SERVICE_UNAVAILABLE', { retryable: true })
     }
 
     if (!response.ok) {
@@ -82,10 +82,10 @@ export class PythonVoiceProvider implements VoiceProvider {
         status: response.status,
         detail: detail.slice(0, 500),
       })
+      const retryable = [408, 425, 429, 500, 502, 503, 504].includes(response.status)
       throw ApiError.provider(
-        response.status === 503
-          ? 'TTS_GENERATION_FAILED'
-          : 'TTS_SERVICE_UNAVAILABLE',
+        response.status === 503 ? 'TTS_GENERATION_FAILED' : 'TTS_SERVICE_UNAVAILABLE',
+        { retryable, upstreamStatus: response.status },
       )
     }
 
@@ -105,7 +105,7 @@ export class PythonVoiceProvider implements VoiceProvider {
     }
 
     const body = response.body
-    if (!body) throw ApiError.provider('TTS_GENERATION_FAILED')
+    if (!body) throw ApiError.provider('TTS_GENERATION_FAILED', { retryable: true })
 
     console.info('VOICE_CACHE_HIT', {
       hit: metadata['x-talkora-cache'] === 'HIT',

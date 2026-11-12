@@ -1,22 +1,32 @@
 /** Dependency-free structural verification, not a production acceptance test. */
 const fs=require('node:fs');const path=require('node:path');const assert=require('node:assert/strict');
+const { verifyStaffPreviewBoundaries } = require('./staff-preview-boundaries.cjs');
 const root=path.resolve(__dirname,'..');
 const read=(p)=>fs.readFileSync(path.join(root,p),'utf8');
 const catalog=JSON.parse(read('backend/src/curriculum/level-design-manifest.json'));
 assert.equal(catalog.length,110);assert.equal(new Set(catalog.map(x=>x.id)).size,110);
 const registry=read('client/features/lessons/registry.ts');
 const roadmap=read('backend/src/curriculum/roadmap.ts');
-const studio=read('client/app/school/curriculum-studio/[grade]/[level]/page.tsx');
 const controller=read('backend/src/controllers/level-map.controller.ts');
 const routes=read('backend/src/routes/level-map.routes.ts');
 const schoolLayout=read('client/app/school/layout.tsx');
 assert.match(routes,/authenticate.*requireRole\('SCHOOL_ADMIN', 'TEACHER'\)/);
 assert.match(routes,/LevelMapController\.studio/);
 assert.match(controller,/checkKGTeacher\(req, grade\)/);
-assert.match(schoolLayout,/isEducator/);assert.match(studio,/gradeLevelMapService\.level\(grade,level\)/);assert.match(studio,/gradeLevelMapService\.studio\(grade,level\)/);
+assert.match(schoolLayout,/isEducator/);
+verifyStaffPreviewBoundaries(read);
 assert.match(roadmap,/GRADE_ROADMAP\.length !== 110/);
 const configRegex=/export const config = (\{[\s\S]*\}) as const satisfies LevelDesignConfig\s*$/;
 const uniqueThemes=new Set(); const uniquePalettes=new Set(); let count=0;
+// Reviewed student pilots, authored staff drafts, and reserved empty
+// workspaces have distinct editorial boundaries; none may self-publish.
+const liveKG='g00-l01';
+const class1Pilot='g01-l01';
+const level2Preview='g00-l02';
+const level3Preview='g00-l03';
+const level4Preview='g00-l04';
+const class1Level2Draft='g01-l02';
+const futureKG = new Set(['g00-l06','g00-l07','g00-l08','g00-l09','g00-l10']);
 for(let grade=0;grade<=10;grade++){
  const slug=grade===0?'kg':`class-${String(grade).padStart(2,'0')}`;
  for(let level=1;level<=10;level++){
@@ -26,29 +36,96 @@ for(let grade=0;grade<=10;grade++){
   const result=configRegex.exec(read(`${dir}/config.ts`));assert.ok(result,`Could not parse ${id}`);
   const config=JSON.parse(result[1]);assert.equal(config.id,id);assert.equal(config.grade,grade);assert.equal(config.level,level);
   assert.ok(config.learningPolicy.autoResume);assert.ok(config.learningPolicy.voiceFirst);assert.ok(config.learningPolicy.homeworkRequired);
-  assert.ok(config.learningPolicy.invisibleAdaptive);assert.equal(config.staffOnlyPreview,true);
-  assert.equal(config.studentPlayable,false,'Draft preview cannot publish a level');
-  assert.equal(config.learningPolicy.introRequired,grade===0&&level===1);
+  assert.ok(config.learningPolicy.invisibleAdaptive);
+  if(id===liveKG){
+   assert.equal(config.editorialStatus,'existing-runtime');
+   assert.equal(config.staffOnlyPreview,false,'The existing KG pilot is student playable');
+   assert.equal(config.studentPlayable,true,'The existing KG pilot must stay playable');
+  }else{
+   assert.equal(config.staffOnlyPreview,true,`${id} must remain staff-only`);
+   assert.equal(config.studentPlayable,false,`${id} cannot be published by a workspace edit`);
+  }
+  if(id===class1Pilot||id===class1Level2Draft||id===level2Preview||id===level3Preview||id===level4Preview||futureKG.has(id)){
+   // These previews may require an intro, but it cannot be skippable.
+   assert.equal(config.learningPolicy.introRequired,config.learningPolicy.introMustComplete);
+   if(id===class1Level2Draft||id===level2Preview||id===level3Preview||id===level4Preview||futureKG.has(id)) assert.equal(config.learningPolicy.introRequired,true);
+  }else{
+   assert.equal(config.learningPolicy.introRequired,id===liveKG);
+  }
   assert.ok(config.experience.minTouchTargetPx>=44);
   assert.equal(config.experience.useReducedMotionFallback,true);
   const activities=read(`${dir}/activities.ts`);
-  assert.match(activities,/export const activities: LevelActivity\[\] = \[\]/,'New activities require independent approval');
+  if(id===liveKG){
+   const activityIds=[...activities.matchAll(/\{\s*id:\s*'([^']+)'/g)].map(match=>match[1]);
+   const approvedCount=[...activities.matchAll(/\bapproved:\s*true\b/g)].length;
+   assert.equal(new Set(activityIds).size,activityIds.length,`${id}: duplicate activity IDs`);
+   assert.equal(activityIds.length,approvedCount,'The KG pilot has eight teacher-reviewed activities');
+   assert.equal(activityIds.length,8,'The existing KG pilot has eight reviewed activities');
+  }else if(id===class1Pilot){
+   // This is a truthful staff-only map of the ten backend First Day scenes.
+   // Publication happens transactionally in Mongo, not via local approved:true.
+   const ids=[...activities.matchAll(/\{\s*id:\s*'(class1-l01-v3-[^']+)'/g)].map(match=>match[1]);
+   assert.equal(ids.length,10,'Class 1 First Day has ten speaking scenes');
+   assert.equal(new Set(ids).size,10,'Class 1 First Day scene IDs must be unique');
+   assert.equal((activities.match(/\bapproved:\s*false\b/g)||[]).length,10,
+     'Staff preview scenes must not claim teacher signoff');
+   assert.doesNotMatch(activities,/\bapproved:\s*true\b/,
+     'Source metadata cannot publish a Class 1 student lesson');
+  }else if(id===level2Preview){
+   // E–J is an interactive staff preview, not six published student activities.
+   assert.match(activities,/\['E', 'F', 'G', 'H', 'I', 'J'\]/);
+   assert.match(activities,/approved:\s*false/);
+   assert.doesNotMatch(activities,/approved:\s*true/);
+  }else if(futureKG.has(id)){
+   // Authoring is not publishing: KG6–10 now have substantial staff-only
+   // scripts and no student access. Strictly verify the shared authoring
+   // source and the per-level adapter; never accept approved:true here.
+   assert.ok(activities.includes(`kgFutureDraftActivities(${level})`),`${id}: missing authored KG draft`);
+   assert.ok(activities.includes(`kgFutureDraftSuggestions(${level})`),`${id}: missing artwork/teacher guidance`);
+   assert.doesNotMatch(activities,/approved:\s*true/,`${id}: unexpected approved draft`);
+   const source=read('client/features/lessons/grades/kg/future-level-drafts.ts');
+   assert.match(source,/approved:\s*false/);
+   assert.doesNotMatch(source,/approved:\s*true/);
+   assert.equal(config.editorialStatus,'draft');
+   assert.equal(config.syllabus.boardReviewRequired,true);
+   assert.equal(config.syllabus.syllabusVerified,false);
+  }else if(grade===1 && level>=2){
+   // Unapproved, original authoring drafts are allowed for Class 1 only.
+   assert.ok(activities.includes(`class1DraftActivities(${level})`),`${id}: missing chapter drafts`);
+   assert.doesNotMatch(activities,/approved:\s*true/,`${id}: unreviewed activity may not self-approve`);
+   const chapterDraft=read('client/features/lessons/grades/class-01/balbharati-curriculum.ts');
+   assert.match(chapterDraft,/approved: false/);
+   assert.doesNotMatch(chapterDraft,/approved: true/);
+   assert.equal(config.editorialStatus,'draft');
+   assert.equal(config.syllabus.boardReviewRequired,true);
+   assert.equal(config.syllabus.syllabusVerified,false);
+  }else{
+   assert.match(activities,/export const activities: LevelActivity\[\] = \[\]/,`${id}: unreviewed draft activities`);
+  }
   assert.match(registry,new RegExp(`'${id}': \\(\\) => import\\('\\./grades/${slug}/level-${String(level).padStart(2,'0')}'\\)`));
-  assert.ok(fs.existsSync(path.join(root,`client/public/lessons/${slug}/level-${String(level).padStart(2,'0')}/.gitkeep`)));
+  // Class 1–10 reserve one asset directory per level. KG stores real assets
+  // in its shared garden folder rather than 10 empty placeholder folders.
+  if(grade>0) assert.ok(fs.existsSync(path.join(root,`client/public/lessons/${slug}/level-${String(level).padStart(2,'0')}/.gitkeep`)));
   const matching=catalog.find(x=>x.id===id);assert.ok(matching);
-  assert.equal(matching.title,config.title);assert.equal(matching.designTheme,config.experience.themeId);
+  const expectedRoadmapTitle = config.roadmapTitle ?? config.title;
+assert.equal(matching.title, expectedRoadmapTitle);
+assert.equal(matching.designTheme, config.experience.themeId);
   assert.equal(matching.readyForPublication,false);
   uniqueThemes.add(config.experience.themeId);uniquePalettes.add(config.experience.palette.background);
   count++;
  }
 }
 assert.equal(count,110);assert.equal(uniqueThemes.size,110);assert.equal(uniquePalettes.size,110);
-assert.match(read('client/app/student/kg/page.tsx'),/const INTRO_VIDEO = '\/kg\/videos\/fullkg.mp4'/);
-assert.match(read('client/app/student/kg/page.tsx'),/kgAlphabetService\.introSeen\(\)/);
+assert.match(read('client/app/student/kg/page.tsx'),/RegisteredLevelExperience/);
+assert.match(read('client/app/student/kg/page.tsx'),/grade=\{0\}/);
+assert.match(read('client/app/student/kg/page.tsx'),/level=\{1\}/);
+const kgExperience=read('client/features/lessons/grades/kg/level-01/LevelExperience.tsx');
+assert.match(kgExperience,/\/lessons\/kg\/videos\/fullkg\.mp4/);
+assert.match(kgExperience,/kgAlphabetService\.introSeen\(\)/);
 assert.match(read('backend/src/controllers/kg-alphabet.controller.ts'),/INTRO_MINIMUM_MS = 59_000/);
-assert.ok(fs.existsSync(path.join(root,'client/public/kg/videos/fullkg.mp4')));
+assert.ok(fs.existsSync(path.join(root,'client/public/lessons/kg/videos/fullkg.mp4')));
 for (const pose of ['idle','speaking','listening','thinking','pointing','encouraging','celebrating']) assert.ok(fs.existsSync(path.join(root,`client/public/miss-julie-animations/${pose}.webm`)));
-assert.ok(fs.existsSync(path.join(root,'client/public/kg/audio/garden-ambience-v1.mp3')));
+assert.ok(fs.existsSync(path.join(root,'client/public/lessons/kg/audio/garden-ambience-v1.mp3')));
 assert.match(read('client/app/student/lesson/[id]/page.tsx'),/ActivityEngine/);
 assert.match(read('backend/src/models/Level.ts'),/levelSchema\.index\(\{ classId: 1, number: 1 \}, \{ unique: true \}/);
-console.log(`OK: ${count}/110 workspaces; 110 distinct palettes/themes; 110 lazy registry entries; draft protection, KG intro, media and existing player confirmed`);
+console.log(`OK: ${count}/110 workspaces; 110 distinct palettes/themes; 110 lazy registry entries; KG runtime, Class 1 draft pilot, all other drafts, media and existing player confirmed`);

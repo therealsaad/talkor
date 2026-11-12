@@ -9,10 +9,12 @@ export const config = {
   "title": "Simple Questions",
   "editorialStatus": "draft",
   "studentPlayable": false,
-  "description": "Simple Questions — a distinct music meadow adventure for Class 1 learners.",
+  "description": "Original voice-first Balbharati activities for chapters 3.6–3.11, with English practice and optional Hindi/Marathi support. Educator sign-off pending.",
   "syllabus": {
     "objectives": [
-      "Recognize, hear, and speak language connected to simple questions."
+      "Name daily-life items and talk about helping others.",
+      "Explain one step in Hindi or Marathi when requested; always return to short English speaking.",
+      "Use modeled feedback for repeated difficulty and extend only when the student is ready."
     ],
     "skills": [
       "listening",
@@ -20,8 +22,8 @@ export const config = {
       "reading"
     ],
     "boardReviewRequired": true,
-    "sourceBook": null,
-    "sourcePages": [],
+    "sourceBook": "English Balbharati Standard One (2025; 2026 reprint)",
+    "sourcePages": [48, 51, 52, 55, 57, 59],
     "syllabusVerified": false
   },
   "experience": {

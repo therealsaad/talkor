@@ -1,0 +1,335 @@
+.school-classes {
+  --classes-ink: #17213b;
+  --classes-muted: #69728a;
+  --classes-line: #e5e8ef;
+  --classes-accent: #6654c7;
+  --classes-accent-dark: #4f3fa8;
+  display: grid;
+  gap: clamp(18px, 2.5vw, 28px);
+  min-width: 0;
+  animation: school-classes-enter 360ms ease-out both;
+}
+
+.school-classes__intro {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: clamp(18px, 2.5vw, 26px);
+  border: 1px solid #e8e9f2;
+  border-radius: 18px;
+  background: linear-gradient(110deg, #fff 0%, #fbfaff 100%);
+  box-shadow: 0 5px 16px rgba(21, 33, 65, .035);
+}
+
+.school-classes__intro-icon,
+.school-class-card__icon,
+.school-classes__message-icon {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  color: var(--classes-accent);
+  background: #f0edff;
+}
+
+.school-classes__intro-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 15px;
+}
+
+.school-classes__eyebrow {
+  color: #77718d;
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: .12em;
+}
+
+.school-classes__intro h2 {
+  margin: 3px 0 2px;
+  color: var(--classes-ink);
+  font-size: clamp(18px, 2vw, 22px);
+  letter-spacing: -.025em;
+}
+
+.school-classes__intro p {
+  color: var(--classes-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.school-classes__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 290px), 1fr));
+  gap: clamp(14px, 1.8vw, 20px);
+  min-width: 0;
+}
+
+.school-class-card {
+  display: flex;
+  min-width: 0;
+  min-height: 244px;
+  flex-direction: column;
+  padding: clamp(18px, 2vw, 24px);
+  border: 1px solid var(--classes-line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(21, 33, 65, .045);
+  animation: school-class-enter 380ms ease-out both;
+  transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+
+.school-class-card:nth-child(2) { animation-delay: 45ms; }
+.school-class-card:nth-child(3) { animation-delay: 90ms; }
+.school-class-card:nth-child(4) { animation-delay: 135ms; }
+.school-class-card:nth-child(5) { animation-delay: 180ms; }
+.school-class-card:nth-child(6) { animation-delay: 225ms; }
+
+.school-class-card:hover {
+  transform: translateY(-3px);
+  border-color: #d3ccef;
+  box-shadow: 0 13px 28px rgba(36, 34, 79, .09);
+}
+
+.school-class-card__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.school-class-card__grade {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid #e5e0fb;
+  border-radius: 999px;
+  background: #f7f5ff;
+  color: #5647a5;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.school-class-card__icon {
+  width: 40px;
+  height: 40px;
+  border: 1px solid #ece9fa;
+  border-radius: 13px;
+}
+
+.school-class-card__body {
+  flex: 1;
+  padding: 20px 0 22px;
+}
+
+.school-class-card__body h2 {
+  margin: 0 0 7px;
+  overflow-wrap: anywhere;
+  color: var(--classes-ink);
+  font-size: clamp(20px, 2.1vw, 25px);
+  font-weight: 800;
+  letter-spacing: -.035em;
+  line-height: 1.2;
+}
+
+.school-class-card__body p {
+  max-width: 42ch;
+  color: var(--classes-muted);
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.school-class-card__actions {
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  gap: 9px;
+  padding-top: 16px;
+  border-top: 1px solid #eff0f4;
+}
+
+.school-class-card__actions a {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 43px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 10px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.school-class-card__secondary {
+  border-color: #e4e6ed !important;
+  background: #fff;
+  color: #414b61;
+}
+
+.school-class-card__secondary:hover {
+  border-color: #cbc5e8 !important;
+  background: #faf9ff;
+  color: var(--classes-accent-dark);
+}
+
+.school-class-card__primary {
+  background: var(--classes-accent);
+  color: #fff;
+  box-shadow: 0 2px 4px rgba(68, 51, 151, .15);
+}
+
+.school-class-card__primary:hover {
+  transform: translateY(-1px);
+  background: var(--classes-accent-dark);
+  box-shadow: 0 4px 9px rgba(68, 51, 151, .21);
+}
+
+.school-class-card__actions a:focus-visible,
+.school-classes__message button:focus-visible {
+  outline: 3px solid #f1c84b;
+  outline-offset: 3px;
+}
+
+.school-classes__message {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: clamp(20px, 3vw, 30px);
+  border: 1px solid var(--classes-line);
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 5px 18px rgba(21, 33, 65, .04);
+}
+
+.school-classes__message--error {
+  border-color: #f0d8d6;
+}
+
+.school-classes__message-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+}
+
+.school-classes__message--error .school-classes__message-icon {
+  background: #fff1ef;
+  color: #a94842;
+}
+
+.school-classes__message h2 {
+  margin: 0 0 4px;
+  color: var(--classes-ink);
+  font-size: 16px;
+}
+
+.school-classes__message p {
+  color: var(--classes-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.school-classes__message button {
+  display: inline-flex;
+  min-height: 42px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-left: auto;
+  padding: 9px 13px;
+  border: 1px solid #ddd7f2;
+  border-radius: 10px;
+  background: #f7f5ff;
+  color: var(--classes-accent-dark);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.school-classes__message button:hover {
+  border-color: #c9c0e9;
+  background: #eeebfc;
+}
+
+.school-class-skeleton {
+  display: grid;
+  min-height: 244px;
+  align-content: start;
+  gap: 14px;
+  padding: 24px;
+  border: 1px solid var(--classes-line);
+  border-radius: 18px;
+  background: #fff;
+}
+
+.school-class-skeleton span {
+  display: block;
+  height: 13px;
+  border-radius: 8px;
+  background: linear-gradient(90deg, #f0f1f5 25%, #f7f7fa 50%, #f0f1f5 75%);
+  background-size: 200% 100%;
+  animation: school-class-shimmer 1.4s ease-in-out infinite;
+}
+
+.school-class-skeleton span:first-child { width: 35%; height: 28px; }
+.school-class-skeleton span:nth-child(2) { width: 65%; height: 23px; margin-top: 12px; }
+.school-class-skeleton span:last-child { width: 90%; }
+
+@keyframes school-classes-enter {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes school-class-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes school-class-shimmer {
+  to { background-position: -200% 0; }
+}
+
+@media (max-width: 640px) {
+  .school-classes { gap: 16px; }
+  .school-classes__intro { align-items: flex-start; gap: 12px; padding: 16px; }
+  .school-classes__intro-icon { width: 44px; height: 44px; border-radius: 13px; }
+  .school-classes__intro-icon svg { width: 22px; height: 22px; }
+  .school-classes__intro p { font-size: 12px; }
+  .school-classes__grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .school-class-card { min-height: 0; padding: 17px; }
+  .school-class-card__body { padding: 15px 0 18px; }
+}
+
+@media (max-width: 380px) {
+  .school-classes__message { align-items: flex-start; flex-wrap: wrap; gap: 12px; }
+  .school-classes__message > div:nth-child(2) { min-width: 0; flex: 1; }
+  .school-classes__message button { width: 100%; margin-left: 0; }
+  .school-class-card__actions { grid-template-columns: minmax(0, 1fr); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .school-classes,
+  .school-class-card,
+  .school-class-skeleton span {
+    animation: none;
+  }
+
+  .school-class-card,
+  .school-class-card__actions a,
+  .school-classes__message button {
+    transition: none;
+  }
+
+  .school-class-card:hover,
+  .school-class-card__primary:hover {
+    transform: none;
+  }
+}

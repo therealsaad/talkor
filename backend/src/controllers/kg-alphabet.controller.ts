@@ -1,4 +1,5 @@
 import { gradeKGTranscription } from '../kg/kg-child-grading'
+import { classifyKGTeachingTurn } from '../teaching/kg-teaching-turn'
 import { Request, Response } from 'express'
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import { Types } from 'mongoose'
@@ -10,15 +11,24 @@ import { KGAlphabetProgress } from '../models/KGAlphabetProgress'
 import { KGAlphabetAttempt, type IKGAlphabetAttempt } from '../models/KGAlphabetAttempt'
 import { KGAlphabetSubmission } from '../models/KGAlphabetSubmission'
 import { KGIntroPlayback } from '../models/KGIntroPlayback'
-import { AUDIO_IDS, AUDIO_LINES, LETTERS, activityAt, audioKey, evaluateKGSpeech, KG_ALPHABET_VERSION, KG_AUDIO_VERSION, type AudioId } from '../kg/alphabet-content'
+import { AUDIO_IDS, AUDIO_LINES, AUDIO_MANIFEST, LETTERS, activityAt, audioKey, evaluateKGSpeech, kgBilingualBridgeLanguage, KG_ALPHABET_VERSION, KG_AUDIO_VERSION, type AudioId } from '../kg/alphabet-content'
 import { isAuthorizedKGAlphabetStudent } from '../services/kg-pilot-access'
 import { getKGStaticAudio } from '../services/kg-static-audio-cache'
-import { generateKGFeedback, type KGFeedbackInput } from '../services/kg-feedback.service'
+import { getKGAzureNarrationAudio } from '../services/kg-azure-narration.service'
+import { PythonVoiceProvider } from '../providers/voice/PythonVoiceProvider'
 import { AzureVoiceProvider } from '../providers/voice/AzureVoiceProvider'
+import { KGQwenFeedbackService } from '../services/kg-qwen-feedback.service'
+import { KGFeedbackAudioService, type KGFeedbackAudioTurn } from '../services/kg-feedback-audio.service'
+import { stableKGTeachingLanguage } from '../services/kg-teaching-language'
+import { safeKGFeedback } from '../services/kg-feedback.service'
+import { issueKGFeedbackReceipt, verifyKGFeedbackReceipt } from '../services/kg-feedback-receipt'
 import { KGSpeechService } from '../services/kg-speech.service'
 import { kgTeachingHint } from '../services/kg-teaching-hint'
 import { env } from '../config/env'
+import { logger } from '../utils/logger'
+import { createTurnTimer, logTurnTiming, parseSlowTurnMs, serverTimingHeader, type TurnTimer } from '../services/kg-turn-timing'
 import { isSupportedVoiceAudioMimeType } from '../schemas/voice.schema'
+import { hasExpectedAudioHeader } from '../services/voice-audio-format'
 
 async function studentContext(req: Request) {
   if (req.auth?.role !== 'STUDENT') throw ApiError.forbidden('Student login required')
@@ -91,10 +101,16 @@ function presentState(state: { currentIndex: number; introSeen: boolean; complet
     homework: { id: 'kg-abcd-picture-homework-v1', audioId: 'homework-abcd', text: AUDIO_LINES['homework-abcd'], status: state.homeworkStatus || 'not-assigned', assignedAt: state.homeworkAssignedAt || null, completedAt: state.homeworkCompletedAt || null },
     level2Unlocked: index === 8,
     // Level 2 is not yet published; never provide a clickable lesson link for it.
-    level2Available: false,
+    // Student Level 2 E–J pilot has its own server-owned course/progress.
+    // Unlock on verified KG1 completion, not on optional homework check-in.
+    level2Available: index === 8,
     letters: LETTERS,
     activity: activityAt(index),
-    audio: Object.fromEntries(AUDIO_IDS.map((id) => [id, { text: AUDIO_LINES[id], url: `/kg-alphabet/audio/${KG_AUDIO_VERSION}/${id}` }])),
+    audio: Object.fromEntries(AUDIO_IDS.map((id) => [id, {
+      text: AUDIO_LINES[id],
+      kind: AUDIO_MANIFEST.find((clip) => clip.id === id)!.kind,
+      url: `/kg-alphabet/audio/${KG_AUDIO_VERSION}/${id}`,
+    }])),
   }
 }
 
@@ -105,7 +121,7 @@ async function canUsePictureSupport(studentId: Types.ObjectId, schoolId: Types.O
   const activity = activityAt(currentIndex)
   if (!activity || activity.mode !== 'speak') return false
   const failures = await KGAlphabetAttempt.countDocuments({ studentId, schoolId, activityId: activity.id,
-    mode: 'speak', replay: false, outcome: { $in: ['incorrect', 'unclear'] } })
+    mode: 'speak', replay: false, outcome: { $in: ['incorrect', 'unclear', 'supported'] } })
   return failures >= 2
 }
 
@@ -114,28 +130,247 @@ function validateSubmissionId(value: unknown): string {
   return value
 }
 
-function feedbackFor(outcome: string, reason?: string) {
-  return outcome === 'supported' ? 'great' : outcome === 'correct' ? 'great' : outcome === 'incorrect' ? 'try-again' : reason === 'silence' ? 'silence' : 'repeat'
+function feedbackFor(outcome: string, reason?: string, letter?: typeof LETTERS[number]['letter'], mode?: 'speak' | 'touch'): AudioId {
+  if (reason === 'silence') return 'silence'
+  if (outcome === 'supported' && mode === 'touch') return 'picture-support'
+  if (outcome === 'supported' && letter) return `bridge-${letter.toLowerCase()}` as AudioId
+  if (outcome === 'correct') return 'great'
+  if (mode === 'speak' && letter) return `model-${letter.toLowerCase()}` as AudioId
+  return outcome === 'incorrect' ? 'try-again' : 'repeat'
 }
 
-/** Personalized feedback speech is generated on-demand; audio bytes are never persisted. */
-async function spokenFeedback(input: KGFeedbackInput) {
-  const generated = await generateKGFeedback(input)
-  try {
-    const { audio } = await new AzureVoiceProvider().synthesizeUncached(generated.text)
-    return { feedbackText: generated.text, feedbackAudioBase64: audio.toString('base64'), feedbackVoice: 'azure', feedbackSource: generated.source }
-  } catch {
-    // Never roll back an already-graded attempt because TTS is temporarily unavailable.
-    return { feedbackText: generated.text, feedbackAudioBase64: null, feedbackVoice: 'unavailable', feedbackSource: generated.source }
-  }
+/** Feedback text is a reviewed server-owned line spoken by the live Priya service. */
+function spokenFeedback(input: { letter: typeof LETTERS[number]['letter']; mode: 'speak' | 'touch'; outcome: string; noSpeech?: boolean }) {
+  const id = feedbackFor(input.outcome, input.noSpeech ? 'silence' : undefined, input.letter, input.mode)
+  return { feedbackText: AUDIO_LINES[id], feedbackAudioBase64: null, feedbackVoice: 'dynamic_tts', feedbackSource: 'reviewed' }
 }
 
 async function sendKGVoice(res: Response, text: string) {
-  const { audio, contentType } = await new AzureVoiceProvider().synthesizeUncached(text)
+  const safeText = text.trim()
+  if (!safeText || safeText.length > 320) throw ApiError.badRequest('KG voice line is invalid')
+  // Prepare the exact canonical teacher prompt once. Priya 8001 is FIRST
+  // for KG letter instruction; when local voice is slow/offline, Azure
+  // generates the same sentence. No user-controlled TTS text reaches here.
+  try {
+    const priya = await new PythonVoiceProvider().synthesize(safeText)
+    const bytes = priya.audioBase64 ? Buffer.from(priya.audioBase64, 'base64') : Buffer.alloc(0)
+    const type = priya.contentType?.trim() || ''
+    if (!priya.available || bytes.length < 256 || bytes.length > 8 * 1024 * 1024 ||
+        !/^audio\/[a-z0-9.+-]+(?:\s*;.*)?$/i.test(type)) {
+      throw new Error('Invalid Priya audio payload')
+    }
+    res.setHeader('Content-Type', type)
+    res.setHeader('Content-Length', String(bytes.length))
+    res.setHeader('Cache-Control', 'private, no-store')
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('X-Voice-Provider', 'python-priya')
+    return res.send(bytes)
+  } catch (error) {
+    console.warn('KG1_PRIYA_TEACHING_FALLBACK_AZURE', {
+      reason: error instanceof Error ? error.name : 'upstream',
+    })
+  }
+
+  // User-verified in local backend with kg-apple.mp3. Fallback never
+  // changes correct answers, progress or the mandatory full-video ticket.
+  try {
+    const azure = await new AzureVoiceProvider().synthesizeUncached(safeText)
+    if (azure.audio.length < 256) throw new Error('Azure returned no playable audio')
+    res.setHeader('Content-Type', azure.contentType)
+    res.setHeader('Content-Length', String(azure.audio.length))
+    res.setHeader('Cache-Control', 'private, no-store')
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('X-Voice-Provider', 'azure-fallback')
+    return res.send(azure.audio)
+  } catch (error) {
+    console.warn('KG1_TEACHING_VOICE_UNAVAILABLE', {
+      reason: error instanceof Error ? error.name : 'upstream',
+    })
+    throw new ApiError(503, 'TTS_SERVICE_UNAVAILABLE',
+      'Miss Julie voice is temporarily unavailable.', { retryable: true })
+  }
+}
+
+/**
+ * A recorded attempt can still have its initial Qwen feedback in flight.
+ * While its submission lease is active, do not serve speculative text/audio
+ * or mint a receipt that can disagree with the final teacher sentence.
+ *
+ * After a process crash (expired/absent lease), one backend request
+ * atomically freezes a deterministic fallback on that recorded attempt.
+ * Whichever line wins the Mongo compare-and-set is used for every retry.
+ */
+async function frozenKGFeedback(attempt: IKGAlphabetAttempt): Promise<string> {
+  if (attempt.feedbackText) return attempt.feedbackText
+  const identity = { studentId: attempt.studentId, schoolId: attempt.schoolId, submissionId: attempt.submissionId }
+  const pending = await KGAlphabetSubmission.exists({ ...identity, expiresAt: { $gt: new Date() } })
+  if (pending) {
+    throw new ApiError(409, 'CONFLICT', 'Miss Julie is finishing this answer. Retry shortly.', { retryable: true })
+  }
+  const fallback = safeKGFeedback({
+    letter: attempt.letter as typeof LETTERS[number]['letter'],
+    mode: attempt.mode, outcome: attempt.outcome,
+    transcript: attempt.transcript, selected: attempt.selected,
+    noSpeech: attempt.recognitionReason === 'silence',
+    languageCode: attempt.feedbackLanguageCode || attempt.languageCode,
+  })
+  const updated = await KGAlphabetAttempt.findOneAndUpdate(
+    { ...identity, feedbackText: { $exists: false } },
+    { $set: { feedbackText: fallback } },
+    { new: true },
+  ).select('feedbackText').lean()
+  if (updated?.feedbackText) return updated.feedbackText
+  const recorded = await KGAlphabetAttempt.findOne(identity).select('feedbackText').lean()
+  if (recorded?.feedbackText) return recorded.feedbackText
+  throw ApiError.internal('KG feedback is not yet ready')
+}
+
+// Timing is for finding the slow step. Only durations and labels are logged, never what a child said.
+const timingOptions = () => ({ enabled: process.env.KG_TURN_TIMING_LOG !== 'false', slowMs: parseSlowTurnMs(process.env.KG_SLOW_TURN_MS) })
+
+async function kgDynamicFeedback(input: { letter: typeof LETTERS[number]['letter']; mode: 'speak' | 'touch'; outcome: 'correct' | 'incorrect' | 'unclear' | 'supported'; transcript?: string; selected?: string; noSpeech?: boolean; languageCode?: 'en-IN' | 'hi-IN' | 'mr-IN' }, timer?: TurnTimer) {
+  const coached = timer ? await timer.time('feedback', () => KGQwenFeedbackService.compose(input)) : await KGQwenFeedbackService.compose(input)
+  timer?.note('feedbackSource', coached.source)
+  return { feedbackText: coached.text, feedbackAudioBase64: null, feedbackVoice: 'azure' as const }
+}
+
+async function sendKGAzure(res: Response, text: string, turn: KGFeedbackAudioTurn, onAudioReady?: () => void) {
+  // Live Azure is the preferred voice. If its audio generation fails, use
+  // local Priya 8001 for this *same, server-owned* feedback sentence. Never
+  // let a failed provider mark the attempt heard or silently progress.
+  // Fixed lines are served from memory after the first child needs them; wording and voices are unchanged.
+  const startedAt = Date.now()
+  let azure: Awaited<ReturnType<typeof KGFeedbackAudioService.synthesize>> = null
+  try {
+    azure = await KGFeedbackAudioService.synthesize(text, turn)
+  } catch (error) {
+    console.warn('KG1_FEEDBACK_AZURE_FAILED', {
+      reason: error instanceof Error ? error.name : 'upstream-error',
+    })
+  }
+  if (!azure?.audio.length) console.warn('KG1_FEEDBACK_AZURE_FAILED', { reason: 'no-audio' })
+  if (azure?.audio.length) {
+    onAudioReady?.()
+    res.setHeader('Content-Type', azure.contentType)
+    res.setHeader('Content-Length', String(azure.audio.length))
+    res.setHeader('Cache-Control', 'private, no-store')
+    res.setHeader('X-Voice-Provider', 'azure')
+    // Visible in the browser network panel and load tests: how long the voice took and where it came from.
+    res.setHeader('Server-Timing', `tts;dur=${Date.now() - startedAt};desc="${azure.source}"`)
+    return res.send(azure.audio)
+  }
+
+  const priya = await new PythonVoiceProvider().synthesize(text)
+  const bytes = priya.audioBase64 ? Buffer.from(priya.audioBase64, 'base64') : Buffer.alloc(0)
+  const contentType = priya.contentType?.trim() || ''
+  if (!priya.available || bytes.length < 256 || bytes.length > 8 * 1024 * 1024 ||
+      !/^audio\/[a-z0-9.+-]+(?:\s*;.*)?$/i.test(contentType)) {
+    throw ApiError.provider('KG_FEEDBACK_AUDIO_UNAVAILABLE')
+  }
+  onAudioReady?.()
   res.setHeader('Content-Type', contentType)
-  res.setHeader('Content-Length', String(audio.length))
+  res.setHeader('Content-Length', String(bytes.length))
   res.setHeader('Cache-Control', 'private, no-store')
+  res.setHeader('X-Voice-Provider', 'python-priya-fallback')
+  return res.send(bytes)
+}
+
+function s3ErrorDetails(error: unknown) {
+  const value = error && typeof error === 'object' ? error as {
+    name?: string; Code?: string; code?: string; $metadata?: { httpStatusCode?: number }
+  } : {}
+  return { status: value.$metadata?.httpStatusCode, code: value.name || value.Code || value.code || 'UnknownS3Error' }
+}
+
+async function getApprovedStaticClip(id: AudioId): Promise<Buffer> {
+  const key = audioKey(id)
+  try {
+    const audio = await getKGStaticAudio(key)
+    if (!audio) {
+      throw new ApiError(404, 'KG_AUDIO_MISSING', `Approved curriculum audio is missing from S3: ${key}`, {
+        s3Key: key, storageCode: 'NoSuchKey', retryable: false,
+      })
+    }
+    return audio
+  } catch (error) {
+    if (error instanceof ApiError) throw error
+    const details = s3ErrorDetails(error)
+    if (details.status === 404 || ['NoSuchKey', 'NotFound'].includes(details.code)) {
+      throw new ApiError(404, 'KG_AUDIO_MISSING', `Approved curriculum audio is missing from S3: ${key}`, {
+        s3Key: key, storageCode: details.code, retryable: false,
+      })
+    }
+    if (details.status === 403 || ['AccessDenied', 'AllAccessDisabled', 'Forbidden'].includes(details.code)) {
+      throw new ApiError(502, 'KG_AUDIO_STORAGE_ACCESS_DENIED', `S3 denied access to approved curriculum audio: ${key}`, {
+        s3Key: key, storageCode: details.code, status: details.status, retryable: false,
+      })
+    }
+    throw new ApiError(503, 'KG_AUDIO_STORAGE_UNAVAILABLE', `S3 could not serve approved curriculum audio: ${key}`, {
+      s3Key: key, storageCode: details.code, status: details.status, retryable: true,
+    })
+  }
+}
+
+async function sendManifestAudio(res: Response, id: AudioId, options: { preview?: boolean; ifNoneMatch?: string } = {}) {
+  const line = AUDIO_MANIFEST.find((clip) => clip.id === id)
+  if (!line) throw ApiError.notFound('Audio clip not found')
+  if (line.kind === 'dynamic_tts') return sendKGVoice(res, line.text)
+
+  // Opt-in, SERVER-OWNED fixed lesson narration only. Existing KG S3 and
+  // fallback behavior remains identical unless explicitly enabled.
+  // No student transcript, Qwen response or feedback audio enters this cache.
+  if (process.env.TALKORA_KG_FIXED_NARRATION_CACHE === 'true') {
+    const result = await getKGAzureNarrationAudio({ level: 1, id, text: line.text })
+    if (result.audio.length > 2 * 1024 * 1024 ||
+        !hasExpectedAudioHeader(result.audio, result.contentType)) {
+      throw ApiError.provider('KG_STATIC_TTS_INVALID')
+    }
+    const etag = `"${createHash('sha256').update(result.audio).digest('hex')}"`
+    res.setHeader('Content-Type', result.contentType)
+    res.setHeader('Content-Length', String(result.audio.length))
+    res.setHeader('Cache-Control', 'private, no-store')
+    res.setHeader('Vary', 'Authorization')
+    res.setHeader('ETag', etag)
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('X-Talkora-Cache', result.source.toUpperCase())
+    // Only the actual full-video ticket endpoint can record intro completion.
+    // An audio 304 is a transport optimization, never a progress write.
+    if (!options.preview && options.ifNoneMatch === etag) return res.status(304).end()
+    return res.send(result.audio)
+  }
+
+  let audio: Buffer
+  try {
+    audio = await getApprovedStaticClip(id)
+  } catch (error) {
+    // The full lesson must not dead-end because a *fixed, reviewed* S3 cue
+    // is temporarily missing. Generate exactly its canonical manifest text
+    // with Azure, without inventing content or writing unreviewed audio
+    // into immutable S3 keys. AccessDenied stays a hard failure.
+    if (!(error instanceof ApiError) ||
+        !['KG_AUDIO_MISSING', 'KG_AUDIO_STORAGE_UNAVAILABLE'].includes(error.code)) throw error
+    console.warn('KG_STATIC_S3_AZURE_FALLBACK', { audioId: id, reason: error.code })
+    const replacement = await new AzureVoiceProvider().synthesizeUncached(line.text)
+    if (replacement.audio.length > 2 * 1024 * 1024 ||
+        !hasExpectedAudioHeader(replacement.audio, replacement.contentType)) {
+      throw ApiError.provider('KG_STATIC_TTS_INVALID')
+    }
+    res.setHeader('Content-Type', replacement.contentType)
+    res.setHeader('Content-Length', String(replacement.audio.length))
+    res.setHeader('Cache-Control', 'private, no-store')
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.setHeader('X-Voice-Provider', 'azure-static-fallback')
+    return res.send(replacement.audio)
+  }
+  const etag = `"${createHash('sha256').update(audio).digest('hex')}"`
+  res.setHeader('Content-Type', 'audio/mpeg')
+  res.setHeader('Content-Length', String(audio.length))
+  res.setHeader('Content-Disposition', `inline; filename="${id}.mp3"`)
+  res.setHeader('Cache-Control', options.preview ? 'private, no-store' : 'private, max-age=31536000, immutable')
+  res.setHeader('Vary', 'Authorization')
+  res.setHeader('ETag', etag)
   res.setHeader('X-Content-Type-Options', 'nosniff')
+  if (!options.preview && options.ifNoneMatch === etag) return res.status(304).end()
   res.send(audio)
 }
 
@@ -177,16 +412,22 @@ async function previewOutcome(input: Record<string, unknown>): Promise<KGPreview
   if (!stt.available) throw ApiError.provider('Speech recognition is temporarily unavailable')
   const transcript = String(stt.transcript || '').slice(0, 240)
   const confidence = 'confidence' in stt ? stt.confidence : undefined
-  const outcome = gradeKGTranscription({
+  let outcome = gradeKGTranscription({
     transcript, letter: activity.letter,
     uncertain: 'uncertain' in stt && stt.uncertain === true,
     confidence: typeof confidence === 'number' ? confidence : undefined,
   })
+  const teaching = classifyKGTeachingTurn({ level: 1, letter: activity.letter,
+    transcript, outcome, uncertain: 'uncertain' in stt && stt.uncertain === true })
+  if (outcome === 'incorrect' && teaching.kind === 'translation_hi_mr' &&
+    !(typeof confidence === 'number' && confidence < 0.5)) outcome = 'supported'
   return { activity, outcome, transcript }
 }
 
-async function applyRecordedProgress(attempt: { studentId: Types.ObjectId; schoolId: Types.ObjectId; activityId: string; outcome: string; replay: boolean; createdAt: Date }) {
+async function applyRecordedProgress(attempt: { studentId: Types.ObjectId; schoolId: Types.ObjectId; activityId: string; mode: string; outcome: string; replay: boolean; createdAt: Date }) {
   if (!['correct', 'supported'].includes(attempt.outcome) || attempt.replay) return
+  // Native-language comprehension is praised but does not certify spoken English.
+  if (attempt.outcome === 'supported' && attempt.mode === 'speak') return
   const index = Array.from({ length: 8 }, (_, i) => i).find((i) => activityAt(i)?.id === attempt.activityId)
   if (index === undefined) return
   // This also repairs a request interrupted between saving the attempt and progress.
@@ -208,6 +449,7 @@ async function assertIntroTicket(req: Request, studentId: Types.ObjectId, school
   const playback = await KGIntroPlayback.findOne({ studentId, schoolId, tokenHash: tokenHash(raw),
     completedAt: { $exists: true }, expiresAt: { $gt: new Date() } }).select('+tokenHash').lean()
   if (!playback) throw ApiError.conflict('Your introduction session has expired. Watch the introduction again.')
+  return playback
 }
 
 export const KGAlphabetController = {
@@ -274,42 +516,119 @@ export const KGAlphabetController = {
   audio: catchAsync(async (req: Request, res: Response) => {
     await studentContext(req)
     const id = validatedAudioId(req)
-    // KG now defaults to Azure, so newly spoken teaching lines do not use the
-    // old monotone Priya library and are never written to a persistent cache.
-    if ((process.env.KG_VOICE_PROVIDER || 'azure').toLowerCase() !== 's3') return sendKGVoice(res, AUDIO_LINES[id])
-    const audio = await getKGStaticAudio(audioKey(id)).catch(() => null)
-    // For deployments explicitly preferring the old S3 clips, Azure is the
-    // fallback when a recording is absent or the bucket cannot be reached.
-    if (!audio) return sendKGVoice(res, AUDIO_LINES[id])
-    const etag = `"${createHash('sha256').update(audio).digest('hex')}"`
-    if (req.headers['if-none-match'] === etag) return res.status(304).end()
-    res.setHeader('Content-Type', 'audio/mpeg')
-    res.setHeader('Content-Length', String(audio.length))
-    res.setHeader('Content-Disposition', `inline; filename="${id}.mp3"`)
-    res.setHeader('Cache-Control', 'private, max-age=31536000, immutable')
-    res.setHeader('Vary', 'Authorization')
-    res.setHeader('ETag', etag)
-    res.setHeader('X-Content-Type-Options', 'nosniff')
-    res.send(audio)
+    await sendManifestAudio(res, id, { ifNoneMatch: req.headers['if-none-match'] })
   }),
   previewAudio: catchAsync(async (req: Request, res: Response) => {
     const id = validatedAudioId(req)
-    await sendKGVoice(res, AUDIO_LINES[id])
+    await sendManifestAudio(res, id, { preview: true })
+  }),
+  acknowledgeFeedback: catchAsync(async (req: Request, res: Response) => {
+    const { student } = await ensureState(req)
+    await assertIntroTicket(req, student._id, student.schoolId)
+    const submissionId = validateSubmissionId(req.params.submissionId)
+    const attempt = await KGAlphabetAttempt.findOne({ studentId: student._id, schoolId: student.schoolId, submissionId })
+    if (!attempt) throw ApiError.notFound('KG answer not found')
+    const words = await frozenKGFeedback(attempt)
+    const validReceipt = verifyKGFeedbackReceipt(req.body?.feedbackReceipt, {
+      studentId: student._id.toString(), schoolId: student.schoolId.toString(),
+      submissionId, introTicketHash: tokenHash(req.get('x-kg-intro-playback') || ''),
+      feedbackText: words,
+    })
+    if (!validReceipt) throw ApiError.conflict('Play Miss Julie feedback fully before continuing this activity.')
+    await applyRecordedProgress(attempt)
+    // New-protocol attempts are pending only until the authenticated audio
+    // receipt is accepted. A duplicate ACK is safe and never grants XP again.
+    await KGAlphabetAttempt.updateOne({ studentId: student._id, schoolId: student.schoolId,
+      submissionId, awaitingFeedbackPlayback: true },
+      { $set: { awaitingFeedbackPlayback: false, feedbackAcknowledgedAt: new Date() } })
+    const latest = await KGAlphabetProgress.findOne({ studentId: student._id, schoolId: student.schoolId })
+    if (!latest) throw ApiError.internal('KG progress unavailable')
+    ok(res, { state: { ...presentState(latest), fallbackAvailable: await canUsePictureSupport(student._id, student.schoolId, latest.currentIndex) } })
+  }),
+  feedbackAudio: catchAsync(async (req: Request, res: Response) => {
+    const { student } = await ensureState(req)
+    await assertIntroTicket(req, student._id, student.schoolId)
+    const submissionId = validateSubmissionId(req.params.submissionId)
+    const attempt = await KGAlphabetAttempt.findOne({ studentId: student._id, schoolId: student.schoolId, submissionId })
+    if (!attempt) throw ApiError.notFound('KG answer not found')
+    // Do NOT call Qwen again when fetching or retrying a previously
+    // submitted turn. That second 8002 call regularly exceeds the browser's
+    // 15-second dynamic audio timeout, and changes the actual words the
+    // child hears versus the submitted feedback displayed on-screen.
+    // Old unfinished attempts recover an immutable safe sentence after lease expiry.
+    const words = await frozenKGFeedback(attempt)
+    const audioTimer = createTurnTimer()
+    await sendKGAzure(res, words, {
+      letter: attempt.letter as typeof LETTERS[number]['letter'],
+      mode: attempt.mode,
+      outcome: attempt.outcome,
+      noSpeech: attempt.recognitionReason === 'silence',
+      languageCode: attempt.feedbackLanguageCode || attempt.languageCode,
+    }, () => {
+      // This receipt is issued only after valid audio is generated by Azure
+      // or the Priya fallback. Never advance from a text-only attempt.
+      const receipt = issueKGFeedbackReceipt({
+        studentId: student._id.toString(), schoolId: student.schoolId.toString(),
+        submissionId, introTicketHash: tokenHash(req.get('x-kg-intro-playback') || ''),
+        feedbackText: words,
+      })
+      res.setHeader('X-KG-Feedback-Receipt', receipt)
+    })
+    // sendKGAzure already answered; this only records how long the voice took and whether the cache served it.
+    const audioTiming = audioTimer.finish()
+    audioTiming.steps.tts = audioTiming.steps.total
+    audioTiming.notes.ttsSource = /desc="([a-z]+)"/.exec(String(res.getHeader?.('Server-Timing') || ''))?.[1]
+    logTurnTiming(logger, 'audio', audioTiming, { submissionId, outcome: attempt.outcome, mode: attempt.mode }, timingOptions())
+  }),
+  /** A refreshed lab tab must be able to replay its last graded, unplayed
+   * turn without sending the child's recording to STT a second time. Only
+   * attempts from this explicit protocol are candidates; historic rows
+   * cannot accidentally resume as unheard. */
+  pendingFeedback: catchAsync(async (req: Request, res: Response) => {
+    const { student, state } = await ensureState(req)
+    await assertIntroTicket(req, student._id, student.schoolId)
+    const activity = activityAt(state.currentIndex)
+    if (!activity) {
+      res.setHeader('Cache-Control', 'private, no-store')
+      return ok(res, { pending: null })
+    }
+    const recent = await KGAlphabetAttempt.findOne({
+      studentId: student._id, schoolId: student.schoolId,
+      activityId: activity.id, replay: false,
+      createdAt: { $gte: new Date(Date.now() - 30 * 60_000) },
+    }).sort({ createdAt: -1, _id: -1 })
+    if (!recent || recent.awaitingFeedbackPlayback !== true) {
+      res.setHeader('Cache-Control', 'private, no-store')
+      return ok(res, { pending: null })
+    }
+    const words = await frozenKGFeedback(recent)
+    res.setHeader('Cache-Control', 'private, no-store')
+    return ok(res, { pending: {
+      submissionId: recent.submissionId, outcome: recent.outcome,
+      replay: recent.replay,
+      advance: recent.outcome === 'correct' || (recent.outcome === 'supported' && recent.mode === 'touch'),
+      state: { ...presentState(state), fallbackAvailable: await canUsePictureSupport(student._id, student.schoolId, state.currentIndex) },
+      feedbackAudioId: feedbackFor(recent.outcome, recent.recognitionReason,
+        recent.letter as typeof LETTERS[number]['letter'], recent.mode),
+      teachingHint: kgTeachingHint(recent.letter as typeof LETTERS[number]['letter'], recent.mode, recent.outcome),
+      feedbackText: words, feedbackAudioBase64: null, feedbackVoice: 'azure' as const,
+    } })
   }),
   previewAttempt: catchAsync(async (req: Request, res: Response) => {
-    // Staff preview performs real Groq STT/feedback but never writes student results.
+    // Staff preview uses the KG-selected STT and reviewed feedback without progress writes.
     const result = await previewOutcome((req.body || {}) as Record<string, unknown>)
-    const voice = await spokenFeedback({ letter: result.activity.letter, mode: result.selected ? 'touch' : result.activity.mode,
+    const voice = await kgDynamicFeedback({ letter: result.activity.letter, mode: result.selected ? 'touch' : result.activity.mode,
       outcome: result.outcome, transcript: result.transcript, selected: result.selected, noSpeech: result.noSpeech })
     res.setHeader('Cache-Control', 'no-store')
-    ok(res, { outcome: result.outcome, transcript: result.transcript || '',
-      feedbackAudioId: feedbackFor(result.outcome, result.noSpeech ? 'silence' : undefined),
+    ok(res, { outcome: result.outcome, advance: result.outcome === 'correct' || (result.outcome === 'supported' && Boolean(result.selected)), transcript: result.transcript || '',
+      feedbackAudioId: feedbackFor(result.outcome, result.noSpeech ? 'silence' : undefined, result.activity.letter, result.activity.mode),
       teachingHint: kgTeachingHint(result.activity.letter, result.activity.mode, result.outcome), ...voice, preview: true })
   }),
   attempt: catchAsync(async (req: Request, res: Response) => {
+    const timer = createTurnTimer()
     const { student, state } = await ensureState(req)
     if (!state.introSeen) throw ApiError.conflict('Watch Miss Julie\u2019s Level 1 story to the end before starting the activities.')
-    await assertIntroTicket(req, student._id, student.schoolId)
+    const introTicket = await assertIntroTicket(req, student._id, student.schoolId)
     const submissionId = validateSubmissionId(req.body?.submissionId)
     const identity = { studentId: student._id, schoolId: student.schoolId, submissionId }
     const requestHash = createHash('sha256').update(JSON.stringify({
@@ -320,16 +639,17 @@ export const KGAlphabetController = {
     })).digest('hex')
     const returnRecorded = async (attempt: IKGAlphabetAttempt) => {
       if (attempt.requestHash && attempt.requestHash !== requestHash) throw ApiError.conflict('This submission ID was already used for another answer')
-      await applyRecordedProgress(attempt)
+      const words = await frozenKGFeedback(attempt)
       const latest = await KGAlphabetProgress.findOne({ studentId: student._id, schoolId: student.schoolId })
       const recoveredState = latest || state
-      return ok(res, { outcome: attempt.outcome, replay: attempt.replay,
+      return ok(res, { submissionId: attempt.submissionId, outcome: attempt.outcome, replay: attempt.replay,
+        advance: attempt.outcome === 'correct' || (attempt.outcome === 'supported' && attempt.mode === 'touch'),
         state: { ...presentState(recoveredState), fallbackAvailable: await canUsePictureSupport(student._id, student.schoolId, recoveredState.currentIndex) }, duplicate: true,
-        feedbackAudioId: feedbackFor(attempt.outcome, attempt.recognitionReason),
+        feedbackAudioId: feedbackFor(attempt.outcome, attempt.recognitionReason, attempt.letter as typeof LETTERS[number]['letter'], attempt.mode),
         teachingHint: kgTeachingHint(attempt.letter as typeof LETTERS[number]['letter'], attempt.mode, attempt.outcome),
-        ...(await spokenFeedback({ letter: attempt.letter as typeof LETTERS[number]['letter'], mode: attempt.mode,
-          outcome: attempt.outcome as 'correct' | 'incorrect' | 'unclear' | 'supported', transcript: attempt.transcript, selected: attempt.selected,
-          noSpeech: attempt.recognitionReason === 'silence' })) })
+        feedbackText: words,
+        feedbackAudioBase64: null,
+        feedbackVoice: 'azure' as const })
     }
     const existing = await KGAlphabetAttempt.findOne(identity)
     if (existing) return returnRecorded(existing)
@@ -365,6 +685,7 @@ export const KGAlphabetController = {
       const recordedDuringLease = await KGAlphabetAttempt.findOne(identity)
       if (recordedDuringLease) return await returnRecorded(recordedDuringLease)
       let sttProvider: string | undefined
+      let languageCode: 'en-IN' | 'hi-IN' | 'mr-IN' | undefined
       let sttConfidence: number | undefined
       let recognitionReason: 'silence' | 'uncertain' | undefined
 
@@ -390,10 +711,15 @@ export const KGAlphabetController = {
         const durationMs = Number(req.body?.durationMs)
         if (!Number.isFinite(durationMs) || durationMs < 250 || durationMs > 12000) throw ApiError.badRequest('Audio must be between 0.25 and 12 seconds')
         if (!/^[A-Za-z0-9+/]+={0,2}$/.test(audioBase64) || audioBase64.length % 4 === 1) throw ApiError.badRequest('Invalid audio encoding')
-        const transcription = await KGSpeechService.transcribe({ audioBase64, mimeType, durationMs })
+        const transcription = await timer.time('stt', () => KGSpeechService.transcribe({ audioBase64, mimeType, durationMs }))
         if (!transcription.available) throw ApiError.provider('Speech recognition is temporarily unavailable')
         transcript = String(transcription.transcript || '').slice(0, 240)
         sttProvider = transcription.provider
+        timer.note('sttProvider', transcription.provider)
+        const detected = 'languageCode' in transcription ? transcription.languageCode : undefined
+        languageCode = detected === 'hi-IN' || detected === 'mr-IN' || detected === 'en-IN'
+          ? detected : undefined
+        timer.note('language', languageCode)
         const confidence = 'confidence' in transcription ? transcription.confidence : undefined
         sttConfidence = typeof confidence === 'number' && Number.isFinite(confidence) && confidence >= 0 && confidence <= 1 ? confidence : undefined
         outcome = gradeKGTranscription({
@@ -402,16 +728,42 @@ export const KGAlphabetController = {
           confidence: sttConfidence,
         })
         if (outcome === 'unclear') recognitionReason = 'uncertain'
+        // Share the same safe translation detector as later KG lessons.
+        // Never count a home-language word as an independent English pass.
+        const shared = classifyKGTeachingTurn({ level: 1, letter: activity.letter,
+          transcript, outcome, detectedLanguage: languageCode,
+          uncertain: 'uncertain' in transcription && transcription.uncertain === true })
+        if (outcome === 'incorrect' && shared.kind === 'translation_hi_mr' &&
+          (sttConfidence === undefined || sttConfidence >= 0.5)) outcome = 'supported'
       } else {
         selected = String(req.body?.selected || '').toLowerCase().trim().slice(0, 20)
         if (!LETTERS.some((item) => item.word === selected)) throw ApiError.badRequest('Choose one of the four pictures')
         outcome = LETTERS.find((item) => item.letter === activity.letter)?.word === selected ? 'correct' : 'incorrect'
       }
 
+      // Only prior speech attempts from this student's current intro ticket may
+      // influence feedback locale. A new lab visit starts a fresh detection window.
+      const recentLocales = await KGAlphabetAttempt.find({
+        studentId: student._id, schoolId: student.schoolId,
+        createdAt: { $gte: introTicket.startedAt },
+        languageCode: { $in: ['en-IN', 'hi-IN', 'mr-IN'] },
+      }).sort({ createdAt: -1 }).limit(2).select('languageCode').lean()
+      // A verified "billi"/"बिल्ली" (or Marathi "manjar"/"मांजर")
+      // deserves native-language teaching even if STT labels the short word
+      // as English or omits its locale. Never change the grading verdict.
+      // The translation is transcribed server-side, never client-provided.
+      const bridgeLanguage = outcome === 'supported' && activity.mode === 'speak' && !assistedPicture
+        ? (kgBilingualBridgeLanguage(transcript || '', activity.letter) ||
+          (() => { const shared = classifyKGTeachingTurn({ level: 1, letter: activity.letter,
+            transcript, outcome, detectedLanguage: languageCode });
+            return shared.kind === 'translation_hi_mr' ? shared.language : undefined })()) : undefined
+      const feedbackLanguageCode = bridgeLanguage ||
+        stableKGTeachingLanguage(languageCode, recentLocales.map((prior) => prior.languageCode))
+
       try {
-        const saved = await KGAlphabetAttempt.create({ studentId: student._id, schoolId: student.schoolId, activityId, letter: activity.letter,
-          mode: assistedPicture ? 'touch' : activity.mode, outcome, transcript, selected, replay, timeSpentMs: Math.round(reportedTimeMs), submissionId, requestHash, sttProvider, sttConfidence, recognitionReason })
-        await applyRecordedProgress(saved)
+        await KGAlphabetAttempt.create({ studentId: student._id, schoolId: student.schoolId, activityId, letter: activity.letter,
+          mode: assistedPicture ? 'touch' : activity.mode, outcome, transcript, languageCode, feedbackLanguageCode, selected, replay, awaitingFeedbackPlayback: !replay, timeSpentMs: Math.round(reportedTimeMs), submissionId, requestHash, sttProvider, sttConfidence, recognitionReason })
+        // The attempt is recorded, but progression waits for audible feedback acknowledgment.
       } catch (error) {
         if ((error as { code?: number }).code !== 11000) throw error
         const prior = await KGAlphabetAttempt.findOne(identity)
@@ -420,12 +772,31 @@ export const KGAlphabetController = {
       }
 
       const latest = await KGAlphabetProgress.findOne({ studentId: student._id, schoolId: student.schoolId })
-      const voice = await spokenFeedback({ letter: activity.letter, mode: assistedPicture ? 'touch' : activity.mode, outcome,
-        transcript, selected, noSpeech: recognitionReason === 'silence' })
+      const voice = await kgDynamicFeedback({ letter: activity.letter, mode: assistedPicture ? 'touch' : activity.mode, outcome,
+        transcript, languageCode: feedbackLanguageCode, selected, noSpeech: recognitionReason === 'silence' }, timer)
+      // Persist only the guarded teacher sentence, never audio, after the
+      // speech attempt is recorded. Duplicate submissions and replay-audio
+      // endpoints must use the exact same line, not regenerate Qwen text.
+      // Atomic first-writer-wins: after a lease expiry, recovery can freeze
+      // a guarded line before an unusually late Qwen call returns.
+      const finalized = await KGAlphabetAttempt.findOneAndUpdate(
+        { ...identity, feedbackText: { $exists: false } },
+        { $set: { feedbackText: voice.feedbackText } },
+        { new: true },
+      ).select('feedbackText').lean()
+      const feedbackText = finalized?.feedbackText ||
+        (await KGAlphabetAttempt.findOne(identity).select('feedbackText').lean())?.feedbackText
+      if (!feedbackText) throw ApiError.internal('KG feedback could not be finalized')
+      // Start voicing a fixed line now so synthesis overlaps this response; the browser's audio request finds it ready.
+      KGFeedbackAudioService.warm(feedbackText, { letter: activity.letter, mode: assistedPicture ? 'touch' : activity.mode, outcome,
+        noSpeech: recognitionReason === 'silence', languageCode: feedbackLanguageCode })
+      const timing = timer.finish()
+      res.setHeader('Server-Timing', serverTimingHeader(timing.steps))
+      logTurnTiming(logger, 'attempt', timing, { submissionId, outcome, mode: assistedPicture ? 'touch' : activity.mode }, timingOptions())
       res.setHeader('Cache-Control', 'no-store')
-      return ok(res, { outcome, replay, transcript: transcript || '', state: { ...presentState(latest || state),
+      return ok(res, { submissionId, outcome, replay, advance: outcome === 'correct' || (outcome === 'supported' && assistedPicture), transcript: transcript || '', state: { ...presentState(latest || state),
         fallbackAvailable: await canUsePictureSupport(student._id, student.schoolId, (latest || state).currentIndex) },
-        feedbackAudioId: feedbackFor(outcome, recognitionReason), teachingHint: kgTeachingHint(activity.letter, assistedPicture ? 'touch' : activity.mode, outcome), ...voice })
+        feedbackAudioId: feedbackFor(outcome, recognitionReason, activity.letter, assistedPicture ? 'touch' : activity.mode), teachingHint: kgTeachingHint(activity.letter, assistedPicture ? 'touch' : activity.mode, outcome), ...voice, feedbackText })
     } finally {
       await KGAlphabetSubmission.deleteOne({ ...identity, owner })
     }

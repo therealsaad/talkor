@@ -2,6 +2,8 @@
 
 import Link from 'next/link'
 import React from 'react'
+import { useEffect, useState } from 'react'
+import { useReducedMotion } from 'framer-motion'
 
 interface AuthFrameProps {
   children: React.ReactNode
@@ -19,6 +21,22 @@ export function AuthFrame({
   badgeText = 'Talkora Adventure',
 }: AuthFrameProps) {
   const poseSrc = `/miss-julie/${pose}.png`
+  const reduceMotion = useReducedMotion()
+  const animationName = pose === 'thinking'
+    ? 'thinking'
+    : pose === 'encouraging'
+      ? 'encouraging'
+      : pose === 'celebrating'
+        ? 'celebrating'
+        : pose === 'teaching' || pose === 'reading'
+          ? 'pointing'
+          : 'idle'
+  const animationSrc = reduceMotion ? null : `/miss-julie-animations/transparent/${animationName}.webm`
+  const [animationReady, setAnimationReady] = useState(false)
+
+  useEffect(() => {
+    setAnimationReady(false)
+  }, [animationSrc])
 
   return (
     <main className="auth-page">
@@ -33,7 +51,7 @@ export function AuthFrame({
         </span>
         <h1>{title}</h1>
         <p>{subtitle}</p>
-        <div className="auth-character">
+        <div className={`auth-character${animationReady ? ' has-transparent-animation' : ''}`}>
           <img
             src={poseSrc}
             alt="Miss Julie, your AI English Teacher"
@@ -42,6 +60,20 @@ export function AuthFrame({
               e.currentTarget.src = '/miss-julie/welcome.png'
             }}
           />
+          {animationSrc ? <video
+            key={animationSrc}
+            className="auth-character-animation"
+            src={animationSrc}
+            autoPlay
+            loop
+            muted
+            playsInline
+            preload="auto"
+            aria-hidden="true"
+            onCanPlay={() => setAnimationReady(true)}
+            onPlaying={() => setAnimationReady(true)}
+            onError={() => setAnimationReady(false)}
+          /> : null}
         </div>
       </section>
       <section className="auth-form-area">{children}</section>

@@ -1,0 +1,90 @@
+{
+  "scenario": "Real Node provider -> owned loopback FastAPI; synthetic curriculum turns",
+  "passed": 16,
+  "modelCallsAllowed": false,
+  "paidSpeechCalls": 0,
+  "physicalAudioTested": false,
+  "productionTested": false,
+  "cases": [
+    {
+      "sceneKey": "hello-school",
+      "contextCharacters": 831,
+      "passed": true
+    },
+    {
+      "sceneKey": "skip-bunny",
+      "contextCharacters": 805,
+      "passed": true
+    },
+    {
+      "sceneKey": "run-race",
+      "contextCharacters": 815,
+      "passed": true
+    },
+    {
+      "sceneKey": "walk-school",
+      "contextCharacters": 821,
+      "passed": true
+    },
+    {
+      "sceneKey": "big-grin",
+      "contextCharacters": 824,
+      "passed": true
+    },
+    {
+      "sceneKey": "school-bell",
+      "contextCharacters": 828,
+      "passed": true
+    },
+    {
+      "sceneKey": "jump-frog",
+      "contextCharacters": 805,
+      "passed": true
+    },
+    {
+      "sceneKey": "play-friends",
+      "contextCharacters": 817,
+      "passed": true
+    },
+    {
+      "sceneKey": "enter-class",
+      "contextCharacters": 836,
+      "passed": true
+    },
+    {
+      "sceneKey": "grade-one",
+      "contextCharacters": 861,
+      "passed": true
+    },
+    {
+      "sceneKey": "poem-pair-1",
+      "contextCharacters": 924,
+      "passed": true
+    },
+    {
+      "sceneKey": "poem-pair-2",
+      "contextCharacters": 939,
+      "passed": true
+    },
+    {
+      "sceneKey": "poem-pair-3",
+      "contextCharacters": 927,
+      "passed": true
+    },
+    {
+      "sceneKey": "poem-pair-4",
+      "contextCharacters": 914,
+      "passed": true
+    },
+    {
+      "sceneKey": "poem-pair-5",
+      "contextCharacters": 967,
+      "passed": true
+    },
+    {
+      "sceneKey": "poem-full",
+      "contextCharacters": 1292,
+      "passed": true
+    }
+  ]
+}

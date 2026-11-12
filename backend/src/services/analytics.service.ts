@@ -49,6 +49,14 @@ export const AnalyticsService = {
   async studentDetail(schoolId: string, studentId: string, teacherId?: string) {
     const student = await Student.findOne({ _id: studentId, schoolId, ...(teacherId ? { teacherId } : {}) }).lean()
     if (!student) return null
+    const homePracticeQuery = async () => {
+      const assignedKey = student.grade === 1 ? 'CLASS1_L01_FIRST_DAY' : 'UNIT1_FAVOURITES'
+      const assigned = await HomePractice.findOne({ studentId, unitKey: assignedKey })
+        .select('unitKey reflection submittedAt audioSizeBytes').lean()
+      if (assigned || assignedKey === 'UNIT1_FAVOURITES') return assigned
+      return HomePractice.findOne({ studentId, unitKey: 'UNIT1_FAVOURITES' })
+        .select('unitKey reflection submittedAt audioSizeBytes').lean()
+    }
     const [progress, scoreGroups, recentAttempts, levelCounts, homePractice] = await Promise.all([
       Progress.find({ studentId }).lean(),
       ActivityAttempt.aggregate([
@@ -57,7 +65,7 @@ export const AnalyticsService = {
       ]),
       ActivityAttempt.find({ studentId }).sort('-createdAt').limit(20).lean(),
       activeLevelCountsByGrade([student.grade]),
-      HomePractice.findOne({ studentId, unitKey: 'UNIT1_FAVOURITES' }).select('reflection submittedAt audioSizeBytes').lean(),
+      homePracticeQuery(),
     ])
     const scores = scoreGroups[0] || { attempts: 0, totalScore: 0, totalTimeMs: 0 }
     return {
@@ -71,7 +79,7 @@ export const AnalyticsService = {
         streak: Math.max(0, ...progress.map((row) => row.streak)),
       },
       recentAttempts: recentAttempts.map((attempt) => ({ activityId: attempt.activityId.toString(), answer: attempt.answer, correct: attempt.correct, score: attempt.score, timeTakenSeconds: Math.round(attempt.timeTakenMs / 1000), createdAt: attempt.createdAt })),
-      homePractice: homePractice ? { reflection: homePractice.reflection, submittedAt: homePractice.submittedAt, hasAudio: Boolean(homePractice.audioSizeBytes) } : null,
+      homePractice: homePractice ? { unitKey: homePractice.unitKey, reflection: homePractice.reflection, submittedAt: homePractice.submittedAt, hasAudio: Boolean(homePractice.audioSizeBytes) } : null,
     }
   },
   async schoolOverview(schoolId: string, teacherId?: string) {

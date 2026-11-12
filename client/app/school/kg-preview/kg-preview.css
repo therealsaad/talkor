@@ -1,0 +1,183 @@
+.kg-preview-garden {
+  position: relative;
+  isolation: isolate;
+  width: min(100%, 1320px);
+  min-height: min(78dvh, 880px);
+  margin: 0 auto;
+  overflow: hidden;
+  border: 5px solid #fff9dc;
+  border-radius: 30px;
+  background: #9bcf78;
+  box-shadow: 0 16px 38px rgba(45, 80, 38, .2);
+}
+
+.kg-preview-garden::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(20, 66, 39, .53), rgba(31, 82, 43, .2) 55%, rgba(35, 75, 38, .5));
+  content: '';
+}
+
+.kg-preview-garden__background {
+  z-index: -2;
+  object-fit: cover;
+  object-position: center;
+}
+
+.kg-preview-garden__content {
+  display: grid;
+  min-height: inherit;
+  align-content: center;
+  gap: clamp(18px, 3vw, 32px);
+  padding: clamp(18px, 4vw, 48px);
+}
+
+.kg-preview-garden__heading {
+  width: fit-content;
+  max-width: 100%;
+  padding: clamp(16px, 2.5vw, 26px) clamp(20px, 3vw, 34px);
+  border: 2px solid rgba(255, 255, 255, .85);
+  border-radius: 24px;
+  background: rgba(255, 250, 224, .95);
+  color: #315d36;
+  box-shadow: 0 8px 22px rgba(30, 65, 34, .18);
+}
+
+.kg-preview-garden__heading > span {
+  color: #7c6a37;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: .12em;
+}
+
+.kg-preview-garden__heading h1 {
+  margin: 4px 0;
+  font-size: clamp(27px, 4vw, 44px);
+  line-height: 1.08;
+}
+
+.kg-preview-garden__heading p {
+  margin: 5px 0 0;
+  font-weight: 700;
+}
+
+.kg-preview-garden__levels {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(10px, 1.6vw, 18px);
+}
+
+.kg-preview-garden__level {
+  display: flex;
+  min-width: 0;
+  min-height: 98px;
+  align-items: center;
+  gap: 14px;
+  padding: 14px;
+  border: 2px solid rgba(255, 255, 255, .88);
+  border-radius: 22px;
+  background: rgba(255, 251, 230, .97);
+  color: #365b36;
+  box-shadow: 0 7px 18px rgba(35, 70, 38, .18);
+  text-decoration: none;
+}
+
+a.kg-preview-garden__level {
+  cursor: pointer;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+a.kg-preview-garden__level:hover,
+a.kg-preview-garden__level:focus-visible {
+  transform: translateY(-3px);
+  outline: 4px solid #ffe078;
+  outline-offset: 3px;
+  box-shadow: 0 12px 24px rgba(35, 70, 38, .24);
+}
+
+.kg-preview-garden__level--featured {
+  border-color: #ffe078;
+  background: #fff3c8;
+}
+
+.kg-preview-garden__level--unavailable {
+  background: rgba(239, 239, 219, .93);
+  color: #616d5b;
+}
+
+.kg-preview-garden__number {
+  display: grid;
+  width: clamp(52px, 6vw, 72px);
+  flex: 0 0 auto;
+  aspect-ratio: 1;
+  place-items: center;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: #f7c95b;
+  color: #68451e;
+  font-size: clamp(25px, 3vw, 38px);
+  font-weight: 950;
+  box-shadow: 0 4px 0 #d9a83b;
+}
+
+.kg-preview-garden__level--unavailable .kg-preview-garden__number {
+  background: #d7ddcb;
+  color: #596552;
+  box-shadow: 0 4px 0 #b6c0a9;
+}
+
+.kg-preview-garden__details {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.kg-preview-garden__details strong {
+  font-size: 17px;
+  font-weight: 950;
+}
+
+.kg-preview-garden__details > span {
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.kg-preview-garden__details small {
+  margin-top: 3px;
+  color: #64734b;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.kg-preview-garden__staff-note {
+  justify-self: center;
+  margin: 0;
+  padding: 9px 14px;
+  border-radius: 999px;
+  background: rgba(255, 250, 224, .94);
+  color: #455d35;
+  font-size: 12px;
+  font-weight: 800;
+  text-align: center;
+}
+
+@media (min-width: 900px) {
+  .kg-preview-garden__levels { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+@media (max-width: 540px) {
+  .kg-preview-garden { min-height: 0; border-width: 3px; border-radius: 20px; }
+  .kg-preview-garden__content { gap: 14px; padding: 14px; }
+  .kg-preview-garden__levels { grid-template-columns: 1fr; gap: 9px; }
+  .kg-preview-garden__level { min-height: 76px; gap: 11px; padding: 10px; border-radius: 17px; }
+  .kg-preview-garden__number { width: 48px; font-size: 25px; }
+  .kg-preview-garden__details strong { font-size: 15px; }
+  .kg-preview-garden__details > span { font-size: 12px; }
+  .kg-preview-garden__details small { font-size: 10px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  a.kg-preview-garden__level { transition: none; }
+}

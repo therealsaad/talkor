@@ -1,23 +1,9 @@
-import type { LevelActivity, SuggestedActivity } from '../../../types'
+import { kgFutureDraftActivities, kgFutureDraftSuggestions } from '../future-level-drafts'
 
-/** Add reviewed, working exercises. Empty means NOT student-playable. */
-export const activities: LevelActivity[] = []
+/** Eight original educator-reviewable KG Level 8 beats. This staff-only
+ * activity list is NOT a published lesson or an authorized student path.
+ * Each beat is deliberately approved:false until media/rubrics are reviewed.
+ */
+export const activities = kgFutureDraftActivities(8)
 
-/** Editorial ideas only; not exposed to students or grading. */
-export const suggestedActivities: SuggestedActivity[] = [
-  {
-    "label": "Listen and explore: Feelings and Greetings",
-    "mode": "tap-picture",
-    "educatorNote": "Teacher defines visual scene and sound cues here."
-  },
-  {
-    "label": "Speak about Feelings and Greetings",
-    "mode": "repeat-after-julie",
-    "educatorNote": "Teacher supplies sample answer, corrective hints and language support."
-  },
-  {
-    "label": "Show what you know about Feelings and Greetings",
-    "mode": "listen-and-find",
-    "educatorNote": "Teacher sets scoring rubric, touch choices and mastery threshold."
-  }
-]
+export const suggestedActivities = kgFutureDraftSuggestions(8)

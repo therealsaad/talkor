@@ -5,6 +5,7 @@
   "description": "Talkora backend engine — auth, curriculum, progress, AI (Miss Julie) and voice service boundaries",
   "main": "dist/server.js",
   "scripts": {
+    "smoke:class1-azure-voice": "tsx src/scripts/smoke-class1-azure-voice-e2e.ts",
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
@@ -14,6 +15,7 @@
     "migrate:curriculum-v1": "tsx src/scripts/migrate-curriculum-v1.ts",
     "db:ensure-indexes": "tsx src/scripts/ensure-indexes.ts",
     "reports:export": "tsx src/scripts/export-school-reports.ts",
+    "reports:reconcile-completions": "tsx src/scripts/reconcile-level-completions.ts",
     "audit:curriculum": "tsx src/scripts/audit-curriculum-atlas.ts",
     "audit:kg-assets": "tsx src/scripts/audit-kg-picture-assets.ts",
     "curriculum:kg": "tsx src/scripts/kg-curriculum-publisher.ts",
@@ -28,7 +30,11 @@
     "test:watch": "jest --watch",
     "lint": "tsc -p tsconfig.json --noEmit",
     "curriculum:map:dry-run": "tsx src/scripts/map-110-curriculum.ts",
-    "curriculum:map:apply": "tsx src/scripts/map-110-curriculum.ts --apply"
+    "curriculum:map:apply": "tsx src/scripts/map-110-curriculum.ts --apply",
+    "kg:azure:warm": "tsx src/scripts/prewarm-kg-azure-audio.ts",
+    "test:kg-azure-audio": "node --test tests/kg-azure-narration.node.test.cjs",
+    "test:synthetic-teaching-harness": "jest --runInBand tests/unit/syntheticTeachingHarness.test.ts",
+    "dev:synthetic-teaching-demo": "tsx src/scripts/check-synthetic-teaching-harness.ts"
   },
   "engines": {
     "node": ">=18"
@@ -48,6 +54,7 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@jest/globals": "^29.7.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",

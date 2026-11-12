@@ -15,7 +15,9 @@ const picture = await readFile(new URL('../../../components/student/lesson/immer
 
 test('Grade 0 opens the authoritative ten-level garden and preserves the canonical Level 1', () => {
   assert.ok(levels.includes('if (student?.grade === 0)'))
-  assert.ok(login.includes("signedIn.student?.grade === 0 ? '/student/kg/map' : '/student/continue'"))
+  assert.ok(login.includes('await loginStudentByPin(pin)'))
+  assert.ok(!login.includes('router.replace('))
+  assert.ok(!login.includes("router.replace('/student/kg/map')"))
   assert.ok(portal.includes("session?.student?.grade === 0 && pathname === '/student/home'"))
   assert.ok(portal.includes("router.replace('/student/kg/map')"))
   assert.ok(!mapPage.includes('curriculumService.getMyCurriculum'))

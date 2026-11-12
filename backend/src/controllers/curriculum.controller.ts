@@ -47,7 +47,10 @@ export const CurriculumController = {
     if (req.auth?.role === 'STUDENT') {
       const progress = await ProgressService.getForStudent(req.auth.id, req.params.classId)
       const statusByLevel = new Map(progress.levels.map((l) => [l.levelId.toString(), l.status]))
-      const annotated = levels.map((l) => ({ ...l, status: statusByLevel.get(l._id.toString()) ?? 'locked' }))
+      const annotated = levels.map((l) => {
+        const recorded = statusByLevel.get(l._id.toString())
+        return { ...l, status: recorded || 'locked' }
+      })
       return ok(res, annotated)
     }
     ok(res, levels)
@@ -66,6 +69,7 @@ export const CurriculumController = {
   listLessons: catchAsync(async (req: Request, res: Response) => {
     if (req.auth?.role === 'STUDENT') await CurriculumAccessService.assertLevel(req.auth.id, req.params.levelId)
     const level = await CurriculumService.getLevel(req.params.levelId)
+    if (req.auth?.role === 'STUDENT') await ProgressService.assertLevelAccessible(req.auth.id, level.classId.toString(), level._id.toString())
     await assertTeacherCanPreviewClass(req.auth?.role, level.classId.toString())
     ok(res, await CurriculumService.listLessons(req.params.levelId))
   }),
@@ -73,6 +77,10 @@ export const CurriculumController = {
   getLesson: catchAsync(async (req: Request, res: Response) => {
     if (req.auth?.role === 'STUDENT') await CurriculumAccessService.assertLesson(req.auth.id, req.params.id)
     const lesson = await CurriculumService.getLesson(req.params.id)
+    if (req.auth?.role === 'STUDENT') {
+      const level = await CurriculumService.getLevel(lesson.levelId.toString())
+      await ProgressService.assertLevelAccessible(req.auth.id, level.classId.toString(), level._id.toString())
+    }
     if (req.auth?.role === 'TEACHER') {
       const level = await CurriculumService.getLevel(lesson.levelId.toString())
       await assertTeacherCanPreviewClass(req.auth.role, level.classId.toString())
@@ -90,7 +98,8 @@ export const CurriculumController = {
       return ok(res, await CurriculumService.listActivitiesForTeacher(req.params.lessonId))
     }
     if (!req.auth) throw ApiError.unauthorized()
-    await CurriculumAccessService.assertLesson(req.auth.id, req.params.lessonId)
+    const access = await CurriculumAccessService.assertLesson(req.auth.id, req.params.lessonId)
+    await ProgressService.assertLevelAccessible(req.auth.id, access.level.classId.toString(), access.level._id.toString())
     ok(res, await CurriculumService.listActivitiesForStudent(req.params.lessonId))
   }),
 
@@ -105,7 +114,8 @@ export const CurriculumController = {
       return ok(res, activity)
     }
     if (!req.auth) throw ApiError.unauthorized()
-    await CurriculumAccessService.assertActivity(req.auth.id, req.params.id)
+    const access = await CurriculumAccessService.assertActivity(req.auth.id, req.params.id)
+    await ProgressService.assertLevelAccessible(req.auth.id, access.level.classId.toString(), access.level._id.toString())
     ok(res, await CurriculumService.getActivityForStudent(req.params.id))
   }),
 }

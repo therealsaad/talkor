@@ -48,7 +48,12 @@ import {
 } from './curriculum-access.service'
 import { KG_CURRICULUM_VERSION } from './kg-pilot-access'
 import { isMissingKGPilotPicture } from './kg-pilot-presentation'
-import { CLASS1_DEMO_VERSION } from './class1-demo-access'
+import {
+  CLASS1_DEMO_ACTIVITY_FILTER,
+  CLASS1_DEMO_LESSON_FILTER,
+  CLASS1_DEMO_VERSION,
+  preferClass1FirstDayLesson,
+} from './class1-demo-access'
 
 import {
   areRequiredActivitiesComplete,
@@ -354,15 +359,13 @@ export const ProgressService = {
       levels.map(
         (
           level,
-          index,
         ) => ({
           levelId:
             level._id,
 
+          // Any level made available to the student's class is accessible without staff approval
           status:
-            index === 0
-              ? 'unlocked'
-              : 'locked',
+            'unlocked',
 
           lessons:
             [],
@@ -374,9 +377,7 @@ export const ProgressService = {
             0,
 
           unlockedAt:
-            index === 0
-              ? new Date()
-              : undefined,
+            new Date(),
         }),
       )
 
@@ -526,27 +527,13 @@ export const ProgressService = {
         continue
       }
 
-      /*
-       * A newly published first level may be unlocked.
-       *
-       * Later newly published levels remain locked until
-       * progression unlocks them.
-       */
-      const shouldUnlock =
-        index ===
-          0 &&
-        progress.levels.length ===
-          0
-
       progress.levels.push(
         {
           levelId:
             level._id,
 
           status:
-            shouldUnlock
-              ? 'unlocked'
-              : 'locked',
+            'unlocked',
 
           lessons:
             [],
@@ -558,9 +545,7 @@ export const ProgressService = {
             0,
 
           unlockedAt:
-            shouldUnlock
-              ? new Date()
-              : undefined,
+            new Date(),
         },
       )
 
@@ -568,17 +553,21 @@ export const ProgressService = {
         true
     }
 
-    const activeLessons = await Lesson.find({
+    const lessonCandidates = await Lesson.find({
       levelId: { $in: levels.map((level) => level._id) },
-      status: levelStatus,
-      ...(isClass1Demo ? { 'settings.talkoraDemoDraft': true } : {}),
+      ...(isClass1Demo ? CLASS1_DEMO_LESSON_FILTER : { status: levelStatus }),
     })
-      .select('_id levelId')
+      .select('_id levelId settings')
       .lean()
+    // Keep archived/v2 learner records intact. A complete v3 lesson becomes
+    // the only current teaching goal; historic IDs remain in their old lesson.
+    const activeLessons = isClass1Demo
+      ? preferClass1FirstDayLesson(lessonCandidates)
+      : lessonCandidates
     const activeActivities = activeLessons.length
       ? await Activity.find({
           lessonId: { $in: activeLessons.map((lesson) => lesson._id) },
-          status: levelStatus,
+          ...(isClass1Demo ? CLASS1_DEMO_ACTIVITY_FILTER : { status: levelStatus }),
         })
           .select('_id lessonId required core type content')
           .lean()
@@ -610,7 +599,12 @@ export const ProgressService = {
     }
 
     let previousLevelsComplete = true
+    // A missing or unapproved level is a hard stop. Never skip from
+    // published Level 1 directly to Level 3 merely because Level 2 is draft.
+    let expectedLevelNumber = 1
     for (const level of levels) {
+      if (!isDraftPilot && level.number !== expectedLevelNumber) previousLevelsComplete = false
+      expectedLevelNumber = level.number + 1
       const levelProgress = progress.levels.find(
         (item) => item.levelId.toString() === level._id.toString(),
       )
@@ -643,7 +637,8 @@ export const ProgressService = {
           changed = true
         }
 
-        const lessonComplete = areRequiredActivitiesComplete(requiredIds, prunedSet)
+        // An empty placeholder lesson is not mastered merely because [].every() is true.
+        const lessonComplete = requiredIds.length > 0 && areRequiredActivitiesComplete(requiredIds, prunedSet)
         if (lessonProgress && lessonProgress.completed !== lessonComplete) {
           lessonProgress.completed = lessonComplete
           changed = true
@@ -667,8 +662,14 @@ export const ProgressService = {
           levelProgress.completedAt = new Date()
           changed = true
         }
+      } else if (levelProgress.status === 'completed' && levelProgress.completedAt) {
+        /*
+          Verified completions are immutable for reporting.
+          Curriculum sync may add new required activities, but must never
+          demote status or clear completedAt — that would erase school/teacher history.
+        */
       } else {
-        const nextStatus =
+        const nextStatus: 'locked' | 'unlocked' | 'in-progress' =
           previousLevelsComplete
             ? levelProgress.status === 'in-progress'
               ? 'in-progress'
@@ -688,7 +689,9 @@ export const ProgressService = {
         }
       }
 
-      previousLevelsComplete = previousLevelsComplete && levelComplete
+      previousLevelsComplete =
+        previousLevelsComplete &&
+        (levelComplete || (levelProgress.status === 'completed' && !!levelProgress.completedAt))
     }
 
     /* =====================================================
@@ -786,23 +789,11 @@ export const ProgressService = {
       )
     }
 
-    const levelProgress =
-      progress.levels.find(
-        (
-          item,
-        ) =>
-          item.levelId.toString() ===
-          levelId,
-      )
-
-    if (
-      !levelProgress ||
-      levelProgress.status ===
-        'locked'
-    ) {
-      throw ApiError.businessRule(
-        'This unit is locked. Complete the previous unit first.',
-      )
+    // The student's previous verified level must already have been completed.
+    // Never create/unlock progress from a direct lesson URL or API call.
+    const levelProgress = progress.levels.find((entry) => entry.levelId.toString() === levelId)
+    if (!levelProgress || levelProgress.status === 'locked') {
+      throw ApiError.businessRule('Finish the previous published level before starting this lesson.')
     }
 
     return progress
@@ -1601,7 +1592,7 @@ export const ProgressService = {
     const wasLessonComplete =
       lessonProgress.completed
 
-    lessonProgress.completed = areRequiredActivitiesComplete(
+    lessonProgress.completed = requiredActivityIds.length > 0 && areRequiredActivitiesComplete(
       requiredActivityIds,
       completedActivityIds,
     )
@@ -1725,7 +1716,14 @@ export const ProgressService = {
     }
 
     /* =====================================================
-       LEVEL COMPLETION
+       LEVEL COMPLETION (canonical verified completion)
+
+       School/teacher Learning Progress reports read
+       Progress.levels[].status === 'completed' + completedAt.
+       Never accept a client "completed: true" flag — only this
+       path (required+core activities across all lessons) may
+       mark a level completed. Idempotent: re-entry after
+       wasLevelComplete does not re-emit events or re-unlock.
        ===================================================== */
 
     const wasLevelComplete =
@@ -1878,6 +1876,8 @@ export const ProgressService = {
         index +
           1
       ]
+    // Skip no unpublished gaps: only the immediately next sequential level.
+    if (nextLevel && nextLevel.number !== levels[index].number + 1) return
 
     /*
      * No next published level.

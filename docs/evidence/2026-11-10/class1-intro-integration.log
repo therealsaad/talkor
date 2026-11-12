@@ -1,0 +1,59 @@
+ts-jest[config] (WARN) [94mmessage[0m[90m TS151002: [0mUsing hybrid module kind (Node16/18/Next) is only supported in "isolatedModules: true". Please set "isolatedModules: true" in your tsconfig.json. To disable this message, you can set "diagnostics.ignoreCodes" to include 151002 in your ts-jest config. See more at https://kulshekhar.github.io/ts-jest/docs/getting-started/options/diagnostics
+ts-jest[config] (WARN) [94mmessage[0m[90m TS151002: [0mUsing hybrid module kind (Node16/18/Next) is only supported in "isolatedModules: true". Please set "isolatedModules: true" in your tsconfig.json. To disable this message, you can set "diagnostics.ignoreCodes" to include 151002 in your ts-jest config. See more at https://kulshekhar.github.io/ts-jest/docs/getting-started/options/diagnostics
+ts-jest[config] (WARN) [94mmessage[0m[90m TS151002: [0mUsing hybrid module kind (Node16/18/Next) is only supported in "isolatedModules: true". Please set "isolatedModules: true" in your tsconfig.json. To disable this message, you can set "diagnostics.ignoreCodes" to include 151002 in your ts-jest config. See more at https://kulshekhar.github.io/ts-jest/docs/getting-started/options/diagnostics
+ts-jest[config] (WARN) [94mmessage[0m[90m TS151002: [0mUsing hybrid module kind (Node16/18/Next) is only supported in "isolatedModules: true". Please set "isolatedModules: true" in your tsconfig.json. To disable this message, you can set "diagnostics.ignoreCodes" to include 151002 in your ts-jest config. See more at https://kulshekhar.github.io/ts-jest/docs/getting-started/options/diagnostics
+GET /api/students/me/next-lesson 200 35.657 ms - 157
+POST /api/voice/sessions 409 17.411 ms - 122
+POST /api/ai/miss-julie 409 29.591 ms - 122
+POST /api/ai/miss-julie 409 13.108 ms - 122
+POST /api/progress/activities/6af2e5b9e292f677fe316ef8/attempts 409 13.321 ms - 122
+POST /api/voice/first-day/intro/start 200 38.677 ms - 125
+POST /api/voice/first-day/intro/complete 409 16.837 ms - 122
+POST /api/voice/first-day/intro/complete 409 11.735 ms - 122
+POST /api/voice/first-day/intro/complete 400 4.020 ms - 241
+POST /api/voice/first-day/intro/complete 409 11.976 ms - 122
+POST /api/voice/first-day/intro/complete 409 14.367 ms - 122
+POST /api/voice/first-day/intro/complete 200 12.243 ms - 42
+POST /api/voice/sessions 201 15.179 ms - 410
+POST /api/voice/sessions 409 11.062 ms - 122
+POST /api/voice/first-day/intro/start 401 0.261 ms - 85
+POST /api/voice/first-day/intro/start 403 0.505 ms - 98
+POST /api/voice/first-day/intro/start 200 15.895 ms - 125
+POST /api/voice/first-day/intro/complete 200 11.902 ms - 42
+POST /api/auth/student/pin-login 200 316.811 ms - 587
+GET /api/auth/me 401 1.897 ms - 115
+POST /api/voice/sessions 409 13.307 ms - 122
+POST /api/voice/first-day/intro/start 200 12.649 ms - 125
+POST /api/voice/first-day/intro/complete 200 13.055 ms - 42
+POST /api/voice/sessions 201 16.815 ms - 410
+POST /api/auth/student/pin-login 200 329.802 ms - 587
+GET /api/auth/me 401 2.078 ms - 115
+POST /api/voice/sessions 409 12.025 ms - 122
+POST /api/voice/first-day/intro/start 200 16.028 ms - 125
+POST /api/voice/first-day/intro/complete 200 14.045 ms - 42
+GET /api/students/me/curriculum 200 21.406 ms - 989
+GET /api/students/me/next-lesson 200 25.083 ms - 157
+GET /api/students/me/lessons/6af2e5bce292f677fe3170bd 200 59.431 ms - 10337
+GET /api/students/me/lessons/6af2e5bce292f677fe3170b9 403 28.156 ms - 100
+GET /api/curriculum-map/grades/1 200 13.535 ms - 5441
+GET /api/curriculum-map/grades/1 403 5.420 ms - 98
+POST /api/voice/first-day/intro/start 200 18.579 ms - 125
+POST /api/voice/first-day/intro/complete 200 20.446 ms - 42
+GET /api/students/me/progress 200 30.889 ms - 455
+GET /api/students/me/next-lesson 200 13.792 ms - 157
+GET /api/students/me/lessons/6af2e5bde292f677fe31715e 200 26.645 ms - 10363
+GET /api/students/me/lessons/6af2e5bee292f677fe3171bf 403 5.276 ms - 100
+PASS tests/integration/class1PublishedLevel1Journey.test.ts (18.965 s)
+  genuinely published Class 1 Level 1 (disposable database)
+    ✓ does not adopt a newer PIN visit when authentication and intro handling race (1085 ms)
+    ✓ allows curriculum bootstrap but refuses direct voice, AI and progress before the full story (910 ms)
+    ✓ rejects early, forged, missing-ended and expired intro completion; only the current reviewed film authorizes voice (846 ms)
+    ✓ new Class 1 PIN visits revoke old JWT/intro eligibility, preserve progress and require the story again (1775 ms)
+    ✓ opens My First Day from the student map/next lesson and staff map with no draft leakage (896 ms)
+    ✓ resumes from saved Mongo progress and cannot skip unpublished Level 2 (1025 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       6 passed, 6 total
+Snapshots:   0 total
+Time:        19.288 s
+Ran all test suites matching /tests\/integration\/class1PublishedLevel1Journey.test.ts/i.

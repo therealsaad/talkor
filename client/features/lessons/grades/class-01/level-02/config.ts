@@ -6,13 +6,15 @@ export const config = {
   "grade": 1,
   "level": 2,
   "gradeLabel": "Class 1",
-  "title": "My School",
+  "title": "Action Beats & Rainbow Words",
   "editorialStatus": "draft",
   "studentPlayable": false,
-  "description": "My School — a distinct treasure cove adventure for Class 1 learners.",
+  "description": "Original Balbharati 1.2–1.6 teaching: clap, alphabet, cat word-building, vowel sounds and colours. Thirty staff-review draft activities (including 19 exercise checkpoints), no unapproved student publication.",
   "syllabus": {
     "objectives": [
-      "Recognize, hear, and speak language connected to my school."
+      "Listen, act and connect letters with familiar words.",
+      "Explain one step in Hindi or Marathi when requested; always return to short English speaking.",
+      "Use modeled feedback for repeated difficulty and extend only when the student is ready."
     ],
     "skills": [
       "listening",
@@ -20,8 +22,8 @@ export const config = {
       "reading"
     ],
     "boardReviewRequired": true,
-    "sourceBook": null,
-    "sourcePages": [],
+    "sourceBook": "English Balbharati Standard One (2025; 2026 reprint)",
+    "sourcePages": [2, 3, 4, 5, 6, 7, 8, 9],
     "syllabusVerified": false
   },
   "experience": {
@@ -48,8 +50,8 @@ export const config = {
     "voiceFirst": true,
     "invisibleAdaptive": true,
     "autoResume": true,
-    "introRequired": false,
-    "introMustComplete": false,
+    "introRequired": true,
+    "introMustComplete": true,
     "speechLanguage": "en-IN",
     "beginnerHindiSupport": true,
     "spontaneousFeedbackTTS": "azure-uncached",

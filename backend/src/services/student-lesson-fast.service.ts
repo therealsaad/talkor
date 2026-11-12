@@ -8,7 +8,15 @@ import { CurriculumAccessService } from './curriculum-access.service'
 import { ProgressService } from './progress.service'
 import { KG_CURRICULUM_VERSION } from './kg-pilot-access'
 import { isMissingKGPilotPicture, presentKGPilotActivity } from './kg-pilot-presentation'
-import { CLASS1_DEMO_EXPERIENCE_ID, CLASS1_DEMO_VERSION } from './class1-demo-access'
+import {
+  CLASS1_DEMO_ACTIVITY_FILTER,
+  CLASS1_DEMO_EXPERIENCE_ID,
+  CLASS1_DEMO_LESSON_FILTER,
+  CLASS1_DEMO_VERSION,
+  CLASS1_FIRST_DAY_PARALLEL_REVISION,
+  CLASS1_FIRST_DAY_POEM_REVISION,
+  preferClass1FirstDayLesson,
+} from './class1-demo-access'
 
 /**
  * One grade-authoritative read for the hands-free lab lesson flow.
@@ -30,18 +38,26 @@ export const StudentLessonFastService = {
             ? { curriculumVersion: CLASS1_DEMO_VERSION, number: 1, status: 'draft', availability: 'UPCOMING' }
             : { status: 'active', availability: 'PUBLISHED' }),
       })
-        .select('_id order title').sort('order').lean(),
+        .select('_id number order title').sort('order').lean(),
     ])
 
     for (const unit of units) {
       const unitProgress = progress.levels.find(item => item.levelId.toString() === unit._id.toString())
       const unitIsAccessible = Boolean(unitProgress && ['unlocked', 'in-progress'].includes(unitProgress.status))
-      const lessons = await Lesson.find({ levelId: unit._id, status: contentStatus, ...(isClass1Demo ? { 'settings.talkoraDemoDraft': true } : {}) })
-        .select('_id order').sort('order').lean()
+      const lessonCandidates = await Lesson.find({
+        levelId: unit._id,
+        ...(isClass1Demo ? CLASS1_DEMO_LESSON_FILTER : { status: contentStatus }),
+      })
+        .select('_id order settings').sort('order').lean()
+      // Historical v2 progress stays in MongoDB, but the next-lesson
+      // resolver teaches ONLY the new syllabus once the v3 lesson is ready.
+      const lessons = isClass1Demo || (student.grade === 1 && unit.number === 1)
+        ? preferClass1FirstDayLesson(lessonCandidates)
+        : lessonCandidates
       for (const lesson of lessons) {
         const activities = await Activity.find({
           lessonId: lesson._id,
-          status: contentStatus,
+          ...(isClass1Demo ? CLASS1_DEMO_ACTIVITY_FILTER : { status: contentStatus }),
           core: { $ne: false },
           required: { $ne: false },
           ...(isKGPilot ? { $nor: [{ type: 'PICTURE_CHOICE', 'content.pictureAsset.status': 'MISSING' }] } : {}),
@@ -64,35 +80,70 @@ export const StudentLessonFastService = {
     if (student.grade === 0 && !hasPlayableActivity) {
       throw ApiError.businessRule(CurriculumAccessService.unpublishedCurriculumMessage(student.grade))
     }
-    return { grade: student.grade, lessonId: null, activityId: null, unitTitle: null, complete: true }
+    // A locked or empty published level cannot be silently skipped and
+    // must not be reported as "all education complete".
+    const blocked = units.some((unit) => {
+      const saved = progress.levels.find((item) => item.levelId.toString() === unit._id.toString())
+      return saved?.status !== 'completed'
+    }) || (!isKGPilot && !isClass1Demo && (units[units.length - 1]?.number ?? 0) < 10)
+    return { grade: student.grade, lessonId: null, activityId: null, unitTitle: null,
+      complete: !blocked, blocked,
+      ...(blocked ? { blockedMessage: 'Miss Julie is preparing your next published lesson. Your progress is saved.' } : {}) }
   },
 
   async lesson(studentId: string, lessonId: string) {
     if (!Types.ObjectId.isValid(lessonId)) throw ApiError.badRequest('Invalid lesson link')
     const { student, curriculumClass, isKGPilot, isClass1Demo } = await CurriculumAccessService.context(studentId)
-    const { lesson, level } = await CurriculumAccessService.assertLesson(studentId, lessonId)
+    const requested = await CurriculumAccessService.assertLesson(studentId, lessonId)
+    const level = requested.level
+    // A published URL is not itself permission to skip an unfinished level.
+    await ProgressService.assertLevelAccessible(studentId, curriculumClass._id.toString(), level._id.toString())
+    // Existing student bookmarks may point to the old v2 ObjectId. Resolve
+    // only within the SAME authenticated Class 1 level and demo curriculum.
+    const publishedFirstDay = !isClass1Demo && student.grade === 1 &&
+      level.number === 1 && level.status === 'active' && level.availability === 'PUBLISHED'
+    const firstDayCandidates = isClass1Demo || publishedFirstDay
+      ? await Lesson.find({
+          levelId: level._id,
+          ...(isClass1Demo ? CLASS1_DEMO_LESSON_FILTER : {
+            status: 'active',
+            'settings.experienceId': CLASS1_DEMO_EXPERIENCE_ID,
+          }),
+          'settings.lessonPlanRevision': { $in: [CLASS1_FIRST_DAY_POEM_REVISION, CLASS1_FIRST_DAY_PARALLEL_REVISION] },
+        }).lean()
+      : []
+    const firstDay = preferClass1FirstDayLesson(firstDayCandidates)[0] || null
+    const lesson = firstDay || requested.lesson
     const contentStatus = isKGPilot || isClass1Demo ? 'draft' : 'active'
     const [progress, activities] = await Promise.all([
       ProgressService.getForStudent(studentId, curriculumClass._id.toString()),
       Activity.find({
         lessonId: lesson._id,
-        status: contentStatus,
-        ...(isClass1Demo ? { curriculumVersion: CLASS1_DEMO_VERSION, activityKey: /^class1-l01-/ } : {}),
+        ...(isClass1Demo ? CLASS1_DEMO_ACTIVITY_FILTER : { status: contentStatus }),
+        ...(firstDay ? { activityKey: firstDay.settings?.lessonPlanRevision === CLASS1_FIRST_DAY_POEM_REVISION
+          ? /^class1-l01-v4-poem-/ : /^class1-l01-v3-/ } : {}),
+        ...(isClass1Demo ? { core: { $ne: false }, required: { $ne: false } } : {}),
       })
         .select('-answer -answerConfig')
         .sort('order').lean(),
     ])
     const levelProgress = progress.levels.find(item => item.levelId.toString() === level._id.toString())
     if (!levelProgress || levelProgress.status === 'locked') {
-      throw ApiError.unitLocked()
+      throw ApiError.activityUnavailable('Finish your previous level before opening this lesson')
     }
     if (!activities.length) throw ApiError.activityUnavailable('This lesson has no published activities')
     const lessonProgress = levelProgress.lessons.find(item => item.lessonId.toString() === lesson._id.toString())
     return {
       grade: student.grade,
-      experienceId: isClass1Demo ? CLASS1_DEMO_EXPERIENCE_ID : undefined,
+      experienceId: (isClass1Demo || firstDay) ? CLASS1_DEMO_EXPERIENCE_ID : undefined,
       curriculumClass: { id: curriculumClass._id.toString(), grade: student.grade, name: curriculumClass.name, order: curriculumClass.order },
-      level: { ...level, id: level._id.toString(), classId: level.classId.toString() },
+      level: { ...level,
+        ...(firstDay ? firstDay.settings?.lessonPlanRevision === CLASS1_FIRST_DAY_POEM_REVISION
+          ? { title: 'My First Day — Poem Garden', place: 'Poem Garden',
+              learningObjectives: ['Listen, chant and recite the whole Grade One Balbharati 1.1 poem'] }
+          : { title: 'My First Day — School Adventure', place: 'School Garden',
+              learningObjectives: ['Speak the First Day school actions in English'] } : {}),
+        id: level._id.toString(), classId: level.classId.toString() },
       lesson: { ...lesson, id: lesson._id.toString(), levelId: level._id.toString() },
       activities: activities.map(item => {
         const presented = isKGPilot ? presentKGPilotActivity(item) : item

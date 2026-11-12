@@ -7,17 +7,23 @@ import { CurriculumClass } from '../../src/models/CurriculumClass'
 import { Level } from '../../src/models/Level'
 import { Lesson } from '../../src/models/Lesson'
 import { Activity } from '../../src/models/Activity'
+import { VoiceSession } from '../../src/models/VoiceSession'
 import { hashPassword } from '../../src/utils/password'
 import { signToken } from '../../src/utils/jwt'
 import { CLASS1_DEMO_VERSION } from '../../src/services/class1-demo-access'
 
 const app = createApp()
+const originalNodeEnv = process.env.NODE_ENV
 
 beforeAll(async () => connectTestDatabase())
 afterAll(async () => disconnectTestDatabase())
+beforeEach(() => { process.env.TALKORA_CLASS1_DEMO_ALL_STUDENTS = 'false' })
 afterEach(async () => {
+  if (originalNodeEnv === undefined) delete process.env.NODE_ENV
+  else process.env.NODE_ENV = originalNodeEnv
   delete process.env.TALKORA_CLASS1_STUDENT_DEMO
   delete process.env.TALKORA_CLASS1_DEMO_STUDENT_ID
+  delete process.env.TALKORA_CLASS1_DEMO_ALL_STUDENTS
   await clearTestDatabase()
 })
 
@@ -39,8 +45,8 @@ async function createStudent(grade: number, name: string) {
   return { student, token }
 }
 
-async function createClass1Draft() {
-  const classroom = await CurriculumClass.create({ grade: 1, name: 'Class 1', order: 1, status: 'draft' })
+async function createClass1Draft(classStatus: 'active' | 'draft' = 'draft') {
+  const classroom = await CurriculumClass.create({ grade: 1, name: 'Class 1', order: 1, status: classStatus })
   const level = await Level.create({
     classId: classroom._id,
     number: 1,
@@ -65,31 +71,37 @@ async function createClass1Draft() {
     settings: { talkoraDemoDraft: true, experienceId: 'g01-l01' },
     status: 'draft',
   })
-  const keys = ['listen-at', 'build-at', 'listen-in', 'build-in', 'look-at-me', 'i-am-sam', 'repeat-at']
+  const keys = [
+    'listen-am', 'build-an', 'listen-at', 'listen-in', 'use-on', 'it-is-up', 'review-little-words',
+    'say-walk', 'find-school', 'school-talk',
+  ]
   const activities = await Activity.create(keys.map((key, index) => ({
     lessonId: lesson._id,
     curriculumVersion: CLASS1_DEMO_VERSION,
-    activityKey: `class1-l01-${key}`,
+    activityKey: `class1-l01-v2-${key}`,
     grade: 1,
     term: 1,
     unitNumber: 1,
     order: index + 1,
-    type: key === 'repeat-at' ? 'CONVERSATION' : 'WORD_RECOGNITION',
-    stage: key === 'repeat-at' ? 'INTERACT' : 'LISTEN_REPEAT',
+    type: ['review-little-words', 'school-talk'].includes(key) ? 'CONVERSATION'
+      : key === 'say-walk' ? 'LISTEN_AND_REPEAT' : 'WORD_RECOGNITION',
+    stage: ['review-little-words', 'school-talk'].includes(key) ? 'INTERACT'
+      : key === 'say-walk' ? 'SPEAK' : 'LISTEN_REPEAT',
     title: key,
-    prompt: key === 'repeat-at' ? 'Say at with Miss Julie.' : 'Choose at.',
-    target: 'at',
-    choices: key === 'repeat-at' ? [] : ['an', 'at', 'in'],
-    answer: key === 'repeat-at' ? undefined : 'at',
+    prompt: ['review-little-words', 'school-talk'].includes(key) ? 'Talk with Miss Julie.' : key === 'say-walk' ? 'Say walk.' : 'Choose a word.',
+    target: key === 'say-walk' ? 'walk' : key === 'school-talk' || key === 'find-school' ? 'school' : 'at',
+    choices: ['review-little-words', 'school-talk', 'say-walk'].includes(key) ? []
+      : key === 'find-school' ? ['bell', 'school', 'playground'] : ['an', 'at', 'in'],
+    answer: ['review-little-words', 'school-talk', 'say-walk'].includes(key) ? undefined : key === 'find-school' ? 'school' : 'am',
     difficulty: 'easy',
     xp: 0,
     estimatedSeconds: 20,
     voiceEnabled: true,
-    aiEnabled: key === 'repeat-at',
-    allowMic: key === 'repeat-at',
-    allowOptions: key !== 'repeat-at',
+    aiEnabled: ['review-little-words', 'school-talk'].includes(key),
+    allowMic: ['review-little-words', 'school-talk', 'say-walk'].includes(key),
+    allowOptions: !['review-little-words', 'school-talk', 'say-walk'].includes(key),
     maxConversationTurns: 2,
-    ...(key === 'repeat-at' ? {
+    ...(['review-little-words', 'school-talk'].includes(key) ? {
       conversationGoal: { requiredConcepts: [], minTurns: 2, maxTurns: 2 },
       metadata: { conversationMode: 'OPEN' },
     } : {}),
@@ -101,11 +113,56 @@ async function createClass1Draft() {
 }
 
 describe('development-only Class 1 student demo access', () => {
-  it('opens the exact seven-activity draft for only the configured Class 1 student', async () => {
+  it('opens the exact ten-activity foundations and My First Day draft for only the configured Class 1 student', async () => {
+    process.env.NODE_ENV = 'development'
     const { student, token } = await createStudent(1, 'Allowed Learner')
-    const { lesson, activities } = await createClass1Draft()
+    const { level, lesson, activities } = await createClass1Draft('active')
     process.env.TALKORA_CLASS1_STUDENT_DEMO = 'true'
     process.env.TALKORA_CLASS1_DEMO_STUDENT_ID = student._id.toString()
+
+    // Nearby draft content must never leak into the one-student g01-l01 demo.
+    const decoyLesson = await Lesson.create({
+      levelId: level._id,
+      title: 'Unapproved Draft Lesson',
+      order: 0,
+      settings: { talkoraDemoDraft: true, experienceId: 'g01-l02' },
+      status: 'draft',
+    })
+    await Activity.create({
+      lessonId: decoyLesson._id, curriculumVersion: CLASS1_DEMO_VERSION, activityKey: 'class1-l01-decoy',
+      grade: 1, term: 1, unitNumber: 1, order: 1, type: 'WORD_RECOGNITION', stage: 'LISTEN_REPEAT',
+      title: 'decoy', prompt: 'Do not show this.', target: 'no', choices: ['no'], answer: 'no', difficulty: 'easy',
+      xp: 0, estimatedSeconds: 10, voiceEnabled: false, aiEnabled: false, allowMic: false, allowOptions: true,
+      core: true, required: true, status: 'draft',
+    })
+    await Activity.create({
+      lessonId: lesson._id, curriculumVersion: 'unapproved-draft-v1', activityKey: 'unapproved-activity',
+      grade: 1, term: 1, unitNumber: 1, order: 11, type: 'WORD_RECOGNITION', stage: 'LISTEN_REPEAT',
+      title: 'unapproved', prompt: 'Do not show this.', target: 'no', choices: ['no'], answer: 'no', difficulty: 'easy',
+      xp: 0, estimatedSeconds: 10, voiceEnabled: false, aiEnabled: false, allowMic: false, allowOptions: true,
+      core: true, required: true, status: 'draft',
+    })
+
+    const progress = await request(app).get('/api/students/me/progress').set('Authorization', `Bearer ${token}`)
+    expect(progress.status).toBe(200)
+    expect(progress.body.data.curriculumVersion).toBe(CLASS1_DEMO_VERSION)
+    expect(progress.body.data.levels).toHaveLength(1)
+    expect(progress.body.data.levels[0]).toMatchObject({ levelId: level._id.toString(), status: 'unlocked' })
+
+    const curriculum = await request(app).get('/api/students/me/curriculum').set('Authorization', `Bearer ${token}`)
+    expect(curriculum.status).toBe(200)
+    expect(curriculum.body.data).toMatchObject({
+      studentGrade: 1,
+      curriculumVersion: CLASS1_DEMO_VERSION,
+      currentUnitId: level._id.toString(),
+      totalUnits: 1,
+    })
+    expect(curriculum.body.data.units[0]).toMatchObject({
+      id: level._id.toString(),
+      title: 'Two-Letter Word Adventure',
+      status: 'CURRENT',
+      lessonCount: 1,
+    })
 
     const next = await request(app).get('/api/students/me/next-lesson').set('Authorization', `Bearer ${token}`)
     expect(next.status).toBe(200)
@@ -114,7 +171,7 @@ describe('development-only Class 1 student demo access', () => {
     const loaded = await request(app).get(`/api/students/me/lessons/${lesson._id}`).set('Authorization', `Bearer ${token}`)
     expect(loaded.status).toBe(200)
     expect(loaded.body.data.experienceId).toBe('g01-l01')
-    expect(loaded.body.data.activities).toHaveLength(7)
+    expect(loaded.body.data.activities).toHaveLength(10)
     expect(loaded.body.data.activities.map((item: { activityKey: string }) => item.activityKey)).toEqual(
       activities.map((item) => item.activityKey),
     )
@@ -124,18 +181,60 @@ describe('development-only Class 1 student demo access', () => {
       activityId: activities[6]._id.toString(),
     })
     expect(voice.status).toBe(201)
-    expect(voice.body.data.provider).toBe('groq-whisper')
+    expect(voice.body.data.provider).toEqual(expect.any(String))
+
+    const controlled = await request(app).post('/api/voice/sessions').set('Authorization', `Bearer ${token}`).send({
+      lessonId: lesson._id.toString(),
+      activityId: activities[7]._id.toString(),
+      expectedPhrase: 'banana', // A student cannot change what "say walk" evaluates.
+    })
+    expect(controlled.status).toBe(201)
+    const storedSession = await VoiceSession.findById(controlled.body.data._id)
+    expect(storedSession?.metadata?.expectedPhrase).toBe('walk')
+  })
+
+  it('opens the exact draft to all active Class 1 students only in development when explicitly enabled', async () => {
+    process.env.NODE_ENV = 'development'
+    process.env.TALKORA_CLASS1_STUDENT_DEMO = 'true'
+    process.env.TALKORA_CLASS1_DEMO_ALL_STUDENTS = 'true'
+    const first = await createStudent(1, 'First Class 1 Learner')
+    const second = await createStudent(1, 'Second Class 1 Learner')
+    const { lesson } = await createClass1Draft('active')
+
+    for (const learner of [first, second]) {
+      const progress = await request(app).get('/api/students/me/progress').set('Authorization', `Bearer ${learner.token}`)
+      expect(progress.status).toBe(200)
+      expect(progress.body.data.curriculumVersion).toBe(CLASS1_DEMO_VERSION)
+      const curriculum = await request(app).get('/api/students/me/curriculum').set('Authorization', `Bearer ${learner.token}`)
+      expect(curriculum.status).toBe(200)
+      const loaded = await request(app).get(`/api/students/me/lessons/${lesson._id}`).set('Authorization', `Bearer ${learner.token}`)
+      expect(loaded.status).toBe(200)
+      expect(loaded.body.data.experienceId).toBe('g01-l01')
+      expect(loaded.body.data.activities).toHaveLength(10)
+    }
+
+    process.env.NODE_ENV = 'production'
+    const production = await request(app).get('/api/students/me/progress').set('Authorization', `Bearer ${first.token}`)
+    expect(production.status).not.toBe(200)
   })
 
   it('fails closed for another Class 1 student and for a mismatched KG student', async () => {
+    process.env.NODE_ENV = 'development'
     const allowed = await createStudent(1, 'Configured Learner')
     const other = await createStudent(1, 'Other Learner')
-    const { lesson } = await createClass1Draft()
+    const { lesson } = await createClass1Draft('active')
     process.env.TALKORA_CLASS1_STUDENT_DEMO = 'true'
     process.env.TALKORA_CLASS1_DEMO_STUDENT_ID = allowed.student._id.toString()
 
+    const otherProgress = await request(app).get('/api/students/me/progress').set('Authorization', `Bearer ${other.token}`)
+    const otherCurriculum = await request(app).get('/api/students/me/curriculum').set('Authorization', `Bearer ${other.token}`)
+    const otherNext = await request(app).get('/api/students/me/next-lesson').set('Authorization', `Bearer ${other.token}`)
+    expect(otherProgress.status).not.toBe(200)
+    expect(otherCurriculum.status).not.toBe(200)
+    expect(otherNext.status).not.toBe(200)
+
     const denied = await request(app).get(`/api/students/me/lessons/${lesson._id}`).set('Authorization', `Bearer ${other.token}`)
-    expect(denied.status).toBe(404)
+    expect(denied.status).not.toBe(200)
 
     const kgClass = await CurriculumClass.create({ grade: 0, name: 'KG', order: 0, status: 'active' })
     await Level.create({
@@ -144,6 +243,11 @@ describe('development-only Class 1 student demo access', () => {
       curriculumVersion: 'kg-published-v1', availability: 'PUBLISHED', title: 'KG Unit', place: 'KG World', order: 1, status: 'active',
     })
     const kg = await createStudent(0, 'KG Learner')
+    const kgProgress = await request(app).get('/api/students/me/progress').set('Authorization', `Bearer ${kg.token}`)
+    const kgCurriculum = await request(app).get('/api/students/me/curriculum').set('Authorization', `Bearer ${kg.token}`)
+    expect(kgProgress.status).toBe(200)
+    expect(kgCurriculum.status).toBe(200)
+    await request(app).get('/api/students/me/curriculum').set('Authorization', `Bearer ${kg.token}`).expect(200)
     const kgDenied = await request(app).get(`/api/students/me/lessons/${lesson._id}`).set('Authorization', `Bearer ${kg.token}`)
     expect(kgDenied.status).toBe(403)
     expect(kgDenied.body.error.code).toBe('ACTIVITY_NOT_AVAILABLE')
@@ -168,5 +272,57 @@ describe('development-only Class 1 student demo access', () => {
     expect(loaded.status).toBe(200)
     expect(loaded.body.data.experienceId).toBeUndefined()
     expect(loaded.body.data.activities).toHaveLength(1)
+  })
+})
+
+describe('Class 1 First Day additive student link resolution', () => {
+  it('opens the ten v3 scenes from an OLD v2 lesson URL without deleting old attempts or activities', async () => {
+    process.env.NODE_ENV = 'development'
+    process.env.TALKORA_CLASS1_STUDENT_DEMO = 'true'
+    const { student, token } = await createStudent(1, 'First Day Learner')
+    process.env.TALKORA_CLASS1_DEMO_STUDENT_ID = student._id.toString()
+    const { level, lesson: legacy, activities: legacyActivities } = await createClass1Draft('active')
+
+    const v3 = await Lesson.create({
+      levelId: level._id, title: 'My First Day — School Adventure',
+      order: 0, status: 'draft',
+      settings: { talkoraDemoDraft: true, experienceId: 'g01-l01',
+        lessonPlanRevision: 'class1-first-day-only-v3-parallel',
+        introVideoUrl: 'https://example.org/reviewed-class1-first-day.mp4' },
+    })
+    const ids = [
+      'hello-school','skip-bunny','run-race','walk-school','big-grin',
+      'school-bell','jump-frog','play-friends','enter-class','grade-one',
+    ]
+    await Activity.create(ids.map((key, index) => ({
+      lessonId: v3._id, curriculumVersion: CLASS1_DEMO_VERSION,
+      activityKey: 'class1-l01-v3-' + key,
+      grade: 1, term: 1, unitNumber: 1, order: index + 1,
+      type: 'CONVERSATION', stage: 'INTERACT',
+      title: key, prompt: 'Miss Julie says hello.',
+      target: 'school', choices: [], difficulty: 'easy', xp: 0,
+      estimatedSeconds: 30, voiceEnabled: true, aiEnabled: true,
+      allowMic: true, allowOptions: false, core: true, required: true, status: 'draft',
+      content: { audioKey: 'class-01/level-01/v3/' + key + '-en.wav' },
+      metadata: { conversationMode: 'OPEN' },
+    })))
+
+    const next = await request(app).get('/api/students/me/next-lesson')
+      .set('Authorization', `Bearer ${token}`)
+    expect(next.status).toBe(200)
+    expect(next.body.data.lessonId).toBe(v3._id.toString())
+
+    // Screenshot scenario: a bookmarked URL still contains the old v2 ID.
+    const loaded = await request(app).get(`/api/students/me/lessons/${legacy._id}`)
+      .set('Authorization', `Bearer ${token}`)
+    expect(loaded.status).toBe(200)
+    expect(loaded.body.data.lesson.id).toBe(v3._id.toString())
+    expect(loaded.body.data.lesson.settings.introVideoUrl)
+      .toBe('https://example.org/reviewed-class1-first-day.mp4')
+    expect(loaded.body.data.activities.map((a: { activityKey: string }) => a.activityKey))
+      .toEqual(ids.map(key => 'class1-l01-v3-' + key))
+
+    expect(await Activity.countDocuments({ lessonId: legacy._id })).toBe(legacyActivities.length)
+    expect(await Activity.countDocuments({ lessonId: v3._id })).toBe(10)
   })
 })

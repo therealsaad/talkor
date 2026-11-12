@@ -11,7 +11,11 @@ let mongod: MongoMemoryServer | null = null
  * sandboxes this download will fail — run these tests in a normal dev machine or CI runner.
  */
 export async function connectTestDatabase() {
-  mongod = await MongoMemoryServer.create()
+  // MONGOMS_VERSION lets a developer pin an older binary; 7.0.x is the default
+  // because MongoDB stopped shipping 6.x binaries for Debian 12+ build hosts.
+  mongod = await MongoMemoryServer.create({
+    binary: { version: process.env.MONGOMS_VERSION ?? '7.0.14' },
+  })
   await mongoose.connect(mongod.getUri())
 }
 
