@@ -1,4 +1,6 @@
 
+'use client'
+
 import { useRef, useState, type FormEvent } from 'react'
 import Link from 'next/link'
 import { ArrowLeft, ArrowRight, BookOpenCheck, Delete, GraduationCap, LockKeyhole, School, Sparkles } from 'lucide-react'
