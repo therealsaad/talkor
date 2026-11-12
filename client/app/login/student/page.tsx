@@ -1,4 +1,3 @@
-'use client'
 
 import { useRef, useState, type FormEvent } from 'react'
 import Link from 'next/link'
@@ -7,7 +6,6 @@ import { useAuth } from '@/components/auth/auth-provider'
 import { TalkoraLogo } from '@/components/brand/talkora-logo'
 import './student-login.css'
 
-/** School lab-friendly: no student roster, school code, or persistent student session. */
 export default function StudentLoginPage() {
   const { loginStudentByPin } = useAuth()
   const [pin, setPin] = useState('')

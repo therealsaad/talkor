@@ -1,0 +1,1364 @@
+
+/* ==========================================
+   TALKORA - TEACHER LOGIN
+   COMPLETE RESPONSIVE DESIGN
+   ========================================== */
+
+/* MAIN BACKGROUND */
+
+.teacher-portal {
+  --teacher-blue: #087af0;
+  --teacher-dark: #142f60;
+
+  position: relative;
+  isolation: isolate;
+
+  width: 100%;
+  min-height: 100svh;
+  box-sizing: border-box;
+  overflow-x: hidden;
+
+  background-color: #c8e3fa;
+  background-image:
+    url('/assets/teacher-login-bg.png');
+
+  /*
+   * Preserve original image proportions.
+   * No stretching.
+   */
+  background-size:  100% 100%;
+  background-position: center center;
+  background-repeat: no-repeat;
+
+  color: var(--teacher-dark);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+/* ==========================================
+   MAIN LAYOUT
+   ========================================== */
+
+.teacher-portal__layout {
+  position: relative;
+  z-index: 1;
+
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+
+  width: 100%;
+  min-height: 100svh;
+  max-width: 1700px;
+
+  margin: 0 auto;
+  padding: 20px clamp(22px, 5vw, 90px);
+
+  box-sizing: border-box;
+}
+
+/* ==========================================
+   LOGIN CARD
+   ========================================== */
+
+.teacher-portal__card {
+  position: relative;
+  flex-shrink: 0;
+
+  width: min(100%, 430px);
+  box-sizing: border-box;
+
+  padding: 25px 29px 22px;
+
+  border: 2px solid rgba(255, 255, 255, 0.98);
+  border-radius: 30px;
+
+  background: linear-gradient(
+    145deg,
+    rgba(255, 255, 255, 0.97),
+    rgba(230, 246, 255, 0.94)
+  );
+
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+
+  box-shadow:
+    0 0 0 6px rgba(72, 169, 255, 0.16),
+    0 18px 50px rgba(20, 72, 135, 0.20),
+    inset 0 2px 8px rgba(255, 255, 255, 0.7);
+
+  text-align: center;
+}
+
+/* ==========================================
+   TOP ICON
+   ========================================== */
+
+.teacher-portal__top-icon {
+  display: grid;
+  place-items: center;
+
+  width: 58px;
+  height: 58px;
+
+  margin: 0 auto 11px;
+
+  border-radius: 19px;
+
+  background: linear-gradient(
+    135deg,
+    #e0f3ff,
+    #b8ddff
+  );
+
+  color: #0878e8;
+
+  box-shadow:
+    0 6px 16px rgba(0, 105, 220, 0.13);
+}
+
+/* ==========================================
+   HEADING
+   ========================================== */
+
+.teacher-portal__heading {
+  margin-bottom: 21px;
+  text-align: center;
+}
+
+.teacher-portal__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  padding: 7px 12px;
+
+  border-radius: 30px;
+
+  background: #e6efff;
+  color: #2460b6;
+
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 1.2px;
+}
+
+.teacher-portal__heading h1 {
+  margin: 11px 0 7px;
+
+  color: #102e60;
+  font-size: clamp(25px, 2.4vw, 31px);
+  font-weight: 900;
+  line-height: 1.2;
+  letter-spacing: -0.8px;
+}
+
+.teacher-portal__heading p {
+  max-width: 330px;
+
+  margin: 0 auto;
+
+  color: #687f9e;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ==========================================
+   FORM
+   ========================================== */
+
+.teacher-portal__form {
+  width: 100%;
+  margin: 0;
+}
+
+/* ==========================================
+   FORM FIELDS
+   ========================================== */
+
+.teacher-portal__field {
+  margin-bottom: 15px;
+  text-align: left;
+}
+
+.teacher-portal__field label {
+  display: block;
+
+  margin: 0 0 7px 5px;
+
+  color: #294c78;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+/* ==========================================
+   INPUT CONTAINER
+   ========================================== */
+
+.teacher-portal__input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  width: 100%;
+  min-height: 53px;
+
+  padding: 0 15px;
+  box-sizing: border-box;
+
+  border: 2px solid #d5e5f7;
+  border-radius: 15px;
+
+  background: rgba(255, 255, 255, 0.97);
+
+  box-shadow:
+    0 5px 13px rgba(20, 83, 165, 0.06);
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.teacher-portal__input-wrap:focus-within {
+  border-color: #1685f8;
+
+  box-shadow:
+    0 0 0 4px rgba(22, 133, 248, 0.12);
+}
+
+/* INPUT ICONS */
+
+.teacher-portal__input-wrap > svg {
+  display: block;
+  flex: 0 0 20px;
+
+  width: 20px;
+  height: 20px;
+
+  color: #1685ee;
+}
+
+/* ==========================================
+   INPUT RESET
+   Fix global CSS conflicts
+   ========================================== */
+
+.teacher-portal__input-wrap input,
+.teacher-portal__input-wrap input[type="text"],
+.teacher-portal__input-wrap input[type="email"],
+.teacher-portal__input-wrap input[type="password"] {
+  display: block;
+  flex: 1 1 auto;
+
+  min-width: 0;
+  width: 100%;
+  height: 49px;
+  min-height: 0;
+
+  margin: 0;
+  padding: 0;
+
+  box-sizing: border-box;
+
+  border: 0;
+  border-radius: 0;
+  outline: none;
+
+  background: transparent;
+  background-image: none;
+
+  box-shadow: none;
+
+  color: #17385f;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: normal;
+
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+.teacher-portal__input-wrap input:focus {
+  border: 0;
+  outline: none;
+  box-shadow: none;
+}
+
+.teacher-portal__input-wrap input::placeholder {
+  color: #899bb5;
+  font-weight: 400;
+  opacity: 1;
+}
+
+.teacher-portal__input-wrap input:disabled {
+  cursor: wait;
+}
+
+/* CHROME AUTOFILL FIX */
+
+.teacher-portal__input-wrap input:-webkit-autofill,
+.teacher-portal__input-wrap input:-webkit-autofill:hover,
+.teacher-portal__input-wrap input:-webkit-autofill:focus {
+  -webkit-text-fill-color: #17385f;
+
+  -webkit-box-shadow:
+    0 0 0 1000px #ffffff inset;
+
+  box-shadow:
+    0 0 0 1000px #ffffff inset;
+
+  border-radius: 0;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* ==========================================
+   SHOW / HIDE PASSWORD
+   ========================================== */
+
+.teacher-portal__eye {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+
+  width: 35px;
+  height: 35px;
+
+  margin: 0;
+  padding: 0;
+
+  border: 0;
+  border-radius: 8px;
+
+  background: transparent;
+
+  color: #7088aa;
+  cursor: pointer;
+
+  box-shadow: none;
+}
+
+.teacher-portal__eye:hover {
+  background: #eff6ff;
+  color: #0878e8;
+}
+
+.teacher-portal__eye:focus-visible {
+  outline: 2px solid #0878e8;
+  outline-offset: 2px;
+}
+
+/* ==========================================
+   LOGIN BUTTON
+   ========================================== */
+
+.teacher-portal__submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 11px;
+
+  width: 100%;
+  min-height: 54px;
+
+  margin: 6px 0 0;
+  padding: 11px 16px;
+
+  box-sizing: border-box;
+
+  border: 1px solid #70d7ff;
+  border-radius: 15px;
+
+  background: linear-gradient(
+    120deg,
+    #18baff 0%,
+    #087df0 52%,
+    #0754d4 100%
+  );
+
+  color: #fff;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 850;
+  line-height: 1.3;
+
+  box-shadow:
+    0 5px 0 #0946a1,
+    0 11px 22px rgba(4, 97, 215, 0.20);
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease;
+}
+
+.teacher-portal__submit:not(:disabled):hover {
+  filter: brightness(1.07);
+  transform: translateY(-2px);
+}
+
+.teacher-portal__submit:active:not(:disabled) {
+  transform: translateY(2px);
+}
+
+.teacher-portal__submit:disabled {
+  opacity: 0.65;
+  cursor: wait;
+}
+
+.teacher-portal__submit:focus-visible {
+  outline: 3px solid #ffca38;
+  outline-offset: 3px;
+}
+
+/* ==========================================
+   ERROR MESSAGE
+   ========================================== */
+
+.teacher-portal__error {
+  padding: 11px;
+  margin: 0 0 12px;
+
+  border-radius: 10px;
+
+  background: #fff0f2;
+  color: #aa2037;
+
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: left;
+}
+
+/* ==========================================
+   DIVIDER
+   ========================================== */
+
+.teacher-portal__divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  margin: 21px 0 14px;
+
+  color: #8194ae;
+
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+
+.teacher-portal__divider::before,
+.teacher-portal__divider::after {
+  content: '';
+
+  flex: 1;
+  height: 1px;
+
+  background: #ccdeee;
+}
+
+/* ==========================================
+   SCHOOL / STUDENT LINKS
+   ========================================== */
+
+.teacher-portal__links {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+}
+
+.teacher-portal__links a {
+  flex: 1;
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 11px 10px;
+  box-sizing: border-box;
+
+  border: 1px solid #d2e5f9;
+  border-radius: 13px;
+
+  background: rgba(255, 255, 255, 0.78);
+
+  color: #2865a8;
+  font-size: 13px;
+  font-weight: 750;
+  text-decoration: none;
+
+  transition:
+    transform 0.2s ease,
+    background 0.2s ease;
+}
+
+.teacher-portal__links a:hover {
+  background: #fff;
+  transform: translateY(-2px);
+}
+
+.teacher-portal__links a:focus-visible {
+  outline: 2px solid #0878e8;
+  outline-offset: 2px;
+}
+
+/* ==========================================
+   SECURITY MESSAGE
+   ========================================== */
+
+.teacher-portal__security {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+
+  margin: 17px 0 0;
+
+  color: #6683a1;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.teacher-portal__security svg {
+  flex-shrink: 0;
+  color: #269777;
+}
+
+/* ==========================================
+   LARGE DESKTOP
+   ========================================== */
+
+@media (min-width: 1500px) {
+  .teacher-portal__layout {
+    padding-right: 5%;
+  }
+
+  .teacher-portal__card {
+    width: 440px;
+  }
+}
+
+/* ==========================================
+   TABLET
+   ========================================== */
+
+@media (max-width: 1050px) {
+  .teacher-portal {
+    background-size: cover;
+    background-position: 42% center;
+  }
+
+  .teacher-portal__layout {
+    padding: 25px;
+  }
+
+  .teacher-portal__card {
+    width: min(100%, 400px);
+    padding: 25px 23px;
+  }
+}
+
+/* ==========================================
+   MOBILE
+   ========================================== */
+
+@media (max-width: 650px) {
+  .teacher-portal {
+    background-size: cover;
+    background-position: 28% center;
+  }
+
+  .teacher-portal__layout {
+    justify-content: center;
+    align-items: center;
+
+    padding: 35px 14px;
+  }
+
+  .teacher-portal__card {
+    width: min(100%, 410px);
+    padding: 24px 19px;
+
+    border-radius: 25px;
+
+    background: rgba(242, 249, 255, 0.96);
+  }
+
+  .teacher-portal__heading h1 {
+    font-size: 26px;
+  }
+
+  .teacher-portal__heading {
+    margin-bottom: 19px;
+  }
+
+  .teacher-portal__input-wrap {
+    min-height: 51px;
+  }
+
+  .teacher-portal__input-wrap input,
+  .teacher-portal__input-wrap input[type="text"],
+  .teacher-portal__input-wrap input[type="email"],
+  .teacher-portal__input-wrap input[type="password"] {
+    height: 47px;
+    font-size: 16px;
+  }
+
+  .teacher-portal__submit {
+    min-height: 53px;
+    font-size: 15px;
+  }
+}
+
+/* ==========================================
+   SMALL PHONES
+   ========================================== */
+
+@media (max-width: 360px) {
+  .teacher-portal__layout {
+    padding: 25px 9px;
+  }
+
+  .teacher-portal__card {
+    padding: 20px 13px;
+  }
+
+  .teacher-portal__heading h1 {
+    font-size: 23px;
+  }
+
+  .teacher-portal__links {
+    gap: 7px;
+  }
+
+  .teacher-portal__links a {
+    padding: 9px 6px;
+    font-size: 11px;
+  }
+}
+
+/* ==========================================
+   SHORT DESKTOP SCREENS
+   ========================================== */
+
+@media (min-width: 651px) and (max-height: 780px) {
+  .teacher-portal__layout {
+    padding-top: 14px;
+    padding-bottom: 14px;
+  }
+
+  .teacher-portal__card {
+    padding-top: 18px;
+    padding-bottom: 16px;
+  }
+
+  .teacher-portal__top-icon {
+    width: 46px;
+    height: 46px;
+    margin-bottom: 7px;
+  }
+
+  .teacher-portal__heading {
+    margin-bottom: 12px;
+  }
+
+  .teacher-portal__heading h1 {
+    margin-top: 8px;
+  }
+
+  .teacher-portal__field {
+    margin-bottom: 10px;
+  }
+
+  .teacher-portal__input-wrap {
+    min-height: 43px;
+  }
+
+  .teacher-portal__input-wrap input,
+  .teacher-portal__input-wrap input[type="text"],
+  .teacher-portal__input-wrap input[type="email"],
+  .teacher-portal__input-wrap input[type="password"] {
+    height: 41px;
+  }
+
+  .teacher-portal__divider {
+    margin: 15px 0 10px;
+  }
+
+  .teacher-portal__security {
+    margin-top: 12px;
+  }
+}
+
+/* ==========================================
+   REDUCED MOTION
+   ========================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  .teacher-portal__input-wrap,
+  .teacher-portal__submit,
+  .teacher-portal__links a {
+    transition: none;
+  }
+}
+
+
+
+/* ============================================
+   TALKORA TEACHER LOGIN
+   COMPLETE MOBILE RESPONSIVE CSS
+   Width: 650px and below
+   ============================================ */
+
+@media screen and (max-width: 650px) {
+
+  /* PAGE BACKGROUND */
+
+  .teacher-portal {
+    width: 100%;
+    min-height: 100svh;
+    height: auto;
+    overflow-x: hidden;
+    overflow-y: visible;
+
+    background-color: #d9eaff;
+    background-image: url('/assets/teacher-login-vertical.png');
+    background-repeat: no-repeat;
+
+    /* Keep the upper artwork visible */
+    background-size: auto 100%;
+    background-position: 42% top;
+
+    font-family: Arial, Helvetica, sans-serif;
+  }
+
+  /* MAIN LAYOUT */
+
+  .teacher-portal__layout {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+
+    width: 100%;
+    max-width: 100%;
+    min-height: 100svh;
+    height: auto;
+
+    margin: 0;
+    padding: 92px 12px 24px;
+    box-sizing: border-box;
+  }
+
+  /* LOGIN CARD */
+
+  .teacher-portal__card {
+    position: relative;
+    flex-shrink: 1;
+
+    width: 100%;
+    max-width: 345px;
+    min-width: 0;
+    max-height: none;
+
+    margin: 0 auto;
+    padding: 17px 17px 16px;
+    box-sizing: border-box;
+    overflow: visible;
+
+    border: 2px solid rgba(255,255,255,.96);
+    border-radius: 25px;
+
+    background: linear-gradient(
+      145deg,
+      rgba(255,255,255,.97),
+      rgba(231,242,255,.95)
+    );
+
+    -webkit-backdrop-filter: blur(12px);
+    backdrop-filter: blur(12px);
+
+    box-shadow:
+      0 0 0 4px rgba(82,169,255,.15),
+      0 12px 30px rgba(20,72,135,.16);
+
+    text-align: center;
+  }
+
+  /* TOP ICON */
+
+  .teacher-portal__top-icon {
+    display: grid;
+    place-items: center;
+
+    width: 42px;
+    height: 42px;
+
+    margin: 0 auto 7px;
+
+    border-radius: 13px;
+    background: linear-gradient(135deg,#e0f3ff,#b9dfff);
+    color: #0878e8;
+  }
+
+  .teacher-portal__top-icon svg {
+    width: 23px;
+    height: 23px;
+  }
+
+  /* HEADING */
+
+  .teacher-portal__heading {
+    margin: 0 0 12px;
+    text-align: center;
+  }
+
+  .teacher-portal__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+
+    padding: 5px 10px;
+    border-radius: 25px;
+
+    background: #e6efff;
+    color: #2460b6;
+
+    font-size: 9px;
+    font-weight: 850;
+    letter-spacing: .8px;
+  }
+
+  .teacher-portal__badge svg {
+    width: 12px;
+    height: 12px;
+  }
+
+  .teacher-portal__heading h1 {
+    margin: 8px 0 5px;
+    color: #102e60;
+
+    font-size: 22px;
+    line-height: 1.15;
+    letter-spacing: -.5px;
+    font-weight: 900;
+  }
+
+  .teacher-portal__heading p {
+    max-width: 270px;
+    margin: 0 auto;
+
+    color: #687f9e;
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  /* FORM */
+
+  .teacher-portal__form {
+    width: 100%;
+    margin: 0;
+  }
+
+  /* FIELDS */
+
+  .teacher-portal__field {
+    margin: 0 0 10px;
+    text-align: left;
+  }
+
+  .teacher-portal__field label {
+    display: block;
+    margin: 0 0 5px 4px;
+
+    color: #294c78;
+    font-size: 12px;
+    line-height: 1.3;
+    font-weight: 800;
+  }
+
+  /* INPUT WRAPPERS */
+
+  .teacher-portal__input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+
+    width: 100%;
+    min-width: 0;
+    min-height: 43px;
+    height: 43px;
+
+    margin: 0;
+    padding: 0 11px;
+    box-sizing: border-box;
+
+    border: 1.5px solid #cbdfff;
+    border-radius: 12px;
+
+    background: #fff;
+
+    box-shadow: 0 3px 10px rgba(20,83,165,.06);
+  }
+
+  .teacher-portal__input-wrap:focus-within {
+    border-color: #1685f8;
+    box-shadow: 0 0 0 3px rgba(22,133,248,.12);
+  }
+
+  /* INPUT ICONS */
+
+  .teacher-portal__input-wrap > svg {
+    display: block;
+    flex: 0 0 18px;
+
+    width: 18px;
+    height: 18px;
+
+    color: #1685ee;
+  }
+
+  /* INPUT RESET - PREVENT GLOBAL CSS CONFLICTS */
+
+  .teacher-portal__input-wrap input,
+  .teacher-portal__input-wrap input[type="text"],
+  .teacher-portal__input-wrap input[type="email"],
+  .teacher-portal__input-wrap input[type="password"] {
+    display: block;
+    flex: 1 1 auto;
+
+    min-width: 0;
+    width: 100%;
+    height: 40px;
+    min-height: 0;
+
+    margin: 0;
+    padding: 0;
+
+    box-sizing: border-box;
+
+    border: 0;
+    border-radius: 0;
+    outline: none;
+
+    background: transparent;
+    box-shadow: none;
+
+    color: #17385f;
+    font-family: inherit;
+
+    /* 16px prevents iOS input zoom */
+    font-size: 16px;
+    font-weight: 600;
+    line-height: normal;
+
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  .teacher-portal__input-wrap input:focus {
+    outline: none;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .teacher-portal__input-wrap input::placeholder {
+    color: #899bb5;
+    font-weight: 400;
+    opacity: 1;
+  }
+
+  /* PASSWORD EYE BUTTON */
+
+  .teacher-portal__eye {
+    display: grid;
+    place-items: center;
+    flex: 0 0 32px;
+
+    width: 32px;
+    height: 32px;
+
+    margin: 0;
+    padding: 0;
+
+    border: 0;
+    border-radius: 8px;
+
+    background: transparent;
+    color: #7088aa;
+
+    cursor: pointer;
+  }
+
+  .teacher-portal__eye svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* LOGIN BUTTON */
+
+  .teacher-portal__submit {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+
+    width: 100%;
+    min-height: 46px;
+
+    margin: 3px 0 0;
+    padding: 10px 12px;
+    box-sizing: border-box;
+
+    border: 1px solid #70d7ff;
+    border-radius: 13px;
+
+    background: linear-gradient(
+      120deg,
+      #18baff 0%,
+      #087df0 52%,
+      #0754d4 100%
+    );
+
+    color: white;
+    font-size: 14px;
+    font-weight: 850;
+
+    box-shadow:
+      0 4px 0 #0946a1,
+      0 8px 17px rgba(4,97,215,.18);
+  }
+
+  .teacher-portal__submit svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .teacher-portal__submit:disabled {
+    opacity: .65;
+    cursor: wait;
+  }
+
+  /* ERROR */
+
+  .teacher-portal__error {
+    padding: 9px;
+    margin: 0 0 9px;
+
+    border-radius: 9px;
+    background: #fff0f2;
+
+    color: #aa2037;
+    font-size: 11px;
+    line-height: 1.4;
+    text-align: left;
+  }
+
+  /* DIVIDER */
+
+  .teacher-portal__divider {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    margin: 13px 0 10px;
+
+    color: #8194ae;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .6px;
+  }
+
+  .teacher-portal__divider::before,
+  .teacher-portal__divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: #ccdeee;
+  }
+
+  /* SCHOOL / STUDENT LINKS */
+
+  .teacher-portal__links {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    gap: 8px;
+
+    width: 100%;
+    margin: 0;
+  }
+
+  .teacher-portal__links a {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    flex: 1;
+    min-width: 0;
+    min-height: 39px;
+
+    padding: 7px 6px;
+    box-sizing: border-box;
+
+    border: 1px solid #d2e5f9;
+    border-radius: 11px;
+
+    background: rgba(255,255,255,.88);
+
+    color: #2865a8;
+    font-size: 11px;
+    font-weight: 750;
+    text-decoration: none;
+  }
+
+  .teacher-portal__links a svg {
+    width: 15px;
+    height: 15px;
+    flex-shrink: 0;
+  }
+
+  /* SECURITY */
+
+  .teacher-portal__security {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+
+    margin: 10px 0 0;
+
+    color: #6683a1;
+    font-size: 9px;
+    line-height: 1.3;
+  }
+
+  .teacher-portal__security svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+  }
+}
+
+/* ============================================
+   SMALL PHONES - 380px AND BELOW
+   ============================================ */
+
+@media screen and (max-width: 380px) {
+  .teacher-portal__layout {
+    padding: 80px 9px 18px;
+  }
+
+  .teacher-portal__card {
+    max-width: 340px;
+    padding: 14px 13px 13px;
+    border-radius: 22px;
+  }
+
+  .teacher-portal__heading h1 {
+    font-size: 20px;
+  }
+
+  .teacher-portal__heading p {
+    font-size: 11px;
+  }
+
+  .teacher-portal__field {
+    margin-bottom: 9px;
+  }
+}
+
+/* ============================================
+   SHORT PHONES - HEIGHT 700px OR LESS
+   ============================================ */
+
+@media screen and (max-width: 650px) and (max-height: 700px) {
+  .teacher-portal__layout {
+    padding-top: 70px;
+    padding-bottom: 15px;
+  }
+
+  .teacher-portal__card {
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .teacher-portal__top-icon {
+    width: 35px;
+    height: 35px;
+    margin-bottom: 5px;
+  }
+
+  .teacher-portal__heading {
+    margin-bottom: 9px;
+  }
+
+  .teacher-portal__heading h1 {
+    margin-top: 6px;
+    font-size: 20px;
+  }
+
+  .teacher-portal__field {
+    margin-bottom: 8px;
+  }
+
+  .teacher-portal__divider {
+    margin: 10px 0 8px;
+  }
+
+  .teacher-portal__security {
+    margin-top: 7px;
+  }
+}
+
+/* ============================================
+   REDUCED MOTION
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .teacher-portal__submit,
+  .teacher-portal__input-wrap,
+  .teacher-portal__links a {
+    transition: none;
+  }
+}
+
+
+/* ==========================================
+   EXTRA COMPACT MOBILE LOGIN
+   iPhone SE 375 x 667
+   ========================================== */
+
+@media screen and (max-width: 650px) {
+
+  .teacher-portal__layout {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    min-height: 100svh;
+    padding: 135px 10px 25px;
+    box-sizing: border-box;
+  }
+
+  .teacher-portal__card {
+    display: block;
+    visibility: visible;
+    opacity: 1;
+
+    width: 100%;
+    max-width: 300px;
+    min-width: 0;
+
+    margin: 0 auto;
+    padding: 12px 13px;
+
+    border-radius: 19px;
+    background: rgba(248,252,255,.95);
+
+    box-shadow:
+      0 8px 24px rgba(15,65,125,.18);
+  }
+
+  .teacher-portal__top-icon {
+    width: 32px;
+    height: 32px;
+    margin-bottom: 4px;
+    border-radius: 10px;
+  }
+
+  .teacher-portal__top-icon svg {
+    width: 19px;
+    height: 19px;
+  }
+
+  .teacher-portal__badge {
+    padding: 4px 8px;
+    font-size: 8px;
+  }
+
+  .teacher-portal__heading {
+    margin-bottom: 9px;
+  }
+
+  .teacher-portal__heading h1 {
+    margin: 5px 0 3px;
+    font-size: 18px;
+  }
+
+  .teacher-portal__heading p {
+    font-size: 10px;
+    line-height: 1.3;
+  }
+
+  .teacher-portal__field {
+    margin-bottom: 7px;
+  }
+
+  .teacher-portal__field label {
+    margin-bottom: 3px;
+    font-size: 11px;
+  }
+
+  .teacher-portal__input-wrap {
+    height: 36px;
+    min-height: 36px;
+    padding: 0 9px;
+    gap: 7px;
+    border-radius: 10px;
+  }
+
+  .teacher-portal__input-wrap input,
+  .teacher-portal__input-wrap input[type="text"],
+  .teacher-portal__input-wrap input[type="email"],
+  .teacher-portal__input-wrap input[type="password"] {
+    height: 33px;
+    min-height: 0;
+    font-size: 16px;
+  }
+
+  .teacher-portal__input-wrap > svg {
+    width: 15px;
+    height: 15px;
+    flex-basis: 15px;
+  }
+
+  .teacher-portal__eye {
+    width: 28px;
+    height: 28px;
+  }
+
+  .teacher-portal__submit {
+    min-height: 39px;
+    margin-top: 3px;
+    padding: 7px;
+    border-radius: 11px;
+    font-size: 12px;
+  }
+
+  .teacher-portal__divider {
+    margin: 9px 0 7px;
+    font-size: 8px;
+  }
+
+  .teacher-portal__links {
+    gap: 7px;
+  }
+
+  .teacher-portal__links a {
+    min-height: 34px;
+    padding: 6px;
+    font-size: 10px;
+  }
+
+  .teacher-portal__security {
+    margin-top: 7px;
+    font-size: 9px;
+  }
+}

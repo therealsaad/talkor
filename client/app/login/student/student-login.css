@@ -1,24 +1,568 @@
-/* Isolated student login styles. No giant dark backdrop or extra dependencies. */
-.lab-login{min-height:100svh;background:radial-gradient(circle at 7% 15%,#fef0ad 0%,transparent 23%),radial-gradient(circle at 95% 90%,#d6f2ff 0%,transparent 36%),#f6f7ff;color:#243650;display:flex;flex-direction:column}
-.lab-login__header{display:flex;justify-content:space-between;align-items:center;gap:24px;width:min(1280px,100%);padding:19px 24px;margin:0 auto;box-sizing:border-box}
-.lab-login__brand{display:inline-flex;align-items:center;width:125px;flex-shrink:0}.lab-login__brand img{width:100%;height:auto;object-fit:contain}
-.lab-login__staff{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.lab-login__staff a{display:inline-flex;gap:8px;align-items:center;color:#334a6b;text-decoration:none;background:#fff;border:1px solid #dbe6f5;padding:12px 17px;border-radius:14px;font-weight:750;font-size:14px;box-shadow:0 3px 12px #2643680a}.lab-login__staff a:hover,.lab-login__staff a:focus-visible{background:#eff5ff;outline:2px solid #b5c9ff}
-.lab-login__main{box-sizing:border-box;width:min(1280px,100%);margin:auto;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(390px,.88fr);gap:35px;align-items:stretch;padding:10px 24px 35px}
-.lab-login__story{border-radius:32px;overflow:hidden;background:#bde8ed;display:flex;flex-direction:column;min-height:670px;box-shadow:0 18px 58px #425d8423;position:relative}
-.lab-login__picture{min-height:370px;flex:1;background-image:url('/classroom-scenes/classroom-lesson.webp');background-size:cover;background-position:center center}
-.lab-login__story-footer{position:relative;padding:30px 37px 34px;background:linear-gradient(130deg,#194c82,#316d99);color:#fff}
-.lab-login__story-label{display:inline-flex;align-items:center;gap:7px;letter-spacing:.13em;font-size:12px;font-weight:900;color:#ddedff}
-.lab-login__story-footer h1{font-size:clamp(32px,3.4vw,48px);line-height:1.12;letter-spacing:-.04em;margin:13px 0 12px;font-weight:900}.lab-login__story-footer h1 span{color:#ffdf82}.lab-login__story-footer p{font-size:17px;color:#e7f3ff;margin:0}
-.lab-login__panel{align-self:center;background:#fff;border:1px solid #e0e6f4;border-radius:32px;box-shadow:0 20px 65px #35507216;padding:clamp(24px,3.1vw,42px);width:100%;box-sizing:border-box;text-align:center}
-.lab-login__student-badge{display:inline-flex;align-items:center;gap:9px;color:#614ac7;background:#f2eeff;padding:10px 14px;border-radius:999px;font-weight:850;letter-spacing:.08em;font-size:12px}
-.lab-login__panel h2{margin:18px 0 7px;font-size:clamp(29px,2.6vw,40px);line-height:1.17;letter-spacing:-.045em;font-weight:900}.lab-login__intro{color:#677792;font-size:16px;margin:0 0 22px}.lab-login__intro strong{color:#424d84}
-.lab-login__form{margin:auto;max-width:400px}.lab-login__pin-label{font-size:15px;font-weight:850;display:block;margin-bottom:11px}
-.lab-login__pin-digits{display:flex;justify-content:center;gap:9px}.lab-login__digit{display:grid;place-items:center;width:calc((100% - 36px)/5);height:58px;border:2px solid #d7dfef;border-radius:14px;background:#f8faff;color:#bcc7d8;font-size:25px;font-weight:900;transition:border-color .15s,background .15s}.lab-login__digit--filled{border-color:#8271ec;background:#f1edff;color:#6b59d8}
-.lab-login__real-input{display:block;width:100%;height:38px;box-sizing:border-box;opacity:.04;border:0;outline:0;position:absolute;max-width:380px;left:-9999px}.lab-login__real-input:focus-visible+.lab-login__hint{text-decoration:underline}.lab-login__hint{font-size:13px;color:#70809a;margin:9px 0 14px}
-.lab-login__keypad{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-width:315px;margin:0 auto 18px}
-.lab-login__key{height:54px;min-width:0;background:#f7f9ff;color:#273958;border:1px solid #e0e8f5;border-radius:13px;font-size:22px;font-weight:850;cursor:pointer;transition:transform .12s,background .12s}.lab-login__key:hover{background:#e8eeff}.lab-login__key:active{transform:scale(.96)}.lab-login__key:focus-visible{outline:3px solid #9283e9}.lab-login__key:disabled{cursor:wait;opacity:.55}.lab-login__key--subtle{color:#667a98;background:#f9fbff;font-size:15px}
-.lab-login__start{display:flex;justify-content:center;align-items:center;gap:12px;width:100%;min-height:60px;border:0;border-radius:15px;background:#ffda71;box-shadow:0 5px 0 #d2ab42;color:#28374d;font-size:19px;font-weight:900;cursor:pointer}.lab-login__start:not(:disabled):hover{background:#ffcf48}.lab-login__start:disabled{opacity:.55;cursor:not-allowed}.lab-login__error{margin:0 0 12px;padding:10px;border-radius:9px;background:#fff1f2;color:#a91e3b;font-size:14px;font-weight:750}
-.lab-login__privacy{display:flex;align-items:flex-start;gap:8px;text-align:left;font-size:12px;color:#6e7e94;line-height:1.45;margin:23px auto 9px;max-width:400px}.lab-login__privacy svg{flex-shrink:0;color:#399a7c}.lab-login__back{display:inline-flex;align-items:center;gap:5px;margin-top:11px;font-size:13px;color:#5e6e89;text-decoration:none;font-weight:750}
-@media(max-width:980px){.lab-login__main{grid-template-columns:minmax(0,1fr);max-width:630px;gap:18px}.lab-login__story{min-height:0}.lab-login__picture{min-height:250px}.lab-login__story-footer{padding:19px 27px}.lab-login__story-footer h1{font-size:31px}.lab-login__panel{padding:27px}}
-@media(max-width:520px){.lab-login__header{padding:16px}.lab-login__brand{width:84px}.lab-login__staff{gap:6px}.lab-login__staff a{padding:9px 8px;font-size:11px}.lab-login__staff svg{display:none}.lab-login__main{padding:0 13px 24px;gap:12px}.lab-login__story{border-radius:23px}.lab-login__picture{min-height:158px}.lab-login__story-footer{padding:13px 19px}.lab-login__story-footer h1{font-size:25px;margin:8px 0}.lab-login__story-footer p{font-size:13px}.lab-login__student-badge{font-size:11px}.lab-login__panel{border-radius:23px;padding:23px 17px}.lab-login__key{height:48px}.lab-login__digit{height:50px}}
-@media(prefers-reduced-motion:reduce){.lab-login__key,.lab-login__digit{transition:none}}
+
+/* ============================================
+   TALKORA STUDENT LOGIN
+   Schoolyard background + PIN login
+   Scoped exclusively to .lab-login
+   ============================================ */
+
+.lab-login {
+  min-height: 100svh;
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  overflow-x: hidden;
+  color: #17365c;
+
+  background-color: #dff2ff;
+  background-image: url('/assets/talkora-classroom-soft.png');
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+}
+
+/* HEADER */
+
+.lab-login__header {
+  position: relative;
+  z-index: 2;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 14px clamp(18px, 3vw, 48px);
+}
+
+.lab-login__brand {
+  display: inline-flex;
+  align-items: center;
+  width: 110px;
+  flex-shrink: 0;
+  text-decoration: none;
+}
+
+.lab-login__brand img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.lab-login__staff {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.lab-login__staff a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 15px;
+  border: 1px solid rgba(255,255,255,.85);
+  border-radius: 13px;
+  background: rgba(255,255,255,.88);
+  color: #20436d;
+  font-size: 13px;
+  font-weight: 750;
+  text-decoration: none;
+  box-shadow: 0 4px 15px rgba(30,80,130,.08);
+  transition: background .2s, transform .2s;
+}
+
+.lab-login__staff a:hover {
+  background: #fff;
+  transform: translateY(-2px);
+}
+
+.lab-login__staff a:focus-visible {
+  outline: 3px solid #2476e9;
+  outline-offset: 2px;
+}
+
+/* MAIN LAYOUT */
+
+.lab-login__main {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  width: 100%;
+  max-width: 1640px;
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 12px clamp(22px, 5vw, 85px) 28px;
+
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* LOGIN PANEL */
+
+.lab-login__panel {
+  width: min(100%, 405px);
+  box-sizing: border-box;
+  flex-shrink: 0;
+  margin: 0;
+
+  padding: 23px 27px 20px;
+  text-align: center;
+
+  border: 1px solid rgba(255,255,255,.85);
+  border-radius: 27px;
+  background: rgba(255,255,255,.88);
+
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+
+  box-shadow:
+    0 15px 45px rgba(28,81,140,.13),
+    0 3px 12px rgba(28,81,140,.05);
+}
+
+/* BADGE */
+
+.lab-login__student-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 13px;
+  border-radius: 999px;
+
+  background: #eeeaff;
+  color: #6049cf;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: .09em;
+}
+
+/* HEADING */
+
+.lab-login__panel h1 {
+  margin: 12px 0 6px;
+  color: #173c6a;
+  font-size: clamp(26px, 2.4vw, 34px);
+  font-weight: 900;
+  line-height: 1.15;
+  letter-spacing: -.04em;
+}
+
+.lab-login__intro {
+  margin: 0 0 15px;
+  color: #62748e;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.lab-login__intro strong {
+  color: #294e83;
+  font-weight: 850;
+}
+
+/* FORM */
+
+.lab-login__form {
+  width: 100%;
+  max-width: 350px;
+  margin: 0 auto;
+}
+
+.lab-login__pin-label {
+  display: block;
+  margin-bottom: 9px;
+  color: #24466d;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+/* PIN BOXES */
+
+.lab-login__pin-digits {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  cursor: text;
+}
+
+.lab-login__digit {
+  display: grid;
+  place-items: center;
+  flex: 1;
+  min-width: 0;
+  height: 46px;
+  box-sizing: border-box;
+
+  border: 2px solid #cbdcf0;
+  border-radius: 12px;
+  background: rgba(255,255,255,.92);
+  color: #a9bad1;
+
+  font-size: 24px;
+  font-weight: 900;
+  transition:
+    border-color .15s,
+    background .15s,
+    transform .15s;
+}
+
+.lab-login__digit--filled {
+  border-color: #7768e9;
+  background: #f1eeff;
+  color: #6654d9;
+  transform: scale(1.025);
+}
+
+/* ACCESSIBLE HIDDEN INPUT */
+
+.lab-login__real-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  opacity: 0;
+}
+
+.lab-login__hint {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin: 8px 0 12px;
+  color: #6684a8;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+/* KEYPAD */
+
+.lab-login__keypad {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  max-width: 280px;
+  margin: 0 auto 15px;
+}
+
+.lab-login__key {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  height: 43px;
+  min-width: 0;
+  box-sizing: border-box;
+
+  border: 1px solid #dce7f5;
+  border-radius: 12px;
+  background: rgba(255,255,255,.92);
+  color: #25466c;
+
+  font-size: 20px;
+  font-weight: 850;
+  cursor: pointer;
+
+  transition:
+    transform .15s,
+    background .15s,
+    box-shadow .15s;
+}
+
+.lab-login__key:hover:not(:disabled) {
+  background: #e9f3ff;
+  box-shadow: 0 3px 9px rgba(33,99,169,.1);
+}
+
+.lab-login__key:active:not(:disabled) {
+  transform: scale(.94);
+}
+
+.lab-login__key:focus-visible {
+  outline: 3px solid #6f92f5;
+  outline-offset: 2px;
+}
+
+.lab-login__key:disabled {
+  opacity: .5;
+  cursor: not-allowed;
+}
+
+.lab-login__key--subtle {
+  background: #f4f8ff;
+  color: #6983a3;
+  font-size: 12px;
+}
+
+/* START BUTTON */
+
+.lab-login__start {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+
+  width: 100%;
+  min-height: 49px;
+  box-sizing: border-box;
+  padding: 10px 14px;
+
+  border: 0;
+  border-radius: 13px;
+  background: #ffcf57;
+  color: #213b5d;
+
+  box-shadow: 0 4px 0 #d4a83d;
+
+  font-size: 16px;
+  font-weight: 900;
+  cursor: pointer;
+
+  transition:
+    background .2s,
+    transform .2s,
+    box-shadow .2s;
+}
+
+.lab-login__start:hover:not(:disabled) {
+  background: #ffdb78;
+  transform: translateY(-1px);
+}
+
+.lab-login__start:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #d4a83d;
+}
+
+.lab-login__start:focus-visible {
+  outline: 3px solid #276bd6;
+  outline-offset: 3px;
+}
+
+.lab-login__start:disabled {
+  opacity: .58;
+  cursor: not-allowed;
+}
+
+/* ERROR */
+
+.lab-login__error {
+  margin: 0 0 12px;
+  padding: 9px;
+  border-radius: 9px;
+  background: #fff0f2;
+  color: #a91e3b;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.4;
+}
+
+/* PRIVACY */
+
+.lab-login__privacy {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+
+  max-width: 350px;
+  margin: 13px auto 0;
+  text-align: left;
+
+  color: #607994;
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.lab-login__privacy svg {
+  flex-shrink: 0;
+  color: #278c79;
+}
+
+/* BACK LINK */
+
+.lab-login__back {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  margin-top: 11px;
+
+  color: #426b9a;
+  font-size: 11px;
+  font-weight: 750;
+  text-decoration: none;
+}
+
+.lab-login__back:hover {
+  color: #2154a6;
+  text-decoration: underline;
+}
+
+/* TABLET */
+
+@media (max-width: 1000px) {
+  .lab-login {
+    background-position: 42% center;
+  }
+
+  .lab-login__main {
+    padding: 18px 25px 25px;
+  }
+
+  .lab-login__panel {
+    width: min(100%, 385px);
+    padding: 21px;
+  }
+}
+
+/* MOBILE */
+
+@media (max-width: 650px) {
+  .lab-login {
+    min-height: 100svh;
+    background-position: 31% center;
+  }
+
+  .lab-login__header {
+    padding: 12px 14px;
+    gap: 10px;
+  }
+
+  .lab-login__brand {
+    width: 76px;
+  }
+
+  .lab-login__staff {
+    gap: 6px;
+  }
+
+  .lab-login__staff a {
+    padding: 8px;
+    font-size: 10px;
+    border-radius: 10px;
+  }
+
+  .lab-login__staff a svg {
+    display: none;
+  }
+
+  .lab-login__main {
+    justify-content: center;
+    align-items: center;
+    padding: 18px 12px 25px;
+  }
+
+  .lab-login__panel {
+    width: min(100%, 390px);
+    margin: 0 auto;
+    padding: 22px 17px;
+    border-radius: 23px;
+    background: rgba(255,255,255,.94);
+  }
+
+  .lab-login__panel h1 {
+    font-size: 27px;
+  }
+
+  .lab-login__key {
+    height: 46px;
+  }
+
+  .lab-login__digit {
+    height: 47px;
+  }
+}
+
+/* VERY SMALL PHONES */
+
+@media (max-width: 360px) {
+  .lab-login__header {
+    padding: 10px;
+  }
+
+  .lab-login__brand {
+    width: 68px;
+  }
+
+  .lab-login__staff a {
+    font-size: 9px;
+    padding: 7px 6px;
+  }
+
+  .lab-login__main {
+    padding: 12px 9px 20px;
+  }
+
+  .lab-login__panel {
+    padding: 19px 13px;
+  }
+
+  .lab-login__keypad {
+    gap: 6px;
+  }
+}
+
+/* SHORT DESKTOP SCREENS */
+
+@media (min-width: 651px) and (max-height: 780px) {
+  .lab-login__header {
+    padding-top: 9px;
+    padding-bottom: 9px;
+  }
+
+  .lab-login__main {
+    padding-top: 8px;
+    padding-bottom: 15px;
+  }
+
+  .lab-login__panel {
+    padding-top: 17px;
+    padding-bottom: 15px;
+  }
+
+  .lab-login__panel h1 {
+    margin-top: 8px;
+    font-size: 28px;
+  }
+
+  .lab-login__intro {
+    margin-bottom: 10px;
+  }
+
+  .lab-login__key {
+    height: 37px;
+  }
+
+  .lab-login__keypad {
+    gap: 6px;
+    margin-bottom: 11px;
+  }
+
+  .lab-login__digit {
+    height: 41px;
+  }
+
+  .lab-login__privacy {
+    margin-top: 9px;
+  }
+}
+
+/* REDUCED MOTION */
+
+@media (prefers-reduced-motion: reduce) {
+  .lab-login__staff a,
+  .lab-login__digit,
+  .lab-login__key,
+  .lab-login__start {
+    transition: none;
+  }
+}
