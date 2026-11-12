@@ -1,0 +1,544 @@
+
+/* =====================================
+   TALKORA HOME LOGIN DESIGN
+   ===================================== */
+
+.talkora-home {
+  width: 100%;
+  min-height: 100svh;
+  position: relative;
+  overflow-x: hidden;
+
+  background-image:
+    url('/assets/talkora-home-bg.png');
+
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  background-color: #d8efff;
+
+  font-family: Arial, Helvetica, sans-serif;
+  color: #10254f;
+}
+
+/* MAIN LAYOUT */
+
+.talkora-home__layout {
+  width: 100%;
+  min-height: 100svh;
+  box-sizing: border-box;
+
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+
+  padding: 40px clamp(25px, 5vw, 90px);
+}
+
+/* BLUE GLASS LOGIN CARD */
+
+.talkora-home__card {
+  position: relative;
+  isolation: isolate;
+  width: min(100%, 565px);
+  box-sizing: border-box;
+
+  padding: 75px 58px 70px;
+
+  border-radius: 65px;
+  border: 5px solid rgba(255,255,255,.92);
+
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(45,160,255,.18),
+      transparent 35%
+    ),
+    linear-gradient(
+      140deg,
+      rgba(249,253,255,.97),
+      rgba(225,244,255,.96)
+    );
+
+  box-shadow:
+    0 0 0 9px rgba(30,175,255,.20),
+    0 0 35px rgba(0,171,255,.30),
+    0 20px 60px rgba(9,85,165,.22);
+
+  text-align: center;
+  overflow: visible;
+}
+
+/* DECORATIVE BLUE CORNERS */
+
+.talkora-home__card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+
+  width: 140px;
+  height: 105px;
+
+  border-radius: 0 60px 0 100%;
+  background: linear-gradient(
+    135deg,
+    rgba(0,170,255,.30),
+    rgba(27,123,239,.70)
+  );
+
+  z-index: -1;
+  pointer-events: none;
+}
+
+.talkora-home__card::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+
+  width: 180px;
+  height: 105px;
+
+  border-radius: 0 100% 0 60px;
+
+  background: linear-gradient(
+    45deg,
+    rgba(0,154,255,.60),
+    rgba(80,194,255,.16)
+  );
+
+  z-index: -1;
+  pointer-events: none;
+}
+
+/* GRADUATION CAP */
+
+.talkora-home__cap {
+  position: absolute;
+  top: -36px;
+  left: 50%;
+
+  transform: translateX(-50%)
+    rotate(-10deg);
+
+  width: 95px;
+  height: 75px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  color: #0878e8;
+  background: linear-gradient(
+    135deg,
+    #ffffff,
+    #c9eeff
+  );
+
+  border: 3px solid #fff;
+  border-radius: 50%;
+
+  box-shadow:
+    0 8px 25px rgba(9,95,220,.25);
+
+  z-index: 2;
+}
+
+/* HEADINGS */
+
+.talkora-home__heading h1 {
+  margin: 0;
+
+  font-size: clamp(25px, 2.6vw, 37px);
+  line-height: 1.2;
+  font-weight: 900;
+
+  color: #0b1d49;
+  letter-spacing: -1.2px;
+}
+
+.talkora-home__heading h1 span {
+  color: #0674e4;
+  font-style: italic;
+}
+
+.talkora-home__heading p {
+  margin: 9px 0 34px;
+
+  font-size: 25px;
+  font-weight: 500;
+  color: #7b8dae;
+}
+
+/* FORM */
+
+.talkora-home__form {
+  width: 100%;
+}
+
+.talkora-home__label {
+  display: block;
+  text-align: left;
+
+  margin: 0 0 12px 12px;
+
+  color: #587195;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* INPUT FIELD */
+
+.talkora-home__input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 17px;
+
+  width: 100%;
+  height: 68px;
+
+  box-sizing: border-box;
+  padding: 0 22px;
+
+  border-radius: 35px;
+  border: 2px solid #d8e5ff;
+
+  background: rgba(255,255,255,.93);
+
+  box-shadow:
+    0 10px 19px rgba(15,81,173,.12);
+
+  transition:
+    border-color .2s,
+    box-shadow .2s;
+}
+
+.talkora-home__input-wrap:focus-within {
+  border-color: #138cff;
+  box-shadow:
+    0 0 0 4px rgba(20,136,255,.12),
+    0 10px 19px rgba(15,81,173,.12);
+}
+
+.talkora-home__input-icon {
+  flex-shrink: 0;
+  color: #0c84f7;
+}
+
+.talkora-home__input-wrap input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+
+  border: 0;
+  outline: none;
+  background: transparent;
+
+  color: #193f71;
+  font-size: 19px;
+  font-weight: 600;
+}
+
+.talkora-home__input-wrap input::placeholder {
+  color: #7d8da9;
+  font-weight: 400;
+}
+
+.talkora-home__eye {
+  flex-shrink: 0;
+
+  display: grid;
+  place-items: center;
+
+  border: none;
+  background: none;
+
+  color: #7189af;
+  cursor: pointer;
+}
+
+.talkora-home__eye:focus-visible {
+  outline: 2px solid #087ce8;
+  border-radius: 5px;
+}
+
+.talkora-home__help {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 7px;
+
+  margin: 16px 0 28px;
+
+  font-size: 13px;
+  color: #6983a7;
+}
+
+.talkora-home__help svg {
+  color: #ecaa00;
+}
+
+/* LOGIN BUTTON */
+
+.talkora-home__submit {
+  width: 100%;
+  min-height: 78px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 17px;
+
+  border: 2px solid #5bd9ff;
+  border-radius: 45px;
+
+  background: linear-gradient(
+    180deg,
+    #32c8ff 0%,
+    #087cf3 48%,
+    #0953e7 100%
+  );
+
+  color: white;
+
+  font-size: 29px;
+  font-weight: 900;
+
+  box-shadow:
+    inset 0 3px 5px rgba(255,255,255,.35),
+    0 9px 23px rgba(0,97,220,.28);
+
+  cursor: pointer;
+
+  transition:
+    transform .2s,
+    filter .2s;
+}
+
+.talkora-home__submit:not(:disabled):hover {
+  transform: translateY(-3px);
+  filter: brightness(1.07);
+}
+
+.talkora-home__submit:active {
+  transform: scale(.98);
+}
+
+.talkora-home__submit:disabled {
+  opacity: .65;
+  cursor: not-allowed;
+}
+
+.talkora-home__submit:focus-visible {
+  outline: 3px solid #144aa9;
+  outline-offset: 4px;
+}
+
+/* STAFF LINKS */
+
+.talkora-home__links {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+
+  margin-top: 27px;
+}
+
+.talkora-home__links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+
+  padding: 10px 14px;
+
+  border: 1px solid #bfdfff;
+  border-radius: 22px;
+
+  background: rgba(255,255,255,.72);
+  color: #195996;
+
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 700;
+
+  transition: background .2s;
+}
+
+.talkora-home__links a:hover {
+  background: #fff;
+}
+
+.talkora-home__links a:focus-visible {
+  outline: 2px solid #087ce8;
+  outline-offset: 2px;
+}
+
+/* DECORATIVE STARS */
+
+.talkora-home__decor span {
+  position: absolute;
+  color: #ffc400;
+  font-size: 28px;
+  pointer-events: none;
+}
+
+.talkora-home__decor span:nth-child(1) {
+  top: 20px;
+  right: 35px;
+}
+
+.talkora-home__decor span:nth-child(2) {
+  bottom: 40px;
+  left: 38px;
+}
+
+.talkora-home__decor span:nth-child(3) {
+  bottom: 130px;
+  right: 25px;
+  font-size: 19px;
+}
+
+/* BOOKS AND GLOBE */
+
+.talkora-home__books {
+  position: absolute;
+  bottom: -16px;
+  right: 19px;
+
+  display: flex;
+  align-items: flex-end;
+
+  font-size: 43px;
+  pointer-events: none;
+  filter: drop-shadow(0 7px 5px rgba(24,82,130,.16));
+}
+
+.talkora-home__books span:last-child {
+  font-size: 58px;
+}
+
+/* ERROR */
+
+.talkora-home__error {
+  padding: 12px;
+  margin-bottom: 17px;
+
+  border-radius: 12px;
+
+  background: #fff0f0;
+  color: #b42338;
+
+  font-size: 13px;
+  font-weight: 700;
+}
+
+/* TABLET */
+
+@media (max-width: 1050px) {
+  .talkora-home {
+    background-position: 42% center;
+  }
+
+  .talkora-home__layout {
+    padding: 55px 25px;
+  }
+
+  .talkora-home__card {
+    width: min(100%, 480px);
+    padding: 65px 35px 60px;
+    border-radius: 48px;
+  }
+
+  .talkora-home__heading h1 {
+    font-size: 29px;
+  }
+}
+
+/* MOBILE */
+
+@media (max-width: 650px) {
+  .talkora-home {
+    background-position: 29% center;
+  }
+
+  .talkora-home__layout {
+    justify-content: center;
+    align-items: center;
+
+    padding: 90px 15px 40px;
+  }
+
+  .talkora-home__card {
+    width: 100%;
+    max-width: 410px;
+
+    padding: 65px 23px 55px;
+    border-radius: 35px;
+
+    background: rgba(242,250,255,.94);
+  }
+
+  .talkora-home__heading h1 {
+    font-size: 27px;
+  }
+
+  .talkora-home__heading p {
+    font-size: 21px;
+    margin-bottom: 25px;
+  }
+
+  .talkora-home__input-wrap {
+    height: 60px;
+    padding: 0 16px;
+  }
+
+  .talkora-home__input-wrap input {
+    font-size: 16px;
+  }
+
+  .talkora-home__submit {
+    min-height: 65px;
+    font-size: 24px;
+  }
+
+  .talkora-home__books {
+    font-size: 30px;
+  }
+
+  .talkora-home__books span:last-child {
+    font-size: 42px;
+  }
+}
+
+/* SMALL SCREENS */
+
+@media (max-width: 360px) {
+  .talkora-home__card {
+    padding: 55px 15px 50px;
+  }
+
+  .talkora-home__heading h1 {
+    font-size: 23px;
+  }
+
+  .talkora-home__links {
+    gap: 7px;
+  }
+
+  .talkora-home__links a {
+    font-size: 11px;
+    padding: 8px 10px;
+  }
+}
+
+/* ACCESSIBILITY */
+
+@media (prefers-reduced-motion: reduce) {
+  .talkora-home__submit,
+  .talkora-home__input-wrap,
+  .talkora-home__links a {
+    transition: none;
+  }
+}
