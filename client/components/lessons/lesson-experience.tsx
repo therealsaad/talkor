@@ -563,6 +563,9 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
     setExperience('student_recording')
     setPose('listening')
     setTranscript('')
+    // A new Class 1 take must not display the *previous* child's answer
+    // beside a fresh listening or no-speech state.
+    if (experienceId === 'g01-l01') setStudentTurn(null)
     setFeedback('')
     setSeconds(0)
 
