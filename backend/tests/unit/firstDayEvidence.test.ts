@@ -41,7 +41,9 @@ describe('Class 1 poem: bounded STT tolerance without false mastery', () => {
       'skip run', 'अच्छा जी', '', 'semi cat', 'semi skip, help please']) {
       expect(poemEvidence('poem-pair-1', said)).toEqual([])
     }
-    expect(firstDaySceneSkills('skip-bunny', 'Semi skip')).toEqual([])
+    // An ordinary action scene already recognizes its target word 'skip';
+    // the new recognition alias does not change that independent scene rule.
+    expect(firstDaySceneSkills('skip-bunny', 'Semi skip')).toEqual(['first_day_english_attempt'])
     expect(poemEvidence('poem-pair-3', 'semi grin')).toEqual([])
     expect(normalizeFirstDayPoemRecognition('Semiconductor skip')).toBe('semiconductor skip')
     expect(poemEvidence('poem-pair-1', 'Semi skip and see me run')).toEqual(['first_day_english_attempt'])
