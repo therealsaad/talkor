@@ -61,6 +61,30 @@ test.each([
   expect(next.response.modelSentence).toBe(current.modelLines.join('\n'))
 })
 
+test('an STT “Semi skip” line can advance coached practice without granting pair mastery', () => {
+  const step = FIRST_DAY_POEM_STEPS.find(item => item.key === 'poem-pair-1')!
+  const current = buildLessonTeachingContext({ grade: 1, lessonKey: 'g01-l01',
+    support: selectLessonSupport({ attempts: [] }), activity: {
+      activityKey: 'class1-l01-v4-poem-pair-1', prompt: 'Recite two current lines.',
+      content: { poemLines: FIRST_DAY_POEM_LINES.slice(step.start, step.end) },
+      metadata: { sceneKey: step.key },
+    } })!
+  const act = (transcript: string, state?: FirstDayPracticeState) => scaffoldFirstDayPractice({
+    context: current, response, language: 'English', transcript, previous: retry(state),
+  })!
+  const first = act('I need help')
+  const second = act('Semi skip.', first.state)
+  expect(second.state).toMatchObject({ stage: 'LINE', lineIndex: 1 })
+  expect(second.response.followUpQuestion).toBe('Say with me: See me run')
+  expect(second.response.activityComplete).toBe(false)
+  expect(second.response.xpAwarded).toBe(0)
+  const third = act('Semi run.', second.state)
+  expect(third.state.stage).toBe('JOIN')
+  expect(third.response.activityComplete).toBe(false)
+  // Completing the reviewed pair still needs a separate recorded combination
+  // and the existing signed end-of-audio acknowledgement.
+})
+
 test('three more unclear line tries offer one approved word, then return to its line', () => {
   let turn = run('um')
   for (let i = 0; i < 3; i++) turn = run('um', turn.state)
