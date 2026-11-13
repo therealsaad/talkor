@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { watchVoiceActivity } from '@/lib/voice-activity'
 import { isClass1NoSpeechError, class1SilenceRecovery } from '@/lib/class1-microphone-recovery'
+import { joinClass1PoemRecitalParts } from '@/lib/class1-poem-recital'
 import { getStoredToken } from '@/lib/api-client'
 import { isTelemetryRequested, lessonTurnTelemetry, setTelemetrySession } from '@/lib/lesson-turn-telemetry'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -771,8 +772,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
               await commitTeacherTurn(nextTurn, 'waiting_for_student')
               return
             }
-            normalizedText = [...poemRecitalParts.current, normalizedText]
-              .map(part => part.replace(/\s+/g, ' ').trim()).join('\n')
+            normalizedText = joinClass1PoemRecitalParts([...poemRecitalParts.current, normalizedText])
           }
 
           setTranscript(normalizedText)
