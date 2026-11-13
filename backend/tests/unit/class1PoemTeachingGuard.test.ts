@@ -118,7 +118,7 @@ describe('Class 1 first-day poem lesson boundaries (recorded student regression)
     const marathi = guardFirstDayPoemTurn('poem-full', 'मला समजत नाही', 'Marathi', legacy())
     expect(marathi.message).toContain('उड्या')
     for (const reply of [english, hindi, marathi]) {
-      expect(reply.modelSentence).toBe('See me skip\\nSee me run')
+      expect(reply.modelSentence).toBe(['See me skip', 'See me run'].join('\n'))
       expect(reply.message).not.toContain('Hip hip hurray!')
       expect(reply.activityComplete).toBe(false)
       expect(reply.xpAwarded).toBe(0)
