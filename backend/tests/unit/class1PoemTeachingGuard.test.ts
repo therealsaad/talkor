@@ -108,6 +108,24 @@ describe('Class 1 first-day poem lesson boundaries (recorded student regression)
     }
   })
 
+  it('answers a six-year-old meaning question in English, Hindi or Marathi without scoring it', () => {
+    const english = guardFirstDayPoemTurn('poem-full', 'What does skip mean?', 'English', legacy())
+    expect(english.message).toContain('little hops')
+    expect(english.message).toContain('move quickly')
+    expect(english.activityComplete).toBe(false)
+    const hindi = guardFirstDayPoemTurn('poem-full', 'मदद, skip मतलब?', 'Hindi', legacy())
+    expect(hindi.message).toContain('उछलकर')
+    const marathi = guardFirstDayPoemTurn('poem-full', 'मला समजत नाही', 'Marathi', legacy())
+    expect(marathi.message).toContain('उड्या')
+    for (const reply of [english, hindi, marathi]) {
+      expect(reply.modelSentence).toBe('See me skip\\nSee me run')
+      expect(reply.message).not.toContain('Hip hip hurray!')
+      expect(reply.activityComplete).toBe(false)
+      expect(reply.xpAwarded).toBe(0)
+      expect(reply.shouldRetry).toBe(true)
+    }
+  })
+
   it('the full recital and all poem keys stay authored; unknown keys fail closed', () => {
     for (const key of ['poem-pair-1','poem-pair-2','poem-pair-3','poem-pair-4','poem-pair-5','poem-full']) {
       expect(isFirstDayPoemScene(key)).toBe(true)
