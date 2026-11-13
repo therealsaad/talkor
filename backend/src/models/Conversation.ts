@@ -1,5 +1,6 @@
 import { Schema, model, Document, Types } from 'mongoose'
 import type { FirstDayPracticeState } from '../services/first-day-practice-scaffold'
+import type { GentlePoemState } from '../services/gentle-first-day-poem'
 
 export interface IConversationMessage {
   role: 'student' | 'missJulie'
@@ -32,6 +33,7 @@ export interface IConversation extends Document {
     originalUtterance: string
     modelSentence?: string
     practiceScaffold?: FirstDayPracticeState
+    gentlePoem?: GentlePoemState
   }
   masteryStatus: 'IN_PROGRESS' | 'MASTERED' | 'COMPLETED_WITH_SUPPORT' | 'NEEDS_PRACTICE'
   summary?: string
@@ -60,6 +62,15 @@ const practiceScaffoldSchema = new Schema<FirstDayPracticeState>({
   misses: { type: Number, min: 0, max: 3, required: true },
 }, { _id: false })
 
+const gentlePoemSchema = new Schema<GentlePoemState>({
+  version: { type: Number, enum: [1], required: true },
+  contentHash: { type: String, match: /^[a-f0-9]{64}$/, required: true },
+  recognizedLines: { type: [Number], default: [], validate: {
+    validator: (value: number[]) => value.length <= 2 && value.every(x => x === 0 || x === 1),
+    message: 'Only authored pair indices are allowed',
+  } },
+}, { _id: false })
+
 const conversationSchema = new Schema<IConversation>(
   {
     studentId: { type: Schema.Types.ObjectId, ref: 'Student', required: true, index: true },
@@ -84,6 +95,7 @@ const conversationSchema = new Schema<IConversation>(
       originalUtterance: { type: String, default: '' },
       modelSentence: { type: String },
       practiceScaffold: { type: practiceScaffoldSchema, default: undefined },
+      gentlePoem: { type: gentlePoemSchema, default: undefined },
     },
     masteryStatus: { type: String, enum: ['IN_PROGRESS', 'MASTERED', 'COMPLETED_WITH_SUPPORT', 'NEEDS_PRACTICE'], default: 'IN_PROGRESS' },
     summary: { type: String, trim: true, maxlength: 1000 },

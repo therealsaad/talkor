@@ -117,7 +117,8 @@ async function fixture() {
       // Exercise the real PIN form rather than injecting browser credentials.
       await page.type('input[inputmode="numeric"]', '12345')
     } else {
-      await page.type('input[placeholder="YOUR SCHOOL CODE"]', school.code)
+      // Stable accessible field IDs, not the old cosmetic placeholder copy.
+      await page.type(kind === 'teacher' ? '#teacher-school-code' : '#school-code', school.code)
       if (kind === 'teacher') await page.type('input[type="email"]', teacher.email)
       await page.type('input[type="password"]', invalid ? 'wrong-password' : 'fixture-password')
     }
