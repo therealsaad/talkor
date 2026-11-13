@@ -16,13 +16,19 @@ export type GentlePoemState = {
 const pairWords: Record<string, {
   words: readonly [string, string]
   patterns: readonly [RegExp, RegExp]
+  allowedWords: readonly string[]
 }> = {
-  'poem-pair-1': { words: ['skip', 'run'], patterns: [/\bskipp?(?:ing)?\b/, /\brunn?(?:ing)?\b/] },
-  'poem-pair-2': { words: ['school', 'walk'], patterns: [/\bschool\b/, /\bwalk(?:ing)?\b/] },
-  'poem-pair-3': { words: ['grin', 'bell'], patterns: [/\b(?:grin|smil(?:e|ing))\b/, /\b(?:bell|ring|rings|ringing)\b/] },
-  'poem-pair-4': { words: ['jump', 'play'], patterns: [/\bjump(?:ing)?\b/, /\bplay(?:ing)?\b/] },
-  'poem-pair-5': { words: ['grade one', 'hurray'], patterns: [/\bgrade\s+(?:one|1)\b/, /\b(?:hurray|hooray)\b/] },
+  'poem-pair-1': { words: ['skip', 'run'], patterns: [/\bskipp?(?:ing)?\b/, /\brunn?(?:ing)?\b/], allowedWords: ['skip', 'skipping', 'run', 'running'] },
+  'poem-pair-2': { words: ['school', 'walk'], patterns: [/\bschool\b/, /\bwalk(?:ing)?\b/], allowedWords: ['school', 'walk', 'walking'] },
+  'poem-pair-3': { words: ['grin', 'bell'], patterns: [/\b(?:grin|smil(?:e|ing))\b/, /\b(?:bell|ring|rings|ringing)\b/], allowedWords: ['grin', 'smile', 'smiling', 'bell', 'ring', 'rings', 'ringing'] },
+  'poem-pair-4': { words: ['jump', 'play'], patterns: [/\bjump(?:ing)?\b/, /\bplay(?:ing)?\b/], allowedWords: ['jump', 'jumping', 'play', 'playing'] },
+  'poem-pair-5': { words: ['grade one', 'hurray'], patterns: [/\bgrade\s+(?:one|1)\b/, /\b(?:hurray|hooray)\b/], allowedWords: ['grade','one','1','hurray','hooray','hip'] },
 }
+
+// Restrict word credit to simple early-primary phrases. Do not match the
+// target word hidden inside unrelated commands, questions or long transcripts.
+const shortPhraseWords = new Set(['see','me','i','am','im','can','a','the','to','go','going','like',
+  'everyone','when','in','with','my','is','very','fast','today','hip','one'])
 
 const nonAnswer = /[?？]|\b(?:what|why|how|help|repeat|again|meaning|explain|don't|dont|didn't|not|never|can't|cannot|no\s+idea|please\s+say|ignore|award|skip\s+the\s+lesson)\b|क्या|काय|म्हणजे|नाही|नहीं|मदद|समजत|मतलब|समझा/u
 
@@ -61,8 +67,10 @@ export function observeGentlePoem(input: {
   ])).digest('hex')
   const recognizedLines = validState(input.previous, contentHash)
   const said = normalizeFirstDayPoemRecognition(input.transcript).trim()
-  const clear = said.length > 0 && said.length <= 100 && said.split(/\s+/).length <= 8 &&
-    !nonAnswer.test(said) && /^[a-z0-9'’.,!\s-]+$/i.test(said)
+  const tokens = said.replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(Boolean)
+  const clear = said.length > 0 && said.length <= 100 && tokens.length <= 8 &&
+    !nonAnswer.test(said) && /^[a-z0-9'’.,!\s-]+$/i.test(said) &&
+    tokens.every(token => shortPhraseWords.has(token) || pair.allowedWords.includes(token))
   // Disconnected "skip run" is not two separately demonstrated words.
   // Complete two-line speech is handled by the original independent gate.
   const matched = clear ? pair.patterns.flatMap((pattern, index) => pattern.test(said) ? [index] : []) : []
