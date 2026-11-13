@@ -206,6 +206,18 @@ test('same word repeated, questions, another student and client state injection 
   expect(await Progress.find({ studentId: f.students[0]._id }).lean()).toEqual(before)
 })
 
+test('unclear finale speaks a bounded two-line Azure-ready prompt without a Qwen turn or progress', async () => {
+  const f = await fixture()
+  const result = await f.turn('At at.', { activity: 2 })
+  expect(result.aiResponse.activityComplete).toBe(false)
+  expect(result.aiResponse.message).toContain('See me skip')
+  expect(result.aiResponse.message).toContain('See me run')
+  expect(result.aiResponse.message).not.toContain('Hip hip hurray!')
+  expect(result.aiResponse.followUpQuestion).toContain('first part')
+  expect(f.generate).not.toHaveBeenCalled()
+  expect(await ActivityAttempt.countDocuments({ activityId: f.activities[2]._id })).toBe(0)
+})
+
 test('five short remembered poem sections finish only with support, with progress still pending audio', async () => {
   const f = await fixture()
   const supported = await f.turn('Skip school grin jump hurray', { activity: 2 })
