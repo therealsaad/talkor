@@ -56,13 +56,16 @@ export function guardFirstDayPoemTurn(
 
   const help = language === 'Hindi' ? step.hintHi
     : language === 'Marathi' ? step.hintMr : ''
+  // Gentle prompts reflect the same supported option the server already
+  // credits. Keep the exact authored English model for optional practice,
+  // but never demand perfect full-line repetition from a beginner.
   const preface = full
-    ? language === 'Hindi' ? 'फिर से पूरी कविता सुनो, फिर धीरे बोलो।'
-      : language === 'Marathi' ? 'पूर्ण कविता पुन्हा ऐक, मग सावकाश म्हण.'
-        : 'Let us listen to the whole poem again, then recite it.'
-    : language === 'Hindi' ? 'इन दोनों पंक्तियों को ध्यान से सुनो, फिर साथ बोलो।'
-      : language === 'Marathi' ? 'या दोन्ही ओळी ऐक, मग सोबत म्हण.'
-        : 'Listen to BOTH poem lines, then say them with me.'
+    ? language === 'Hindi' ? 'कविता को पाँच छोटे भागों में सीखते हैं। हर भाग से एक शब्द बोलो, या पूरी पंक्तियाँ बोलो।'
+      : language === 'Marathi' ? 'कविता पाच छोट्या भागांत शिकूया. प्रत्येक भागातून एक शब्द बोल, किंवा पूर्ण ओळी म्हण.'
+        : 'Let us learn the poem in five little parts. Try one word from each part, or say the full lines.'
+    : language === 'Hindi' ? 'इन दो पंक्तियों को सुनो। एक शब्द बोलो, या दोनों पंक्तियाँ बोलने की कोशिश करो।'
+      : language === 'Marathi' ? 'या दोन ओळी ऐक. एक शब्द बोल, किंवा दोन्ही ओळी म्हणायचा प्रयत्न कर.'
+        : 'Listen to these two poem lines. You can say one word, or try both lines.'
 
   const message = aligned
     ? ai!.message
@@ -79,8 +82,8 @@ export function guardFirstDayPoemTurn(
     corrections: [],
     hint: null,
     followUpQuestion: answered ? null
-      : full ? 'Now try the whole poem, two lines at a time.'
-        : 'Your turn! Say BOTH lines slowly.',
+      : full ? 'Your turn! Try one word from each of the five parts, or try the full poem.'
+        : 'Your turn! Say one word from these lines, or try both lines.',
     memoryUpdates: [],
     xpAwarded: 0,
     teachingAction: answered ? 'ASK_FOLLOW_UP' : 'MODEL_SENTENCE',
