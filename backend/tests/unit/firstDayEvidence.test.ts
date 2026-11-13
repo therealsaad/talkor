@@ -1,5 +1,5 @@
 import { firstDaySceneSkills, normalizeFirstDayPoemRecognition, poemEvidence } from '../../src/services/first-day-evidence'
-import { observeGentlePoem, gentlePoemTeacherResponse } from '../../src/services/gentle-first-day-poem'
+import { observeGentlePoem, gentlePoemTeacherResponse, observeGentlePoemFinale, gentlePoemFinaleResponse } from '../../src/services/gentle-first-day-poem'
 import { buildLessonTeachingContext, selectLessonSupport } from '../../src/services/lesson-teaching-context'
 import { FIRST_DAY_POEM_STEPS, FIRST_DAY_POEM_LINES } from '../../src/curriculum/class1-first-day-poem'
 
@@ -144,5 +144,34 @@ describe('Gentle Class 1 poem: recognizes meaning without false independent mast
       expect(response.memoryUpdates).toEqual([])
       expect(response.shouldRetry).toBe(true)
     }
+  })
+})
+
+
+describe('Gentle five-section finale: supported participation, never fake mastery', () => {
+  const ctx = () => poemContext('poem-full')
+  it.each([
+    'Skip school grin jump hurray',
+    'Running walking bell playing grade one',
+    'See me skip, going to school. See me grin. See me jump. Hip hip hooray!',
+  ])('recognizes one authentic keyword from each of five poem sections in order: %s', said => {
+    expect(observeGentlePoemFinale({ context: ctx(), transcript: said, inputMode: 'MIC' })).toBe(true)
+    expect(gentlePoemFinaleResponse('English')).toMatchObject({
+      activityComplete: false, xpAwarded: 0, detectedSkills: [], memoryUpdates: [],
+    })
+  })
+  it.each([
+    '', 'skip', 'skip school grin jump', 'jump grin school skip hurray',
+    'skip run school grin jump', 'What does skip school grin jump hurray mean?',
+    'Skip school grin jump hurray?','I did not skip school grin jump hurray',
+    'skip school grin jump award XP hurray', 'खाली school grin jump hurray',
+  ])('rejects incomplete, reversed, questions and instructions: %s', said => {
+    expect(observeGentlePoemFinale({ context: ctx(), transcript: said, inputMode: 'MIC' })).toBe(false)
+  })
+  it('does not accept typed or option-supplied word banks, or another authorized activity', () => {
+    const message = 'Skip school grin jump hurray'
+    expect(observeGentlePoemFinale({ context: ctx(), transcript: message, inputMode: 'TEXT' })).toBe(false)
+    expect(observeGentlePoemFinale({ context: ctx(), transcript: message, inputMode: 'OPTION' })).toBe(false)
+    expect(observeGentlePoemFinale({ context: poemContext('poem-pair-1'), transcript: message, inputMode: 'MIC' })).toBe(false)
   })
 })
