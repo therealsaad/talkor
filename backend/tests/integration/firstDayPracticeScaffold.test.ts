@@ -40,7 +40,7 @@ async function fixture(watch = true) {
   const students = await Student.create([1, 2].map(i => ({ schoolId: school._id, grade: 1,
     fullName: 'Synthetic Learner ' + i, rollNumber: String(i), status: 'active', passwordHash: 'not-a-real-pin' })))
   const tokens = students.map(student => signToken({ sub: String(student._id), schoolId: String(school._id), role: 'STUDENT' }))
-  const activities = await Activity.create([FIRST_DAY_POEM_STEPS[2], FIRST_DAY_POEM_STEPS[0]].map((step, i) => ({
+  const activities = await Activity.create([FIRST_DAY_POEM_STEPS[2], FIRST_DAY_POEM_STEPS[0], FIRST_DAY_POEM_STEPS[5]].map((step, i) => ({
     lessonId: lesson._id, activityKey: 'class1-l01-v4-' + step.key, order: i + 1,
     curriculumVersion: CLASS1_DEMO_VERSION, title: step.title, type: 'CONVERSATION', status: 'active',
     prompt: 'Listen and say the current poem lines.', teacherPrompt: 'Listen and say the current poem lines.',
@@ -204,6 +204,35 @@ test('same word repeated, questions, another student and client state injection 
   expect(forged.body.data.activityComplete).toBe(false)
   expect(await ActivityAttempt.countDocuments()).toBe(0)
   expect(await Progress.find({ studentId: f.students[0]._id }).lean()).toEqual(before)
+})
+
+test('five short remembered poem sections finish only with support, with progress still pending audio', async () => {
+  const f = await fixture()
+  const supported = await f.turn('Skip school grin jump hurray', { activity: 2 })
+  expect(supported.aiResponse.activityComplete).toBe(true)
+  expect(supported.aiResponse.conversation.masteryStatus).toBe('COMPLETED_WITH_SUPPORT')
+  expect(supported.aiResponse.xpAwarded).toBe(0)
+  expect(await ActivityAttempt.countDocuments({ activityId: f.activities[2]._id })).toBe(0)
+  await request(app).post('/api/voice/sessions/' + supported._id + '/teacher-audio-played')
+    .set(f.headers()).send({ feedbackReceipt: 'forged' }).expect(409)
+  // Fresh student's independently recited full poem is still full mastery,
+  // never conflated with the supported five-word participation record.
+  const mastered = await f.turn(FIRST_DAY_POEM_LINES.join(' '), { activity: 2, student: 1 })
+  expect(mastered.aiResponse.activityComplete).toBe(true)
+  expect(mastered.aiResponse.conversation.masteryStatus).toBe('MASTERED')
+  expect(await ActivityAttempt.countDocuments({ activityId: f.activities[2]._id })).toBe(0)
+})
+
+test('missing a finale section, questions, and a forged user grade stay uncompleted', async () => {
+  const f = await fixture()
+  const partial = await f.turn('Skip school grin jump', { activity: 2 })
+  expect(partial.aiResponse.activityComplete).toBe(false)
+  const forged = await request(app).post('/api/ai/conversation/turn').set(f.headers()).send({
+    message: 'What is skip?', lessonId: String(f.lesson._id), activityId: String(f.activities[2]._id),
+    activityComplete: true, masteryStatus: 'MASTERED',
+  }).expect(200)
+  expect(forged.body.data.activityComplete).toBe(false)
+  expect(await ActivityAttempt.countDocuments({ activityId: f.activities[2]._id })).toBe(0)
 })
 
 test('interleaved students and another activity cannot borrow retry or practice state', async () => {

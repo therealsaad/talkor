@@ -14,7 +14,7 @@ import { firstDaySceneSkills } from './first-day-evidence'
 import { guardFirstDayPoemTurn, isFirstDayPoemScene } from './class1-poem-teacher-guard'
 import { class1ExplanationLanguage } from '../providers/ai/class1-language'
 import { scaffoldFirstDayPractice } from './first-day-practice-scaffold'
-import { observeGentlePoem, gentlePoemTeacherResponse } from './gentle-first-day-poem'
+import { observeGentlePoem, gentlePoemTeacherResponse, observeGentlePoemFinale, gentlePoemFinaleResponse } from './gentle-first-day-poem'
 import { logger } from '../utils/logger'
 import type { AIStructuredResponse } from '../types'
 
@@ -293,7 +293,12 @@ export const MissJulieService = {
       previous: priorRetry?.gentlePoem,
       inputMode: input.inputMode,
     }) : undefined
-    const gentleSupportComplete = Boolean(gentlePoem?.completedWithSupport) &&
+    const gentleFinaleSupport = isFirstDayScene && observeGentlePoemFinale({
+      context: studentContext.teachingContext,
+      transcript: input.message,
+      inputMode: input.inputMode,
+    })
+    const gentleSupportComplete = Boolean(gentlePoem?.completedWithSupport || gentleFinaleSupport) &&
       !turnSkills.includes('first_day_english_attempt')
 
     const skillEvidence = isGoldEpisode
@@ -349,9 +354,11 @@ export const MissJulieService = {
       activity?.activityKey !== 'class1-l01-v4-' + poemKey)) {
       throw ApiError.provider('FIRST_DAY_POEM_SCENE_NOT_AUTHORED')
     }
-    const guidedResponse = gentlePoem &&
-      gentlePoem.kind !== 'unclear' ? gentlePoemTeacherResponse(
-        gentlePoem, class1ExplanationLanguage(studentContext)) : undefined
+    const guidedResponse = gentleFinaleSupport
+      ? gentlePoemFinaleResponse(class1ExplanationLanguage(studentContext))
+      : gentlePoem && gentlePoem.kind !== 'unclear'
+        ? gentlePoemTeacherResponse(gentlePoem, class1ExplanationLanguage(studentContext))
+        : undefined
     let response: AIStructuredResponse
     if (guidedResponse) {
       // The lesson has already understood a word. Give immediate, gentle
