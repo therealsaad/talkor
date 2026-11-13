@@ -128,6 +128,81 @@ test('three recorded at-at replies become small practice; refresh, partial repli
   expect(await ActivityAttempt.countDocuments({ studentId: f.students[0]._id, activityId: f.activities[0]._id })).toBe(1)
 })
 
+test('real HTTP Class 1 accepts skip then run as supported learning, only signed Azure audio saves completion', async () => {
+  const f = await fixture()
+  const first = await f.turn('Skip', { activity: 1 })
+  expect(first.aiResponse.activityComplete).toBe(false)
+  expect(first.aiResponse.message).toContain('Great!')
+  expect(first.aiResponse.followUpQuestion).toContain('Now say: run.')
+  expect(first.aiResponse.conversation.masteryStatus).toBe('IN_PROGRESS')
+  expect(first.aiResponse.conversation.retryState.gentlePoem.recognizedLines).toEqual([0])
+  expect(await ActivityAttempt.countDocuments()).toBe(0)
+  // Existing Mongo conversation is the owner: no hidden client state required.
+  const initialId = first.aiResponse.conversation.id
+  const inDb = await Conversation.findById(initialId).lean()
+  expect(inDb?.retryState?.gentlePoem?.recognizedLines).toEqual([0])
+  const resumed = await request(createApp()).post('/api/ai/conversation/start')
+    .set(f.headers()).send({ lessonId: String(f.lesson._id),
+      activityId: String(f.activities[1]._id), mode: 'LESSON' }).expect(201)
+  expect(resumed.body.data.conversationId).toBe(initialId)
+
+  const second = await f.turn('Running', { activity: 1 })
+  expect(second.aiResponse.activityComplete).toBe(true)
+  expect(second.aiResponse.conversation.masteryStatus).toBe('COMPLETED_WITH_SUPPORT')
+  expect(second.aiResponse.xpAwarded).toBe(0)
+  expect(second.aiResponse.conversation.id).toBe(initialId)
+  expect(second.aiResponse.conversation.retryState.gentlePoem.recognizedLines).toEqual([0, 1])
+  expect(await ActivityAttempt.countDocuments({ studentId: f.students[0]._id,
+    activityId: f.activities[1]._id })).toBe(0)
+  expect(await Progress.find({ studentId: f.students[0]._id }).lean()).toEqual([])
+  const acknowledge = (receipt: string) => request(app)
+    .post('/api/voice/sessions/' + second._id + '/teacher-audio-played')
+    .set(f.headers()).send({ feedbackReceipt: receipt })
+  await acknowledge('client-cannot-forge-receipt').expect(409)
+  jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeStream').mockImplementation(async () => ({
+    provider: 'synthetic-azure', contentType: 'audio/mpeg',
+    body: new ReadableStream<Uint8Array>({ start(c) { c.enqueue(new Uint8Array(512)); c.close() } }),
+  }))
+  const audio = await request(app).post('/api/voice/synthesize').set(f.headers()).send({
+    text: 'Client cannot change Miss Julie wording.',
+    purpose: 'CONVERSATION',
+    activityId: String(f.activities[1]._id),
+    teacherSessionId: second._id,
+  }).expect(200)
+  const receipt = audio.headers['x-class1-feedback-receipt']
+  expect(receipt).toMatch(/^v1\./)
+  await acknowledge(receipt).expect(200)
+  await acknowledge(receipt).expect(200)
+  expect(await ActivityAttempt.countDocuments({ studentId: f.students[0]._id,
+    activityId: f.activities[1]._id })).toBe(1)
+})
+
+test('same word repeated, questions, another student and client state injection cannot unlock the poem', async () => {
+  const f = await fixture()
+  const first = await f.turn('run', { activity: 1 })
+  const repeat = await f.turn('running', { activity: 1 })
+  expect(first.aiResponse.activityComplete).toBe(false)
+  expect(repeat.aiResponse.activityComplete).toBe(false)
+  expect(repeat.aiResponse.conversation.retryState.gentlePoem.recognizedLines).toEqual([1])
+  const question = await f.turn('What does skip mean?', { activity: 1 })
+  expect(question.aiResponse.activityComplete).toBe(false)
+  const unknown = await f.turn('skip run', { activity: 1 })
+  expect(unknown.aiResponse.activityComplete).toBe(false)
+  const other = await f.turn('skip', { activity: 1, student: 1 })
+  expect(other.aiResponse.activityComplete).toBe(false)
+  expect(other.aiResponse.conversation.retryState.gentlePoem.recognizedLines).toEqual([0])
+  // Untrusted attempt to submit the missing word as a fabricated client state
+  // does not alter the server's actual evidence or signed progress.
+  const forged = await request(app).post('/api/ai/conversation/turn').set(f.headers()).send({
+    message: 'What is skip?', lessonId: String(f.lesson._id),
+    activityId: String(f.activities[1]._id),
+    gentlePoem: { version: 1, contentHash: 'a'.repeat(64), recognizedLines: [0, 1] },
+  }).expect(200)
+  expect(forged.body.data.activityComplete).toBe(false)
+  expect(await ActivityAttempt.countDocuments()).toBe(0)
+  expect(await Progress.find({ studentId: f.students[0]._id }).lean()).toEqual([])
+})
+
 test('interleaved students and another activity cannot borrow retry or practice state', async () => {
   const f = await fixture()
   for (let i = 0; i < 3; i++) await Promise.all([
