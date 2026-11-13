@@ -79,7 +79,7 @@ describe('Class 1 first-day poem lesson boundaries (recorded student regression)
     expect(pairEn.xpAwarded).toBe(0)
     const finalEn = guardFirstDayPoemTurn('poem-full', 'At at.', 'English', legacy())
     expect(finalEn.message).toContain('five little parts')
-    expect(finalEn.followUpQuestion).toContain('one word from each')
+    expect(finalEn.followUpQuestion).toContain('first part')
     expect(finalEn.modelSentence).toContain('See me skip')
     expect(finalEn.activityComplete).toBe(false)
     for (const lang of ['Hindi', 'Marathi'] as const) {
@@ -89,6 +89,40 @@ describe('Class 1 first-day poem lesson boundaries (recorded student regression)
       expect(full.message).toContain('एक शब्द')
       expect(full.activityComplete).toBe(false)
       expect(full.xpAwarded).toBe(0)
+    }
+  })
+
+  it('a struggling finale learner hears only the first two authorized lines rather than all ten', () => {
+    const model = 'See me skip\nSee me run'
+    for (const language of ['English', 'Hindi', 'Marathi'] as const) {
+      const answer = guardFirstDayPoemTurn('poem-full', 'At at.', language, legacy())
+      expect(answer.message).toContain('See me skip')
+      expect(answer.message).toContain('See me run')
+      expect(answer.message).not.toContain('Hip hip hurray!')
+      expect(answer.modelSentence).toBe(model)
+      expect(answer.followUpQuestion).toContain('first part')
+      expect(answer.activityComplete).toBe(false)
+      expect(answer.shouldRetry).toBe(true)
+      expect(answer.xpAwarded).toBe(0)
+      expect(answer.memoryUpdates).toEqual([])
+    }
+  })
+
+  it('answers a six-year-old meaning question in English, Hindi or Marathi without scoring it', () => {
+    const english = guardFirstDayPoemTurn('poem-full', 'What does skip mean?', 'English', legacy())
+    expect(english.message).toContain('little hops')
+    expect(english.message).toContain('move quickly')
+    expect(english.activityComplete).toBe(false)
+    const hindi = guardFirstDayPoemTurn('poem-full', 'मदद, skip मतलब?', 'Hindi', legacy())
+    expect(hindi.message).toContain('उछलकर')
+    const marathi = guardFirstDayPoemTurn('poem-full', 'मला समजत नाही', 'Marathi', legacy())
+    expect(marathi.message).toContain('उड्या')
+    for (const reply of [english, hindi, marathi]) {
+      expect(reply.modelSentence).toBe(['See me skip', 'See me run'].join('\n'))
+      expect(reply.message).not.toContain('Hip hip hurray!')
+      expect(reply.activityComplete).toBe(false)
+      expect(reply.xpAwarded).toBe(0)
+      expect(reply.shouldRetry).toBe(true)
     }
   })
 

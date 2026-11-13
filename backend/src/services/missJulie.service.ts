@@ -364,6 +364,12 @@ export const MissJulieService = {
       // The lesson has already understood a word. Give immediate, gentle
       // feedback without a Qwen call, but let Node/receipt own completion.
       response = guidedResponse
+    } else if (poemKey === 'poem-full' && isFirstDayScene &&
+      !turnSkills.includes('first_day_english_attempt')) {
+      // A missed finale already has the authored two-line fallback. Avoid
+      // spending a Qwen round trip on a response that the poem guard must
+      // replace anyway. This does not change evidence, progress or Azure ACK.
+      response = guardFirstDayPoemTurn(poemKey, input.message, class1ExplanationLanguage(studentContext))
     } else {
       try {
         response = await getAIProvider(studentContext).generate(studentContext)
