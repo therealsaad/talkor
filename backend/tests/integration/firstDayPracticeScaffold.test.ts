@@ -208,7 +208,7 @@ test('same word repeated, questions, another student and client state injection 
 
 test('five short remembered poem sections finish only with support, with progress still pending audio', async () => {
   const f = await fixture()
-  const supported = await f.turn('Skip school grin jump hurray', { activity: 2 })
+  const supported = await f.turn('Skip\nschool\ngrin\njump\nhurray', { activity: 2 })
   expect(supported.aiResponse.activityComplete).toBe(true)
   expect(supported.aiResponse.conversation.masteryStatus).toBe('COMPLETED_WITH_SUPPORT')
   expect(supported.aiResponse.xpAwarded).toBe(0)
@@ -225,7 +225,7 @@ test('five short remembered poem sections finish only with support, with progres
 
 test('missing a finale section, questions, and a forged user grade stay uncompleted', async () => {
   const f = await fixture()
-  const partial = await f.turn('Skip school grin jump', { activity: 2 })
+  const partial = await f.turn('Skip\nschool\ngrin\njump', { activity: 2 })
   expect(partial.aiResponse.activityComplete).toBe(false)
   const forged = await request(app).post('/api/ai/conversation/turn').set(f.headers()).send({
     message: 'What is skip?', lessonId: String(f.lesson._id), activityId: String(f.activities[2]._id),
@@ -233,6 +233,19 @@ test('missing a finale section, questions, and a forged user grade stay uncomple
   }).expect(200)
   expect(forged.body.data.activityComplete).toBe(false)
   expect(await ActivityAttempt.countDocuments({ activityId: f.activities[2]._id })).toBe(0)
+})
+
+test('single merged word bank and misaligned clips never claim supported finale', async () => {
+  const f = await fixture()
+  const singleClip = await f.turn('skip school grin jump hurray', { activity: 2 })
+  expect(singleClip.aiResponse.activityComplete).toBe(false)
+  const misplaced = await f.turn('skip\nschool\njump\ngrin\nhurray', { activity: 2 })
+  expect(misplaced.aiResponse.activityComplete).toBe(false)
+  const repeated = await f.turn('skip\nskip\nskip\nskip\nskip', { activity: 2 })
+  expect(repeated.aiResponse.activityComplete).toBe(false)
+  expect(await ActivityAttempt.countDocuments({ activityId: f.activities[2]._id })).toBe(0)
+  expect(await Conversation.findOne({ studentId: f.students[0]._id, activityId: f.activities[2]._id })
+    .then(conversation => conversation?.masteryStatus)).toBe('IN_PROGRESS')
 })
 
 test('interleaved students and another activity cannot borrow retry or practice state', async () => {
