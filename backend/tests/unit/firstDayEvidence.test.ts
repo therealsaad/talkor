@@ -167,7 +167,7 @@ describe('Gentle five-section finale: evidence must be from its matching recordi
     'skip\nschool\ngrin\njump\n', // Empty last clip
     'skip\nschool\njump\ngrin\nhurray', // Words spoken in the wrong sections
     'skip\nskip\nskip\nskip\nskip',
-    'skip school grin jump hurray\nschool\ngrin\njump\nhurray', // One clip cannot supply another
+    'skip school grin jump hurray\ncat\ngrin\njump\nhurray', // Missing target in section 2
     'skip\nschool\ngrin\njump\nhurray\nextra', // Extra unverified section
     'skip\nschool\nWhat is grin?\njump\nhurray',
     'skip\nschool\ngrin\nI do not jump\nhurray',
