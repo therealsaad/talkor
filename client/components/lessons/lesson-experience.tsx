@@ -1009,7 +1009,14 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
       })
 
       setTeacherText(normalizedTurn.text)
-      setFeedback(ai ? (retryRequired ? ai.correction?.explanation || result.evaluation?.feedback || '' : '') : result.evaluation?.feedback || '')
+      // An open Class 1 poem is not an essay test: 'Run' is meaningful
+      // evidence, not an incomplete sentence. Avoid the generic
+      // 'add more words' feedback from the shared open-response scorer.
+      const class1Gentle = /^class1-l01-v(?:3|4)-/.test(activity?.activityKey || '')
+      setFeedback(class1Gentle
+        ? (retryRequired && ai?.correction?.needed ? ai.correction.explanation : '')
+        : ai ? (retryRequired ? ai.correction?.explanation || result.evaluation?.feedback || '' : '')
+          : result.evaluation?.feedback || '')
       setModelSentence(retryRequired ? normalizedTurn.modelSentence || '' : '')
       setXp((value) => value + (result.xpAwarded || 0))
       setConversationTurn((value) => value + 1)

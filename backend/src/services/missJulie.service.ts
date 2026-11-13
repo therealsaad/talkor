@@ -14,6 +14,7 @@ import { firstDaySceneSkills } from './first-day-evidence'
 import { guardFirstDayPoemTurn, isFirstDayPoemScene } from './class1-poem-teacher-guard'
 import { class1ExplanationLanguage } from '../providers/ai/class1-language'
 import { scaffoldFirstDayPractice } from './first-day-practice-scaffold'
+import { observeGentlePoem, gentlePoemTeacherResponse } from './gentle-first-day-poem'
 import { logger } from '../utils/logger'
 import type { AIStructuredResponse } from '../types'
 
@@ -283,6 +284,17 @@ export const MissJulieService = {
     const priorRetry = existingConversation?.retryState?.waiting
       ? existingConversation.retryState
       : undefined
+    // Each short word is evidence for the current authorized two-line pair.
+    // Only two DISTINCT microphone turns can complete it with support;
+    // the original full-pair matcher still determines independent mastery.
+    const gentlePoem = isFirstDayScene ? observeGentlePoem({
+      context: studentContext.teachingContext,
+      transcript: input.message,
+      previous: priorRetry?.gentlePoem,
+      inputMode: input.inputMode,
+    }) : undefined
+    const gentleSupportComplete = Boolean(gentlePoem?.completedWithSupport) &&
+      !turnSkills.includes('first_day_english_attempt')
 
     const skillEvidence = isGoldEpisode
       ? mergeEvidence(
@@ -311,16 +323,15 @@ export const MissJulieService = {
       : isGoldEpisode
         ? required.every((skill) => skillEvidence.some((item) => item.skill === skill))
         : required.every((item) => goalState.includes(item))
-    const finalLessonTurn = Boolean(
-      lessonConversation &&
-      ((nextTurn >= minTurns && demonstratedRequiredSkills &&
-        // For the First Day pilot, an earlier English word plus a final
-        // request for help cannot be mistaken for a successful answer.
+    const independentLessonTurn = Boolean(
+      (nextTurn >= minTurns && demonstratedRequiredSkills &&
+        // Help or silence on the current turn is never independent evidence.
         (!isFirstDayScene || turnSkills.includes('first_day_english_attempt'))) ||
-        // A First Day scene never passes just because a child has spent four
-        // turns silent, asking for help or answering only in a home language.
-        (nextTurn >= maxTurns && (!isFirstDayScene ||
-          (demonstratedRequiredSkills && turnSkills.includes('first_day_english_attempt'))))),
+      (nextTurn >= maxTurns && (!isFirstDayScene ||
+        (demonstratedRequiredSkills && turnSkills.includes('first_day_english_attempt')))),
+    )
+    const finalLessonTurn = Boolean(
+      lessonConversation && (independentLessonTurn || gentleSupportComplete),
     )
 
     const freeTalkConversation = !input.lessonId && !input.activityId && (!existingConversation || existingConversation.mode === 'FREE_TALK')
@@ -338,25 +349,30 @@ export const MissJulieService = {
       activity?.activityKey !== 'class1-l01-v4-' + poemKey)) {
       throw ApiError.provider('FIRST_DAY_POEM_SCENE_NOT_AUTHORED')
     }
+    const guidedResponse = gentlePoem &&
+      gentlePoem.kind !== 'unclear' ? gentlePoemTeacherResponse(
+        gentlePoem, class1ExplanationLanguage(studentContext)) : undefined
     let response: AIStructuredResponse
-    try {
-      response = await getAIProvider(studentContext).generate(studentContext)
-    } catch (error) {
-      if (!poemActivity) throw error
-      // No transcript, student name, secret or provider response is logged.
-      logger.warn('Class 1 poem AI bridge failed; keeping authored scene lines', { sceneKey: poemKey })
-      // A reviewed, syllabus-scoped fallback is preferable to making children
-      // repeat "at" or wait indefinitely when Ollama cannot teach the poem.
-      // Node alone still decides completion from independent transcript evidence.
-      response = guardFirstDayPoemTurn(
-        poemKey, input.message, class1ExplanationLanguage(studentContext))
-    }
-    if (poemActivity) {
-      response = guardFirstDayPoemTurn(
-        poemKey, input.message, class1ExplanationLanguage(studentContext), response)
+    if (guidedResponse) {
+      // The lesson has already understood a word. Give immediate, gentle
+      // feedback without a Qwen call, but let Node/receipt own completion.
+      response = guidedResponse
+    } else {
+      try {
+        response = await getAIProvider(studentContext).generate(studentContext)
+      } catch (error) {
+        if (!poemActivity) throw error
+        logger.warn('Class 1 poem AI bridge failed; keeping authored scene lines', { sceneKey: poemKey })
+        response = guardFirstDayPoemTurn(
+          poemKey, input.message, class1ExplanationLanguage(studentContext))
+      }
+      if (poemActivity) {
+        response = guardFirstDayPoemTurn(
+          poemKey, input.message, class1ExplanationLanguage(studentContext), response)
+      }
     }
     const priorPractice = priorRetry?.practiceScaffold
-    const practice = isFirstDayScene && !finalTurn ? scaffoldFirstDayPractice({
+    const practice = isFirstDayScene && !finalTurn && !guidedResponse ? scaffoldFirstDayPractice({
       context: studentContext.teachingContext, transcript: input.message,
       language: class1ExplanationLanguage(studentContext), response,
       previous: priorRetry && { waiting: priorRetry.waiting, attempt: priorRetry.attempt,
@@ -383,7 +399,8 @@ export const MissJulieService = {
       ? 'COMPLETED_WITH_SUPPORT'
       : lessonConversation
       ? finalLessonTurn
-        ? calculatedMasteryStatus === 'MASTERED' ? 'MASTERED' : 'COMPLETED_WITH_SUPPORT'
+        ? gentleSupportComplete ? 'COMPLETED_WITH_SUPPORT'
+          : calculatedMasteryStatus === 'MASTERED' ? 'MASTERED' : 'COMPLETED_WITH_SUPPORT'
         : 'IN_PROGRESS'
       : calculatedMasteryStatus
 
@@ -414,8 +431,15 @@ export const MissJulieService = {
       originalUtterance: input.message,
       modelSentence: response.modelSentence,
     })
-    const retryState = nextRetry && practice
-      ? { ...nextRetry, practiceScaffold: practice.state } : nextRetry
+    const retryState = nextRetry || gentlePoem
+      ? {
+          ...(nextRetry || { waiting: false, targetSkill: '', attempt: 0,
+            hintLevel: 0, originalUtterance: '' }),
+          ...(practice ? { practiceScaffold: practice.state } : {}),
+          // Preserve bounded, authored word evidence across a browser refresh.
+          // Neither this field nor the client chooses mastery or XP.
+          ...(gentlePoem ? { gentlePoem: gentlePoem.state } : {}),
+        } : undefined
 
     const freeTalkSummary = finalFreeTalkTurn
       ? `Student conversed for ${nextTurn} turns. Key topics discussed: ${[
