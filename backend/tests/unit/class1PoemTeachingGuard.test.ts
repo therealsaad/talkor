@@ -69,6 +69,29 @@ describe('Class 1 first-day poem lesson boundaries (recorded student regression)
     expect(result.message).toContain('both poem lines')
   })
 
+  it('offers short supported word practice in English, Hindi and Marathi instead of insisting on perfect recitation', () => {
+    const pairEn = guardFirstDayPoemTurn('poem-pair-1', 'At at.', 'English', legacy())
+    expect(pairEn.message).toContain('one word')
+    expect(pairEn.followUpQuestion).toContain('one word')
+    expect(pairEn.message).toContain('See me skip')
+    expect(pairEn.message).toContain('See me run')
+    expect(pairEn.activityComplete).toBe(false)
+    expect(pairEn.xpAwarded).toBe(0)
+    const finalEn = guardFirstDayPoemTurn('poem-full', 'At at.', 'English', legacy())
+    expect(finalEn.message).toContain('five little parts')
+    expect(finalEn.followUpQuestion).toContain('one word from each')
+    expect(finalEn.modelSentence).toContain('See me skip')
+    expect(finalEn.activityComplete).toBe(false)
+    for (const lang of ['Hindi', 'Marathi'] as const) {
+      const pair = guardFirstDayPoemTurn('poem-pair-1', 'At at.', lang, legacy())
+      const full = guardFirstDayPoemTurn('poem-full', 'At at.', lang, legacy())
+      expect(pair.message).toContain(lang === 'Hindi' ? 'एक शब्द' : 'एक शब्द')
+      expect(full.message).toContain('एक शब्द')
+      expect(full.activityComplete).toBe(false)
+      expect(full.xpAwarded).toBe(0)
+    }
+  })
+
   it('the full recital and all poem keys stay authored; unknown keys fail closed', () => {
     for (const key of ['poem-pair-1','poem-pair-2','poem-pair-3','poem-pair-4','poem-pair-5','poem-full']) {
       expect(isFirstDayPoemScene(key)).toBe(true)
