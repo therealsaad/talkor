@@ -33,6 +33,24 @@ test('First Day uses motion-first Miss Julie and voice recovery controls, not fa
   assert.match(css, /orientation:portrait/)
 })
 
+test('Class 1 poem offers a supported one-word choice while keeping full-line practice available', async () => {
+  const scene = await load('../../features/lessons/grades/class-01/level-01/FirstDayPoemClassroom.tsx')
+  const css = await load('../../features/lessons/grades/class-01/level-01/first-day-poem-classroom.css')
+  const service = await load('../../../backend/src/services/missJulie.service.ts')
+  assert.match(scene, /Say one word you know, like <strong>\{exampleWord\}<\/strong>, or say both lines with Miss Julie\./)
+  assert.match(scene, /Five little parts/)
+  assert.match(scene, /Your choice · part/)
+  assert.match(scene, /<span>Speak<\/span>/)
+  assert.match(scene, /aria-label="Start speaking a poem word or the current lines"/)
+  assert.match(scene, /lang="hi"/)
+  assert.match(scene, /lang="mr"/)
+  assert.match(css, /\.poem-gentle-invitation/)
+  assert.match(service, /observeGentlePoemFinale/)
+  assert.match(service, /gentleSupportComplete/)
+  assert.match(service, /turnSkills\.includes\('first_day_english_attempt'\)/)
+  assert.doesNotMatch(scene, /onLocalComplete|onSkipPoem|awardXP/)
+})
+
 test('the Class 1 mic tolerates quiet voices with no extra STT requests', async () => {
   const engine = await load('../../components/lessons/lesson-experience.tsx')
   assert.match(engine, /speechThreshold: 0\.012/)
