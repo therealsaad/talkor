@@ -681,6 +681,26 @@
   letter-spacing: 0.02em;
 }
 
+.poem-gentle-invitation {
+  margin: 0;
+  padding: 8px 16px;
+  background: #e7f7ea;
+  color: #1c5b3b;
+  text-align: center;
+  font-size: clamp(12px, 1.05vw, 15px);
+  font-weight: 750;
+  line-height: 1.45;
+  border-top: 1px solid #cdecd3;
+}
+
+.poem-gentle-invitation strong {
+  display: inline-block;
+  border-radius: 12px;
+  padding: 1px 7px;
+  background: #fff;
+  color: #1e633f;
+}
+
 .poem-hints {
   flex: none;
   display: flex;
