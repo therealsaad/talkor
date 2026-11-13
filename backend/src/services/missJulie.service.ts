@@ -323,17 +323,15 @@ export const MissJulieService = {
       : isGoldEpisode
         ? required.every((skill) => skillEvidence.some((item) => item.skill === skill))
         : required.every((item) => goalState.includes(item))
-    const finalLessonTurn = Boolean(
-      lessonConversation &&
-      (gentleSupportComplete ||
+    const independentLessonTurn = Boolean(
       (nextTurn >= minTurns && demonstratedRequiredSkills &&
-        // For the First Day pilot, an earlier English word plus a final
-        // request for help cannot be mistaken for a successful answer.
+        // Help or silence on the current turn is never independent evidence.
         (!isFirstDayScene || turnSkills.includes('first_day_english_attempt'))) ||
-        // A First Day scene never passes just because a child has spent four
-        // turns silent, asking for help or answering only in a home language.
-        (nextTurn >= maxTurns && (!isFirstDayScene ||
-          (demonstratedRequiredSkills && turnSkills.includes('first_day_english_attempt')))))),
+      (nextTurn >= maxTurns && (!isFirstDayScene ||
+        (demonstratedRequiredSkills && turnSkills.includes('first_day_english_attempt')))),
+    )
+    const finalLessonTurn = Boolean(
+      lessonConversation && (independentLessonTurn || gentleSupportComplete),
     )
 
     const freeTalkConversation = !input.lessonId && !input.activityId && (!existingConversation || existingConversation.mode === 'FREE_TALK')
