@@ -79,7 +79,7 @@ describe('Class 1 first-day poem lesson boundaries (recorded student regression)
     expect(pairEn.xpAwarded).toBe(0)
     const finalEn = guardFirstDayPoemTurn('poem-full', 'At at.', 'English', legacy())
     expect(finalEn.message).toContain('five little parts')
-    expect(finalEn.followUpQuestion).toContain('one word from each')
+    expect(finalEn.followUpQuestion).toContain('first part')
     expect(finalEn.modelSentence).toContain('See me skip')
     expect(finalEn.activityComplete).toBe(false)
     for (const lang of ['Hindi', 'Marathi'] as const) {
