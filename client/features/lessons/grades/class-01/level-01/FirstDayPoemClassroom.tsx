@@ -206,7 +206,7 @@ export function FirstDayPoemClassroom({
   const [animationFailed, setAnimationFailed] = useState(false)
   const [videoReady, setVideoReady] = useState(false)
 
-  // Five two-line turns, then whole-poem recitation with no fake mastery.
+  // Five poem sections, each offering supported word participation OR a full recital.
   const final = sceneId === 'poem-full'
   const pairIndex = Number(sceneId.match(/^poem-pair-(\d)$/)?.[1] || 1) - 1
   const pair = PAIRS[Math.min(Math.max(pairIndex, 0), PAIRS.length - 1)]
@@ -220,10 +220,14 @@ export function FirstDayPoemClassroom({
     ? PAIRS[activeChunkPairIndex]?.image || '/lessons/class-01/level-01/illustrations/first-day-school.webp'
     : pair.image
   const activeActionText = final
-    ? `Reciting lines ${activeStart + 1}–${activeEnd}: ${PAIRS[activeChunkPairIndex]?.title || 'My First Day'}`
+    ? `Learning part ${recitalChunk + 1}/5: ${PAIRS[activeChunkPairIndex]?.title || 'My First Day'}`
     : pair.actionText
   const activeActionAnim = final ? 'poem-anim-celebrate' : pair.actionAnim
   const activeHighlights = final ? (PAIRS[activeChunkPairIndex]?.highlightWords || []) : pair.highlightWords
+  // Highlighted words are visual guidance, never browser-side grades or XP.
+  const exampleWord = final
+    ? (PAIRS[activeChunkPairIndex]?.highlightWords[0] || 'school')
+    : pair.highlightWords[0]
 
   useOriginalInstrumental(music, isSpeaking && !isListening && !isProcessing)
 
@@ -246,9 +250,9 @@ export function FirstDayPoemClassroom({
   const status = isListening ? 'Miss Julie is listening'
     : isProcessing ? 'Thinking about your recitation'
     : isSpeaking ? 'Miss Julie is reciting'
-    : isRetry ? 'Let us try those lines again'
+    : isRetry ? 'Good trying! Let us practise one word at a time'
     : isCompleted ? 'Lovely effort!'
-    : 'Your turn to recite'
+    : 'Your turn—one word is a great start!'
 
   return (
     <main
@@ -280,8 +284,8 @@ export function FirstDayPoemClassroom({
         <div className="poem-header__steps">
           <div className="poem-header__step-label">
             {final
-              ? `Full poem · lines ${activeStart + 1}–${activeEnd} of 10`
-              : `Two lines at a time · ${step}/${total}`}
+              ? `Five little parts · ${recitalChunk + 1}/5`
+              : `Practise two lines · ${step}/${total}`}
           </div>
           <div
             className="poem-header__progress-bar"
@@ -382,7 +386,7 @@ export function FirstDayPoemClassroom({
 
               {/* Decorative story motion elements */}
               <div className="poem-sky-label">
-                {final ? '🎉 Whole poem celebration!' : '✨ Listen · Move · Say'}
+                {final ? '🎉 Five small poem steps!' : '✨ Listen · Move · Say'}
               </div>
             </div>
 
@@ -454,22 +458,28 @@ export function FirstDayPoemClassroom({
           </div>
 
           {/* Focused active poem lines */}
-          <div className="poem-focus" aria-label="Active line to recite">
+          <div className="poem-focus" aria-label="Active poem words and lines">
             <span className="poem-focus__badge">
-              {final ? `🎤 Full recital · part ${recitalChunk + 1}/5` : '🎵 Your two lines'}
+              {final ? `🎤 Your choice · part ${recitalChunk + 1}/5` : '🎵 Your words and lines'}
             </span>
             <strong className="poem-focus__text">
               {LINES.slice(activeStart, activeEnd).join('   ·   ')}
             </strong>
           </div>
 
+          {/* Beginner-friendly practice choices; the server alone evaluates
+              independent mastery versus assisted learning. */}
+          <p className="poem-gentle-invitation" role="note">
+            Say one word you know, like <strong>{exampleWord}</strong>, or say both lines with Miss Julie.
+          </p>
+
           {/* Bilingual Support Hints */}
           {isRetry ? (
             <div className="poem-hints" role="note">
               <span className="poem-hints__title">Miss Julie's Hint:</span>
-              <span lang="hi">{final ? 'पूरी कविता धीरे बोलो।' : pair.hintHi}</span>
+              <span lang="hi">{final ? 'हर भाग से एक शब्द बोलो, या दोनों पंक्तियाँ बोलो।' : pair.hintHi}</span>
               <span className="poem-hints__divider">·</span>
-              <span lang="mr">{final ? 'संपूर्ण कविता सावकाश म्हण.' : pair.hintMr}</span>
+              <span lang="mr">{final ? 'प्रत्येक भागातला एक शब्द बोल, किंवा दोन्ही ओळी म्हण.' : pair.hintMr}</span>
             </div>
           ) : null}
         </section>
@@ -574,10 +584,10 @@ export function FirstDayPoemClassroom({
               type="button"
               className="poem-actions__mic"
               onClick={onStartMic}
-              aria-label="Start recording your poem lines"
+              aria-label="Start speaking a poem word or the current lines"
             >
               <Mic size={20} className="poem-mic-icon" />
-              <span>Recite</span>
+              <span>Speak</span>
             </button>
           ) : null}
 
