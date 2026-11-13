@@ -121,3 +121,55 @@ export function gentlePoemTeacherResponse(
     detectedSkills: [], remainingSkills: [],
   }
 }
+
+
+/** Finale support is *not* an independent recital. The browser's existing
+ * five two-line recordings are joined into one Sarvam transcript submission;
+ * award supported participation only when a word from every authored pair
+ * appears in poem order. A disconnected five-word bank is only supported
+ * participation, never pronunciation mastery.
+ */
+export function observeGentlePoemFinale(input: {
+  context?: LessonTeachingContext
+  transcript: string
+  inputMode?: 'MIC' | 'TEXT' | 'OPTION'
+}): boolean {
+  const context = input.context
+  if (context?.sceneKey !== 'poem-full' ||
+      context.activityKey !== 'class1-l01-v4-poem-full' ||
+      context.mode !== 'RECITE' || context.modelLines.length !== 10 ||
+      input.inputMode !== 'MIC') return false
+  const said = normalizeFirstDayPoemRecognition(input.transcript).trim()
+  const tokens = said.split(/\s+/).filter(Boolean)
+  if (!said || said.length > 1200 || tokens.length < 5 || tokens.length > 130 ||
+      !/^[a-z0-9'’.,!\s-]+$/i.test(said) || nonAnswer.test(said)) return false
+  let after = 0
+  for (let i = 1; i <= 5; i++) {
+    const pair = pairWords['poem-pair-' + i]
+    if (!pair) return false
+    // Match from the previous section onward, never reuse an earlier word
+    // across sections or accept a reversed word-bank dump as a recital.
+    const candidates = pair.patterns.flatMap(pattern => {
+      const match = new RegExp(pattern.source, 'gi').exec(said.slice(after))
+      return match ? [{ at: after + match.index, end: after + match.index + match[0].length }] : []
+    }).sort((a, b) => a.at - b.at)
+    if (!candidates.length) return false
+    after = candidates[0].end
+  }
+  return true
+}
+
+export function gentlePoemFinaleResponse(language: 'English' | 'Hindi' | 'Marathi'): AIStructuredResponse {
+  const messages = {
+    English: 'Wonderful trying! You remembered words from all five parts of our poem. We can practise more another day!',
+    Hindi: 'बहुत बढ़िया! तुमने कविता के पाँचों हिस्सों से शब्द याद किए। शाबाश!',
+    Marathi: 'खूप छान! तुला कवितेच्या पाचही भागांतील शब्द आठवले. शाब्बास!',
+  }
+  return {
+    message: messages[language], emotion: 'celebrating', responseQuality: 'ADEQUATE',
+    corrections: [], hint: null, followUpQuestion: null,
+    memoryUpdates: [], xpAwarded: 0, teachingAction: 'ASK_FOLLOW_UP',
+    shouldRetry: false, hintLevel: 1, activityComplete: false,
+    detectedSkills: [], remainingSkills: [],
+  }
+}
