@@ -97,20 +97,20 @@ test('three recorded at-at replies become small practice; refresh, partial repli
   expect(resumed.body.data.conversationId).toBe(conversationId)
   expect(resumed.body.data.message).toContain('Say with me: See me grin')
   const line1 = await f.turn('See me grin.')
-  expect(line1.aiResponse.followUpQuestion).toBe('Say with me: When the bell rings, I go in.')
+  expect(line1.aiResponse.followUpQuestion).toBe('Now say: bell.')
+  expect(line1.aiResponse.activityComplete).toBe(false)
+  // The second line is independently spoken on a new mic turn. Do not force
+  // a third perfect combined recitation for a six-year-old learner.
   const line2 = await f.turn('When the bell rings, I go in.')
-  expect(line2.aiResponse.followUpQuestion).toBe('Say with me: See me grin\nWhen the bell rings, I go in.')
-  expect(line2.aiResponse.activityComplete).toBe(false)
+  expect(line2.aiResponse.activityComplete).toBe(true)
+  expect(line2.aiResponse.conversation.masteryStatus).toBe('COMPLETED_WITH_SUPPORT')
+  expect(line2.aiResponse.conversation.retryState.practiceScaffold).toBeUndefined()
   expect(await ActivityAttempt.countDocuments()).toBe(0)
   expect(await Progress.find({ studentId: f.students[0]._id }).lean()).toEqual(before)
   await request(app).post('/api/voice/sessions/' + line2._id + '/teacher-audio-played')
     .set(f.headers()).send({ feedbackReceipt: 'forged' }).expect(409)
 
-  const full = await f.turn('See me grin. When the bell rings, I go in.')
-  expect(full.aiResponse.activityComplete).toBe(true)
-  expect(full.aiResponse.conversation.retryState.practiceScaffold).toBeUndefined()
-  expect(await ActivityAttempt.countDocuments()).toBe(0)
-  const ack = () => request(app).post('/api/voice/sessions/' + full._id + '/teacher-audio-played').set(f.headers())
+  const ack = () => request(app).post('/api/voice/sessions/' + line2._id + '/teacher-audio-played').set(f.headers())
   await ack().send({}).expect(409)
   const azure = jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeStream').mockImplementation(async () => ({
     provider: 'synthetic-azure', contentType: 'audio/mpeg',
@@ -118,7 +118,7 @@ test('three recorded at-at replies become small practice; refresh, partial repli
   }))
   const audio = await request(app).post('/api/voice/synthesize').set(f.headers()).send({
     text: 'Client cannot choose this teacher text.', purpose: 'CONVERSATION',
-    activityId: String(f.activities[0]._id), teacherSessionId: full._id,
+    activityId: String(f.activities[0]._id), teacherSessionId: line2._id,
   }).expect(200)
   expect(azure).toHaveBeenCalledTimes(1)
   const receipt = audio.headers['x-class1-feedback-receipt']
