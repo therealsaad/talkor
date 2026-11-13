@@ -154,11 +154,13 @@ test('real HTTP Class 1 accepts skip then run as supported learning, only signed
   expect(second.aiResponse.conversation.retryState.gentlePoem.recognizedLines).toEqual([0, 1])
   expect(await ActivityAttempt.countDocuments({ studentId: f.students[0]._id,
     activityId: f.activities[1]._id })).toBe(0)
-  expect(await Progress.find({ studentId: f.students[0]._id }).lean()).toEqual([])
+  // The signed audio receipt is the only path to new student progress.
+  const beforeAckProgress = await Progress.find({ studentId: f.students[0]._id }).lean()
   const acknowledge = (receipt: string) => request(app)
     .post('/api/voice/sessions/' + second._id + '/teacher-audio-played')
     .set(f.headers()).send({ feedbackReceipt: receipt })
   await acknowledge('client-cannot-forge-receipt').expect(409)
+  expect(await Progress.find({ studentId: f.students[0]._id }).lean()).toEqual(beforeAckProgress)
   jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeStream').mockImplementation(async () => ({
     provider: 'synthetic-azure', contentType: 'audio/mpeg',
     body: new ReadableStream<Uint8Array>({ start(c) { c.enqueue(new Uint8Array(512)); c.close() } }),
@@ -179,6 +181,7 @@ test('real HTTP Class 1 accepts skip then run as supported learning, only signed
 
 test('same word repeated, questions, another student and client state injection cannot unlock the poem', async () => {
   const f = await fixture()
+  const before = await Progress.find({ studentId: f.students[0]._id }).lean()
   const first = await f.turn('run', { activity: 1 })
   const repeat = await f.turn('running', { activity: 1 })
   expect(first.aiResponse.activityComplete).toBe(false)
@@ -200,7 +203,7 @@ test('same word repeated, questions, another student and client state injection 
   }).expect(200)
   expect(forged.body.data.activityComplete).toBe(false)
   expect(await ActivityAttempt.countDocuments()).toBe(0)
-  expect(await Progress.find({ studentId: f.students[0]._id }).lean()).toEqual([])
+  expect(await Progress.find({ studentId: f.students[0]._id }).lean()).toEqual(before)
 })
 
 test('interleaved students and another activity cannot borrow retry or practice state', async () => {
