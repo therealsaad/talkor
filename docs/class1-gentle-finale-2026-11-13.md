@@ -2,6 +2,8 @@
 
 **Dependency:** Review PR #143 (gentle word-level poem pairs) before this PR. This is intentionally a separate, small, stacked branch; it is not merged or published.
 
+**CI:** The repository's automated workflow triggers for PRs targeting `main`. This branch can be tested against `main` before being returned to its narrower stacked review base. No branch is merged or deployed during that CI check.
+
 ## The barrier
 The current `poem-full` browser already captures five successive short microphone clips of two poem lines each and joins their Sarvam transcripts. The backend's independent 10-line recitation check requires 20+ words and several ordered themes. That remains appropriate for **independent mastery**, but it is too difficult as the only completion path for a Class 1 beginner.
 
