@@ -92,6 +92,22 @@ describe('Class 1 first-day poem lesson boundaries (recorded student regression)
     }
   })
 
+  it('a struggling finale learner hears only the first two authorized lines rather than all ten', () => {
+    const model = 'See me skip\nSee me run'
+    for (const language of ['English', 'Hindi', 'Marathi'] as const) {
+      const answer = guardFirstDayPoemTurn('poem-full', 'At at.', language, legacy())
+      expect(answer.message).toContain('See me skip')
+      expect(answer.message).toContain('See me run')
+      expect(answer.message).not.toContain('Hip hip hurray!')
+      expect(answer.modelSentence).toBe(model)
+      expect(answer.followUpQuestion).toContain('first part')
+      expect(answer.activityComplete).toBe(false)
+      expect(answer.shouldRetry).toBe(true)
+      expect(answer.xpAwarded).toBe(0)
+      expect(answer.memoryUpdates).toEqual([])
+    }
+  })
+
   it('the full recital and all poem keys stay authored; unknown keys fail closed', () => {
     for (const key of ['poem-pair-1','poem-pair-2','poem-pair-3','poem-pair-4','poem-pair-5','poem-full']) {
       expect(isFirstDayPoemScene(key)).toBe(true)
