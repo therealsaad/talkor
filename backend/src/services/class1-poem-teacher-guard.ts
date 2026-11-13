@@ -61,8 +61,18 @@ export function guardFirstDayPoemTurn(
     // Use the short reviewed fallback for uncertain finale answers.
     (!full || answered))
 
-  const help = full ? '' : language === 'Hindi' ? step.hintHi
-    : language === 'Marathi' ? step.hintMr : ''
+  // A child who asks for the meaning of a word needs a real explanation,
+  // not another rote recitation. Reuse the reviewed first-pair translations.
+  const asksForHelp = full && !answered &&
+    /\b(?:what|why|how|meaning|mean|explain|help|don't know|dont know)\b|क्या|मतलब|मदद|समझ|काय|म्हणजे|समजत|नाही|नहीं/u
+      .test(transcript.normalize('NFKC').toLowerCase())
+  const firstPair = FIRST_DAY_POEM_STEPS.find(candidate => candidate.key === 'poem-pair-1')!
+  const help = asksForHelp
+    ? language === 'Hindi' ? firstPair.hintHi
+      : language === 'Marathi' ? firstPair.hintMr
+        : 'Skip means move with little hops. Run means move quickly.'
+    : full ? '' : language === 'Hindi' ? step.hintHi
+      : language === 'Marathi' ? step.hintMr : ''
   // Gentle prompts reflect the same supported option the server already
   // credits. Keep the exact authored English model for optional practice,
   // but never demand perfect full-line repetition from a beginner.
