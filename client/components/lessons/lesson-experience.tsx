@@ -1191,6 +1191,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
               avatarType={avatarType}
               studentName={studentName}
               statusText={statusText}
+              waitInvitation={class1WaitCue?.invitation}
               feedback={feedback}
               modelSentence={modelSentence}
               expectedPhrase={expectedPhrase}
