@@ -1,4 +1,7 @@
 import { firstDaySceneSkills, normalizeFirstDayPoemRecognition, poemEvidence } from '../../src/services/first-day-evidence'
+import { observeGentlePoem, gentlePoemTeacherResponse } from '../../src/services/gentle-first-day-poem'
+import { buildLessonTeachingContext, selectLessonSupport } from '../../src/services/lesson-teaching-context'
+import { FIRST_DAY_POEM_STEPS, FIRST_DAY_POEM_LINES } from '../../src/curriculum/class1-first-day-poem'
 
 describe('First Day conversational mastery evidence', () => {
   it.each([
