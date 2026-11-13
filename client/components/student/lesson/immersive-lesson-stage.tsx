@@ -56,6 +56,7 @@ export interface ImmersiveLessonStageProps {
   avatarType: 'BOY' | 'GIRL'
   studentName: string
   statusText: string
+  waitInvitation?: string
   feedback: string
   modelSentence?: string
   expectedPhrase?: string
@@ -110,6 +111,7 @@ export function ImmersiveLessonStage({
   avatarType,
   studentName,
   statusText,
+  waitInvitation,
   feedback,
   modelSentence,
   expectedPhrase,
@@ -400,6 +402,8 @@ export function ImmersiveLessonStage({
       isSpeaking={isJulieSpeaking}
       isListening={isRecording}
       isProcessing={isProcessing}
+      turnStatus={statusText}
+      waitInvitation={waitInvitation}
       isCompleted={isCompleted}
       isRetry={isRetry}
       transcript={studentTurnText || transcript}

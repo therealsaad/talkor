@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { watchVoiceActivity } from '@/lib/voice-activity'
 import { isClass1NoSpeechError, class1SilenceRecovery } from '@/lib/class1-microphone-recovery'
+import { class1TurnWaitCue } from '@/lib/class1-turn-wait-cue'
 import { joinClass1PoemRecitalParts } from '@/lib/class1-poem-recital'
 import { getStoredToken } from '@/lib/api-client'
 import { isTelemetryRequested, lessonTurnTelemetry, setTelemetrySession } from '@/lib/lesson-turn-telemetry'
@@ -1138,7 +1139,12 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
 
   const responsePhase: ActivityResponsePhase = experience === 'student_recording' ? 'listening_mic' : ['transcribing', 'student_submitted', 'julie_thinking'].includes(experience) ? 'evaluating' : experience === 'retry_required' || experience === 'recoverable_error' ? 'retry' : experience === 'activity_complete' ? 'correct' : experience === 'lesson_complete' ? 'completed' : isConversation && conversationTurn > 0 ? 'conversation' : 'ready'
   const learnerState = experience === 'student_recording' ? 'speaking' : experience === 'transcribing' || experience === 'student_submitted' || experience === 'julie_thinking' ? 'thinking' : experience === 'activity_complete' ? 'happy' : experience === 'retry_required' || experience === 'recoverable_error' ? 'retry' : julie.isSpeaking ? 'listening' : 'idle'
-  const statusText = experience === 'student_recording' ? 'Listening to you…' : experience === 'transcribing' ? 'Turning your voice into words…' : experience === 'julie_thinking' ? 'Miss Julie is thinking…' : julie.state === 'loading' ? 'Julie is getting ready to speak…' : ''
+  const class1WaitCue = experienceId === 'g01-l01' ? class1TurnWaitCue(experience) : null
+  const statusText = class1WaitCue?.label ||
+    (experience === 'student_recording' ? 'Listening to you…'
+      : experience === 'transcribing' ? 'Turning your voice into words…'
+        : experience === 'julie_thinking' ? 'Miss Julie is thinking…'
+          : julie.state === 'loading' ? 'Julie is getting ready to speak…' : '')
   const stageLabel = resolveStageLabel(activity?.stage, world.stageLabel)
   const reflection = useMemo(() => evidence.slice(-3), [evidence])
 
@@ -1185,12 +1191,15 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
               avatarType={avatarType}
               studentName={studentName}
               statusText={statusText}
+              waitInvitation={class1WaitCue?.invitation}
               feedback={feedback}
               modelSentence={modelSentence}
               expectedPhrase={expectedPhrase}
               seconds={seconds}
               isRecording={responsePhase === 'listening_mic'}
-              isProcessing={responsePhase === 'evaluating'}
+              // Show the teacher preparing immediately, including the Azure
+              // audio fetch. No separate filler TTS or extra model round trip.
+              isProcessing={responsePhase === 'evaluating' || Boolean(class1WaitCue && !julie.isSpeaking)}
               teacherReady={experience === 'transitioning' && !julie.isSpeaking && julie.state !== 'loading' && currentTeacherTurnRef.current?.id === `teacher-${activity.id}-intro`}
               requiresVoiceResponse={hasMic}
               spokenWarmupAnswer={spokenWarmupAnswer}

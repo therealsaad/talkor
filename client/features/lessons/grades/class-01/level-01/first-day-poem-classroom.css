@@ -771,6 +771,61 @@
   color: #8c5717;
 }
 
+/* Instant feedback uses no fetch, no LLM and no layout-wide spinner.
+   The tiny three dots are opacity-only and respect reduced-motion. */
+.poem-feedback__wait {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 46px;
+  max-width: 100%;
+  color: #174a38;
+}
+
+.poem-feedback__wait-copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 1px;
+}
+
+.poem-feedback__wait-copy strong {
+  font-size: clamp(13px, 1.25vw, 16px);
+  font-weight: 850;
+}
+
+.poem-feedback__wait-copy small {
+  color: #50745d;
+  font-size: clamp(11px, 0.9vw, 13px);
+  line-height: 1.3;
+}
+
+.poem-feedback__wait-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+}
+
+.poem-feedback__wait-dots i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #3f8b63;
+  animation: poemWaitBlink 1.1s ease-in-out infinite alternate;
+}
+.poem-feedback__wait-dots i:nth-child(2) { animation-delay: 180ms; }
+.poem-feedback__wait-dots i:nth-child(3) { animation-delay: 360ms; }
+
+@keyframes poemWaitBlink {
+  from { opacity: 0.25; }
+  to { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poem-feedback__wait-dots i { animation: none; opacity: 0.85; }
+}
+
 .poem-feedback__teacher-text {
   font-size: clamp(13px, 1.35vw, 17px);
   font-weight: 850;
