@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { watchVoiceActivity } from '@/lib/voice-activity'
 import { isClass1NoSpeechError, class1SilenceRecovery } from '@/lib/class1-microphone-recovery'
+import { joinClass1PoemRecitalParts } from '@/lib/class1-poem-recital'
 import { getStoredToken } from '@/lib/api-client'
 import { isTelemetryRequested, lessonTurnTelemetry, setTelemetrySession } from '@/lib/lesson-turn-telemetry'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -743,9 +744,10 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
           }
 
           // Sarvam accepts short clips only. For the full ten-line poem,
-          // collect five consecutive two-line recordings without scoring
-          // any intermediate take. Only the final combined transcript is
-          // sent to Qwen and can ever earn activity progress.
+          // collect five consecutive two-line recordings. A separate newline
+          // preserves each clip boundary in the final authenticated transcript
+          // so the backend can check each current section independently.
+          // No intermediate clip can save progress or award XP.
           if (activity.activityKey === 'class1-l01-v4-poem-full') {
             if (poemRecitalChunk < 4) {
               poemRecitalParts.current.push(normalizedText)
@@ -756,7 +758,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
               const nextLines = FIRST_DAY_POEM_LINES.slice(next*2,next*2+2).join('. ')
               const nextTurn: TeacherTurn = {
                 id: `poem-next-${activity.id}-${next}-${Date.now()}`,
-                text: `Lovely effort! Listen to the next two lines: ${nextLines}. Now recite them.`,
+                text: `Thank you for trying! Now listen to the next two lines: ${nextLines}. Say one word from these lines, or try both lines.`,
                 emotion: 'encouraging',
                 intent: 'ask',
                 requiresStudentResponse: true,
@@ -770,7 +772,7 @@ export function LessonExperience({ activities, levelTitle = 'Favourite Fair', sy
               await commitTeacherTurn(nextTurn, 'waiting_for_student')
               return
             }
-            normalizedText = [...poemRecitalParts.current, normalizedText].join(' ')
+            normalizedText = joinClass1PoemRecitalParts([...poemRecitalParts.current, normalizedText])
           }
 
           setTranscript(normalizedText)

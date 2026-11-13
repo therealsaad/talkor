@@ -83,6 +83,26 @@ test('Class 1 poem records both lines, retries silence without a second STT call
   assert.match(engine, /await acknowledgeFirstDayTeacherAudio\(\)/)
 })
 
+test('Class 1 finale sends five aligned real clip boundaries with no client-owned grading', async () => {
+  const source = await load('../../lib/class1-poem-recital.ts')
+  const module = { exports: {} }
+  vm.runInNewContext(ts.transpileModule(source, { compilerOptions: {
+    module: ts.ModuleKind.CommonJS,
+  } }).outputText, { module, exports: module.exports })
+  const join = module.exports.joinClass1PoemRecitalParts
+  const five = ['See me skip.\nSee me run.', 'school', 'grin', 'jumping', 'Hooray!']
+  assert.equal(join(five), 'See me skip. See me run.\nschool\ngrin\njumping\nHooray!')
+  assert.throws(() => join(five.slice(0, 4)), /Five poem parts/)
+  assert.throws(() => join(['skip', 'school', '', 'jump', 'hurray']), /unclear/)
+  assert.throws(() => join(['skip', 'school', 'grin', 'jump', 'a'.repeat(241)]), /unclear/)
+  const engine = await load('../../components/lessons/lesson-experience.tsx')
+  assert.match(engine, /joinClass1PoemRecitalParts\(\[\.\.\.poemRecitalParts\.current, normalizedText\]\)/)
+  assert.match(engine, /await cancelActiveVoiceSession\(\)/)
+  assert.match(engine, /Say one word from these lines, or try both lines/)
+  assert.match(engine, /await submit\(normalizedText, currentSessionId, 'MIC'/)
+  assert.doesNotMatch(source, /activityComplete|xpAwarded|masteryStatus/)
+})
+
 test('First Day route uses school-action homework and hides v3 fullscreen button', async () => {
   const page = await load('../../app/student/lesson/[id]/page.tsx')
   const wrapper = await load('../../features/lessons/grades/class-01/level-01/Class1Immersion.tsx')

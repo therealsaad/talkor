@@ -123,11 +123,15 @@ export function gentlePoemTeacherResponse(
 }
 
 
-/** Finale support is *not* an independent recital. The browser's existing
- * five two-line recordings are joined into one Sarvam transcript submission;
- * award supported participation only when a word from every authored pair
- * appears in poem order. A disconnected five-word bank is only supported
- * participation, never pronunciation mastery.
+/** Finale support is *not* an independent recital. The existing browser
+ * records five short poem sections. It sends one normalized STT result per
+ * section, separated by newlines, in a single authenticated MIC submission.
+ * The backend must inspect each corresponding section; a five-word dump in
+ * one clip cannot stand in for five attempts.
+ *
+ * This is still STT text evidence, NOT a cryptographic recording attestation
+ * or phoneme/pronunciation grading. Independent full-poem evidence is handled
+ * separately by poemEvidence, not by this assisted check.
  */
 export function observeGentlePoemFinale(input: {
   context?: LessonTeachingContext
@@ -139,24 +143,22 @@ export function observeGentlePoemFinale(input: {
       context.activityKey !== 'class1-l01-v4-poem-full' ||
       context.mode !== 'RECITE' || context.modelLines.length !== 10 ||
       input.inputMode !== 'MIC') return false
-  const said = normalizeFirstDayPoemRecognition(input.transcript).trim()
-  const tokens = said.split(/\s+/).filter(Boolean)
-  if (!said || said.length > 1200 || tokens.length < 5 || tokens.length > 130 ||
-      !/^[a-z0-9'’.,!\s-]+$/i.test(said) || nonAnswer.test(said)) return false
-  let after = 0
-  for (let i = 1; i <= 5; i++) {
-    const pair = pairWords['poem-pair-' + i]
-    if (!pair) return false
-    // Match from the previous section onward, never reuse an earlier word
-    // across sections or accept a reversed word-bank dump as a recital.
-    const candidates = pair.patterns.flatMap(pattern => {
-      const match = new RegExp(pattern.source, 'gi').exec(said.slice(after))
-      return match ? [{ at: after + match.index, end: after + match.index + match[0].length }] : []
-    }).sort((a, b) => a.at - b.at)
-    if (!candidates.length) return false
-    after = candidates[0].end
-  }
-  return true
+
+  // Each newline is a boundary created between the five STT clips by the
+  // browser. Clip-internal whitespace is collapsed before joining. Never
+  // re-segment arbitrary text based on a keyword search across the full poem.
+  const sections = input.transcript.split('\n')
+  if (sections.length !== 5 || input.transcript.length > 1200) return false
+  return sections.every((raw, i) => {
+    const said = normalizeFirstDayPoemRecognition(raw).trim()
+    const tokens = said.split(/\s+/).filter(Boolean)
+    const pair = pairWords['poem-pair-' + (i + 1)]
+    return Boolean(pair && said.length > 0 && said.length <= 240 &&
+      tokens.length >= 1 && tokens.length <= 30 &&
+      /^[a-z0-9'’.,!\s-]+$/i.test(said) &&
+      !nonAnswer.test(said) &&
+      pair.patterns.some(pattern => pattern.test(said)))
+  })
 }
 
 export function gentlePoemFinaleResponse(language: 'English' | 'Hindi' | 'Marathi'): AIStructuredResponse {
