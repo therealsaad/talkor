@@ -7,6 +7,7 @@ import { useReducedMotion } from 'framer-motion'
 import { requestKGMicrophone } from '@/lib/kg-microphone'
 import { watchVoiceActivity } from '@/lib/voice-activity'
 import { lessonTurnTelemetry } from '@/lib/lesson-turn-telemetry'
+import { nextKGStudentRoute } from '@/services/kg-resume-service'
 import { LatencyReportButton } from '@/components/latency-report-button'
 import { AnimatedMissJulie } from '../level-01/components/AnimatedMissJulie'
 import { KindergartenWorld } from '../components/KindergartenWorld'
@@ -74,7 +75,11 @@ export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State 
       setState(updated)
       // After the persisted final J acknowledgement, automatically resolve
       // the next permitted lesson; never send the child back to a completed map.
-      if (updated.completed) { router.replace('/student/continue'); return }
+      if (updated.completed) {
+        try { router.replace(await nextKGStudentRoute()) }
+        catch { setMessage('Your progress is saved. Tap Continue when your connection returns.') }
+        return
+      }
       setCycle((n) => n + 1)
     }
     function fail(cause: unknown) {
@@ -173,6 +178,11 @@ export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State 
       setPhase('error')
     }
   }
+  async function continueToNextLesson() {
+    setMessage('Opening your next lesson…')
+    try { router.replace(await nextKGStudentRoute()) }
+    catch { setMessage('Your progress is saved. Check your connection and try again.') }
+  }
   const busy = phase === 'narrating' || phase === 'requesting' || phase === 'checking'
   const display = state.completed ? 'Wonderful! You finished Level 2!'
     : phase === 'listening' ? 'Your turn! Say ' + letter + '!'
@@ -206,7 +216,10 @@ export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State 
               <h1>Level 2 complete!</h1>
               <p>You said all six letters with Miss Julie. Hooray!</p>
               <p>Your progress is saved. Your next adventure will appear when it is ready.</p>
-              <Link className="kg-level2-play__action" href="/student/kg/map"><CheckCircle2 size={18} /> Back to my garden</Link>
+              <button type="button" className="kg-level2-play__action" onClick={() => void continueToNextLesson()}>
+                <CheckCircle2 size={18} /> Continue to next lesson
+              </button>
+              {message ? <p role="status">{message}</p> : null}
             </div>
           ) : letter ? (
             <>

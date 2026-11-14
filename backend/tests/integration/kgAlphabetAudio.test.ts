@@ -31,12 +31,24 @@ async function approveIntro(authorization: string) {
     .send({ videoEnded: true, playbackId: activePlaybackId }).expect(200)
 }
 
+async function acknowledgeAttemptFeedback(authorization: string, submissionId: string) {
+  const audio = await request(app).get(`/api/kg-alphabet/attempt/${encodeURIComponent(submissionId)}/feedback-audio`)
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId).expect(200)
+  const feedbackReceipt = audio.headers['x-kg-feedback-receipt']
+  expect(feedbackReceipt).toMatch(/^v1\./)
+  return request(app).post(`/api/kg-alphabet/attempt/${encodeURIComponent(submissionId)}/feedback-played`)
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
+    .send({ feedbackReceipt }).expect(200)
+}
 
 beforeAll(() => connectTestDatabase())
 afterAll(() => disconnectTestDatabase())
 beforeEach(() => {
   // Background warming and the in-memory line cache would make Azure spy counts depend on test order.
   jest.spyOn(KGFeedbackAudioService, 'warm').mockImplementation(() => undefined)
+  jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached').mockResolvedValue({
+    audio: Buffer.alloc(500, 65), contentType: 'audio/mpeg',
+  })
 })
 afterEach(async () => {
   activePlaybackId = ''
@@ -55,25 +67,151 @@ it('saves all ABCD speech attempts, handles low-confidence speech, resumes, and 
   const speak = (id: string, submissionId: string) => request(app).post('/api/kg-alphabet/attempt').set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
     .send({ activityId: id, submissionId, audioBase64: 'Y'.repeat(160), mimeType: 'audio/webm', durationMs: 1000 })
   expect((await speak('say-a', 'quality-low-123456').expect(200)).body.data.outcome).toBe('unclear')
+  await acknowledgeAttemptFeedback(authorization, 'quality-low-123456')
   expect((await speak('say-a', 'quality-flag-12345').expect(200)).body.data.outcome).toBe('unclear')
+  await acknowledgeAttemptFeedback(authorization, 'quality-flag-12345')
   for (const [letter, word] of [['a', 'apple'], ['b', 'ball'], ['c', 'cat'], ['d', 'dog']]) {
+    const submissionId = `complete-speech-${letter}-1234`
     transcribe.mockResolvedValueOnce({ transcript: word, available: true, provider: 'test' } as never)
-    await speak(`say-${letter}`, `complete-speech-${letter}-1234`).expect(200)
+    await speak(`say-${letter}`, submissionId).expect(200)
+    await acknowledgeAttemptFeedback(authorization, submissionId)
   }
   const resumed = await request(app).get('/api/kg-alphabet/state').set('Authorization', authorization).expect(200)
   expect(resumed.body.data.currentIndex).toBe(4)
   for (const [letter, word] of [['a', 'apple'], ['b', 'ball'], ['c', 'cat'], ['d', 'dog']]) {
+    const submissionId = `complete-touch-${letter}-1234`
     await request(app).post('/api/kg-alphabet/attempt').set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
-      .send({ activityId: `find-${letter}`, selected: word, submissionId: `complete-touch-${letter}-1234`, studentId: 'forged', schoolId: 'forged', outcome: 'correct' }).expect(200)
+      .send({ activityId: `find-${letter}`, selected: word, submissionId, studentId: 'forged', schoolId: 'forged', outcome: 'correct' }).expect(200)
+    await acknowledgeAttemptFeedback(authorization, submissionId)
   }
   const progress = await KGAlphabetProgress.findOne({ studentId: student._id })
   expect(progress?.currentIndex).toBe(8)
   expect(progress?.completedAt).toBeTruthy()
+  const completedState = await request(app).get('/api/kg-alphabet/state').set('Authorization', authorization).expect(200)
+  expect(completedState.body.data).toMatchObject({
+    currentLevel: null,
+    nextIncompleteLevel: null,
+    unlockedLevels: [1],
+    completedLevels: [1],
+    level2Available: false,
+  })
+  expect(completedState.body.data.levels.find((level: { level: number }) => level.level === 1).status).toBe('completed')
+  expect(completedState.body.data.levels.filter((level: { level: number }) => level.level > 1)
+    .every((level: { status: string }) => level.status === 'locked')).toBe(true)
   const attempts = await KGAlphabetAttempt.find({ studentId: student._id }).lean()
   expect(attempts).toHaveLength(10)
   expect(attempts.every((attempt) => attempt.schoolId.toString() === student.schoolId.toString())).toBe(true)
   expect(attempts.every((attempt) => !('audioBase64' in attempt) && !('audio' in attempt))).toBe(true)
   expect(await KGAlphabetSubmission.countDocuments()).toBe(0)
+})
+
+it('starts an eligible student at Level 1 and keeps unpublished levels unavailable through student APIs', async () => {
+  const { authorization } = await makePilot()
+  const state = await request(app).get('/api/kg-alphabet/state').set('Authorization', authorization).expect(200)
+  expect(state.body.data).toMatchObject({
+    currentLevel: 1,
+    nextIncompleteLevel: 1,
+    studentPlayableLevels: [1],
+    unlockedLevels: [1],
+    completedLevels: [],
+    completed: false,
+  })
+  expect(state.body.data.levels.find((level: { level: number }) => level.level === 1)).toMatchObject({
+    unlocked: true, status: 'available',
+  })
+  expect(state.body.data.levels.filter((level: { level: number }) => level.level > 1).every(
+    (level: { unlocked: boolean; status: string }) => !level.unlocked && level.status === 'locked',
+  )).toBe(true)
+
+  for (const [level, letter] of [[2, 'E'], [3, 'K'], [4, 'Q'], [5, 'W']] as const) {
+    await request(app).post('/api/kg-alphabet/attempt').set('Authorization', authorization)
+      .send({ level, letter, submissionId: `draft-level-${level}-1234`, durationMs: 1000 })
+      .expect(403)
+    await request(app).get(`/api/kg-alphabet/narration/${level}/letter-${letter.toLowerCase()}`)
+      .set('Authorization', authorization)
+      .expect(403)
+  }
+  const repeatedState = await request(app).get('/api/kg-alphabet/state').set('Authorization', authorization).expect(200)
+  expect(repeatedState.body.data.unlockedLevels).toEqual([1])
+  expect(repeatedState.body.data.nextIncompleteLevel).toBe(1)
+})
+
+it('preserves a completed Level 1 record without unlocking an unpublished next level', async () => {
+  const { student, authorization } = await makePilot()
+  await KGAlphabetProgress.create({
+    studentId: student._id,
+    schoolId: student.schoolId,
+    currentIndex: 8,
+    introSeen: true,
+    completedAt: new Date(),
+    xp: 100,
+    stars: 3,
+    homeworkStatus: 'pending',
+    homeworkAssignedAt: new Date(),
+  })
+
+  const state = await request(app).get('/api/kg-alphabet/state').set('Authorization', authorization).expect(200)
+  expect(state.body.data).toMatchObject({
+    currentLevel: null,
+    nextIncompleteLevel: null,
+    unlockedLevels: [1],
+    completedLevels: [1],
+    completed: true,
+    level2Unlocked: true,
+    level2Available: false,
+  })
+  expect(state.body.data.levels.find((level: { level: number }) => level.level === 1).status).toBe('completed')
+  expect(state.body.data.levels.find((level: { level: number }) => level.level === 2).status).toBe('locked')
+  expect(state.body.data.levels.find((level: { level: number }) => level.level === 1))
+    .toMatchObject({ currentIndex: 8, totalActivities: 8, status: 'completed' })
+})
+
+it('keeps multiple saved level records isolated across authenticated sessions', async () => {
+  const { student, authorization } = await makePilot()
+  await approveIntro(authorization)
+  jest.spyOn(KGSpeechService, 'transcribe').mockResolvedValue({
+    transcript: 'apple', available: true, provider: 'test',
+  } as never)
+  const attempt = await request(app).post('/api/kg-alphabet/attempt')
+    .set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
+    .send({
+      activityId: 'say-a', submissionId: 'session-progress-attempt-123',
+      audioBase64: 'Y'.repeat(160), mimeType: 'audio/webm', durationMs: 1000,
+    }).expect(200)
+  expect(attempt.body.data.outcome).toBeDefined()
+  await acknowledgeAttemptFeedback(authorization, 'session-progress-attempt-123')
+
+  await KGAlphabetProgress.updateOne({ studentId: student._id }, {
+    $set: { levelProgress: [
+      { level: 2, currentIndex: 2 },
+      { level: 3, currentIndex: 1 },
+      { level: 4, currentIndex: 0 },
+      { level: 5, currentIndex: 0 },
+    ] },
+  })
+  const newSessionToken = signToken({
+    sub: student._id.toString(), schoolId: student.schoolId.toString(), role: 'STUDENT', sv: 0,
+  })
+  const resumed = await request(app).get('/api/kg-alphabet/state')
+    .set('Authorization', `Bearer ${newSessionToken}`).expect(200)
+  expect(resumed.body.data).toMatchObject({
+    currentIndex: 1,
+    currentLevel: 1,
+    nextIncompleteLevel: 1,
+    studentPlayableLevels: [1],
+  })
+  expect(resumed.body.data.levels.find((level: { level: number }) => level.level === 1).status).toBe('in_progress')
+  expect(resumed.body.data.levels.find((level: { level: number }) => level.level === 2))
+    .toMatchObject({ currentIndex: 2, status: 'locked', unlocked: false })
+  expect(resumed.body.data.levels.find((level: { level: number }) => level.level === 3))
+    .toMatchObject({ currentIndex: 1, status: 'locked', unlocked: false })
+
+  const otherStudent = await makePilot('KGVOICE2')
+  const otherState = await request(app).get('/api/kg-alphabet/state')
+    .set('Authorization', otherStudent.authorization).expect(200)
+  expect(otherState.body.data).toMatchObject({ currentIndex: 0, nextIncompleteLevel: 1 })
+  expect(await KGAlphabetProgress.countDocuments({ studentId: student._id })).toBe(1)
+  expect(await KGAlphabetProgress.countDocuments({ studentId: otherStudent.student._id })).toBe(1)
 })
 
 it('serializes simultaneous retries before STT and rejects reusing an ID for a different answer', async () => {
@@ -94,6 +232,7 @@ it('serializes simultaneous retries before STT and rejects reusing an ID for a d
   expect(duplicate.body.error.details.retryable).toBe(true)
   release()
   expect((await first).status).toBe(200)
+  await acknowledgeAttemptFeedback(authorization, body.submissionId)
   const recovered = await request(app).post('/api/kg-alphabet/attempt').set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId).send(body).expect(200)
   expect(recovered.body.data.duplicate).toBe(true)
   expect(recovered.body.data.state.currentIndex).toBe(1)
@@ -104,17 +243,43 @@ it('serializes simultaneous retries before STT and rejects reusing an ID for a d
 it('repairs progress from a saved correct attempt after an interrupted request', async () => {
   const { student, authorization } = await makePilot()
   await approveIntro(authorization)
-  await KGAlphabetAttempt.create({ studentId: student._id, schoolId: student.schoolId, activityId: 'say-a', letter: 'A', mode: 'speak', outcome: 'correct', replay: false, submissionId: 'interrupted-correct-123' })
+  const body = {
+    activityId: 'say-a',
+    submissionId: 'interrupted-correct-123',
+    audioBase64: 'Y'.repeat(160),
+    mimeType: 'audio/webm',
+    durationMs: 1000,
+  }
+  const requestHash = createHash('sha256').update(JSON.stringify({
+    activityId: body.activityId,
+    replay: false,
+    selected: undefined,
+    audioBase64: body.audioBase64,
+    mimeType: body.mimeType,
+    durationMs: body.durationMs,
+    timeSpentMs: undefined,
+    noSpeech: undefined,
+    assistedPicture: false,
+  })).digest('hex')
+  await KGAlphabetAttempt.create({
+    studentId: student._id, schoolId: student.schoolId, activityId: body.activityId, letter: 'A',
+    mode: 'speak', outcome: 'correct', replay: false, submissionId: body.submissionId, requestHash,
+  })
   const transcribe = jest.spyOn(KGSpeechService, 'transcribe')
   const response = await request(app).post('/api/kg-alphabet/attempt').set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
-    .send({ activityId: 'say-a', submissionId: 'interrupted-correct-123' }).expect(200)
-  expect(response.body.data.state.currentIndex).toBe(1)
+    .send(body).expect(200)
+  expect(response.body.data.state.currentIndex).toBe(0)
   expect(response.body.data.duplicate).toBe(true)
   expect(transcribe).not.toHaveBeenCalled()
+  const acknowledged = await acknowledgeAttemptFeedback(authorization, body.submissionId)
+  expect(acknowledged.body.data.state.currentIndex).toBe(1)
+  const duplicateAcknowledgement = await acknowledgeAttemptFeedback(authorization, body.submissionId)
+  expect(duplicateAcknowledgement.body.data.state.currentIndex).toBe(1)
+  expect(await KGAlphabetAttempt.countDocuments({ studentId: student._id })).toBe(1)
 })
 
-async function makePilot() {
-  const school = await School.create({ name: 'Audio Pilot School', code: 'KGVOICE1', passwordHash: 'test-hash', status: 'active' })
+async function makePilot(schoolCode = 'KGVOICE1') {
+  const school = await School.create({ name: 'Audio Pilot School', code: schoolCode, passwordHash: 'test-hash', status: 'active' })
   const student = await Student.create({
     schoolId: school._id,
     fullName: 'Asha Learner',
@@ -318,15 +483,18 @@ it('scores KG speech on the server, retries unclear speech, advances once, and d
   const wrong = await submitSpeech('speech-wrong-12345').expect(200)
   expect(wrong.body.data.outcome).toBe('incorrect')
   expect(wrong.body.data.state.currentIndex).toBe(0)
+  await acknowledgeAttemptFeedback(authorization, 'speech-wrong-12345')
 
   const unclear = await submitSpeech('speech-unclear-12345').expect(200)
   expect(unclear.body.data.outcome).toBe('unclear')
   expect(unclear.body.data.state.currentIndex).toBe(0)
+  await acknowledgeAttemptFeedback(authorization, 'speech-unclear-12345')
 
   const correct = await submitSpeech('speech-correct-12345').expect(200)
   expect(correct.body.data.outcome).toBe('correct')
-  expect(correct.body.data.state.currentIndex).toBe(1)
+  expect(correct.body.data.state.currentIndex).toBe(0)
   expect(correct.body.data.feedbackAudioId).toBe('great')
+  expect((await acknowledgeAttemptFeedback(authorization, 'speech-correct-12345')).body.data.state.currentIndex).toBe(1)
 
   const duplicate = await submitSpeech('speech-correct-12345').expect(200)
   expect(duplicate.body.data.duplicate).toBe(true)
@@ -352,16 +520,19 @@ it('praises Hindi/Marathi meaning with reusable Priya feedback but advances only
 
   const hindi = await say('child-hindi-1234567').expect(200)
   expect(hindi.body.data).toMatchObject({ outcome: 'supported', advance: false,
-    feedbackAudioId: 'bridge-a', feedbackVoice: 'dynamic_tts', feedbackAudioBase64: null,
+    feedbackAudioId: 'bridge-a', feedbackVoice: 'azure', feedbackAudioBase64: null,
     state: { currentIndex: 0 } })
+  await acknowledgeAttemptFeedback(authorization, 'child-hindi-1234567')
   const marathi = await say('child-marathi-12345').expect(200)
   expect(marathi.body.data).toMatchObject({ outcome: 'supported', advance: false,
     feedbackAudioId: 'bridge-a', state: { currentIndex: 0 } })
   expect(marathi.body.data.state.fallbackAvailable).toBe(true)
+  await acknowledgeAttemptFeedback(authorization, 'child-marathi-12345')
 
   const english = await say('child-english-12345').expect(200)
   expect(english.body.data).toMatchObject({ outcome: 'correct', advance: true,
-    feedbackAudioId: 'great', state: { currentIndex: 1 } })
+    feedbackAudioId: 'great', state: { currentIndex: 0 } })
+  expect((await acknowledgeAttemptFeedback(authorization, 'child-english-12345')).body.data.state.currentIndex).toBe(1)
   expect(transcribe).toHaveBeenCalledTimes(3)
   expect(await KGAlphabetAttempt.countDocuments({ studentId: student._id })).toBe(3)
 })
@@ -416,18 +587,32 @@ it('rejects locked picture puzzles, validates the final answer, and records repl
     .send({ activityId: 'find-d', submissionId: 'final-puzzle-wrong-123', selected: 'cat', timeSpentMs: 1000 }).expect(200)
   expect(wrong.body.data.outcome).toBe('incorrect')
   expect(wrong.body.data.state.currentIndex).toBe(7)
+  await acknowledgeAttemptFeedback(authorization, 'final-puzzle-wrong-123')
 
   const final = await request(app).post('/api/kg-alphabet/attempt').set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
     .send({ activityId: 'find-d', submissionId: 'final-puzzle-right-123', selected: 'dog', timeSpentMs: 1200 }).expect(200)
   expect(final.body.data.outcome).toBe('correct')
-  expect(final.body.data.state).toMatchObject({ currentIndex: 8, completed: true, level2Unlocked: true, level2Available: false })
-  expect(final.body.data.state.completedAt).toBeTruthy()
+  expect(final.body.data.state).toMatchObject({ currentIndex: 7, completed: false, level2Unlocked: false, level2Available: false })
+  const completion = await acknowledgeAttemptFeedback(authorization, 'final-puzzle-right-123')
+  expect(completion.body.data.state).toMatchObject({ currentIndex: 8, completed: true, level2Unlocked: true, level2Available: false })
+  expect(completion.body.data.state.completedAt).toBeTruthy()
+  const completedStateBeforeReview = await request(app).get('/api/kg-alphabet/state')
+    .set('Authorization', authorization).expect(200)
 
   const replay = await request(app).post('/api/kg-alphabet/attempt').set('Authorization', authorization).set('X-KG-Intro-Playback', activePlaybackId)
     .send({ activityId: 'find-d', submissionId: 'final-puzzle-replay-123', selected: 'dog', replay: true, timeSpentMs: 700 }).expect(200)
   expect(replay.body.data.outcome).toBe('correct')
   expect(replay.body.data.state.currentIndex).toBe(8)
-  expect(replay.body.data.state.completedAt).toBe(final.body.data.state.completedAt)
+  expect(replay.body.data.state.completedAt).toBe(completion.body.data.state.completedAt)
+  await acknowledgeAttemptFeedback(authorization, 'final-puzzle-replay-123')
+  const completedStateAfterReview = await request(app).get('/api/kg-alphabet/state')
+    .set('Authorization', authorization).expect(200)
+  expect(completedStateAfterReview.body.data).toMatchObject({
+    currentIndex: completedStateBeforeReview.body.data.currentIndex,
+    currentLevel: completedStateBeforeReview.body.data.currentLevel,
+    unlockedLevels: completedStateBeforeReview.body.data.unlockedLevels,
+    completedLevels: completedStateBeforeReview.body.data.completedLevels,
+  })
   expect(await KGAlphabetAttempt.countDocuments({ studentId: student._id, replay: true })).toBe(1)
   expect(await KGAlphabetProgress.findOne({ studentId: student._id }).then((progress) => progress?.currentIndex)).toBe(8)
 })
@@ -447,14 +632,19 @@ it('enforces two server-recorded speech failures before picture support and neve
   await assisted('early-picture-1234', 'apple').expect(403)
   const first = await speech('first-failure-1234').expect(200)
   expect(first.body.data.state.fallbackAvailable).toBe(false)
+  await acknowledgeAttemptFeedback(authorization, 'first-failure-1234')
   const second = await speech('second-failure-1234').expect(200)
   expect(second.body.data.state.fallbackAvailable).toBe(true)
+  await acknowledgeAttemptFeedback(authorization, 'second-failure-1234')
   expect((await request(app).get('/api/kg-alphabet/state').set('Authorization', authorization).expect(200)).body.data.fallbackAvailable).toBe(true)
   expect((await assisted('wrong-picture-1234', 'ball').expect(200)).body.data.state.currentIndex).toBe(0)
+  await acknowledgeAttemptFeedback(authorization, 'wrong-picture-1234')
   const result = await assisted('correct-picture-1234', 'apple').expect(200)
   expect(result.body.data.outcome).toBe('supported')
-  expect(result.body.data.state.currentIndex).toBe(1)
-  expect(result.body.data.state.pronunciationNeedsPractice).toContain('A')
+  expect(result.body.data.state.currentIndex).toBe(0)
+  const completed = await acknowledgeAttemptFeedback(authorization, 'correct-picture-1234')
+  expect(completed.body.data.state.currentIndex).toBe(1)
+  expect(completed.body.data.state.pronunciationNeedsPractice).toContain('A')
   expect(stt).toHaveBeenCalledTimes(2)
   const progress = await KGAlphabetProgress.findOne({ studentId: student._id })
   expect(progress?.pronunciationNeedsPractice).toContain('A')

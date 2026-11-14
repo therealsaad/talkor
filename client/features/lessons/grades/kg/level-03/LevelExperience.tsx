@@ -27,10 +27,11 @@ const LETTER_PICTURES: Record<Letter, { src: string; word: string }> = {
 }
 
 const LETTER_TRANSITION_PAUSE_MS = 900
-export default function LevelExperience({ preview = false, previewStartLetter = 'K', onPreviewBack }: LevelExperienceProps) {
+export default function LevelExperience({ preview = false, previewStartLetter = 'K', studentMode = false, studentReview = false, studentStartLetter = 'K', onPreviewBack }: LevelExperienceProps) {
   const router = useRouter()
   const reduceMotion = useReducedMotion()
-  const [selected, setSelected] = useState<Letter>(previewStartLetter)
+  const initialLetter = studentMode ? studentStartLetter : previewStartLetter
+  const [selected, setSelected] = useState<Letter>(LETTERS.includes(initialLetter as Letter) ? initialLetter as Letter : 'K')
   const [julieState, setJulieState] = useState<'idle' | 'speaking'>('idle')
   const [phase, setPhase] = useState<'narrating' | 'requesting' | 'listening' | 'checking' | 'feedback' | 'error' | 'finished'>('narrating')
   const [feedback, setFeedback] = useState('')
@@ -43,7 +44,7 @@ export default function LevelExperience({ preview = false, previewStartLetter = 
   const picture = LETTER_PICTURES[selected]
 
   useEffect(() => {
-    if (!preview) return
+    if (!preview && !studentMode) return
 
     const controller = new AbortController()
     let active = true
@@ -140,9 +141,15 @@ export default function LevelExperience({ preview = false, previewStartLetter = 
           audio: (!speechDetected && vadAvailable) || blob.size < 800 ? undefined : blob,
           durationMs,
           noSpeech: (!speechDetected && vadAvailable) || blob.size < 800,
+          studentMode,
+          replay: studentReview,
           signal: controller.signal,
         }).then(async (result) => {
           if (!active || controller.signal.aborted) return
+          if (studentMode && !studentReview && result.outcome === 'correct' && !result.advanced) {
+            fail(new Error('Student progress was not advanced'))
+            return
+          }
           const transition = resolveLevel3Attempt(selected, result.outcome)
           setFeedbackOutcome(result.outcome)
           setFeedback(transition.retry
@@ -161,6 +168,7 @@ export default function LevelExperience({ preview = false, previewStartLetter = 
               result.outcome === 'correct' ? 'great' : result.outcome === 'unclear' ? 'repeat' : 'try-again',
               audioRef.current,
               controller.signal,
+              studentMode,
             )
           } catch (error) {
             fail(error)
@@ -216,7 +224,7 @@ export default function LevelExperience({ preview = false, previewStartLetter = 
       const { kgLevel3PreviewService } = await import('./services/kg-level3-preview-service')
       previewService = kgLevel3PreviewService
       if (!audioRef.current) audioRef.current = new Audio()
-      await previewService.playIntroduction(selected, audioRef.current, controller.signal)
+      await previewService.playIntroduction(selected, audioRef.current, controller.signal, studentMode)
       if (!active || controller.signal.aborted) return
       setJulieState('idle')
       await beginListening()
@@ -238,7 +246,7 @@ export default function LevelExperience({ preview = false, previewStartLetter = 
       releaseMicrophone()
       audioRef.current?.pause()
     }
-  }, [attemptCycle, preview, router, selected])
+  }, [attemptCycle, preview, router, selected, studentMode, studentReview])
 
   useEffect(() => () => {
     audioRef.current?.pause()
@@ -251,7 +259,7 @@ export default function LevelExperience({ preview = false, previewStartLetter = 
     setAttemptCycle((cycle) => cycle + 1)
   }
 
-  if (!preview) {
+  if (!preview && !studentMode) {
     return <main className="kg-alpha kg-level3-blocked"><strong>Staff-only draft preview.</strong><span>This Level 3 lesson is not available to students.</span></main>
   }
 
@@ -272,7 +280,7 @@ export default function LevelExperience({ preview = false, previewStartLetter = 
       className="kg-alpha kg-alpha-play kg-level3-play"
       data-phase={phase}
       data-outcome={feedbackOutcome}
-      aria-label="Staff preview of Level 3 letters K to P"
+      aria-label={studentMode ? 'Level 3 letters K to P' : 'Staff preview of Level 3 letters K to P'}
     >
       <KindergartenWorld />
       <header className="kg-alpha-play-top">
@@ -281,7 +289,7 @@ export default function LevelExperience({ preview = false, previewStartLetter = 
           <span>LEVEL 3 · K–P</span>
           <div className="kg-alpha-step-bar">{LETTERS.map((letter, index) => <i key={letter} className={index < selectedIndex ? 'done' : index === selectedIndex ? 'current' : ''} />)}</div>
         </div>
-        <span className="kg-alpha-level-pill"><Sparkles size={15} /> STAFF-ONLY DRAFT</span>
+        <span className="kg-alpha-level-pill"><Sparkles size={15} /> {preview ? 'STAFF-ONLY DRAFT' : studentReview ? 'LEVEL REVIEW' : 'YOUR LEARNING'}</span>
       </header>
 
       <div className="kg-alpha-scene">
@@ -317,7 +325,7 @@ export default function LevelExperience({ preview = false, previewStartLetter = 
                 className="kg-level3-letter-word-picture"
               />
               <span className="kg-level3-letter-count" aria-label={`Letter ${selectedIndex + 1} of ${LETTERS.length}`}>{selectedIndex + 1} of {LETTERS.length}</span>
-              <p className="kg-level3-preview-note">Design preview only. No student progress or scoring is recorded.</p>
+              <p className="kg-level3-preview-note">{studentMode ? studentReview ? 'Review completed letters.' : 'Your practice is saved to your student account.' : 'Design preview only. No student progress or scoring is recorded.'}</p>
               {phase === 'narrating' || phase === 'requesting' || phase === 'checking'
                 ? <div className="kg-alpha-status"><LoaderCircle className="kg-spin" size={19} /> {phase === 'narrating' ? 'Miss Julie is speaking…' : phase === 'requesting' ? 'Starting microphone…' : 'Checking your answer…'}</div>
                 : null}

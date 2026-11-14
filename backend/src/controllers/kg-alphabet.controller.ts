@@ -7,12 +7,17 @@ import { catchAsync } from '../utils/catchAsync'
 import { ok } from '../utils/ApiResponse'
 import { ApiError } from '../utils/ApiError'
 import { Student } from '../models/Student'
-import { KGAlphabetProgress } from '../models/KGAlphabetProgress'
+import { KGAlphabetProgress, type IKGAlphabetProgress } from '../models/KGAlphabetProgress'
 import { KGAlphabetAttempt, type IKGAlphabetAttempt } from '../models/KGAlphabetAttempt'
 import { KGAlphabetSubmission } from '../models/KGAlphabetSubmission'
 import { KGIntroPlayback } from '../models/KGIntroPlayback'
 import { AUDIO_IDS, AUDIO_LINES, AUDIO_MANIFEST, LETTERS, activityAt, audioKey, evaluateKGSpeech, kgBilingualBridgeLanguage, KG_ALPHABET_VERSION, KG_AUDIO_VERSION, type AudioId } from '../kg/alphabet-content'
-import { isAuthorizedKGAlphabetStudent } from '../services/kg-pilot-access'
+import { LEVEL2_NARRATION } from '../kg/level2-content'
+import { LEVEL3_NARRATION } from '../kg/level3-content'
+import { LEVEL4_NARRATION } from '../kg/level4-content'
+import { LEVEL5_NARRATION } from '../kg/level5-content'
+import { isKGLevelNumber, kgLevelStatus, lettersForLevel, gradeKGLevelLetter, type KGLevelNumber } from '../kg/level-progression'
+import { isAuthorizedKGPilotStudent, isAuthorizedKGAlphabetStudent } from '../services/kg-pilot-access'
 import { getKGStaticAudio } from '../services/kg-static-audio-cache'
 import { getKGAzureNarrationAudio } from '../services/kg-azure-narration.service'
 import { PythonVoiceProvider } from '../providers/voice/PythonVoiceProvider'
@@ -30,11 +35,30 @@ import { createTurnTimer, logTurnTiming, parseSlowTurnMs, serverTimingHeader, ty
 import { isSupportedVoiceAudioMimeType } from '../schemas/voice.schema'
 import { hasExpectedAudioHeader } from '../services/voice-audio-format'
 
+// Student access remains deliberately limited to the currently released level.
+const STUDENT_READY_KG_LEVELS: readonly KGLevelNumber[] = [1]
+
 async function studentContext(req: Request) {
   if (req.auth?.role !== 'STUDENT') throw ApiError.forbidden('Student login required')
-  const student = await Student.findById(req.auth.id).select('grade status schoolId fullName kgAlphabetPilotEnabled')
-  if (!student || student.schoolId.toString() !== req.auth.schoolId ||
-      !isAuthorizedKGAlphabetStudent({ id: student._id.toString(), grade: student.grade, status: student.status, kgAlphabetPilotEnabled: student.kgAlphabetPilotEnabled })) {
+  const student = await Student.findById(req.auth.id).select('grade status schoolId kgAlphabetPilotEnabled')
+  const schoolMatchesToken = Boolean(student && student.schoolId.toString() === req.auth.schoolId)
+  const legacyPilotEligible = Boolean(student && isAuthorizedKGPilotStudent({
+    id: student._id.toString(), grade: student.grade, status: student.status,
+  }))
+  const pilotEligible = Boolean(student && isAuthorizedKGAlphabetStudent({
+    id: student._id.toString(), grade: student.grade, status: student.status,
+    kgAlphabetPilotEnabled: student.kgAlphabetPilotEnabled,
+  }))
+  if (!student || !schoolMatchesToken || !pilotEligible) {
+    logger.warn('KG alphabet student access denied', {
+      studentRecordFound: Boolean(student),
+      studentRecordMatchesSession: Boolean(student && student._id.toString() === req.auth.id),
+      schoolMatchesToken,
+      gradeIsZero: student?.grade === 0,
+      statusIsActive: student?.status === 'active',
+      pilotFlagIsTrue: student?.kgAlphabetPilotEnabled === true,
+      legacyPilotEligible,
+    })
     throw ApiError.forbidden('KG Level 1 is not enabled for this student. Ask your school administrator to enable the ABCD pilot in Students.')
   }
   return student
@@ -49,50 +73,125 @@ async function ensureState(req: Request) {
     { studentId: student._id },
     {
       $set: { schoolId: student.schoolId },
-      $setOnInsert: { studentId: student._id, version: KG_ALPHABET_VERSION, currentIndex: 0, introSeen: false },
+      $setOnInsert: {
+        studentId: student._id,
+        version: KG_ALPHABET_VERSION,
+        currentLevel: 1,
+        unlockedLevels: [1],
+        completedLevels: [],
+        levelProgress: [2, 3, 4, 5].map((level) => ({ level, currentIndex: 0 })),
+        currentIndex: 0,
+        introSeen: false,
+      },
     },
     { upsert: true, new: true, runValidators: true },
   )
   if (!state) throw ApiError.internal('Unable to load KG progress')
+  if (state.currentIndex === 8 && !state.completedLevels.includes(1)) {
+    await KGAlphabetProgress.updateOne(
+      { _id: state._id, schoolId: student.schoolId, currentIndex: 8, completedLevels: { $ne: 1 } },
+      { $set: { currentLevel: 1 }, $addToSet: { completedLevels: 1 } },
+    )
+  }
+  for (const level of [2, 3, 4, 5]) {
+    if (!state.levelProgress.some((item) => item.level === level)) {
+      await KGAlphabetProgress.updateOne(
+        { _id: state._id, 'levelProgress.level': { $ne: level } },
+        { $addToSet: { levelProgress: { level, currentIndex: 0 } } },
+      )
+    }
+  }
+  const normalizedState = await KGAlphabetProgress.findById(state._id)
+  if (!normalizedState) throw ApiError.internal('Unable to load KG progress')
   // Phase 2B: repair already-completed KG1 records written before Phase 1
   // rewards/homework existed. No replays, extra XP or cross-student writes.
   // Keep KGAlphabetProgress canonical rather than creating invalid generic
   // Progress rows without a published CurriculumClass/Level relationship.
-  if (state.currentIndex === 8 && (state.xp < 100 || state.stars < 3 ||
-      state.homeworkStatus === 'not-assigned' || !state.homeworkAssignedAt || !state.completedAt)) {
+  if (normalizedState.currentIndex === 8 && (normalizedState.xp < 100 || normalizedState.stars < 3 ||
+      normalizedState.homeworkStatus === 'not-assigned' || !normalizedState.homeworkAssignedAt || !normalizedState.completedAt)) {
     const finalActivityId = activityAt(7)?.id
     const finalAttempt = finalActivityId ? await KGAlphabetAttempt.findOne({
       studentId: student._id, schoolId: student.schoolId,
       activityId: finalActivityId, outcome: 'correct', replay: false,
     }).select('createdAt').sort({ createdAt: 1 }).lean() : null
-    const recordedAt = finalAttempt?.createdAt || state.completedAt || state.updatedAt || new Date()
+    const recordedAt = finalAttempt?.createdAt || normalizedState.completedAt || normalizedState.updatedAt || new Date()
     const set: Record<string, unknown> = {}
-    if (state.homeworkStatus === 'not-assigned') set.homeworkStatus = 'pending'
-    if (!state.homeworkAssignedAt) set.homeworkAssignedAt = recordedAt
+    if (normalizedState.homeworkStatus === 'not-assigned') set.homeworkStatus = 'pending'
+    if (!normalizedState.homeworkAssignedAt) set.homeworkAssignedAt = recordedAt
     // Only claim a lesson-completion timestamp when supported by a saved
     // successful final answer. Do not fabricate historical completion times.
-    if (!state.completedAt && finalAttempt?.createdAt) set.completedAt = finalAttempt.createdAt
+    if (!normalizedState.completedAt && finalAttempt?.createdAt) set.completedAt = finalAttempt.createdAt
     const refreshed = await KGAlphabetProgress.findOneAndUpdate(
-      { _id: state._id, schoolId: student.schoolId, currentIndex: 8 },
+      { _id: normalizedState._id, schoolId: student.schoolId, currentIndex: 8 },
       { $max: { xp: 100, stars: 3 }, ...(Object.keys(set).length ? { $set: set } : {}) },
       { new: true, runValidators: true },
     )
     if (refreshed) return { student, state: refreshed }
   }
-  return { student, state }
+  return { student, state: normalizedState }
 }
 
-function presentState(state: { currentIndex: number; introSeen: boolean; completedAt?: Date; xp?: number; stars?: number; homeworkStatus?: string; homeworkAssignedAt?: Date; homeworkCompletedAt?: Date; pronunciationNeedsPractice?: string[] }) {
+function presentState(state: {
+  currentIndex: number; currentLevel?: number; unlockedLevels?: number[]; completedLevels?: number[]
+  levelProgress?: Array<{ level: number; currentIndex: number; completedAt?: Date }>
+  introSeen: boolean; completedAt?: Date; xp?: number; stars?: number; homeworkStatus?: string
+  homeworkAssignedAt?: Date; homeworkCompletedAt?: Date; pronunciationNeedsPractice?: string[]
+}) {
   const index = state.currentIndex
+  const recordedCompletedLevels = new Set(state.completedLevels || [])
+  const level1Completed = index === 8 || Boolean(state.completedAt)
+  if (level1Completed) recordedCompletedLevels.add(1)
+  const completedLevels = [...recordedCompletedLevels]
+    .filter((level) => STUDENT_READY_KG_LEVELS.some((playable) => playable === level))
+  const unlockedLevels = (state.unlockedLevels || [1])
+    .filter((level) => STUDENT_READY_KG_LEVELS.some((playable) => playable === level))
+  for (const completedLevel of completedLevels) {
+    if (!unlockedLevels.includes(completedLevel)) unlockedLevels.push(completedLevel)
+  }
+  const nextIncompleteLevel = [...STUDENT_READY_KG_LEVELS].sort((a, b) => a - b)
+    .find((level) => !completedLevels.includes(level)) ?? null
+  const levelProgress = [1, 2, 3, 4, 5].map((level) => {
+    const progress = level === 1 ? null : state.levelProgress?.find((item) => item.level === level)
+    const currentIndex = level === 1 ? index : progress?.currentIndex || 0
+    const totalActivities = level === 1 ? 8 : lettersForLevel(level as KGLevelNumber).length
+    const playable = STUDENT_READY_KG_LEVELS.some((readyLevel) => readyLevel === level)
+    const completed = level === 1 ? level1Completed : completedLevels.includes(level)
+    const unlocked = playable && (unlockedLevels.includes(level) || completed)
+    const status = level === 1
+      ? !playable ? 'locked' : completed ? 'completed' : currentIndex > 0 ? 'in_progress' : 'available'
+      : kgLevelStatus({
+        level: level as KGLevelNumber,
+        playable,
+        unlocked,
+        completed,
+        current: nextIncompleteLevel === level,
+        currentIndex,
+      })
+    return {
+      level,
+      currentIndex,
+      totalActivities,
+      completed,
+      completedAt: level === 1 ? state.completedAt || null : progress?.completedAt || null,
+      unlocked,
+      status,
+    }
+  })
   return {
     version: KG_ALPHABET_VERSION,
     level: 1,
+    currentLevel: nextIncompleteLevel,
+    nextIncompleteLevel,
+    studentPlayableLevels: [...STUDENT_READY_KG_LEVELS],
+    unlockedLevels,
+    completedLevels,
+    levels: levelProgress,
     title: 'ABCD Picture Garden',
     currentIndex: index,
     totalActivities: 8,
     audioVersion: KG_AUDIO_VERSION,
     introSeen: state.introSeen,
-    completed: index === 8,
+    completed: level1Completed,
     fallbackAvailable: false,
     pronunciationNeedsPractice: state.pronunciationNeedsPractice || [],
     completedAt: state.completedAt || null,
@@ -101,9 +200,7 @@ function presentState(state: { currentIndex: number; introSeen: boolean; complet
     homework: { id: 'kg-abcd-picture-homework-v1', audioId: 'homework-abcd', text: AUDIO_LINES['homework-abcd'], status: state.homeworkStatus || 'not-assigned', assignedAt: state.homeworkAssignedAt || null, completedAt: state.homeworkCompletedAt || null },
     level2Unlocked: index === 8,
     // Level 2 is not yet published; never provide a clickable lesson link for it.
-    // Student Level 2 E–J pilot has its own server-owned course/progress.
-    // Unlock on verified KG1 completion, not on optional homework check-in.
-    level2Available: index === 8,
+    level2Available: false,
     letters: LETTERS,
     activity: activityAt(index),
     audio: Object.fromEntries(AUDIO_IDS.map((id) => [id, {
@@ -424,17 +521,224 @@ async function previewOutcome(input: Record<string, unknown>): Promise<KGPreview
   return { activity, outcome, transcript }
 }
 
-async function applyRecordedProgress(attempt: { studentId: Types.ObjectId; schoolId: Types.ObjectId; activityId: string; mode: string; outcome: string; replay: boolean; createdAt: Date }) {
+async function applyRecordedProgress(attempt: {
+  studentId: Types.ObjectId
+  schoolId: Types.ObjectId
+  level: number
+  activityId: string
+  letter: string
+  mode: string
+  outcome: string
+  replay: boolean
+  createdAt: Date
+}) {
+  if (attempt.level > 1) {
+    if (!isKGLevelNumber(attempt.level) || attempt.level === 1 || attempt.outcome !== 'correct' || attempt.replay) return
+    const level = attempt.level
+    const index = lettersForLevel(level).indexOf(attempt.letter)
+    if (index < 0) return
+    await advanceStudentLevel(attempt.studentId, attempt.schoolId, level, index, 'correct', attempt.createdAt)
+    return
+  }
   if (!['correct', 'supported'].includes(attempt.outcome) || attempt.replay) return
   // Native-language comprehension is praised but does not certify spoken English.
   if (attempt.outcome === 'supported' && attempt.mode === 'speak') return
   const index = Array.from({ length: 8 }, (_, i) => i).find((i) => activityAt(i)?.id === attempt.activityId)
   if (index === undefined) return
+  const nextLevel = index === 7 && STUDENT_READY_KG_LEVELS.includes(2) ? 2 : 1
   // This also repairs a request interrupted between saving the attempt and progress.
   await KGAlphabetProgress.updateOne({ studentId: attempt.studentId, schoolId: attempt.schoolId, currentIndex: index }, {
-    $set: { currentIndex: index + 1, ...(index === 7 ? { completedAt: attempt.createdAt, xp: 100, stars: 3, homeworkStatus: 'pending', homeworkAssignedAt: attempt.createdAt } : {}) },
-    ...(attempt.outcome === 'supported' ? { $addToSet: { pronunciationNeedsPractice: activityAt(index)!.letter } } : {}),
+    $set: { currentIndex: index + 1, ...(index === 7 ? {
+      currentLevel: nextLevel,
+      completedAt: attempt.createdAt,
+      xp: 100,
+      stars: 3,
+      homeworkStatus: 'pending',
+      homeworkAssignedAt: attempt.createdAt,
+    } : {}) },
+    ...((index === 7 || attempt.outcome === 'supported') ? {
+      $addToSet: {
+        ...(index === 7 ? { completedLevels: 1 } : {}),
+        ...(index === 7 && nextLevel === 2 ? { unlockedLevels: 2 } : {}),
+        ...(attempt.outcome === 'supported' ? { pronunciationNeedsPractice: activityAt(index)!.letter } : {}),
+      },
+    } : {}),
   })
+}
+
+function studentNarrationText(level: Exclude<KGLevelNumber, 1>, id: string): string {
+  const catalog = level === 2 ? LEVEL2_NARRATION
+    : level === 3 ? LEVEL3_NARRATION
+      : level === 4 ? LEVEL4_NARRATION : LEVEL5_NARRATION
+  if (!Object.prototype.hasOwnProperty.call(catalog, id)) {
+    throw ApiError.notFound(`Level ${level} narration not found`)
+  }
+  return catalog[id as keyof typeof catalog]
+}
+
+async function assertStudentLevelAccessible(state: IKGAlphabetProgress, level: KGLevelNumber, review: boolean) {
+  if (!STUDENT_READY_KG_LEVELS.includes(level)) {
+    throw ApiError.forbidden(`Kindergarten Level ${level} is not available to students yet`)
+  }
+  const completed = state.completedLevels.includes(level) || (level === 1 && state.currentIndex === 8)
+  if (review) {
+    if (!completed) throw ApiError.forbidden('Only completed Kindergarten levels can be reviewed')
+    return
+  }
+  if (!state.unlockedLevels.includes(level) || state.currentLevel !== level || completed) {
+    throw ApiError.forbidden('Complete the previous Kindergarten level before opening this one')
+  }
+}
+
+async function advanceStudentLevel(
+  studentId: Types.ObjectId,
+  schoolId: Types.ObjectId,
+  level: Exclude<KGLevelNumber, 1>,
+  index: number,
+  outcome: 'correct' | 'incorrect' | 'unclear',
+  completedAt: Date,
+): Promise<boolean> {
+  if (outcome !== 'correct') return false
+  const total = lettersForLevel(level).length
+  const finalLetter = index === total - 1
+  const nextLevel = level < 5 ? (level + 1) as KGLevelNumber : null
+  const unlockNextLevel = nextLevel !== null && STUDENT_READY_KG_LEVELS.includes(nextLevel)
+  const update = await KGAlphabetProgress.updateOne(
+    {
+      studentId,
+      schoolId,
+      currentLevel: level,
+      unlockedLevels: level,
+      levelProgress: { $elemMatch: { level, currentIndex: index } },
+    },
+    {
+      $inc: { 'levelProgress.$.currentIndex': 1 },
+      ...(finalLetter ? {
+        $set: {
+          'levelProgress.$.completedAt': completedAt,
+          currentLevel: unlockNextLevel ? nextLevel : level,
+        },
+        $addToSet: {
+          completedLevels: level,
+          ...(unlockNextLevel && nextLevel !== null ? { unlockedLevels: nextLevel } : {}),
+        },
+      } : {}),
+    },
+  )
+  return update.modifiedCount === 1
+}
+
+async function submitStudentLevelAttempt(req: Request, res: Response, student: { _id: Types.ObjectId; schoolId: Types.ObjectId }, state: IKGAlphabetProgress, level: Exclude<KGLevelNumber, 1>) {
+  const body = req.body as Record<string, unknown> | undefined
+  const letters = lettersForLevel(level)
+  const replay = body?.replay === true
+  await assertStudentLevelAccessible(state, level, replay)
+  const levelState = state.levelProgress.find((item) => item.level === level)
+  if (!levelState) throw ApiError.internal('Kindergarten level progress is unavailable')
+  const letter = typeof body?.letter === 'string' ? body.letter : ''
+  const letterIndex = letters.indexOf(letter)
+  if (letterIndex < 0 || (!replay && letterIndex !== levelState.currentIndex) ||
+      (replay && letterIndex >= levelState.currentIndex)) {
+    throw ApiError.conflict('This letter is not currently available. Reload your garden.')
+  }
+  const durationMs = Number(body?.durationMs)
+  if (!Number.isInteger(durationMs) || durationMs < 250 || durationMs > 12_000) {
+    throw ApiError.badRequest('Recording duration must be 0.25–12 seconds')
+  }
+  const submissionId = validateSubmissionId(body?.submissionId)
+  const requestHash = createHash('sha256').update(JSON.stringify({
+    level, letter, replay, audioBase64: body?.audioBase64, mimeType: body?.mimeType,
+    durationMs, noSpeech: body?.noSpeech === true,
+  })).digest('hex')
+  const identity = { studentId: student._id, schoolId: student.schoolId, submissionId }
+  const returnRecorded = async (attempt: IKGAlphabetAttempt) => {
+    if (attempt.requestHash && attempt.requestHash !== requestHash) {
+      throw ApiError.conflict('This submission ID was already used for another answer')
+    }
+    const latest = await KGAlphabetProgress.findOne({ studentId: student._id, schoolId: student.schoolId })
+    if (!latest) throw ApiError.internal('Kindergarten progress is unavailable')
+    const current = latest.levelProgress.find((item) => item.level === level)?.currentIndex || 0
+    ok(res, {
+      outcome: attempt.outcome,
+      replay: attempt.replay,
+      duplicate: true,
+      advanced: !attempt.replay && (current > letterIndex || latest.completedLevels.includes(level)),
+      submissionId,
+      state: { ...presentState(latest), fallbackAvailable: false },
+    })
+  }
+  const existing = await KGAlphabetAttempt.findOne(identity)
+  if (existing) return returnRecorded(existing)
+
+  const audioBase64 = body?.audioBase64
+  let outcome: 'correct' | 'incorrect' | 'unclear'
+  if (body?.noSpeech === true) {
+    outcome = 'unclear'
+  } else {
+    const mimeType = typeof body?.mimeType === 'string' ? body.mimeType : ''
+    if (!isSupportedVoiceAudioMimeType(mimeType) || typeof audioBase64 !== 'string' ||
+        audioBase64.length < 128 || audioBase64.length > 11_000_000 ||
+        !/^[A-Za-z0-9+/]+={0,2}$/.test(audioBase64) || audioBase64.length % 4 === 1) {
+      throw ApiError.badRequest('A valid short microphone recording is required')
+    }
+    const stt = await KGSpeechService.transcribe({ audioBase64, mimeType, durationMs })
+    if (!stt.available) throw ApiError.provider('Speech recognition is temporarily unavailable')
+    const confidence = 'confidence' in stt ? stt.confidence : undefined
+    const uncertain = ('uncertain' in stt && stt.uncertain === true) ||
+      (typeof confidence === 'number' && (!Number.isFinite(confidence) || confidence < 0.5))
+    outcome = gradeKGLevelLetter(level, String(stt.transcript || ''), letter, uncertain)
+  }
+
+  const owner = randomUUID()
+  const lease = { ...identity, requestHash, owner, expiresAt: new Date(Date.now() + Math.max(60_000, env.sttTimeoutMs * 2 + 10_000)) }
+  try {
+    await KGAlphabetSubmission.create(lease)
+  } catch (error) {
+    if ((error as { code?: number }).code !== 11000) throw error
+    const recovered = await KGAlphabetSubmission.findOneAndUpdate(
+      { ...identity, requestHash, expiresAt: { $lt: new Date() } },
+      { $set: lease },
+    )
+    if (!recovered) {
+      res.setHeader('Retry-After', '1')
+      throw new ApiError(409, 'CONFLICT', 'This answer is still being checked. Please retry shortly.', { retryable: true })
+    }
+  }
+  try {
+    const recorded = await KGAlphabetAttempt.findOne(identity)
+    if (recorded) return await returnRecorded(recorded)
+    let attempt: IKGAlphabetAttempt
+    try {
+      attempt = await KGAlphabetAttempt.create({
+        ...identity,
+        level,
+        activityId: `level-${level}-${letter.toLowerCase()}`,
+        letter,
+        mode: 'speak',
+        outcome,
+        replay,
+        submissionId,
+        requestHash,
+        timeSpentMs: Math.min(300_000, Math.max(0, Number(body?.timeSpentMs) || 0)),
+      })
+    } catch (error) {
+      if ((error as { code?: number }).code !== 11000) throw error
+      const prior = await KGAlphabetAttempt.findOne(identity)
+      if (!prior) throw error
+      return await returnRecorded(prior)
+    }
+    const latest = await KGAlphabetProgress.findOne({ studentId: student._id, schoolId: student.schoolId })
+    if (!latest) throw ApiError.internal('Kindergarten progress is unavailable')
+    ok(res, {
+      outcome,
+      replay,
+      advanced: false,
+      submissionId,
+      state: { ...presentState(latest), fallbackAvailable: false },
+    })
+  } finally {
+    await KGAlphabetSubmission.deleteOne({ ...identity, owner })
+  }
 }
 
 const INTRO_MINIMUM_MS = 59_000 // The packaged film is 63.018 seconds; allow minor timer skew.
@@ -457,6 +761,19 @@ export const KGAlphabetController = {
     const { state } = await ensureState(req)
     res.setHeader('Cache-Control', 'private, no-store')
     ok(res, { ...presentState(state), fallbackAvailable: await canUsePictureSupport(state.studentId, state.schoolId, state.currentIndex) })
+  }),
+  studentNarration: catchAsync(async (req: Request, res: Response) => {
+    const levelNumber = Number(req.params.level)
+    if (!isKGLevelNumber(levelNumber) || levelNumber === 1) throw ApiError.notFound('Kindergarten narration not found')
+    const { state } = await ensureState(req)
+    await assertStudentLevelAccessible(state, levelNumber, state.completedLevels.includes(levelNumber))
+    const text = studentNarrationText(levelNumber, req.params.id)
+    const { audio, contentType } = await new AzureVoiceProvider().synthesizeUncached(text)
+    res.setHeader('Content-Type', contentType)
+    res.setHeader('Content-Length', String(audio.length))
+    res.setHeader('Cache-Control', 'private, no-store')
+    res.setHeader('X-Content-Type-Options', 'nosniff')
+    res.send(audio)
   }),
   /** Starts a per-visit watch; no client-side localStorage trust. */
   startIntro: catchAsync(async (req: Request, res: Response) => {
@@ -627,6 +944,9 @@ export const KGAlphabetController = {
   attempt: catchAsync(async (req: Request, res: Response) => {
     const timer = createTurnTimer()
     const { student, state } = await ensureState(req)
+    const requestedLevel = req.body?.level === undefined ? 1 : Number(req.body.level)
+    if (!isKGLevelNumber(requestedLevel)) throw ApiError.badRequest('A valid Kindergarten level is required')
+    if (requestedLevel !== 1) return submitStudentLevelAttempt(req, res, student, state, requestedLevel)
     if (!state.introSeen) throw ApiError.conflict('Watch Miss Julie\u2019s Level 1 story to the end before starting the activities.')
     const introTicket = await assertIntroTicket(req, student._id, student.schoolId)
     const submissionId = validateSubmissionId(req.body?.submissionId)

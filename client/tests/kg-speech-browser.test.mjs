@@ -29,15 +29,16 @@ function wave() {
 async function fixture({ outcome = 'correct', denied = false, lostResponse = false, silent = false, feedbackFailure = false, waitForRecording = false } = {}) {
   const context = await browser.createBrowserContext()
   const page = await context.newPage()
+  await page.emulateMediaFeatures([{ name: 'prefers-reduced-motion', value: 'reduce' }])
   const diagnostics = []
   const requests = []
   page.on('pageerror', (error) => diagnostics.push(error.message))
   page.on('requestfailed', (request) => diagnostics.push(`request failed: ${new URL(request.url()).pathname} (${request.failure()?.errorText})`))
   page.on('response', (response) => { if (response.status() >= 400) diagnostics.push(`HTTP ${response.status()}: ${new URL(response.url()).pathname}`) })
   let index = 0; let releaseAnswer; let received
-  const firstAttempt = new Promise((resolve) => { received = resolve })
+  const firstAnswerAttempt = new Promise((resolve) => { received = resolve })
   const gate = new Promise((resolve) => { releaseAnswer = resolve })
-  const ids = []; let saved
+  const ids = []; const attempts = []; const answerIds = []; let saved
   const state = () => ({ version: 'kg-alphabet-v1', level: 1, title: 'ABCD Picture Garden', currentIndex: index,
     totalActivities: 8, audioVersion: 'v1', introSeen: true, completed: false, completedAt: null, level2Unlocked: false, level2Available: false,
     letters, activity: { id: `say-${'abcd'[index % 4]}`, letter: 'ABCD'[index % 4], mode: 'speak', audioId: `say-${'abcd'[index % 4]}` },
@@ -89,9 +90,8 @@ async function fixture({ outcome = 'correct', denied = false, lostResponse = fal
       const destination = audio.createMediaStreamDestination()
       const oscillator = audio.createOscillator(); const gain = audio.createGain()
       oscillator.connect(gain); gain.connect(destination)
-      gain.gain.setValueAtTime(0, audio.currentTime)
-      gain.gain.setValueAtTime(silent ? 0 : 0.3, audio.currentTime + 0.15)
-      gain.gain.setValueAtTime(0, audio.currentTime + 0.55)
+      gain.gain.setValueAtTime(silent ? 0 : 0.3, audio.currentTime + 0.05)
+      gain.gain.setValueAtTime(0, audio.currentTime + 1.55)
       oscillator.start()
       const stream = destination.stream
       window.__kgMedia.streams++
@@ -107,7 +107,12 @@ async function fixture({ outcome = 'correct', denied = false, lostResponse = fal
   page.on('request', async (request) => {
     const url = new URL(request.url())
     requests.push(`${request.method()} ${url.origin}${url.pathname}`)
-    const headers = { 'Access-Control-Allow-Origin': new URL(base).origin, 'Access-Control-Allow-Headers': 'authorization,content-type,x-kg-intro-playback', 'Access-Control-Allow-Methods': 'GET,POST,OPTIONS' }
+    const headers = {
+      'Access-Control-Allow-Origin': new URL(base).origin,
+      'Access-Control-Allow-Headers': 'authorization,content-type,x-kg-intro-playback',
+      'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+      'Access-Control-Expose-Headers': 'X-KG-Feedback-Receipt',
+    }
     const json = (data, status = 200) => request.respond({ status, headers, contentType: 'application/json', body: JSON.stringify({ success: true, data }) })
     try {
       if (request.method() === 'OPTIONS') return await request.respond({ status: 204, headers })
@@ -115,36 +120,38 @@ async function fixture({ outcome = 'correct', denied = false, lostResponse = fal
         student: { _id: '111111111111111111111111', fullName: 'Automated Test', grade: 0, avatarType: 'GIRL', kgAlphabetPilotEnabled: true },
         school: { _id: '222222222222222222222222', name: 'Isolated Test School' } })
       if (url.pathname.includes('/kg-alphabet/audio/')) {
-        if (feedbackFailure && url.pathname.endsWith('/great')) return await request.respond({ status: 404, headers: { ...headers, 'Cache-Control': 'no-store' }, contentType: 'application/json', body: JSON.stringify({ success: false, error: { message: 'Test missing feedback clip' } }) })
         return await request.respond({ status: 200, headers, contentType: 'audio/wav', body: wave() })
-      }
-      if (url.pathname.endsWith('/feedback-audio')) {
-        if (feedbackFailure) return await request.respond({ status: 404, headers: { ...headers, 'Cache-Control': 'no-store' }, contentType: 'application/json', body: JSON.stringify({ success: false, error: { code: 'KG_AUDIO_MISSING', message: 'Test missing feedback clip' } }) })
-        return await request.respond({ status: 200, headers, contentType: 'audio/wav', body: wave() })
-      }
-      if (url.pathname.endsWith('/feedback-played')) {
-        return await json({ state: state() })
       }
       if (url.pathname.endsWith('/kg-alphabet/intro/start')) return await json({ playbackId: 'a'.repeat(64) })
       if (url.pathname.endsWith('/kg-alphabet/intro-seen')) return await json({ introSeen: true })
       if (url.pathname.endsWith('/kg-alphabet/state')) return await json(state())
+      if (url.pathname.endsWith('/kg-alphabet/pending-feedback')) return await json({ pending: null })
+      if (url.pathname.includes('/kg-alphabet/attempt/') && url.pathname.endsWith('/feedback-audio')) {
+        if (feedbackFailure) return await request.respond({ status: 503, headers, contentType: 'application/json', body: JSON.stringify({ success: false, error: { message: 'Test unavailable feedback clip' } }) })
+        return await request.respond({ status: 200, headers: { ...headers, 'X-KG-Feedback-Receipt': `v1.1.${'a'.repeat(32)}.${'b'.repeat(64)}` }, contentType: 'audio/wav', body: wave() })
+      }
+      if (url.pathname.includes('/kg-alphabet/attempt/') && url.pathname.endsWith('/feedback-played')) {
+        return await json({ state: state() })
+      }
       if (url.pathname.endsWith('/kg-alphabet/attempt')) {
         const body = JSON.parse(request.postData())
         ids.push(body.submissionId)
-        received()
+        attempts.push({ submissionId: body.submissionId, noSpeech: Boolean(body.noSpeech) })
         if (body.noSpeech) {
           assert.equal(body.audioBase64, undefined)
           return await json({ outcome: 'unclear', state: state(), feedbackAudioId: 'silence' })
         }
+        answerIds.push(body.submissionId)
+        received()
         assert.ok(body.audioBase64.length > 128)
         if (lostResponse && ids.length === 1) {
-          index = 1; saved = { outcome: 'correct', submissionId: body.submissionId, state: state(), feedbackAudioId: 'great' }
+          index = 1; saved = { outcome: 'correct', state: state(), feedbackAudioId: 'great', submissionId: body.submissionId }
           return await request.abort('failed')
         }
         if (lostResponse) return await json(saved)
         await gate
         if (outcome === 'correct') index = 1
-        return await json({ outcome, submissionId: body.submissionId, state: state(), feedbackAudioId: outcome === 'correct' ? 'great' : outcome === 'incorrect' ? 'try-again' : 'repeat' })
+        return await json({ outcome, state: state(), feedbackAudioId: outcome === 'correct' ? 'great' : outcome === 'incorrect' ? 'try-again' : 'repeat', submissionId: body.submissionId })
       }
       if (url.pathname.startsWith('/api/') || url.origin !== new URL(base).origin) return await request.abort()
       return await request.continue()
@@ -187,15 +194,15 @@ async function fixture({ outcome = 'correct', denied = false, lostResponse = fal
     await context.close()
     throw error
   }
-  return { page, context, firstAttempt, releaseAnswer, ids, diagnostics, requests, restoreFeedback: () => { feedbackFailure = false } }
+  return { page, context, firstAnswerAttempt, releaseAnswer, ids, attempts, answerIds, diagnostics, requests, restoreFeedback: () => { feedbackFailure = false } }
 }
 
 for (const outcome of ['correct', 'incorrect', 'unclear']) {
   test(`real browser playback and recorder: ${outcome} uses the server result without audio-driven advancement`, { timeout: 40000 }, async () => {
     const fixtureData = await fixture({ outcome })
-    const { page, context, firstAttempt, releaseAnswer } = fixtureData
+    const { page, context, firstAnswerAttempt, releaseAnswer } = fixtureData
     try {
-      await firstAttempt
+      await firstAnswerAttempt
       assert.equal(await page.evaluate(() => window.__kgMedia.streams), 0)
       assert.equal(await page.evaluate(() => window.__kgMedia.overlap), false)
       assert.match(await page.$eval('h1', (element) => element.textContent), /A.*apple/)
@@ -261,27 +268,28 @@ test('real browser silence retries twice, saves only silence events, and offers 
   } finally { await context.close() }
 })
 
-test('real browser retries missing praise without resubmitting the saved correct answer', { timeout: 40000 }, async () => {
+test('real browser retries unavailable praise without resubmitting the saved correct answer', { timeout: 40000 }, async () => {
   const fixtureData = await fixture({ feedbackFailure: true })
-  const { page, context, firstAttempt, releaseAnswer, restoreFeedback, ids } = fixtureData
+  const { page, context, firstAnswerAttempt, releaseAnswer, restoreFeedback, answerIds } = fixtureData
   try {
-    await firstAttempt; releaseAnswer()
+    await firstAnswerAttempt; releaseAnswer()
     try {
       await page.waitForFunction(() => document.body.textContent.includes('reply needs another try'), { timeout: 12000 })
     } catch (error) {
-      console.error('Missing praise diagnostic:', JSON.stringify({ requests: await page.evaluate(() => window.__kgMedia), requestLog: fixtureData.requests, attempts: ids, text: await page.$eval('body', (element) => element.innerText) }))
+      console.error('Missing praise diagnostic:', JSON.stringify({ requests: await page.evaluate(() => window.__kgMedia), requestLog: fixtureData.requests, attempts: fixtureData.attempts, text: await page.$eval('body', (element) => element.innerText) }))
       throw error
     }
-    assert.equal(ids.length, 1)
+    assert.equal(answerIds.length, 1)
+    const answeredId = answerIds[0]
     restoreFeedback()
     const buttons = await page.$$('button')
     for (const button of buttons) if ((await button.evaluate((element) => element.textContent)).includes('Try again')) { await button.click(); break }
     try {
       await page.waitForFunction(() => document.querySelector('h1')?.textContent.includes('ball'), { timeout: 20000 })
     } catch (error) {
-      console.error('Missing praise retry diagnostic:', JSON.stringify({ requests: await page.evaluate(() => window.__kgMedia), requestLog: fixtureData.requests, attempts: ids, text: await page.$eval('body', (element) => element.innerText), diagnostics: fixtureData.diagnostics }))
+      console.error('Missing praise retry diagnostic:', JSON.stringify({ attempts: fixtureData.attempts, answerIds, requestLog: fixtureData.requests, errors: fixtureData.diagnostics, text: await page.$eval('body', (element) => element.innerText) }))
       throw error
     }
-    assert.equal(ids.length, 1)
+    assert.deepEqual(answerIds, [answeredId])
   } finally { releaseAnswer(); await context.close() }
 })

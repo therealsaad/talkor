@@ -3,12 +3,28 @@ import { kgRequest } from './kg-request'
 import { lessonTurnTelemetry, setTelemetrySession } from '@/lib/lesson-turn-telemetry'
 import { clipKey, createDeviceAudioCache, shouldSkipBackgroundDownload } from '@/lib/device-audio-cache'
 
+const stateRequests = new Map<string | null, Promise<KGAlphabetState>>()
+
 export type KGOutcome = 'correct' | 'incorrect' | 'unclear' | 'supported'
-export type KGLetter = 'A' | 'B' | 'C' | 'D'
+export type KGLetter = 'A' | 'B' | 'C' | 'D' | 'E' | 'F' | 'G' | 'H' | 'I' | 'J' | 'K' | 'L' | 'M' | 'N' | 'O' | 'P' | 'Q' | 'R' | 'S' | 'T' | 'U' | 'V' | 'W' | 'X' | 'Y' | 'Z'
 export type KGAudioKind = 'curriculum_static' | 'dynamic_tts'
 export interface KGAlphabetState {
   version: string
   level: number
+  currentLevel: number | null
+  nextIncompleteLevel: number | null
+  studentPlayableLevels: number[]
+  unlockedLevels: number[]
+  completedLevels: number[]
+  levels: Array<{
+    level: number
+    currentIndex: number
+    totalActivities: number
+    completed: boolean
+    completedAt: string | null
+    unlocked: boolean
+    status: 'locked' | 'available' | 'in_progress' | 'completed'
+  }>
   title: string
   currentIndex: number
   totalActivities: number
@@ -31,6 +47,7 @@ export interface KGAttemptResponse {
   outcome: KGOutcome
   advance?: boolean
   replay: boolean
+  advanced?: boolean
   duplicate?: boolean
   state: KGAlphabetState
   feedbackAudioId?: string
@@ -67,16 +84,10 @@ const clipCache = new Map<string, ClipCacheEntry>()
 const MAX_CLIPS = 20
 const MISSING_CLIP_TTL_MS = 60_000
 
-// A single live KG1 state read can be shared across simultaneous mounts.
- // Never persist a completed snapshot: feedback acknowledgements and re-login
- // must fetch current server-owned progress. Bind in-flight work to the token
- // because school lab browsers can switch students while a request is pending.
-let pendingState: Promise<KGAlphabetState> | null = null
-let pendingStateStudentToken: string | null = null
-
 function readKGState(): Promise<KGAlphabetState> {
   const token = getStoredToken()
-  if (pendingState && pendingStateStudentToken === token) return pendingState
+  const pending = stateRequests.get(token)
+  if (pending) return pending
   let request: Promise<KGAlphabetState>
   request = apiClient<KGAlphabetState>('/kg-alphabet/state', { cache: 'no-store' })
     .then((state) => {
@@ -89,13 +100,9 @@ function readKGState(): Promise<KGAlphabetState> {
       return state
     })
     .finally(() => {
-      if (pendingState === request) {
-        pendingState = null
-        pendingStateStudentToken = null
-      }
+      if (stateRequests.get(token) === request) stateRequests.delete(token)
     })
-  pendingState = request
-  pendingStateStudentToken = token
+  stateRequests.set(token, request)
   return request
 }
 
@@ -118,6 +125,10 @@ function introTicketHeaders(): Record<string, string> {
 function audioPath(id: string, path?: string): string {
   if (path?.startsWith('/kg-alphabet/audio/v1/') && !path.includes('..')) return path
   return `/kg-alphabet/audio/v1/${encodeURIComponent(id)}`
+}
+
+function introPlaybackHeaders(): Record<string, string> {
+  return playbackId ? { 'X-KG-Intro-Playback': playbackId } : {}
 }
 
 function missingClip(error: unknown): boolean {
@@ -214,12 +225,76 @@ async function playAudioUrl(url: string, audio: HTMLAudioElement, signal?: Abort
   })
 }
 
+async function playBlob(blob: Blob, audio: HTMLAudioElement, signal?: AbortSignal): Promise<void> {
+  const url = URL.createObjectURL(blob)
+  try {
+    await playAudioUrl(url, audio, signal)
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
 export const kgAlphabetService = {
   state: readKGState,
   /** Resumes only the most recent current-activity attempt without another STT pass. */
   pendingFeedback: () => apiClient<{ pending: KGAttemptResponse | null }>('/kg-alphabet/pending-feedback', {
     cache: 'no-store', headers: introTicketHeaders(),
   }),
+  async playStudentNarration(level: number, id: string, audio: HTMLAudioElement, signal?: AbortSignal): Promise<void> {
+    const ownerToken = getStoredToken()
+    if (!ownerToken) throw new Error('Sign in to hear this Kindergarten lesson.')
+    const timeout = AbortSignal.timeout(35_000)
+    const requestSignal = signal ? AbortSignal.any([signal, timeout]) : timeout
+    const blob = await apiClientBlob(`/kg-alphabet/narration/${level}/${encodeURIComponent(id)}`, {
+      cache: 'no-store',
+      signal: requestSignal,
+    })
+    if (getStoredToken() !== ownerToken) throw new Error('Student session changed during narration. Restart the lesson.')
+    await playBlob(blob, audio, signal)
+  },
+
+  async submitStudentLetterAttempt(input: {
+    level: number
+    letter: string
+    audio?: Blob
+    durationMs: number
+    noSpeech?: boolean
+    replay?: boolean
+    timeSpentMs?: number
+    signal?: AbortSignal
+  }): Promise<KGAttemptResponse> {
+    const ownerToken = getStoredToken()
+    if (!ownerToken) throw new Error('Sign in to save this Kindergarten answer.')
+    let audioBase64: string | undefined
+    if (input.audio) {
+      audioBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(String(reader.result).split(',')[1] || '')
+        reader.onerror = () => reject(new Error('Unable to read microphone recording'))
+        reader.readAsDataURL(input.audio!)
+      })
+    }
+    input.signal?.throwIfAborted()
+    if (getStoredToken() !== ownerToken) throw new Error('Student session changed while preparing your answer. Please try again.')
+    const submissionId = crypto.randomUUID().replace(/-/g, '')
+    const result = await apiClient<KGAttemptResponse>('/kg-alphabet/attempt', {
+      method: 'POST',
+      body: JSON.stringify({
+        level: input.level,
+        letter: input.letter,
+        audioBase64,
+        mimeType: input.audio?.type,
+        durationMs: input.durationMs,
+        noSpeech: input.noSpeech,
+        replay: input.replay === true,
+        timeSpentMs: input.timeSpentMs,
+        submissionId,
+      }),
+      signal: input.signal ? AbortSignal.any([input.signal, AbortSignal.timeout(65_000)]) : AbortSignal.timeout(65_000),
+    })
+    if (getStoredToken() !== ownerToken) throw new Error('Student session changed while saving your answer. Please reopen the lesson.')
+    return result
+  },
 
   hasIntroTicket: () => Boolean(playbackId && playbackStudentToken && getStoredToken() === playbackStudentToken),
 

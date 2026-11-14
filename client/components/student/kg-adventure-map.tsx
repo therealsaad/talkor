@@ -11,32 +11,26 @@ import type { KGContinuationOverview } from '@/features/lessons/grades/kg/contin
 import styles from './kg-adventure-map.module.css'
 
 const LEVEL_POSITIONS = [
-  { left: 22.5, top: 34 },
-  { left: 42.4, top: 31.5 },
-  { left: 67.2, top: 34.5 },
-  { left: 86.4, top: 46.4 },
-  { left: 38.2, top: 53.7 },
-  { left: 62.5, top: 57.2 },
-  { left: 15.7, top: 66.8 },
-  { left: 39, top: 75.3 },
-  { left: 64.8, top: 78.3 },
+  { left: 22.5, top: 34 }, { left: 42.4, top: 31.5 }, { left: 67.2, top: 34.5 },
+  { left: 86.4, top: 46.4 }, { left: 38.2, top: 53.7 }, { left: 62.5, top: 57.2 },
+  { left: 15.7, top: 66.8 }, { left: 39, top: 75.3 }, { left: 64.8, top: 78.3 },
   { left: 89, top: 76.5 },
 ] as const
 
-type GardenStatus = 'CURRENT' | 'COMPLETED' | 'LOCKED'
+type GardenStatus = 'locked' | 'available' | 'in_progress' | 'completed'
 
-function lessonHref(levelNumber: number, status: GardenStatus) {
-  if (status === 'LOCKED') return undefined
-  if (levelNumber === 1) return status === 'COMPLETED' ? '/student/kg?replay=all' : '/student/kg'
-  if (levelNumber >= 2 && levelNumber <= 5 && status === 'COMPLETED') return '/student/kg/review/' + levelNumber
-  if (levelNumber === 2 && status === 'CURRENT') return '/student/kg/level-2'
-  if (levelNumber >= 3 && levelNumber <= 5 && status === 'CURRENT') return '/student/kg/level-' + levelNumber
+function lessonHref(level: number, status: GardenStatus) {
+  if (status === 'locked') return undefined
+  if (level === 1) return status === 'completed' ? '/student/kg?replay=all' : '/student/kg'
+  if (level >= 2 && level <= 5) {
+    return status === 'completed' ? `/student/kg/review/${level}` : `/student/kg/level-${level}`
+  }
   return undefined
 }
 
 function displayStatus(status: GardenStatus) {
-  if (status === 'CURRENT') return 'Ready'
-  if (status === 'COMPLETED') return 'Completed'
+  if (status === 'available' || status === 'in_progress') return 'Continue'
+  if (status === 'completed') return 'Review'
   return 'Locked'
 }
 
@@ -63,33 +57,34 @@ export function KGAdventureMap({
 }) {
   const levels = LEVEL_POSITIONS.map((position, index) => {
     const number = index + 1
-    const status: GardenStatus = number === 1 && kgLevel1State
-      ? kgLevel1State.completed ? 'COMPLETED' : 'CURRENT'
-      : number === 2 && kgLevel1State?.completed && kgLevel1State.level2Available
-        ? kgLevel2State?.completed ? 'COMPLETED' : 'CURRENT'
-        : number >= 3 && number <= 5 && kgLevel2State?.completed
-          ? kgContinuation?.levels.find((item) => item.level === number)?.status || 'LOCKED'
-          : 'LOCKED'
-    const progress = number === 1 && kgLevel1State
-      ? Math.min(100, Math.round((kgLevel1State.currentIndex / Math.max(1, kgLevel1State.totalActivities)) * 100))
-      : number === 2 && kgLevel2State
-        ? Math.min(100, Math.round((kgLevel2State.currentIndex / Math.max(1, kgLevel2State.totalActivities)) * 100))
-        : number >= 3 && number <= 5
-          ? (() => { const next = kgContinuation?.levels.find((item) => item.level === number); return next ? Math.round((next.currentIndex / Math.max(1, next.totalActivities)) * 100) : 0 })()
-          : 0
-
+    const continuationLevel = kgContinuation?.levels.find((level) => level.level === number)
+    let status: GardenStatus = 'locked'
+    let progress = 0
+    if (number === 1 && kgLevel1State) {
+      status = kgLevel1State.completed ? 'completed' : kgLevel1State.currentIndex > 0 ? 'in_progress' : 'available'
+      progress = Math.min(100, Math.round((kgLevel1State.currentIndex / Math.max(1, kgLevel1State.totalActivities)) * 100))
+    } else if (number === 2 && kgLevel1State?.completed && kgLevel2State) {
+      status = kgLevel2State.completed ? 'completed' : 'available'
+      progress = Math.min(100, Math.round((kgLevel2State.currentIndex / Math.max(1, kgLevel2State.totalActivities)) * 100))
+    } else if (number >= 3 && number <= 5 && kgLevel2State?.completed && continuationLevel) {
+      status = continuationLevel.status === 'COMPLETED' ? 'completed'
+        : continuationLevel.status === 'CURRENT'
+          ? continuationLevel.currentIndex > 0 ? 'in_progress' : 'available'
+          : 'locked'
+      progress = Math.min(100, Math.round((continuationLevel.currentIndex / Math.max(1, continuationLevel.totalActivities)) * 100))
+    }
     return {
       number,
       position,
-      title: number === 1 ? kgLevel1State?.title : number === 2 && status !== 'LOCKED' ? 'Letters E to J' : number >= 3 && number <= 5 && status !== 'LOCKED' ? kgContinuation?.levels.find((item) => item.level === number)?.title : undefined,
+      title: number === 1 ? kgLevel1State?.title : continuationLevel?.title || (number === 2 && status !== 'locked' ? 'Letters E to J' : undefined),
       status,
       progress,
       href: lessonHref(number, status),
     }
   })
-  const currentLevel = levels.find((level) => level.status === 'CURRENT')
-  const allLevelsComplete = levels.every((level) => level.status === 'COMPLETED')
-  const completedLevelCount = levels.filter((level) => level.status === 'COMPLETED').length
+  const currentLevel = levels.find((level) => level.status === 'available' || level.status === 'in_progress')
+  const allLevelsComplete = levels.every((level) => level.status === 'completed')
+  const completedLevelCount = levels.filter((level) => level.status === 'completed').length
   const xp = kgLevel1State?.xp ?? 0
   const stars = kgLevel1State?.stars ?? 0
   const homework = kgLevel1State?.homework
@@ -106,106 +101,61 @@ export function KGAdventureMap({
               : allLevelsComplete
                 ? 'You finished every garden level. Hooray!'
                 : completedLevelCount > 0
-                  ? `You finished ${completedLevelCount} level${completedLevelCount === 1 ? '' : 's'}! Tap a completed stone to practise again.`
-                : error
-                  ? 'Your garden is taking a little rest. Try loading it again.'
-                  : 'Choose a garden stone to see your next adventure.'}
+                  ? `You finished ${completedLevelCount} level${completedLevelCount === 1 ? '' : 's'}! More garden paths are getting ready.`
+                  : error
+                    ? 'Your garden is taking a little rest. Try loading it again.'
+                    : 'Choose a garden stone to see your next adventure.'}
           </p>
-          {currentLevel?.href ? (
-            <Link className={styles.continue} href={currentLevel.href}>
-              Continue with Level {currentLevel.number}
-              <ChevronRight size={19} aria-hidden="true" />
-            </Link>
-          ) : null}
+          {currentLevel?.href ? <Link className={styles.continue} href={currentLevel.href}>
+            Continue with Level {currentLevel.number}<ChevronRight size={19} aria-hidden="true" />
+          </Link> : null}
         </div>
-        <div className={styles.julie} aria-label="Miss Julie welcomes you">
-          <MissJulieCharacter state="greeting" />
-        </div>
+        <div className={styles.julie} aria-label="Miss Julie welcomes you"><MissJulieCharacter state="greeting" /></div>
       </header>
 
-      {kgLevel1State ? (
-        <section aria-label="Your KG learning progress" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'stretch', margin: '12px 0 18px' }}>
-          <div style={{ padding: '12px 18px', background: '#fff9e9', color: '#55411e', borderRadius: 16, fontWeight: 700 }} aria-label={`${xp} experience points`}>⭐ {xp} XP</div>
-          <div style={{ padding: '12px 18px', background: '#fff9e9', color: '#55411e', borderRadius: 16, fontWeight: 700 }} aria-label={`${stars} stars earned`}>🌟 {stars} Stars</div>
-          {homework?.status !== 'not-assigned' && homework ? (
-            <div style={{ flex: '1 1 260px', padding: '12px 18px', background: '#eef9ef', color: '#244e35', borderRadius: 16 }}>
-              <strong>📚 Miss Julie&apos;s homework — {homework.status === 'completed' ? 'Practised!' : 'To practise at home'}</strong>
-              <p style={{ margin: '6px 0 0' }}>{homework.text}</p>
-              {homework.status === 'pending' && onHomeworkComplete ? (
-                <button type="button" className={styles.homeworkCheckIn} disabled={homeworkBusy} onClick={onHomeworkComplete}>
-                  {homeworkBusy ? 'Saving your practice…' : 'I practised at home'}
-                </button>
-              ) : homework.status === 'completed' ? <p aria-live="polite">✅ Your practice is saved!</p> : null}
-              {homeworkError ? <p role="alert">{homeworkError}</p> : null}
-            </div>
-          ) : null}
-        </section>
-      ) : null}
+      {kgLevel1State ? <section aria-label="Your KG learning progress" style={{ display: 'flex', flexWrap: 'wrap', gap: 12, alignItems: 'stretch', margin: '12px 0 18px' }}>
+        <div style={{ padding: '12px 18px', background: '#fff9e9', color: '#55411e', borderRadius: 16, fontWeight: 700 }} aria-label={`${xp} experience points`}>⭐ {xp} XP</div>
+        <div style={{ padding: '12px 18px', background: '#fff9e9', color: '#55411e', borderRadius: 16, fontWeight: 700 }} aria-label={`${stars} stars earned`}>🌟 {stars} Stars</div>
+        {homework?.status !== 'not-assigned' && homework ? <div style={{ flex: '1 1 260px', padding: '12px 18px', background: '#eef9ef', color: '#244e35', borderRadius: 16 }}>
+          <strong>📚 Miss Julie&apos;s homework — {homework.status === 'completed' ? 'Practised!' : 'To practise at home'}</strong>
+          <p style={{ margin: '6px 0 0' }}>{homework.text}</p>
+          {homework.status === 'pending' && onHomeworkComplete ? <button type="button" className={styles.homeworkCheckIn} disabled={homeworkBusy} onClick={onHomeworkComplete}>
+            {homeworkBusy ? 'Saving your practice…' : 'I practised at home'}
+          </button> : homework.status === 'completed' ? <p aria-live="polite">✅ Your practice is saved!</p> : null}
+          {homeworkError ? <p role="alert">{homeworkError}</p> : null}
+        </div> : null}
+      </section> : null}
+
       <figure className={styles.scene}>
-        <Image
-          src="/lessons/kg/images/kg-simple-garden.webp"
-          alt=""
-          aria-hidden="true"
-          fill
-          priority
-          sizes="(max-width: 760px) 100vw, 96vw"
-          className={styles.background}
-        />
-
-        {loading || error || !kgLevel1State ? (
-          <div className={styles.message} role={error ? 'alert' : 'status'}>
-            {error ? (
-              <>
-                <span>{error}</span>
-                {onRetry ? <button type="button" onClick={onRetry}>Try again</button> : null}
-              </>
-            ) : (
-              <span>{loading ? 'Loading your garden...' : 'Your class levels are not available yet. Please ask your teacher.'}</span>
-            )}
-          </div>
-        ) : (
-          <ol className={styles.levels} aria-label="Ten KG learning levels">
-            {levels.map((level) => {
-              const Icon = level.status === 'CURRENT' ? Sprout : level.status === 'COMPLETED' ? Check : LockKeyhole
-              const status = displayStatus(level.status)
-              const style = {
-                left: `${level.position.left}%`,
-                top: `${level.position.top}%`,
-              } satisfies CSSProperties
-              const ringStyle = {
-                background: `conic-gradient(#48a66c ${level.progress}%, rgba(255, 255, 255, .88) 0)`,
-              } satisfies CSSProperties
-              const label = `Level ${level.number}${level.title ? `, ${level.title}` : ', not available yet'}; ${status}${level.status === 'COMPLETED' ? ', tap to revise' : ''}${level.number === 1 && kgLevel1State ? `, ${level.progress}% complete` : ''}`
-
-              return (
-                <li
-                  className={`${styles.level} ${level.status === 'CURRENT' ? styles.current : ''} ${level.status === 'COMPLETED' ? styles.completed : ''} ${level.status === 'LOCKED' ? styles.locked : ''}`}
-                  key={level.number}
-                  style={style}
-                >
-                  <div className={styles.progressRing} style={ringStyle}>
-                    {level.href ? (
-                      <Link href={level.href} className={styles.levelButton} aria-label={label}>
-                        <span className={styles.levelNumber}>{level.number}</span>
-                        <span className={styles.levelStatus} aria-hidden="true"><Icon size={16} strokeWidth={2.8} /></span>
-                      </Link>
-                    ) : (
-                      <button type="button" className={styles.levelButton} aria-label={label} disabled>
-                        <span className={styles.levelNumber}>{level.number}</span>
-                        <span className={styles.levelStatus} aria-hidden="true"><Icon size={16} strokeWidth={2.8} /></span>
-                      </button>
-                    )}
-                  </div>
-                  {level.status === 'CURRENT' ? <span className={styles.readyLabel}>Ready</span> : null}
-                </li>
-              )
-            })}
-          </ol>
-        )}
+        <Image src="/lessons/kg/images/kg-simple-garden.webp" alt="" aria-hidden="true" fill priority sizes="(max-width: 760px) 100vw, 96vw" className={styles.background} />
+        {loading || error || !kgLevel1State ? <div className={styles.message} role={error ? 'alert' : 'status'}>
+          {error ? <><span>{error}</span>{onRetry ? <button type="button" onClick={onRetry}>Try again</button> : null}</>
+            : <span>{loading ? 'Loading your garden...' : 'Your class levels are not available yet. Please ask your teacher.'}</span>}
+        </div> : <ol className={styles.levels} aria-label="Ten KG learning levels">
+          {levels.map((level) => {
+            const Icon = level.status === 'available' || level.status === 'in_progress'
+              ? Sprout : level.status === 'completed' ? Check : LockKeyhole
+            const statusLabel = displayStatus(level.status)
+            const style = { left: `${level.position.left}%`, top: `${level.position.top}%` } satisfies CSSProperties
+            const ringStyle = { background: `conic-gradient(#48a66c ${level.progress}%, rgba(255, 255, 255, .88) 0)` } satisfies CSSProperties
+            const label = `Level ${level.number}${level.title ? `, ${level.title}` : ', not available yet'}; ${statusLabel}${level.status === 'completed' ? ', tap to review' : ''}${level.progress ? `, ${level.progress}% complete` : ''}`
+            return <li className={`${styles.level} ${level.status === 'available' || level.status === 'in_progress' ? styles.current : ''} ${level.status === 'completed' ? styles.completed : ''} ${level.status === 'locked' ? styles.locked : ''}`} key={level.number} style={style}>
+              <div className={styles.progressRing} style={ringStyle}>
+                {level.href ? <Link href={level.href} className={styles.levelButton} aria-label={label}>
+                  <span className={styles.levelNumber}>{level.number}</span><span className={styles.levelStatus} aria-hidden="true"><Icon size={16} strokeWidth={2.8} /></span>
+                </Link> : <button type="button" className={styles.levelButton} aria-label={label} disabled>
+                  <span className={styles.levelNumber}>{level.number}</span><span className={styles.levelStatus} aria-hidden="true"><Icon size={16} strokeWidth={2.8} /></span>
+                </button>}
+              </div>
+              {level.status === 'available' || level.status === 'in_progress' ? <span className={styles.readyLabel}>Continue</span> : null}
+              {level.status === 'completed' ? <span className={styles.readyLabel}>Review</span> : null}
+            </li>
+          })}
+        </ol>}
       </figure>
 
       <footer className={styles.footer}>
-        <span><Sprout size={15} aria-hidden="true" /> Green check = revise · Glowing stone = continue</span>
+        <span><Sprout size={15} aria-hidden="true" /> Continue or review a level</span>
         {kgLevel1State ? <span>{completedLevelCount} of {LEVEL_POSITIONS.length} levels complete</span> : null}
       </footer>
     </main>
