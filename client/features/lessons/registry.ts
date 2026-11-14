@@ -6,6 +6,9 @@ export interface LevelExperienceProps {
   previewStartIndex?: number
   previewStartLetter?: 'K' | 'L' | 'M' | 'N' | 'O' | 'P'
   previewStartLevel5Letter?: 'W' | 'X' | 'Y' | 'Z'
+  studentMode?: boolean
+  studentReview?: boolean
+  studentStartLetter?: string
   onPreviewBack?: () => void
 }
 export interface LevelWorkspace { config:LevelDesignConfig; LevelExperience:ComponentType<LevelExperienceProps> }

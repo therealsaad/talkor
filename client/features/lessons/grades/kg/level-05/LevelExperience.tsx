@@ -24,10 +24,11 @@ const LESSONS: Record<Level5Letter, { word: string; picture: string; color: stri
 }
 type Phase = 'narrating' | 'requesting' | 'listening' | 'checking' | 'feedback' | 'error' | 'finished'
 
-export default function LevelExperience({ preview = false, previewStartLevel5Letter = 'W', onPreviewBack }: LevelExperienceProps) {
+export default function LevelExperience({ preview = false, previewStartLevel5Letter = 'W', studentMode = false, studentReview = false, studentStartLetter = 'W', onPreviewBack }: LevelExperienceProps) {
   const router = useRouter()
   const reducedMotion = useReducedMotion()
-  const initial = LEVEL5_LETTERS.includes(previewStartLevel5Letter as Level5Letter) ? previewStartLevel5Letter as Level5Letter : 'W'
+  const requestedLetter = studentMode ? studentStartLetter : previewStartLevel5Letter
+  const initial = LEVEL5_LETTERS.includes(requestedLetter as Level5Letter) ? requestedLetter as Level5Letter : 'W'
   const [letter, setLetter] = useState<Level5Letter>(initial)
   const [phase, setPhase] = useState<Phase>('narrating')
   const [feedback, setFeedback] = useState('')
@@ -60,7 +61,7 @@ export default function LevelExperience({ preview = false, previewStartLevel5Let
   }, [])
 
   useEffect(() => {
-    if (!preview || introComplete) return
+    if ((!preview && !studentMode) || introComplete) return
     const video = introVideoRef.current
     if (video) void startIntroduction()
   }, [preview, introComplete, startIntroduction])
@@ -77,7 +78,7 @@ export default function LevelExperience({ preview = false, previewStartLevel5Let
     }
     try {
       setFeedback(''); setOutcome(''); setPhase('narrating'); if (!audioRef.current) audioRef.current = new Audio()
-      await kgLevel5PreviewService.playIntroduction(letter, audioRef.current, controller.signal); if (!active) return () => undefined
+      await kgLevel5PreviewService.playIntroduction(letter, audioRef.current, controller.signal, studentMode); if (!active) return () => undefined
       setPhase('requesting'); stream = await requestKGMicrophone(controller.signal); if (!active) return () => undefined
       const mime = ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'].find((type) => MediaRecorder.isTypeSupported(type)) || ''
       recorder = new MediaRecorder(stream, mime ? { mimeType: mime } : undefined); recorderRef.current = recorder; const chunks: Blob[] = []; startedAt = performance.now()
@@ -87,11 +88,17 @@ export default function LevelExperience({ preview = false, previewStartLevel5Let
         if (!claimSubmission()) return
         const durationMs = Math.min(11900, Math.max(250, Math.round(performance.now() - startedAt))); const blob = new Blob(chunks, { type: recorder?.mimeType || mime || 'audio/webm' }); release(); recorderRef.current = null
         if (!active) return; setPhase('checking'); const noSpeech = (!speechDetected && vadAvailable) || blob.size < 800
-        void kgLevel5PreviewService.submitAttempt({ letter, audio: noSpeech ? undefined : blob, durationMs, noSpeech, signal: controller.signal }).then(async (result) => {
-          if (!active) return; const transition = resolveLevel5Attempt(letter, result.outcome); setOutcome(result.outcome)
+        void kgLevel5PreviewService.submitAttempt({ letter, audio: noSpeech ? undefined : blob, durationMs, noSpeech, studentMode, replay: studentReview, signal: controller.signal }).then(async (result) => {
+          if (!active) return
+          if (studentMode && !studentReview && result.outcome === 'correct' &&
+              (!('advanced' in result) || !result.advanced)) {
+            fail(new Error('Student progress was not advanced'))
+            return
+          }
+          const transition = resolveLevel5Attempt(letter, result.outcome); setOutcome(result.outcome)
           setFeedback(transition.retry ? (result.outcome === 'unclear' ? 'I could not hear clearly. Let’s try again!' : `Good try! Say the letter ${letter} once more.`) : letter === 'Z' ? 'Wonderful! You completed W through Z!' : `Great listening! Next we meet ${LEVEL5_LETTERS[index + 1]}.`)
           setPhase('feedback')
-          await kgLevel5PreviewService.playFeedback(result.outcome === 'correct' ? 'great' : result.outcome === 'unclear' ? 'repeat' : 'try-again', audioRef.current!, controller.signal)
+          await kgLevel5PreviewService.playFeedback(result.outcome === 'correct' ? 'great' : result.outcome === 'unclear' ? 'repeat' : 'try-again', audioRef.current!, controller.signal, studentMode)
           if (!active) return
           if (transition.retry) { setAttemptCycle((value) => value + 1); return }
           if (transition.complete) timer = window.setTimeout(() => {
@@ -110,7 +117,7 @@ export default function LevelExperience({ preview = false, previewStartLevel5Let
       timer = window.setTimeout(() => { if (recorder?.state === 'recording') recorder.stop() }, 12000)
     } catch (error) { fail(error) }
     return () => { active = false; controller.abort(); release() }
-  }, [letter, index, preview, reducedMotion, router])
+  }, [letter, index, preview, reducedMotion, router, studentMode, studentReview])
 
   useEffect(() => {
     if (!introComplete) return
@@ -121,12 +128,12 @@ export default function LevelExperience({ preview = false, previewStartLevel5Let
   }, [beginTurn, attemptCycle, introComplete])
   const stopRecording = () => { if (recorderRef.current?.state === 'recording') recorderRef.current.stop() }
   const restartTurn = () => { stopRecording(); setAttemptCycle((value) => value + 1) }
-  if (!preview) return <main className="kg-level5 blocked"><strong>Staff-only Level 05 preview</strong><span>This lesson is not available to students yet.</span></main>
+  if (!preview && !studentMode) return <main className="kg-level5 blocked"><strong>Staff-only Level 05 preview</strong><span>This lesson is not available to students yet.</span></main>
 
   const finishIntroduction = () => {
     if (introCompletedRef.current) return
     introCompletedRef.current = true
-    sessionStorage.setItem('talkora:kg-level5-introduction-completed', 'true')
+    if (preview) sessionStorage.setItem('talkora:kg-level5-introduction-completed', 'true')
     setIntroStatus('ready')
     setIntroComplete(true)
     setLetter('W')
@@ -159,7 +166,7 @@ export default function LevelExperience({ preview = false, previewStartLevel5Let
 
   const julieState = phase === 'listening' ? 'listening' : phase === 'checking' ? 'thinking' : phase === 'feedback' && outcome === 'correct' ? 'celebrating' : phase === 'error' ? 'encouraging' : 'speaking'
   return <main className="kg-level5" data-phase={phase} aria-label={`Level 5 letter ${letter}`}>
-    <header className="kg-level5-header"><button type="button" className="kg-level5-back" onClick={onPreviewBack} aria-label="Back to Level 5 map"><ArrowLeft size={19} /> Letters</button><div className="kg-level5-progress" aria-label={`Letter ${index + 1} of 4`}><span>LEVEL 5 · W–Z</span><div>{LEVEL5_LETTERS.map((item, itemIndex) => <i key={item} className={itemIndex < index ? 'done' : itemIndex === index ? 'current' : ''} />)}</div></div><span className="kg-level5-staff"><Sparkles size={15} /> Staff preview</span></header>
+    <header className="kg-level5-header"><button type="button" className="kg-level5-back" onClick={() => onPreviewBack ? onPreviewBack() : router.push('/student/kg/map')} aria-label="Back to Level 5 map"><ArrowLeft size={19} /> Letters</button><div className="kg-level5-progress" aria-label={`Letter ${index + 1} of 4`}><span>LEVEL 5 · W–Z</span><div>{LEVEL5_LETTERS.map((item, itemIndex) => <i key={item} className={itemIndex < index ? 'done' : itemIndex === index ? 'current' : ''} />)}</div></div><span className="kg-level5-staff"><Sparkles size={15} /> {preview ? 'Staff preview' : studentReview ? 'Review' : 'My lesson'}</span></header>
     <div className="kg-level5-stage">
       <motion.aside className="kg-level5-teacher" aria-label="Miss Julie" initial={reducedMotion ? false : { opacity: 0, x: -28, y: 14 }} animate={{ opacity: 1, x: 0, y: 0 }} transition={{ duration: .55, ease: [0.22, 1, 0.36, 1] }}><div className="kg-level5-teacher-halo" /><AnimatedMissJulie state={julieState} reducedMotion={Boolean(reducedMotion)} /><div className="kg-level5-speech" role="status" aria-live="polite">{phase === 'finished' ? 'You learned all four letters!' : phase === 'listening' ? `Say the letter ${letter}.` : phase === 'checking' ? 'Let me hear that…' : phase === 'error' ? feedback : feedback || `Look at ${lesson.word}. It starts with ${letter}!`}</div></motion.aside>
       <section className="kg-level5-board">
@@ -171,6 +178,7 @@ export default function LevelExperience({ preview = false, previewStartLevel5Let
           {phase === 'listening' ? <button className="kg-level5-mic" type="button" onClick={stopRecording}><Mic size={23} /><span>Done speaking</span></button> : null}
           {phase === 'error' ? <button className="kg-level5-action" type="button" onClick={restartTurn}><RotateCw size={18} /> Try again</button> : null}
           {phase === 'feedback' ? <div className={`kg-level5-feedback ${outcome}`}><Check size={20} /> {feedback}</div> : null}
+          {phase === 'finished' ? <div className="kg-level5-feedback correct"><Check size={20} /> {feedback}<button type="button" className="kg-level5-action" onClick={() => router.push('/student/kg/map')}>Back to my garden</button></div> : null}
         </motion.div></AnimatePresence>
       </section>
     </div>

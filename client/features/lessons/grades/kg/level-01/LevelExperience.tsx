@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { ArrowLeft, Check, Headphones, LoaderCircle, Mic, Play, RotateCw, Sparkles, Volume2, VolumeX } from 'lucide-react'
 import { watchVoiceActivity } from '@/lib/voice-activity'
+import { nextKGStudentRoute } from '@/services/kg-resume-service'
 import { lessonTurnTelemetry } from '@/lib/lesson-turn-telemetry'
 import { LatencyReportButton } from '@/components/latency-report-button'
 import { parseSilenceMs } from '@/lib/silence-policy'
@@ -693,17 +694,26 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     if (preview && stateRef.current) { stateRef.current = { ...stateRef.current, currentIndex: nextIndex }; setData(stateRef.current) }
     if (replayRef.current && !replayAllRef.current) { pendingResultRef.current = null; setPhase('finished'); return }
     if (nextIndex >= STEP_COUNT) {
+      if (!preview && stateRef.current?.completed !== true) {
+        setFeedback('Your completed garden progress has not been confirmed yet. Please try again.')
+        setPhase('error')
+        return
+      }
       try { await playClip('level-complete'); await playClip('celebrate') }
       catch { /* Saved completion remains available while Priya TTS recovers. */ }
-      // The child has already mastered the activities. A missing homework
-      // audio object must not erase progress or trap them in an error state.
       if (generation.current !== token) return
-      pendingResultRef.current = null; setPhase('finished')
+      pendingResultRef.current = null
+      setPhase('finished')
       try { await playClip('homework-abcd') } catch { /* printed homework remains visible */ }
       if (preview) router.replace('/school/kg-preview')
-      // The next published pilot begins immediately AFTER the spoken homework.
-      // Do not force the child back to the ten-level map or replay Level 1.
-      else if (stateRef.current?.level2Available) router.replace('/student/kg/level-2')
+      else {
+        try {
+          const destination = await nextKGStudentRoute()
+          if (generation.current === token) router.replace(destination)
+        } catch {
+          if (generation.current === token) router.replace('/student/kg/map')
+        }
+      }
       return
     }
     await beginStep(nextIndex)

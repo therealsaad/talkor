@@ -38,7 +38,7 @@ export default function KGAlphabetMapPage() {
       .then(async (state) => {
         if (!active) return
         setKgLevel1State(state)
-        if (state.completed && state.level2Available) {
+        if (state.completed) {
           const level2 = await kgLevel2StudentService.state()
           if (active) setKgLevel2State(level2)
           if (level2.completed) {

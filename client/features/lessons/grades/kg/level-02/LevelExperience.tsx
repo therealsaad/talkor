@@ -43,10 +43,10 @@ const LETTER_TRANSITION_PAUSE_MS = 900
 
 type Phase = 'narrating' | 'requesting' | 'listening' | 'checking' | 'feedback' | 'error' | 'finished'
 
-export default function LevelExperience({ preview = false, onPreviewBack }: LevelExperienceProps) {
+export default function LevelExperience({ preview = false, studentMode = false, studentReview = false, studentStartLetter = 'E', onPreviewBack }: LevelExperienceProps) {
   const router = useRouter()
   const reduceMotion = useReducedMotion()
-  const [selected, setSelected] = useState<Level2Letter>('E')
+  const [selected, setSelected] = useState<Level2Letter>(LEVEL2_LETTERS.includes(studentStartLetter as Level2Letter) ? studentStartLetter as Level2Letter : 'E')
   const [julieState, setJulieState] = useState<'idle' | 'speaking'>('idle')
   const [phase, setPhase] = useState<Phase>('narrating')
   const [feedback, setFeedback] = useState('')
@@ -57,7 +57,7 @@ export default function LevelExperience({ preview = false, onPreviewBack }: Leve
   const selectedIndex = LEVEL2_LETTERS.indexOf(selected)
 
   useEffect(() => {
-    if (!preview) return
+    if (!preview && !studentMode) return
 
     const controller = new AbortController()
     let active = true
@@ -151,9 +151,15 @@ export default function LevelExperience({ preview = false, onPreviewBack }: Leve
           audio: noSpeech ? undefined : blob,
           durationMs,
           noSpeech,
+          studentMode,
+          replay: studentReview,
           signal: controller.signal,
         }).then(async (result) => {
           if (!active || controller.signal.aborted) return
+          if (studentMode && !studentReview && result.outcome === 'correct' && !result.advanced) {
+            fail(new Error('Student progress was not advanced'))
+            return
+          }
           const transition = resolveLevel2Attempt(selected, result.outcome)
           setFeedback(transition.retry
             ? result.outcome === 'unclear'
@@ -171,6 +177,7 @@ export default function LevelExperience({ preview = false, onPreviewBack }: Leve
               result.outcome === 'correct' ? 'great' : result.outcome === 'unclear' ? 'repeat' : 'try-again',
               audioRef.current,
               controller.signal,
+              studentMode,
             )
           } catch (feedbackError) {
             fail(feedbackError)
@@ -225,7 +232,7 @@ export default function LevelExperience({ preview = false, onPreviewBack }: Leve
       const { kgLevel2PreviewService } = await import('./services/kg-level2-preview-service')
       previewService = kgLevel2PreviewService
       if (!audioRef.current) audioRef.current = new Audio()
-      await previewService.playIntroduction(selected, audioRef.current, controller.signal)
+      await previewService.playIntroduction(selected, audioRef.current, controller.signal, studentMode)
       if (!active || controller.signal.aborted) return
       setJulieState('idle')
       await beginListening()
@@ -247,7 +254,7 @@ export default function LevelExperience({ preview = false, onPreviewBack }: Leve
       releaseMicrophone()
       audioRef.current?.pause()
     }
-  }, [attemptCycle, preview, router, selected])
+  }, [attemptCycle, preview, router, selected, studentMode, studentReview])
 
   useEffect(() => () => {
     audioRef.current?.pause()
@@ -259,7 +266,7 @@ export default function LevelExperience({ preview = false, onPreviewBack }: Leve
     setAttemptCycle((cycle) => cycle + 1)
   }
 
-  if (!preview) {
+  if (!preview && !studentMode) {
     return (
       <main className="kg-level2-play" role="status">
         <strong>Staff-only draft preview.</strong>
@@ -292,7 +299,7 @@ export default function LevelExperience({ preview = false, onPreviewBack }: Leve
             ))}
           </div>
         </div>
-        <span className="kg-level2-play__badge"><Sparkles size={15} /> STAFF-ONLY DRAFT</span>
+        <span className="kg-level2-play__badge"><Sparkles size={15} /> {preview ? 'STAFF-ONLY DRAFT' : studentReview ? 'LEVEL REVIEW' : 'YOUR LEARNING'}</span>
       </header>
 
       <div className="kg-level2-play__scene">
@@ -315,7 +322,7 @@ export default function LevelExperience({ preview = false, onPreviewBack }: Leve
               <div className="kg-level2-play__letter" aria-label="Letters E through J">E–J</div>
               <h1>You did it!</h1>
               <p>{feedback || 'You explored all six letters, E through J!'}</p>
-              <p>Design preview only. No student progress or scoring is stored.</p>
+              <p>{studentMode ? studentReview ? 'Review completed letters.' : 'Your practice is saved to your student account.' : 'Design preview only. No student progress or scoring is stored.'}</p>
             </div>
           ) : (
             <>
@@ -347,7 +354,7 @@ export default function LevelExperience({ preview = false, onPreviewBack }: Leve
               {phase === 'error' ? <p className="kg-level2-play__alert" role="alert">{feedback}</p> : null}
             </>
           )}
-          <p>Design preview only. No student progress or scoring is stored.</p>
+          <p>{studentMode ? studentReview ? 'Review completed letters.' : 'Your practice is saved to your student account.' : 'Design preview only. No student progress or scoring is stored.'}</p>
         </section>
       </div>
     </main>

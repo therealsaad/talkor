@@ -51,6 +51,20 @@ const DYNAMIC_TTS_IDS = new Set([
 export function makeKGPreviewState(currentIndex = 0): KGAlphabetState {
   return {
     version: 'kg-alphabet-v1-preview', level: 1, title: 'ABCD Picture Garden', audioVersion: 'v1',
+    currentLevel: currentIndex === 8 ? null : 1,
+    nextIncompleteLevel: currentIndex === 8 ? null : 1,
+    studentPlayableLevels: [1],
+    unlockedLevels: [1],
+    completedLevels: currentIndex === 8 ? [1] : [],
+    levels: [1, 2, 3, 4, 5].map((level) => ({
+      level,
+      currentIndex: level === 1 ? currentIndex : 0,
+      totalActivities: level === 1 ? 8 : 6,
+      completed: level === 1 && currentIndex === 8,
+      completedAt: null,
+      unlocked: level === 1,
+      status: level > 1 ? 'locked' : currentIndex === 8 ? 'completed' : currentIndex > 0 ? 'in_progress' : 'available',
+    })),
     currentIndex, totalActivities: 8, introSeen: false, completed: currentIndex === 8,
     completedAt: null,
 
@@ -66,7 +80,7 @@ homework: {
   completedAt: null,
 },
 
-level2Unlocked: currentIndex === 8, level2Available: false,
+level2Unlocked: false, level2Available: false,
     letters: [
       { letter: 'A', word: 'apple', emoji: '🍎', color: '#ff6f82' },
       { letter: 'B', word: 'ball', emoji: '⚽', color: '#ffbc56' },
@@ -79,4 +93,3 @@ level2Unlocked: currentIndex === 8, level2Available: false,
     }])),
   }
 }
-

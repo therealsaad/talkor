@@ -38,8 +38,8 @@ export default function StudentLoginPage() {
     try {
       await loginStudentByPin(pin)
       setPin('')
-      // AuthProvider updates the session; LoginLayout performs the single
-      // redirect to /student/continue so the PIN flow cannot race with /home.
+      // AuthProvider updates the session; LoginLayout resolves KG progress
+      // from the backend and opens the next authorized level directly.
     } catch {
       setError('That PIN did not work. Please ask your teacher for help.')
       setPin('')

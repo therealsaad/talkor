@@ -13,7 +13,7 @@ const lesson = await readFile(new URL('../../../components/lessons/lesson-experi
 const intro = await readFile(new URL('../../../components/student/lesson/kg-lesson-intro.tsx', import.meta.url), 'utf8')
 const picture = await readFile(new URL('../../../components/student/lesson/immersive-lesson-stage.tsx', import.meta.url), 'utf8')
 
-test('Grade 0 opens the authoritative ten-level garden and preserves the canonical Level 1', () => {
+test('Grade 0 opens the five-level garden and preserves the canonical Level 1', () => {
   assert.ok(levels.includes('if (student?.grade === 0)'))
   assert.ok(login.includes('await loginStudentByPin(pin)'))
   assert.ok(!login.includes('router.replace('))
@@ -24,10 +24,10 @@ test('Grade 0 opens the authoritative ten-level garden and preserves the canonic
   assert.ok(mapPage.includes('kgAlphabetService.state()'))
   assert.ok(mapPage.includes('student?.id'))
   assert.ok(map.includes('LEVEL_POSITIONS = ['))
-  assert.equal((map.match(/\{ left: \d+(?:\.\d+)?, top: \d+(?:\.\d+)? \}/g) || []).length, 10)
-  assert.ok(map.includes('number === 1 && kgLevel1State'))
-  assert.ok(map.includes(": 'LOCKED'"))
-  assert.ok(map.includes('kgLevel1State.currentIndex'))
+  assert.equal((map.match(/\{ left: \d+(?:\.\d+)?, top: \d+(?:\.\d+)? \}/g) || []).length, 5)
+  assert.ok(map.includes('levelProgress?.status ||'))
+  assert.ok(map.includes("if (status === 'locked') return undefined"))
+  assert.ok(map.includes('levelProgress.currentIndex'))
   assert.ok(map.includes('disabled'))
   assert.ok(map.includes('MissJulieCharacter state="greeting"'))
   assert.ok(map.includes('/student/kg?replay=all'))

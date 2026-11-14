@@ -15,8 +15,28 @@ async function load(path, dependencies = {}) {
 }
 const { kgRequest } = await load('../features/lessons/grades/kg/level-01/services/kg-request.ts')
 const { requestKGMicrophone } = await load('../lib/kg-microphone.ts')
-const { watchVoiceActivity } = await load('../lib/voice-activity.ts')
+const { watchVoiceActivity } = await load('../lib/voice-activity.ts', {
+  '@/lib/silence-policy': {
+    shouldStopRecording: ({ heardVoice, now, startedAt, lastVoiceAt, silenceMs, minimumSpeechMs, noSpeechTimeoutMs }) =>
+      heardVoice
+        ? now - startedAt >= minimumSpeechMs && now - lastVoiceAt > silenceMs
+        : now - startedAt > noSpeechTimeoutMs,
+  },
+})
 const quickly = { retries: 2, timeoutMs: 50, delayMs: 1 }
+const serviceDependencies = {
+  '@/lib/lesson-turn-telemetry': {
+    lessonTurnTelemetry: { bind() {}, mark() {}, markFor() {} },
+    setTelemetrySession() {},
+  },
+  '@/lib/device-audio-cache': {
+    clipKey: (...parts) => parts.join(':'),
+    createDeviceAudioCache: () => ({
+      get: async () => null, put: async () => false, prune: async () => {}, has: async () => false,
+    }),
+    shouldSkipBackgroundDownload: () => false,
+  },
+}
 
 test('network retries reuse the submitted payload, while authorization and validation errors are not retried', async () => {
   const bodies = []
@@ -113,7 +133,8 @@ test('audio completion resolves playback only, and aborted playback releases its
   globalThis.window = { setTimeout, clearTimeout }
   let posts = 0
   const { kgAlphabetService } = await load('../features/lessons/grades/kg/level-01/services/kg-alphabet-service.ts', {
-    '@/lib/api-client': { apiClient: async () => { posts++; return {} }, apiClientBlob: async () => new Blob(['test audio'], { type: 'audio/mpeg' }) },
+    ...serviceDependencies,
+    '@/lib/api-client': { apiClient: async () => { posts++; return {} }, apiClientBlob: async () => new Blob(['test audio'], { type: 'audio/mpeg' }), getStoredToken: () => 'test-session' },
     './kg-request': { kgRequest: (operation, signal, options = {}) => kgRequest(operation, signal, { ...options, timeoutMs: 50, delayMs: 1 }) },
   })
   try {
@@ -132,6 +153,60 @@ test('audio completion resolves playback only, and aborted playback releases its
   } finally { globalThis.window = oldWindow }
 })
 
+test('attempt feedback audio and acknowledgement carry the active introduction ticket', async () => {
+  const oldWindow = globalThis.window
+  const oldCreate = URL.createObjectURL
+  const oldRevoke = URL.revokeObjectURL
+  const playbackId = 'a'.repeat(64)
+  const apiRequests = []
+  const blobRequests = []
+  globalThis.window = { setTimeout, clearTimeout }
+  URL.createObjectURL = () => 'blob:kg-feedback-test'
+  URL.revokeObjectURL = () => {}
+  const { kgAlphabetService } = await load('../features/lessons/grades/kg/level-01/services/kg-alphabet-service.ts', {
+    ...serviceDependencies,
+    '@/lib/api-client': {
+      apiClient: async (path, options = {}) => {
+        apiRequests.push({ path, options })
+        return path === '/kg-alphabet/intro/start' ? { playbackId } : {}
+      },
+      apiClientBlob: async (path, options = {}, onReceipt) => {
+        blobRequests.push({ path, options })
+        onReceipt?.({ get: (name) => name.toLowerCase() === 'x-kg-feedback-receipt'
+          ? `v1.1234567890.${'a'.repeat(32)}.${'b'.repeat(64)}` : null })
+        return new Blob(['feedback audio'], { type: 'audio/wav' })
+      },
+      getStoredToken: () => 'test-session',
+    },
+    './kg-request': { kgRequest: (operation, signal, options = {}) => kgRequest(operation, signal, { ...options, timeoutMs: 50, delayMs: 1 }) },
+  })
+  try {
+    await kgAlphabetService.beginIntro()
+    const audio = {
+      paused: true,
+      pause() { this.paused = true },
+      play() {
+        this.paused = false
+        queueMicrotask(() => this.onended?.())
+        return Promise.resolve()
+      },
+    }
+    await kgAlphabetService.playAttemptFeedback('feedback-submission-123', audio)
+    await kgAlphabetService.acknowledgeFeedback('feedback-submission-123')
+    assert.deepEqual(blobRequests[0].options.headers, { 'X-KG-Intro-Playback': playbackId })
+    const acknowledgement = apiRequests.find(({ path }) => path.endsWith('/feedback-played'))
+    assert.deepEqual(acknowledgement.options.headers, { 'X-KG-Intro-Playback': playbackId })
+    assert.deepEqual(JSON.parse(acknowledgement.options.body), {
+      feedbackReceipt: `v1.1234567890.${'a'.repeat(32)}.${'b'.repeat(64)}`,
+    })
+    kgAlphabetService.clearAudioCache()
+  } finally {
+    globalThis.window = oldWindow
+    URL.createObjectURL = oldCreate
+    URL.revokeObjectURL = oldRevoke
+  }
+})
+
 test('audio requests deduplicate in flight, negative-cache missing clips, and retry a retryable TTS outage once', async () => {
   const oldCreate = URL.createObjectURL
   const oldRevoke = URL.revokeObjectURL
@@ -142,8 +217,10 @@ test('audio requests deduplicate in flight, negative-cache missing clips, and re
   const missing = Object.assign(new Error('missing'), { code: 'KG_AUDIO_MISSING', status: 404 })
   const outage = Object.assign(new Error('Priya unavailable'), { code: 'TTS_SERVICE_UNAVAILABLE', status: 503, details: { retryable: true } })
   const { kgAlphabetService } = await load('../features/lessons/grades/kg/level-01/services/kg-alphabet-service.ts', {
+    ...serviceDependencies,
     '@/lib/api-client': {
       apiClient: async () => ({}),
+      getStoredToken: () => 'test-session',
       apiClientBlob: async (key) => {
         if (key.endsWith('/say-a')) { missingCalls++; throw missing }
         dynamicCalls++
