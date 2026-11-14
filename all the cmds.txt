@@ -1,0 +1,78 @@
+all the cmds 
+
+
+ai serccies tts 
+cd "D:\allabouttalkora\live_talkora\talkora1\talkora\ai-service"
+.\.venv-talkora311\Scripts\Activate.ps1
+
+python -m uvicorn app.main:app --host 127.0.0.1 --port 8001
+
+
+cd ai-models
+ollama serve 
+ollama list
+
+if we wannna test 
+ollama run qwen3:4b-instruct 
+
+while 
+task kill 
+taskkill /F /IM "ollama app.exe"
+taskkill /F /IM ollama.exe
+
+    QQ  QQQQQQQQQQQQ
+and qwen ai llm we have 
+
+
+cd "D:\allabouttalkora\live_talkora\talkora1\talkora\ai-models\talkora-ai-starter"
+
+.\.venv\Scripts\Activate.ps1
+
+$env:TALKORA_CLASS1_QWEN_PILOT="true"
+$env:OLLAMA_MODEL="qwen3:4b-instruct"
+$env:OLLAMA_BASE_URL="http://127.0.0.1:11434"
+
+python -m uvicorn server.main:app --host 127.0.0.1 --port 8002 --reload
+
+	
+
+
+Quick check — are all services running?
+In an extra PowerShell terminal:
+Test-NetConnection 127.0.0.1 -Port 8001
+Test-NetConnection 127.0.0.1 -Port 8002
+Test-NetConnection 127.0.0.1 -Port 11434
+Test-NetConnection 127.0.0.1 -Port 5000
+Test-NetConnection 127.0.0.1 -Port 3000
+
+
+
+
+
+
+
+
+git ai 
+
+
+
+
+
+
+cd "D:\talkora-ai-publish\talkora-ai-starter"
+
+git status
+git remote -v
+git fetch origin
+git pull --ff-only origin main
+
+git log -1 --oneline
+
+
+
+in talkora live 1 
+
+git -C "D:\talkora-ai-publish\talkora-ai-starter" pull --ff-only origin main
+
+
+

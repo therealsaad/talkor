@@ -4,11 +4,11 @@ import { ApiError } from '../utils/ApiError'
 
 export const CLASS1_INTRO_VALID_MS = 2 * 60 * 60_000
 export function firstDayIntroSource(settings: Record<string, unknown> = {}) {
-  // The default matches the measured packaged 90-second film. A different
-  // reviewed 87–93s film must pin its duration in authorized lesson metadata.
-  const configured = settings.introDurationSeconds
-  const seconds = configured === undefined ? 90 : Number(configured)
-  if (!Number.isFinite(seconds) || seconds < 87 || seconds > 93) throw ApiError.conflict('The reviewed story duration is unavailable')
+  const bundled = !settings.introVideoUrl || settings.introVideoUrl === '/lessons/class-01/level-01/miss-julie-first-day-intro.mp4'
+  // Keep the ticket clock aligned with the shipped MP4, including older
+  // lesson records that still describe the previous 90-second asset.
+  const seconds = bundled ? 40.908798 : Number(settings.introDurationSeconds ?? 90)
+  if (!Number.isFinite(seconds) || (!bundled && (seconds < 87 || seconds > 93))) throw ApiError.conflict('The reviewed story duration is unavailable')
   const sourceHash = createHash('sha256').update(JSON.stringify([
     settings.lessonPlanRevision || 'first-day-v3-v4', settings.introVideoUrl || 'packaged-first-day', seconds,
   ])).digest('hex')
