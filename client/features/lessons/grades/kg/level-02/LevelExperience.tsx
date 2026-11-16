@@ -11,7 +11,7 @@ import '../level-01/styles/kg-alphabet.css'
 import '../level-01/styles/kg-level1-polish.css'
 import '../components/kindergarten-world.css'
 import './level-02.css'
-import { KindergartenWorld } from '../components/KindergartenWorld'
+import { Level2JungleWorld } from './Level2JungleWorld'
 import { LetterWordPicture } from '../components/LetterWordPicture'
 import type { LevelExperienceProps } from '../../../registry'
 import {
@@ -31,12 +31,12 @@ const LETTER_WORDS: Record<Level2Letter, string> = {
   J: 'jam',
 }
 const LETTER_PICTURES: Record<Level2Letter, string> = {
-  E: '/kg/pictures/level-2/elephant.svg',
-  F: '/kg/pictures/level-2/fish.svg',
-  G: '/kg/pictures/level-2/goat.svg',
-  H: '/kg/pictures/level-2/hat.svg',
-  I: '/kg/pictures/level-2/igloo.svg',
-  J: '/kg/pictures/level-2/jam.svg',
+  E: '/kg/pictures/level-2/elephant.jpg',
+  F: '/kg/pictures/level-2/fish.jpg',
+  G: '/kg/pictures/level-2/goat.jpg',
+  H: '/kg/pictures/level-2/hat.jpg',
+  I: '/kg/pictures/level-2/igloo.jpg',
+  J: '/kg/pictures/level-2/jam.jpg',
 }
 
 const LETTER_TRANSITION_PAUSE_MS = 900
@@ -285,8 +285,8 @@ export default function LevelExperience({ preview = false, studentMode = false, 
         : ''
 
   return (
-    <main className="kg-level2-play" data-phase={phase} aria-label="Staff preview of Level 2 letters E to J">
-      <KindergartenWorld />
+    <main className="kg-level2-play kg-level2-visuals" data-phase={phase} aria-label="Staff preview of Level 2 letters E to J">
+      <Level2JungleWorld />
       <header className="kg-level2-play__top">
         {onPreviewBack
           ? <button type="button" className="kg-level2-play__back" onClick={onPreviewBack}><ArrowLeft size={18} /> Back to introduction</button>

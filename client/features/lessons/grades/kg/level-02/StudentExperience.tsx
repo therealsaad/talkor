@@ -10,7 +10,7 @@ import { lessonTurnTelemetry } from '@/lib/lesson-turn-telemetry'
 import { nextKGStudentRoute } from '@/services/kg-resume-service'
 import { LatencyReportButton } from '@/components/latency-report-button'
 import { AnimatedMissJulie } from '../level-01/components/AnimatedMissJulie'
-import { KindergartenWorld } from '../components/KindergartenWorld'
+import { Level2JungleWorld } from './Level2JungleWorld'
 import { LetterWordPicture } from '../components/LetterWordPicture'
 import { LEVEL2_LETTERS, microphoneFailureMessage, type Level2Letter } from './level2-flow'
 import { kgLevel2StudentService, type KGLevel2State } from './services/kg-level2-student-service'
@@ -23,12 +23,12 @@ const WORDS: Record<Level2Letter, string> = {
   E: 'elephant', F: 'fish', G: 'goat', H: 'hat', I: 'igloo', J: 'jam',
 }
 const PICTURES: Record<Level2Letter, string> = {
-  E: '/kg/pictures/level-2/elephant.svg',
-  F: '/kg/pictures/level-2/fish.svg',
-  G: '/kg/pictures/level-2/goat.svg',
-  H: '/kg/pictures/level-2/hat.svg',
-  I: '/kg/pictures/level-2/igloo.svg',
-  J: '/kg/pictures/level-2/jam.svg',
+  E: '/kg/pictures/level-2/elephant.jpg',
+  F: '/kg/pictures/level-2/fish.jpg',
+  G: '/kg/pictures/level-2/goat.jpg',
+  H: '/kg/pictures/level-2/hat.jpg',
+  I: '/kg/pictures/level-2/igloo.jpg',
+  J: '/kg/pictures/level-2/jam.jpg',
 }
 type Phase = 'narrating' | 'requesting' | 'listening' | 'checking' | 'feedback' | 'error' | 'finished'
 
@@ -190,8 +190,8 @@ export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State 
     : phase === 'checking' ? 'Miss Julie is checking your answer.'
     : phase === 'requesting' ? 'Opening your microphone…' : message
   return (
-    <main className="kg-level2-play" data-phase={phase} aria-label="Kindergarten Level 2 letters E to J">
-      <KindergartenWorld />
+    <main className="kg-level2-play kg-level2-visuals" data-phase={phase} aria-label="Kindergarten Level 2 letters E to J">
+      <Level2JungleWorld />
       <header className="kg-level2-play__top">
         <Link className="kg-level2-play__back" href="/student/kg/map">My garden</Link>
         <div className="kg-level2-play__progress" aria-label={'Level 2, ' + index + ' of 6 letters complete'}>
