@@ -48,12 +48,20 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
   const [playbackId, setPlaybackId] = useState<string | null>(null)
   const [introRetry, setIntroRetry] = useState(0)
   const completing = useRef(false)
+  // React Strict Mode may replay effects during development. Keep one server
+  // ticket request per lesson/retry key, while allowing the live effect to
+  // observe the same promise after the first setup is cleaned up.
+  const introStartRequest = useRef<{ key: string; promise: ReturnType<typeof beginFirstDayIntro> } | null>(null)
 
   useEffect(() => {
     if (!firstDayOnly || !sourceReady) return
     let live = true
+    const requestKey = `${lessonId || ''}:${introRetry}`
+    if (!introStartRequest.current || introStartRequest.current.key !== requestKey) {
+      introStartRequest.current = { key: requestKey, promise: beginFirstDayIntro(lessonId || '') }
+    }
     setPlaybackId(null)
-    void beginFirstDayIntro(lessonId || '').then(result => {
+    void introStartRequest.current.promise.then(result => {
       if (live) setPlaybackId(result.playbackId)
     }).catch(() => {
       if (live) { setError('Your story could not open. Please try again.'); setLoading(false) }
