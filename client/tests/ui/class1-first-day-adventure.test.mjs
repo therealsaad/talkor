@@ -103,6 +103,40 @@ test('Class 1 finale sends five aligned real clip boundaries with no client-owne
   assert.doesNotMatch(source, /activityComplete|xpAwarded|masteryStatus/)
 })
 
+test('Class 1 gives instant truthful visual feedback while STT, Node and Azure are working', async () => {
+  const source = await load('../../lib/class1-turn-wait-cue.ts')
+  const module = { exports: {} }
+  vm.runInNewContext(ts.transpileModule(source, { compilerOptions: {
+    module: ts.ModuleKind.CommonJS,
+  } }).outputText, { module, exports: module.exports })
+  const cue = module.exports.class1TurnWaitCue
+  assert.match(cue('transcribing').label, /words/)
+  assert.match(cue('julie_thinking').label, /next little step/)
+  assert.match(cue('julie_audio_pending').label, /voice/)
+  assert.match(cue('julie_text_ready').label, /voice/)
+  for (const state of ['julie_speaking', 'student_recording', 'retry_required',
+    'activity_complete', 'recoverable_error', 'waiting_for_student']) {
+    assert.equal(cue(state), null, 'Never mislabel ' + state + ' as still waiting')
+  }
+
+  const engine = await load('../../components/lessons/lesson-experience.tsx')
+  const stage = await load('../../components/student/lesson/immersive-lesson-stage.tsx')
+  const classroom = await load('../../features/lessons/grades/class-01/level-01/FirstDayPoemClassroom.tsx')
+  const css = await load('../../features/lessons/grades/class-01/level-01/first-day-poem-classroom.css')
+  assert.match(engine, /class1TurnWaitCue\(experience\)/)
+  assert.match(engine, /waitInvitation=\{class1WaitCue\?\.invitation\}/)
+  assert.match(engine, /class1WaitCue && !julie\.isSpeaking/)
+  assert.match(stage, /turnStatus=\{statusText\}/)
+  assert.match(stage, /waitInvitation=\{waitInvitation\}/)
+  assert.match(classroom, /isProcessing && !isSpeaking && !isListening && turnStatus/)
+  assert.match(classroom, /poem-feedback__wait/)
+  assert.match(classroom, /role="status" aria-live="polite"/)
+  assert.match(css, /prefers-reduced-motion: reduce/)
+  assert.match(css, /poem-feedback__wait-dots/)
+  // No invented audio filler, false success status, or additional network path.
+  assert.doesNotMatch(source, /fetch\(|audio\.play|julie\.speak|setTimeout|xpAwarded|masteryStatus/)
+})
+
 test('First Day route uses school-action homework and hides v3 fullscreen button', async () => {
   const page = await load('../../app/student/lesson/[id]/page.tsx')
   const wrapper = await load('../../features/lessons/grades/class-01/level-01/Class1Immersion.tsx')
