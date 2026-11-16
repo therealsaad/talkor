@@ -60,6 +60,33 @@ test('step stats do not include invalid/unrelated numbers or throw on missing pr
   assert.equal(r.gate, 'PASS_SERVER_BUDGET')
 })
 
+test('Python provider-attempt logs are reported separately and do not double-count AI turns', () => {
+  const pythonAttempt = (requestId, durationMs, outcome = 'success') =>
+    'INFO ' + JSON.stringify({ message: 'AI Python request timing', requestId, provider: 'python-qwen',
+      model: 'configured-python-service', durationMs, outcome, studentName: 'PRIVATE' })
+  const aiTurn = (requestId, llm) =>
+    'INFO ' + JSON.stringify({ message: 'AI turn timing', phase: 'ai', requestId, llm,
+      cohort: 'class1-l1', provider: 'python-qwen', model: 'configured-python-service' })
+  const report = analyzeKGLatency([
+    pythonAttempt('bridge-1', 80, 'failure'),
+    aiTurn('turn-1', 120),
+    pythonAttempt('bridge-2', 90),
+    aiTurn('turn-2', 150),
+  ], { minPairs: 4 })
+  assert.equal(report.counts.aiRequests, 2)
+  assert.equal(report.counts.pythonProviderAttempts, 2)
+  assert.deepEqual(report.aiLatencyByCohortProviderModel, [
+    { cohort: 'class1-l1', provider: 'python-qwen', model: 'configured-python-service',
+      count: 2, p50Ms: 120, p95Ms: 150, maxMs: 150 },
+  ])
+  assert.deepEqual(report.pythonProviderAttemptLatencyByProviderModel, [
+    { provider: 'python-qwen', model: 'configured-python-service',
+      count: 2, p50Ms: 80, p95Ms: 90, maxMs: 90 },
+  ])
+  assert.equal(report.gate, 'INSUFFICIENT_REAL_SAMPLES')
+  assert.equal(JSON.stringify(report).includes('bridge-1'), false)
+})
+
 test('AI reports group p50/p95 and counts by cohort, provider and model without exposing request IDs', () => {
   const ai = (requestId, llm, cohort = 'class1-l1', provider = 'python-qwen', model = 'configured-python-service') =>
     'INFO ' + JSON.stringify({ message: 'AI turn timing', phase: 'ai', requestId, llm, cohort, provider, model,
