@@ -28,13 +28,23 @@ export function firstDaySceneSkills(sceneKey: string, message: string): string[]
   return evidence[sceneKey]?.test(text) ? ['first_day_english_attempt'] : []
 }
 
+/** A bounded recognition alias for a common child's spoken "See me".
+ * Saaras can render the connected English sounds as "semi". This is NOT a
+ * general-purpose correction and never supplies an absent action/second line.
+ * Do not change the stored raw transcript or use this for pronunciation grades.
+ */
+export function normalizeFirstDayPoemRecognition(text: string): string {
+  return text.normalize('NFKC').toLowerCase()
+    .replace(/\bsemi\s+(?=(?:skip|run|walk|grin|jump|play)(?:ping|ning|ing)?\b)/g, 'see me ')
+}
+
 /** Only transcript evidence of both taught lines is enough to progress.
  * No acoustic pronunciation or comprehension scores are inferred from STT.
  */
 export function poemEvidence(sceneKey: string, text: string): string[] {
   // Direct callers (including the final teacher-voice guard) can pass raw
   // Sarvam casing. Normalize here, not only in firstDaySceneSkills.
-  const said = text.toLowerCase().trim().normalize('NFC')
+  const said = normalizeFirstDayPoemRecognition(text).trim()
   if (!said || /[?]|\b(?:what|why|how|help|repeat|again|meaning|i don['’]?t know|no idea)\b|क्या|मदद|मतलब|काय|म्हणजे|नाही|समजत/.test(said)) return []
   // A bare word bank response ("grin bell", "skip run", or "at at")
   // is NOT reciting both lines. Look for both authored phrase patterns with

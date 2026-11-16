@@ -1,18 +1,18 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { Play, RotateCcw, Sparkles } from 'lucide-react'
-import { requestClass1Fullscreen } from './class1-fullscreen'
+import { Volume2, RotateCcw, Sparkles } from 'lucide-react'
 import { voiceService } from '@/services/voice-service'
 import { beginFirstDayIntro, completeFirstDayIntro } from '@/services/class1-intro-service'
 
-/** This reviewed 90-second video is delivered separately from the application. */
+/** The bundled introduction can be overridden by a reviewed hosted video. */
 export const CLASS1_FIRST_DAY_VIDEO = process.env.NEXT_PUBLIC_TALKORA_CLASS1_INTRO_URL?.trim() ||
   '/lessons/class-01/level-01/miss-julie-first-day-intro.mp4'
 
 export const CLASS1_FIRST_DAY_VIDEO_BUNDLED = '/lessons/class-01/level-01/miss-julie-first-day-intro.mp4'
 
 const MIN_DURATION_SECONDS = 87
+const BUNDLED_DURATION_SECONDS = 40.908798
 const MAX_DURATION_SECONDS = 93
 const REQUIRED_WATCH_SECONDS = 85
 
@@ -29,18 +29,20 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
   // our *exact* same-origin shipped MP4. Keep all other relative paths
   // forbidden so an old/placeholder chapter cannot silently sneak in.
   const candidate = approvedVideoUrl?.trim() ||
-    process.env.NEXT_PUBLIC_TALKORA_CLASS1_INTRO_URL?.trim() || ''
+    process.env.NEXT_PUBLIC_TALKORA_CLASS1_INTRO_URL?.trim() || CLASS1_FIRST_DAY_VIDEO_BUNDLED
   const reviewedSource = candidate === CLASS1_FIRST_DAY_VIDEO_BUNDLED ||
     /^https:\/\//.test(candidate)
     ? candidate : ''
   const sourceReady = !firstDayOnly || Boolean(reviewedSource)
   const videoSource = firstDayOnly ? reviewedSource : CLASS1_FIRST_DAY_VIDEO
+  const bundledVideo = videoSource === CLASS1_FIRST_DAY_VIDEO_BUNDLED
   const frame = useRef<HTMLDivElement>(null)
   const video = useRef<HTMLVideoElement>(null)
   const watchedUntil = useRef(0)
   const fullscreenActive = useRef(false)
   const [canPlay, setCanPlay] = useState(false)
-  const [needsTap, setNeedsTap] = useState(true)
+  // Show a tap only when the browser actually blocks sound-on autoplay.
+  const [needsTap, setNeedsTap] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [playbackId, setPlaybackId] = useState<string | null>(null)
@@ -71,7 +73,8 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
     function pauseWhenHidden() {
       if (document.hidden) {
         video.current?.pause()
-        setNeedsTap(true)
+      } else {
+        void video.current?.play().catch(() => setNeedsTap(true))
       }
     }
 
@@ -98,7 +101,9 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
 
   function validateVideo() {
     const duration = video.current?.duration ?? NaN
-    if (!Number.isFinite(duration) || duration < MIN_DURATION_SECONDS || duration > MAX_DURATION_SECONDS) {
+    if (!Number.isFinite(duration) || (bundledVideo
+      ? Math.abs(duration - BUNDLED_DURATION_SECONDS) > 1
+      : duration < MIN_DURATION_SECONDS || duration > MAX_DURATION_SECONDS)) {
       setError('The First Day introduction must be a complete 90-second video with sound.')
       setCanPlay(false)
       setLoading(false)
@@ -112,36 +117,53 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
     onAvailable()
   }
 
-  async function begin() {
-    if (!canPlay || !video.current || !frame.current || (firstDayOnly && !playbackId)) return
-    try {
-      // Fullscreen is an enhancement; school browser policies can reject it.
-      // Request it for the WHOLE lesson, so fullscreen survives the intro video.
-      const fullscreenTarget = frame.current.closest<HTMLElement>('[data-class1-immersion]') || frame.current
-      // All gesture-sensitive calls begin before any await. A fullscreen
-      // promise may otherwise consume the activation needed by speech audio.
-      const fullscreen = requestClass1Fullscreen(fullscreenTarget)
-      const unlockAudio = voiceService.unlockPlayback()
-      video.current.muted = false
-      const startedVideo = video.current.play()
-      fullscreenActive.current = await fullscreen
-      await startedVideo
-      await unlockAudio.catch(() => false)
-      setNeedsTap(false)
-      setError('')
-    } catch {
-      video.current?.pause()
+  // Wait for media validation and the server ticket before autoplay.
+  useEffect(() => {
+    if (!sourceReady || !canPlay || error || (firstDayOnly && !playbackId)) return
+    const player = video.current
+    if (!player) return
+    if (document.hidden) {
       setNeedsTap(true)
-      setError('The story could not start. Check sound permissions on this computer and tap Play again.')
+      return
+    }
+    let cancelled = false
+    player.muted = false
+    player.volume = 1
+    void player.play().then(() => {
+      if (!cancelled && !player.paused && !document.hidden) setNeedsTap(false)
+    }).catch(async () => {
+      if (cancelled) return
+      // Browsers allow muted autoplay even when sound needs a gesture.
+      player.muted = true
+      try {
+        await player.play()
+        if (!cancelled) setNeedsTap(true)
+      } catch {
+        if (!cancelled) setError('The story could not start. Please try loading again.')
+      }
+    })
+    return () => { cancelled = true }
+  }, [canPlay, error, firstDayOnly, playbackId, sourceReady, videoSource, introRetry])
+
+  async function enableSound() {
+    if (!video.current) return
+    video.current.muted = false
+    void voiceService.unlockPlayback().catch(() => false)
+    try {
+      await video.current.play()
+      setNeedsTap(false)
+    } catch {
+      video.current.muted = true
+      void video.current.play().catch(() => undefined)
     }
   }
 
   async function finish() {
     if (completing.current) return
-    if (video.current?.muted || watchedUntil.current < REQUIRED_WATCH_SECONDS) {
+    if (watchedUntil.current < (bundledVideo ? BUNDLED_DURATION_SECONDS - 1 : REQUIRED_WATCH_SECONDS)) {
       video.current?.pause()
       setNeedsTap(true)
-      setError("Let's finish the complete story with sound before we start practising.")
+      setError("Let's finish the complete story before we start practising.")
       return
     }
     completing.current = true
@@ -162,7 +184,7 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
     setError('')
     setCanPlay(false)
     setLoading(true)
-    setNeedsTap(true)
+    setNeedsTap(false)
     watchedUntil.current = 0
     completing.current = false
     setPlaybackId(null)
@@ -174,19 +196,19 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
     <div className="class1-intro-card">
       <div className="class1-intro-heading">
         <span><Sparkles size={20} aria-hidden="true" /> First, a little story with Miss Julie</span>
-        <small>90-second welcome</small>
+        <small>Welcome story</small>
       </div>
       <video
         ref={video}
         className="class1-intro-video"
         src={videoSource || undefined}
-        playsInline preload="metadata" controls={false}
+        playsInline preload="auto" controls={false}
         disablePictureInPicture controlsList="nodownload noplaybackrate noremoteplayback"
-        aria-label="Reviewed 90-second Balbharati My First Day introduction"
+        aria-label="Balbharati My First Day introduction"
         onLoadedMetadata={validateVideo}
         onTimeUpdate={(event) => {
           const player = event.currentTarget
-          if (document.hidden || player.muted || player.seeking || player.paused) return
+          if (document.hidden || player.seeking || player.paused) return
           if (player.currentTime <= watchedUntil.current + 1.5) {
             watchedUntil.current = Math.max(watchedUntil.current, player.currentTime)
           }
@@ -206,8 +228,8 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
       {loading || (firstDayOnly && !playbackId && !error) ? <p className="class1-intro-status" role="status">Getting Miss Julie's story ready...</p> : null}
       {error ? <div className="class1-intro-error" role="alert"><p>{error}</p><button type="button" onClick={retryVideo} disabled={!sourceReady}><RotateCcw size={16} /> Try loading again</button></div> : null}
       {needsTap && canPlay && (!firstDayOnly || playbackId) ? <div className="class1-intro-play-prompt">
-        <p>Watch the whole story with sound. Then we will practise school actions and English with Miss Julie.</p>
-        <button type="button" onClick={() => void begin()}><Play size={18} fill="currentColor" /> Play story</button>
+        <p>The story is playing. Tap to turn on sound.</p>
+        <button type="button" onClick={() => void enableSound()}><Volume2 size={18} /> Turn on sound</button>
       </div> : null}
     </div>
   </div>

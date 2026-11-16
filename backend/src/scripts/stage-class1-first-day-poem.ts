@@ -136,18 +136,18 @@ async function main() {
       const teaching = first
         ? 'Listen to our complete My First Day poem with rhythm.\n'+FIRST_DAY_POEM_FULL+
           '\nNow we will practise just two lines. Listen: '+lines.join('. ')+
-          '\nIt is your turn. Say both lines to me!'
+          '\nYour turn! You can say one word, or try both lines.'
         : full
           ? 'You learnt the poem two lines at a time. Here is the complete poem once more.\n'+
-            FIRST_DAY_POEM_FULL+'\nYour turn! Recite the whole poem slowly with actions.'
+            FIRST_DAY_POEM_FULL+'\nYour turn! Try five little parts. Say one word from each part, or try the full poem.'
           : 'Well done practising! Listen to the next two poem lines: '+lines.join('. ')+
-            '\nNow say BOTH lines. I will listen and help.'
+            '\nTry one word from these lines, or say both lines. I will listen and help.'
       return {
         lessonId:lesson._id,curriculumVersion:CLASS1_DEMO_VERSION,
         activityKey:'class1-l01-v4-'+step.key,grade:1,term:1,unitNumber:1,
         order:i+1,title:step.title,prompt:teaching,teacherPrompt:teaching,
         target:step.target,modelSentence:lines.join(' '),
-        instruction:'Listen, recite two lines, try again with Miss Julie if needed.',
+        instruction:'Listen, try one current English word or say both lines. Miss Julie will help.',
         type:'CONVERSATION' as const,stage:'INTERACT' as const,
         expectedPatterns:[],keywords:[...FIRST_DAY_POEM_WORD_BANK],
         choices:[],difficulty:'easy' as const,xp:0,estimatedSeconds:150,

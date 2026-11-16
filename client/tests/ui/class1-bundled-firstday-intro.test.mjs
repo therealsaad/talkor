@@ -19,6 +19,15 @@ test('authenticated poem lesson supports the exact bundled reviewed media source
   assert.match(intro, /const MIN_DURATION_SECONDS = 87/)
   assert.match(intro, /const MAX_DURATION_SECONDS = 93/)
   assert.match(intro, /const REQUIRED_WATCH_SECONDS = 85/)
+  // Native autoPlay could start before the validated media/server ticket;
+  // only the reviewed, ticket-scoped effect may attempt an unmuted play().
+  assert.match(intro, /if \(!sourceReady \|\| !canPlay \|\| error \|\| \(firstDayOnly && !playbackId\)\) return/)
+  assert.match(intro, /player\.muted = false/)
+  assert.match(intro, /player\.volume = 1/)
+  assert.match(intro, /void player\.play\(\)\.then/)
+  assert.match(intro, /if \(!cancelled && player\.paused\) setNeedsTap\(true\)/)
+  assert.doesNotMatch(intro, /\bautoPlay\s*=/)
+  assert.match(intro, /\{needsTap && canPlay && \(!firstDayOnly \|\| playbackId\)/)
   assert.match(intro, /if \(video\.current\?\.muted \|\| watchedUntil\.current < REQUIRED_WATCH_SECONDS\)/)
   assert.match(page, /lesson\.activities\.length === 6/)
   assert.match(page, /class1IntroVideoUrl=\{firstDayReady/)

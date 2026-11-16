@@ -69,6 +69,63 @@ describe('Class 1 first-day poem lesson boundaries (recorded student regression)
     expect(result.message).toContain('both poem lines')
   })
 
+  it('offers short supported word practice in English, Hindi and Marathi instead of insisting on perfect recitation', () => {
+    const pairEn = guardFirstDayPoemTurn('poem-pair-1', 'At at.', 'English', legacy())
+    expect(pairEn.message).toContain('one word')
+    expect(pairEn.followUpQuestion).toContain('one word')
+    expect(pairEn.message).toContain('See me skip')
+    expect(pairEn.message).toContain('See me run')
+    expect(pairEn.activityComplete).toBe(false)
+    expect(pairEn.xpAwarded).toBe(0)
+    const finalEn = guardFirstDayPoemTurn('poem-full', 'At at.', 'English', legacy())
+    expect(finalEn.message).toContain('five little parts')
+    expect(finalEn.followUpQuestion).toContain('first part')
+    expect(finalEn.modelSentence).toContain('See me skip')
+    expect(finalEn.activityComplete).toBe(false)
+    for (const lang of ['Hindi', 'Marathi'] as const) {
+      const pair = guardFirstDayPoemTurn('poem-pair-1', 'At at.', lang, legacy())
+      const full = guardFirstDayPoemTurn('poem-full', 'At at.', lang, legacy())
+      expect(pair.message).toContain(lang === 'Hindi' ? 'एक शब्द' : 'एक शब्द')
+      expect(full.message).toContain('एक शब्द')
+      expect(full.activityComplete).toBe(false)
+      expect(full.xpAwarded).toBe(0)
+    }
+  })
+
+  it('a struggling finale learner hears only the first two authorized lines rather than all ten', () => {
+    const model = 'See me skip\nSee me run'
+    for (const language of ['English', 'Hindi', 'Marathi'] as const) {
+      const answer = guardFirstDayPoemTurn('poem-full', 'At at.', language, legacy())
+      expect(answer.message).toContain('See me skip')
+      expect(answer.message).toContain('See me run')
+      expect(answer.message).not.toContain('Hip hip hurray!')
+      expect(answer.modelSentence).toBe(model)
+      expect(answer.followUpQuestion).toContain('first part')
+      expect(answer.activityComplete).toBe(false)
+      expect(answer.shouldRetry).toBe(true)
+      expect(answer.xpAwarded).toBe(0)
+      expect(answer.memoryUpdates).toEqual([])
+    }
+  })
+
+  it('answers a six-year-old meaning question in English, Hindi or Marathi without scoring it', () => {
+    const english = guardFirstDayPoemTurn('poem-full', 'What does skip mean?', 'English', legacy())
+    expect(english.message).toContain('little hops')
+    expect(english.message).toContain('move quickly')
+    expect(english.activityComplete).toBe(false)
+    const hindi = guardFirstDayPoemTurn('poem-full', 'मदद, skip मतलब?', 'Hindi', legacy())
+    expect(hindi.message).toContain('उछलकर')
+    const marathi = guardFirstDayPoemTurn('poem-full', 'मला समजत नाही', 'Marathi', legacy())
+    expect(marathi.message).toContain('उड्या')
+    for (const reply of [english, hindi, marathi]) {
+      expect(reply.modelSentence).toBe(['See me skip', 'See me run'].join('\n'))
+      expect(reply.message).not.toContain('Hip hip hurray!')
+      expect(reply.activityComplete).toBe(false)
+      expect(reply.xpAwarded).toBe(0)
+      expect(reply.shouldRetry).toBe(true)
+    }
+  })
+
   it('the full recital and all poem keys stay authored; unknown keys fail closed', () => {
     for (const key of ['poem-pair-1','poem-pair-2','poem-pair-3','poem-pair-4','poem-pair-5','poem-full']) {
       expect(isFirstDayPoemScene(key)).toBe(true)

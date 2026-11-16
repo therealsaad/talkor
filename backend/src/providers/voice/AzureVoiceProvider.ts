@@ -57,16 +57,18 @@ export class AzureVoiceProvider implements VoiceProvider {
     const practice = kindergarten && (selected.locale === 'hi-IN' || selected.locale === 'mr-IN')
       ? /^(.*?)(\s+Say (?:[a-z][a-z'-]{0,26}|the letter [a-z])[.!?]?)$/is.exec(text)
       : null
-    const voiceNode = (voice: string, words: string) =>
-      `<voice name="${voice}"><prosody rate="${rate}" pitch="${pitch}">${escapeXml(words)}</prosody></voice>`
+    // Azure SSML requires pauses inside a <voice> (or its <prosody>),
+    // never as a direct child of <speak>. An orphan <break> causes HTTP 400
+    // for the multi-line First Day poem, even with valid credentials.
+    const voiceNode = (voice: string, words: string, pauseBefore = false) =>
+      `<voice name="${voice}"><prosody rate="${rate}" pitch="${pitch}">${pauseBefore ? '<break time="360ms"/>' : ''}${escapeXml(words)}</prosody></voice>`
     // Voice-code hints come from verified Sarvam/Node; actual English poem
     // lines ALWAYS use the English Neural voice. Devanagari support lines
     // switch to the chosen Hindi/Marathi Neural voice in the same SSML call.
     const content = poemRecitation
       ? text.split(/\r?\n/).map(line => line.trim()).filter(Boolean)
           .map((line, index) =>
-            (index ? '<break time="360ms"/>' : '') +
-            voiceNode(/[\u0900-\u097F]/u.test(line) ? selected.voice : s.voice, line))
+            voiceNode(/[\u0900-\u097F]/u.test(line) ? selected.voice : s.voice, line, index > 0))
           .join('')
       : practice && practice[1].trim()
         ? voiceNode(selected.voice, practice[1].trim()) + voiceNode('en-IN-NeerjaNeural', practice[2].trim())

@@ -40,6 +40,8 @@ describe('Class 1 poem: Azure is the actual teacher voice, not a generic word cl
     expect(ssml).toContain('pitch="+3%"')
     expect(ssml).toContain('See me grin.')
     expect(ssml).toContain('<break time="360ms"/>')
+    expect(ssml).toMatch(/<voice name="en-IN-NeerjaNeural"><prosody[^>]+><break time="360ms"\/>When the bell rings, I go in\.<\/prosody><\/voice>/)
+    expect(ssml).not.toMatch(/<\/voice>\s*<break\b/)
     expect(ssml).toContain('When the bell rings, I go in.')
     expect(ssml).not.toContain('Can you say at?')
     const reader = result.body.getReader()
@@ -74,6 +76,8 @@ describe('Class 1 poem: Azure is the actual teacher voice, not a generic word cl
     expect(ssml.match(/<break time="360ms"\/>/g)).toHaveLength(2)
     expect(ssml).toContain('See me grin.')
     expect(ssml).toContain('When the bell rings, I go in.')
+    expect(ssml).not.toMatch(/<\/voice>\s*<break\b/)
+    expect(ssml).toMatch(/<voice name="en-IN-NeerjaNeural"><prosody[^>]+><break time="360ms"\/>See me grin\./)
   })
 
   it('reads Marathi help in Aarohi, but uses the English poem voice on Latin-script lines', async () => {
@@ -88,6 +92,25 @@ describe('Class 1 poem: Azure is the actual teacher voice, not a generic word cl
     const ssml = String(mock.mock.calls[0][1]?.body)
     expect(ssml).toContain('voice name="mr-IN-AarohiNeural"')
     expect(ssml).toContain('voice name="en-IN-NeerjaNeural"')
+  })
+
+  it('submits a valid poem tree to Azure rather than a root-level break that returns 400', async () => {
+    process.env.AZURE_SPEECH_KEY = 'fake-test-key-not-a-live-Azure-credential'
+    const azureRequest = jest.spyOn(globalThis, 'fetch').mockImplementation(async (_url, init) => {
+      const body = String(init?.body)
+      // Mimic Azure's documented SSML hierarchy. Only voice nodes are legal
+      // direct children of speak; breaks belong inside prosody/voice nodes.
+      if (/<\/voice>\s*<break\b/.test(body)) return new Response('Malformed SSML', { status: 400 })
+      if (!body.includes('<prosody') || !body.includes('<break time="360ms"/>')) {
+        return new Response('Missing poem pauses', { status: 400 })
+      }
+      return new Response(new Uint8Array(512), { status: 200 })
+    })
+    await expect(new AzureVoiceProvider().synthesizeStream(
+      'See me skip.\nSee me run.\nI’m going to school like everyone.',
+      { class1Lesson: true, poemRecitation: true, language: 'en-IN' },
+    )).resolves.toMatchObject({ contentType: 'audio/mpeg', provider: 'azure-neerja' })
+    expect(azureRequest).toHaveBeenCalledTimes(1)
   })
 
 })

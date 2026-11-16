@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto'
 import { z } from 'zod'
 import type { AIStructuredResponse } from '../types'
 import type { LessonTeachingContext } from './lesson-teaching-context'
-import { firstDaySceneSkills } from './first-day-evidence'
+import { firstDaySceneSkills, normalizeFirstDayPoemRecognition } from './first-day-evidence'
 
 const practiceSchema = z.object({
   version: z.literal(1), contentHash: z.string().regex(/^[a-f0-9]{64}$/),
@@ -64,7 +64,9 @@ export function scaffoldFirstDayPractice(input: {
     // curriculum evaluator. Questions, negation and injected instructions do
     // not match a quoted model. This never grants a skill or saves an attempt.
     const repeated = prior.stage !== 'JOIN' && !/[?？]/.test(input.transcript) &&
-      normalized(input.transcript.slice(0, 400)) === normalized(pending)
+      normalized(context.sceneKey.startsWith('poem-')
+        ? normalizeFirstDayPoemRecognition(input.transcript.slice(0, 400))
+        : input.transcript.slice(0, 400)) === normalized(pending)
     if (repeated) {
       state.misses = 0
       if (prior.stage === 'WORD') state.stage = 'LINE'
