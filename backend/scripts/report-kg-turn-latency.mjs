@@ -130,7 +130,7 @@ export function analyzeKGLatency(lines, options = {}) {
   })
   return {
     kind: 'talkora-kg-latency-report',
-    methodology: aiSampleCount ? (pairs.length ? 'actual-backend-logs-with-separate-ai-provider-and-kg-request-measurements' : 'actual-backend-ai-provider-duration-only')
+    methodology: (aiSampleCount || providerAttemptCount) ? (pairs.length ? 'actual-backend-logs-with-separate-ai-provider-and-kg-request-measurements' : 'actual-backend-ai-provider-duration-only')
       : 'actual-backend-log-request-sum',
     recordedAt: new Date().toISOString(),
     threshold: { minimumCompletedPairs: minPairs, maximumServerRequestSumP95Ms: budgetP95Ms },
