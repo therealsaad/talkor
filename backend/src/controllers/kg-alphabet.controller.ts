@@ -199,8 +199,9 @@ function presentState(state: {
     stars: state.stars ?? 0,
     homework: { id: 'kg-abcd-picture-homework-v1', audioId: 'homework-abcd', text: AUDIO_LINES['homework-abcd'], status: state.homeworkStatus || 'not-assigned', assignedAt: state.homeworkAssignedAt || null, completedAt: state.homeworkCompletedAt || null },
     level2Unlocked: index === 8,
-    // Level 2 is not yet published; never provide a clickable lesson link for it.
-    level2Available: false,
+    // The student Level 2 pilot is available after the authoritative KG1
+    // completion gate used by /api/kg-level2/state.
+    level2Available: index === 8,
     letters: LETTERS,
     activity: activityAt(index),
     audio: Object.fromEntries(AUDIO_IDS.map((id) => [id, {

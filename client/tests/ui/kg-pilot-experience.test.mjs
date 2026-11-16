@@ -28,7 +28,7 @@ const level3Routes=await read('../../../backend/src/routes/kg-level3-preview.rou
 const level3Content=await read('../../../backend/src/kg/level3-content.ts')
 const level3Integration=await read('../../../backend/tests/integration/kgLevel3Preview.test.ts')
 
-test('KG PIN login resumes server progress and the ten-level garden keeps unreleased levels locked',()=>{
+test('KG PIN login resumes server progress and the five-level student garden shows the approved pilot levels',()=>{
  assert.match(login,/await loginStudentByPin\(pin\)/)
  assert.match(loginLayout,/student\?\.grade === 0/)
  assert.match(loginLayout,/nextKGStudentRoute\(\)/)
@@ -46,10 +46,10 @@ test('KG PIN login resumes server progress and the ten-level garden keeps unrele
  assert.doesNotMatch(gardenPage,/curriculumService\.getMyCurriculum/)
  assert.match(gardenPage,/student\?\.id/)
  assert.match(garden,/LEVEL_POSITIONS = \[/)
- assert.equal((garden.match(/\{ left: \d+(?:\.\d+)?, top: \d+(?:\.\d+)? \}/g) || []).length,10)
+ assert.equal((garden.match(/\{ left: \d+(?:\.\d+)?, top: \d+(?:\.\d+)? \}/g) || []).length,5)
  assert.match(garden,/kgLevel1State\?\.completed && kgLevel2State/)
  assert.match(garden,/continuationLevel\.status === 'COMPLETED'/)
- assert.match(garden,/aria-label="Ten KG learning levels"/)
+ assert.match(garden,/aria-label="Five KG learning levels"/)
  assert.match(garden,/if \(status === 'completed'\) return 'Review'/)
  assert.match(garden,/disabled/)
  assert.match(garden,/MissJulieCharacter state="greeting"/)
@@ -63,11 +63,12 @@ test('KG PIN login resumes server progress and the ten-level garden keeps unrele
  assert.match(replayMap,/onPreviewPlay\?\.\(0\)/)
  assert.doesNotMatch(layout,/mustKeepKGStudentInGarden/)
 })
-test('server keeps draft KG levels unavailable and preserves Level 1 completion without unlocking drafts',()=>{
+test('server keeps draft KG levels unavailable and gates the separate Level 2 pilot on KG1 completion',()=>{
  assert.match(controller,/STUDENT_READY_KG_LEVELS: readonly KGLevelNumber\[\] = \[1\]/)
  assert.match(controller,/currentLevel: 1,\s*unlockedLevels: \[1\]/)
  assert.match(controller,/if \(!STUDENT_READY_KG_LEVELS\.includes\(level\)\)/)
- assert.match(controller,/level2Available: false/)
+ assert.match(controller,/level2Unlocked: index === 8/)
+ assert.match(controller,/level2Available: index === 8/)
  assert.match(controller,/\{ completedLevels: 1 \}/)
 })
 test('Level 1 requires the complete server-verified fullscreen story on every entry',()=>{

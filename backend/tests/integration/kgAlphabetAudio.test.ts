@@ -93,7 +93,7 @@ it('saves all ABCD speech attempts, handles low-confidence speech, resumes, and 
     nextIncompleteLevel: null,
     unlockedLevels: [1],
     completedLevels: [1],
-    level2Available: false,
+    level2Available: true,
   })
   expect(completedState.body.data.levels.find((level: { level: number }) => level.level === 1).status).toBe('completed')
   expect(completedState.body.data.levels.filter((level: { level: number }) => level.level > 1)
@@ -136,7 +136,7 @@ it('starts an eligible student at Level 1 and keeps unpublished levels unavailab
   expect(repeatedState.body.data.nextIncompleteLevel).toBe(1)
 })
 
-it('preserves a completed Level 1 record without unlocking an unpublished next level', async () => {
+it('preserves a completed Level 1 record without unlocking it in the KG alphabet controller', async () => {
   const { student, authorization } = await makePilot()
   await KGAlphabetProgress.create({
     studentId: student._id,
@@ -158,7 +158,7 @@ it('preserves a completed Level 1 record without unlocking an unpublished next l
     completedLevels: [1],
     completed: true,
     level2Unlocked: true,
-    level2Available: false,
+    level2Available: true,
   })
   expect(state.body.data.levels.find((level: { level: number }) => level.level === 1).status).toBe('completed')
   expect(state.body.data.levels.find((level: { level: number }) => level.level === 2).status).toBe('locked')
@@ -594,7 +594,7 @@ it('rejects locked picture puzzles, validates the final answer, and records repl
   expect(final.body.data.outcome).toBe('correct')
   expect(final.body.data.state).toMatchObject({ currentIndex: 7, completed: false, level2Unlocked: false, level2Available: false })
   const completion = await acknowledgeAttemptFeedback(authorization, 'final-puzzle-right-123')
-  expect(completion.body.data.state).toMatchObject({ currentIndex: 8, completed: true, level2Unlocked: true, level2Available: false })
+  expect(completion.body.data.state).toMatchObject({ currentIndex: 8, completed: true, level2Unlocked: true, level2Available: true })
   expect(completion.body.data.state.completedAt).toBeTruthy()
   const completedStateBeforeReview = await request(app).get('/api/kg-alphabet/state')
     .set('Authorization', authorization).expect(200)

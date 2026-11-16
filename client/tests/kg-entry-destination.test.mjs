@@ -4,11 +4,12 @@ import { test } from 'node:test'
 import ts from 'typescript'
 
 const read = (path) => readFile(new URL(path, import.meta.url), 'utf8')
-const [helperSource, continuePage, authProvider, lesson] = await Promise.all([
+const [helperSource, continuePage, authProvider, lesson, homePage] = await Promise.all([
   read('../features/lessons/grades/kg/level-01/services/kg-entry-destination.ts'),
   read('../app/student/continue/page.tsx'),
   read('../components/auth/auth-provider.tsx'),
   read('../features/lessons/grades/kg/level-01/LevelExperience.tsx'),
+  read('../app/page.tsx'),
 ])
 const compiled = ts.transpileModule(helperSource, {
   compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 },
@@ -35,6 +36,8 @@ function state({
 
 test('a first eligible KG login opens available Level 1 directly', () => {
   assert.equal(kgStudentEntryDestination(state()), '/student/kg')
+  assert.match(homePage, /router\.replace\('\/student\/continue'\)/)
+  assert.doesNotMatch(homePage, /signedIn\.student\?\.grade === 0[\s\S]*?\/student\/kg\/map/)
   assert.match(continuePage, /nextKGStudentRoute\(\)/)
   assert.match(continuePage, /router\.replace\(destination\)/)
 })

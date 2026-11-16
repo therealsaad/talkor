@@ -12,9 +12,7 @@ import styles from './kg-adventure-map.module.css'
 
 const LEVEL_POSITIONS = [
   { left: 22.5, top: 34 }, { left: 42.4, top: 31.5 }, { left: 67.2, top: 34.5 },
-  { left: 86.4, top: 46.4 }, { left: 38.2, top: 53.7 }, { left: 62.5, top: 57.2 },
-  { left: 15.7, top: 66.8 }, { left: 39, top: 75.3 }, { left: 64.8, top: 78.3 },
-  { left: 89, top: 76.5 },
+  { left: 86.4, top: 46.4 }, { left: 38.2, top: 53.7 },
 ] as const
 
 type GardenStatus = 'locked' | 'available' | 'in_progress' | 'completed'
@@ -131,7 +129,7 @@ export function KGAdventureMap({
         {loading || error || !kgLevel1State ? <div className={styles.message} role={error ? 'alert' : 'status'}>
           {error ? <><span>{error}</span>{onRetry ? <button type="button" onClick={onRetry}>Try again</button> : null}</>
             : <span>{loading ? 'Loading your garden...' : 'Your class levels are not available yet. Please ask your teacher.'}</span>}
-        </div> : <ol className={styles.levels} aria-label="Ten KG learning levels">
+        </div> : <ol className={styles.levels} aria-label="Five KG learning levels">
           {levels.map((level) => {
             const Icon = level.status === 'available' || level.status === 'in_progress'
               ? Sprout : level.status === 'completed' ? Check : LockKeyhole
