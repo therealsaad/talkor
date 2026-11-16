@@ -67,3 +67,19 @@ test('summary gives p50/p95 per step and the Qwen and cache shares, ignoring oth
   const feedback = report.steps.find((s) => s.step === 'feedback')
   assert.deepEqual([feedback.count, feedback.p50, feedback.max], [2, 2, 1500])
 })
+
+test('llm timing and server allowlisted AI labels are summarized safely', async () => {
+  const timer = t.createTurnTimer(clock(0, 10, 40))
+  await timer.time('llm', async () => 'ok')
+  assert.equal(timer.finish().steps.llm, 30)
+  assert.deepEqual(t.aiTimingLabels({ provider: 'qwen', model: 'qwen3:4b-instruct', grade: 1, levelId: 'g01-l01' }),
+    { provider: 'qwen', model: 'qwen3:4b-instruct', cohort: 'class1-l1' })
+  assert.equal(t.configuredAIModel('python-qwen', { qwen: '', groq: '', openai: '' }), 'default')
+  assert.deepEqual(t.aiTimingLabels({ provider: 'unknown-student-name', model: 'secret token', grade: 11 }),
+    { provider: 'other', model: 'default', cohort: 'class10' })
+  const report = t.summarizeTurnTimings([
+    'INFO ' + JSON.stringify({ message: 'KG turn timing', phase: 'ai', llm: 20, cohort: 'kg', provider: 'qwen', model: 'qwen3' }),
+    'INFO ' + JSON.stringify({ message: 'KG turn timing', phase: 'ai', llm: 40, cohort: 'kg', provider: 'qwen', model: 'qwen3' }),
+  ])
+  assert.deepEqual(report.aiGroups, [{ cohort: 'kg', provider: 'qwen', model: 'qwen3', count: 2, p50: 20, p95: 40 }])
+})

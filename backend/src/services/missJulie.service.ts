@@ -3,6 +3,9 @@ import { Activity } from '../models/Activity'
 import { Conversation, IConversation } from '../models/Conversation'
 import { MissJulieContext } from '../providers/ai/AIProvider'
 import { getAIProvider } from '../providers/ai'
+import { env } from '../config/env'
+import { aiTimingLabels, configuredAIModel, createTurnTimer } from './kg-turn-timing'
+import { randomUUID } from 'node:crypto'
 import { ApiError } from '../utils/ApiError'
 import { ProgressService } from './progress.service'
 import { detectStudentSkills, masteryFor, mergeEvidence, nextRetryState } from './pedagogy.service'
@@ -339,9 +342,20 @@ export const MissJulieService = {
       throw ApiError.provider('FIRST_DAY_POEM_SCENE_NOT_AUTHORED')
     }
     let response: AIStructuredResponse
+    const aiRequestId = randomUUID()
+    const aiProvider = getAIProvider(studentContext)
+    const configuredProvider = process.env.TALKORA_CLASS1_QWEN_PILOT === 'true' && studentContext.grade === 1 &&
+      studentContext.levelId === 'g01-l01' ? 'qwen' : env.aiProvider
+    const labels = aiTimingLabels({ provider: aiProvider.name,
+      model: configuredAIModel(configuredProvider, { qwen: env.qwenModel, groq: env.conversationGroqModel,
+        openai: 'gpt-4o-mini' }), grade: studentContext.grade, levelId: studentContext.levelId })
+    const aiTimer = createTurnTimer()
     try {
-      response = await getAIProvider(studentContext).generate(studentContext)
+      response = await aiTimer.time('llm', () => aiProvider.generate(studentContext))
     } catch (error) {
+      const failedTiming = aiTimer.finish()
+      logger.warn('AI turn timing', { requestId: aiRequestId, phase: 'ai', ...labels,
+        llm: failedTiming.steps.llm, outcome: 'failure' })
       if (!poemActivity) throw error
       // No transcript, student name, secret or provider response is logged.
       logger.warn('Class 1 poem AI bridge failed; keeping authored scene lines', { sceneKey: poemKey })
@@ -351,6 +365,9 @@ export const MissJulieService = {
       response = guardFirstDayPoemTurn(
         poemKey, input.message, class1ExplanationLanguage(studentContext))
     }
+    const aiCompletedTiming = aiTimer.finish()
+    logger.info('AI turn timing', { requestId: aiRequestId, phase: 'ai', ...labels,
+      llm: aiCompletedTiming.steps.llm, outcome: 'success' })
     if (poemActivity) {
       response = guardFirstDayPoemTurn(
         poemKey, input.message, class1ExplanationLanguage(studentContext), response)
