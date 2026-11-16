@@ -74,6 +74,7 @@ test('llm timing and server allowlisted AI labels are summarized safely', async 
   assert.equal(timer.finish().steps.llm, 30)
   assert.deepEqual(t.aiTimingLabels({ provider: 'qwen', model: 'qwen3:4b-instruct', grade: 1, levelId: 'g01-l01' }),
     { provider: 'qwen', model: 'qwen3:4b-instruct', cohort: 'class1-l1' })
+  assert.equal(t.configuredAIModel('python', { qwen: '', groq: '', openai: '' }), 'configured-python-service')
   assert.equal(t.configuredAIModel('python-qwen', { qwen: '', groq: '', openai: '' }), 'default')
   assert.deepEqual(t.aiTimingLabels({ provider: 'unknown-student-name', model: 'secret token', grade: 11 }),
     { provider: 'other', model: 'default', cohort: 'class10' })
