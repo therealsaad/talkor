@@ -10,7 +10,7 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
 
-const STEPS = ['stt', 'feedback', 'save', 'tts', 'total']
+const STEPS = ['stt', 'feedback', 'save', 'llm', 'tts', 'total']
 const MAX_FILE_BYTES = 25 * 1024 * 1024
 const AI_TIMING_MESSAGE = 'AI turn timing'
 // Same pattern the backend uses for provider/model/cohort labels: nothing free-form reaches a report.
@@ -52,7 +52,7 @@ function readTiming(line) {
     }
     // Only retain whitelisted values. Never echo names, transcripts or IDs.
     return {
-      id: entry.submissionId, phase: entry.phase, steps,
+      ai: false, id: entry.submissionId, phase: entry.phase, steps,
       feedbackSource: entry.feedbackSource === 'qwen-8002' ? 'qwen' : 'other',
       ttsSource: entry.ttsSource === 'cache' ? 'cache' : 'other',
     }
@@ -123,12 +123,16 @@ export function analyzeKGLatency(lines, options = {}) {
     }
   }).sort((a, b) => (a.cohort + a.provider + a.model).localeCompare(b.cohort + b.provider + b.model))
   return {
-    kind: 'talkora-kg-latency-report', methodology: 'actual-backend-log-request-sum',
+    kind: 'talkora-kg-latency-report',
+    methodology: (aiSampleCount || providerAttemptCount) ? (pairs.length ? 'actual-backend-logs-with-separate-ai-provider-and-kg-request-measurements' : 'actual-backend-ai-provider-duration-only')
+      : 'actual-backend-log-request-sum',
     recordedAt: new Date().toISOString(),
     threshold: { minimumCompletedPairs: minPairs, maximumServerRequestSumP95Ms: budgetP95Ms },
     counts: {
       attemptRequests: attempts.size, audioRequests: audio.size, correlatedTurns: pairs.length,
       unmatchedAttempts: attempts.size - pairs.length, unmatchedAudio: audio.size - pairs.length,
+      aiRequests: aiSampleCount,
+      pythonProviderAttempts: providerAttemptCount,
       duplicateLogLines: duplicates, unrelatedOrInvalidLines: unrelatedLines,
     },
     serverRequestSum: requestP95,

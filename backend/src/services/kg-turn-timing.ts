@@ -19,6 +19,27 @@ const STEP_ORDER: TurnStep[] = ['stt', 'feedback', 'save', 'llm', 'tts', 'total'
 export const TURN_TIMING_MESSAGE = 'KG turn timing'
 export const DEFAULT_SLOW_TURN_MS = 2500
 
+const SAFE_LABEL = /^[a-z0-9][a-z0-9._:-]{0,79}$/i
+export function safeTimingLabel(value: unknown, fallback = 'unknown'): string {
+  return typeof value === 'string' && SAFE_LABEL.test(value) ? value : fallback
+}
+
+/** Provider/model labels are selected from fixed server configuration, never request text. */
+export function aiTimingLabels(input: { provider: string; model: string; grade: number; levelId?: string }) {
+  const provider = new Set(['qwen', 'python-qwen', 'groq', 'openai', 'mock']).has(input.provider) ? input.provider : 'other'
+  const model = safeTimingLabel(input.model, 'default')
+  const cohort = input.grade === 0 ? 'kg' : input.grade === 1
+    ? input.levelId === 'g01-l01' ? 'class1-l1' : 'class1-unspecified'
+    : `class${Math.min(10, Math.max(2, Math.trunc(input.grade)))}`
+  return { provider, model, cohort }
+}
+
+export function configuredAIModel(provider: string, config: { qwen: string; groq: string; openai: string }): string {
+  const candidate = provider === 'qwen' ? config.qwen : provider === 'groq' ? config.groq
+    : provider === 'openai' ? config.openai : provider === 'python' ? 'configured-python-service' : 'default'
+  return safeTimingLabel(candidate, 'default')
+}
+
 export function createTurnTimer(now: () => number = Date.now) {
   const startedAt = now()
   const steps: Partial<Record<TurnStep, number>> = {}
@@ -81,7 +102,8 @@ export function logTurnTiming(
 }
 
 export type StepSummary = { step: TurnStep; count: number; p50: number; p95: number; max: number }
-export type TimingReport = { turns: number; slow: number; qwenShare: number; cacheShare: number; steps: StepSummary[] }
+export type TimingReport = { turns: number; slow: number; qwenShare: number; cacheShare: number; steps: StepSummary[];
+  aiGroups: Array<{ cohort: string; provider: string; model: string; count: number; p50: number; p95: number }> }
 
 const percentile = (sorted: number[], p: number) => sorted[Math.min(sorted.length - 1, Math.max(0, Math.ceil(p * sorted.length) - 1))]
 
@@ -94,6 +116,7 @@ export function summarizeTurnTimings(lines: Iterable<string>): TimingReport {
   let qwen = 0
   let audioTurns = 0
   let cached = 0
+  const aiGroups = new Map<string, number[]>()
   for (const line of lines) {
     const start = line.indexOf('{')
     if (start < 0) continue
@@ -103,6 +126,13 @@ export function summarizeTurnTimings(lines: Iterable<string>): TimingReport {
     turns += 1
     if (entry.slow === true) slow += 1
     for (const step of STEP_ORDER) if (typeof entry[step] === 'number') values[step].push(entry[step] as number)
+    if (entry.phase === 'ai' && typeof entry.llm === 'number') {
+      const cohort = safeTimingLabel(entry.cohort, 'unknown')
+      const provider = safeTimingLabel(entry.provider, 'other')
+      const model = safeTimingLabel(entry.model, 'default')
+      const key = JSON.stringify([cohort, provider, model])
+      aiGroups.set(key, [...(aiGroups.get(key) || []), entry.llm])
+    }
     if (entry.phase === 'attempt' && typeof entry.feedbackSource === 'string') { feedbackTurns += 1; if (entry.feedbackSource === 'qwen-8002') qwen += 1 }
     if (entry.phase === 'audio' && typeof entry.ttsSource === 'string') { audioTurns += 1; if (entry.ttsSource === 'cache') cached += 1 }
   }
@@ -110,5 +140,10 @@ export function summarizeTurnTimings(lines: Iterable<string>): TimingReport {
     const sorted = [...values[step]].sort((a, b) => a - b)
     return { step, count: sorted.length, p50: percentile(sorted, 0.5), p95: percentile(sorted, 0.95), max: sorted[sorted.length - 1] }
   })
-  return { turns, slow, qwenShare: feedbackTurns ? qwen / feedbackTurns : 0, cacheShare: audioTurns ? cached / audioTurns : 0, steps }
+  const groups = [...aiGroups.entries()].map(([key, samples]) => {
+    const [cohort, provider, model] = JSON.parse(key) as [string, string, string]
+    const sorted = [...samples].sort((a, b) => a - b)
+    return { cohort, provider, model, count: sorted.length, p50: percentile(sorted, 0.5), p95: percentile(sorted, 0.95) }
+  })
+  return { turns, slow, qwenShare: feedbackTurns ? qwen / feedbackTurns : 0, cacheShare: audioTurns ? cached / audioTurns : 0, steps, aiGroups: groups }
 }

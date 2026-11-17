@@ -147,6 +147,7 @@ test('real HTTP Class 1 accepts skip then run as supported learning, only signed
   expect(resumed.body.data.conversationId).toBe(initialId)
 
   const second = await f.turn('Running', { activity: 1 })
+  expect(f.generate).not.toHaveBeenCalled()
   expect(second.aiResponse.activityComplete).toBe(true)
   expect(second.aiResponse.conversation.masteryStatus).toBe('COMPLETED_WITH_SUPPORT')
   expect(second.aiResponse.xpAwarded).toBe(0)

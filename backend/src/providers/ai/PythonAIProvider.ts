@@ -7,6 +7,8 @@ import { class1ExplanationLanguage } from './class1-language'
 import { ApiError } from '../../utils/ApiError'
 import { errorCategory } from '../../utils/error-category'
 import { lessonTeachingContextSchema } from '../../services/lesson-teaching-context'
+import { logger } from '../../utils/logger'
+import { randomUUID } from 'node:crypto'
 
 export class PythonAIProvider implements AIProvider {
   name = 'python-qwen'
@@ -14,6 +16,7 @@ export class PythonAIProvider implements AIProvider {
 
   async generate(context: MissJulieContext): Promise<AIStructuredResponse> {
     const startedAt = Date.now()
+    const requestId = randomUUID()
     const controller = new AbortController()
     // Even an OLD Python 8002 process must not keep a child waiting ten
     // seconds on a poem recitation. Only this canonical scene is bounded;
@@ -42,14 +45,6 @@ export class PythonAIProvider implements AIProvider {
     const timeout = setTimeout(() => controller.abort(), deadlineMs)
 
     try {
-      if (env.nodeEnv !== 'production') {
-        console.info('[TALKORA AI] QWEN_REQUEST', {
-          grade: context.grade,
-          levelId: context.levelId,
-          messageLength: context.studentMessage.length,
-        })
-      }
-
       const response = await fetch(
         `${baseUrl.replace(/\/$/, '')}/v1/brain/respond`,
         {
@@ -161,20 +156,13 @@ export class PythonAIProvider implements AIProvider {
         remainingSkills: brain.remainingSkills || [],
       })
 
-      if (env.nodeEnv !== 'production') {
-        console.info('[TALKORA AI] QWEN_RESPONSE', {
-          latencyMs: Date.now() - startedAt,
-          responseQuality: result.responseQuality,
-          activityComplete: result.activityComplete,
-        })
-      }
+      logger.info('AI Python request timing', { requestId, provider: 'python-qwen', model: 'configured-python-service',
+        durationMs: Math.max(0, Date.now() - startedAt), outcome: 'success' })
 
       return result
     } catch (error) {
-      console.warn(
-        '[TALKORA AI] Local Qwen unavailable.',
-        errorCategory(error),
-      )
+      logger.warn('AI Python request timing', { requestId, provider: 'python-qwen', model: 'configured-python-service',
+        durationMs: Math.max(0, Date.now() - startedAt), outcome: 'failure', errorCategory: errorCategory(error) })
 
       // Never route an unavailable Class 1 curriculum turn to an unrestricted
       // provider: it could switch syllabus or make unsupported claims.
