@@ -54,3 +54,17 @@ On the **next real school day**, independently verify PIN login again opens the 
 ### Repeat for Class 1
 
 Class 1 First Day v3 has its own staff-only curriculum staging and separate live voice acceptance runbook (`docs/class1-first-day-voice-acceptance.md`). Do not publish a draft or replace existing student attempts by running migration scripts. Verify the approved introductory media, real live Sarvam/Qwen/Azure call and teacher sign-off before changing its publication gate.
+
+## AI provider timing for Miss Julie turns (measurement only)
+
+Each time a Miss Julie turn really asks an AI provider, the backend writes one `AI turn timing` log line with a fixed set of keys: `phase`, `outcome` (`success` or `failure`), `cohort`, `provider`, `model` and `llm` (milliseconds). Turns answered without a provider call, such as guided replies and the authored finale prompt, write nothing. No name, id, transcript, prompt, model answer or error text is ever logged.
+
+`node scripts/report-kg-turn-latency.mjs --file=<log> [--min-ai-samples=20]` adds an `aiProviderLatency` block that groups these lines by cohort, provider and model. Percentiles use successful calls only, failures are counted separately, and nothing is printed below the minimum sample count. The existing KG report fields are unchanged.
+
+What a number here does and does not mean:
+
+- `llm` is how long Node waited for the provider. For Class 1 Level 1 that includes the Python brain and Ollama. It does **not** include speech-to-text, voice synthesis, the network to the browser or playback, so it is not the time a child waits.
+- `provider` and `model` name the route that was requested. The generic `qwen` route can fall back inside the provider (direct Qwen, then Python, then Groq) and the line does not say which one answered. Class 1 Level 1 never falls back, so its label (`python-qwen`, `class1-python-brain`) is exact.
+- `cohort` is derived only from the authorized student context (`kg`, `class1-l1`, `class1-other`, `class2` to `class10`, `other`), never from anything the browser sends.
+- These lines are not joined to browser turns. The browser's `?latency=1` turn id is not sent to the server for Class 1, so joining would need a client and API change.
+- This is measurement only. It does not show that anything is fast or slow enough, and it is not evidence of an improvement until before and after runs on the same devices and network exist.
