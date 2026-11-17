@@ -218,6 +218,57 @@ test('unclear finale speaks a bounded two-line Azure-ready prompt without a Qwen
   expect(await ActivityAttempt.countDocuments({ activityId: f.activities[2]._id })).toBe(0)
 })
 
+const aiTimingLines = (...spies: jest.SpyInstance[]) => spies.flatMap((spy) => spy.mock.calls)
+  .map((call) => String(call[0])).filter((line) => line.includes('"message":"AI turn timing"'))
+
+test('a normal poem turn asks the provider once and writes one sanitized success timing record', async () => {
+  const f = await fixture()
+  const log = jest.spyOn(console, 'log').mockImplementation(() => {})
+  const warn = jest.spyOn(console, 'warn').mockImplementation(() => {})
+  const result = await f.turn('The quick brown fox jumps over the lazy dog.', { activity: 1 })
+  expect(result.aiResponse.message).toContain('Listen to these two poem lines')
+  expect(f.generate).toHaveBeenCalledTimes(1)
+  const timing = aiTimingLines(log, warn)
+  expect(timing).toHaveLength(1)
+  expect(timing[0]).toContain('"outcome":"success"')
+  for (const privateValue of ['Synthetic Learner', 'quick brown fox', f.students[0]._id.toString(), f.school._id.toString()])
+    expect(timing[0]).not.toContain(privateValue)
+})
+
+test('a guided reply makes no provider call and writes no timing record', async () => {
+  const f = await fixture()
+  const log = jest.spyOn(console, 'log').mockImplementation(() => {})
+  const warn = jest.spyOn(console, 'warn').mockImplementation(() => {})
+  const result = await f.turn('Skip', { activity: 1 })
+  expect(result.aiResponse.message).toContain('Great!')
+  expect(f.generate).not.toHaveBeenCalled()
+  expect(aiTimingLines(log, warn)).toHaveLength(0)
+})
+
+test('an unclear finale makes no provider call and writes no timing record', async () => {
+  const f = await fixture()
+  const log = jest.spyOn(console, 'log').mockImplementation(() => {})
+  const warn = jest.spyOn(console, 'warn').mockImplementation(() => {})
+  await f.turn('At at.', { activity: 2 })
+  expect(f.generate).not.toHaveBeenCalled()
+  expect(aiTimingLines(log, warn)).toHaveLength(0)
+})
+
+test('a poem provider failure keeps the authored fallback and writes exactly one failure record', async () => {
+  const f = await fixture()
+  const log = jest.spyOn(console, 'log').mockImplementation(() => {})
+  const warn = jest.spyOn(console, 'warn').mockImplementation(() => {})
+  f.generate.mockRejectedValueOnce(new Error('synthetic provider failure'))
+  const result = await f.turn('I see me skip and see me run.', { activity: 1 })
+  expect(result.aiResponse.message).not.toBe('Can you say at?')
+  expect(f.generate).toHaveBeenCalledTimes(1)
+  const timing = aiTimingLines(log, warn)
+  expect(timing).toHaveLength(1)
+  expect(timing[0]).toContain('"outcome":"failure"')
+  for (const privateValue of ['Synthetic Learner', 'I see me skip', 'synthetic provider failure', f.students[0]._id.toString(), f.school._id.toString()])
+    expect(timing[0]).not.toContain(privateValue)
+})
+
 test('five short remembered poem sections finish only with support, with progress still pending audio', async () => {
   const f = await fixture()
   const supported = await f.turn('Skip\nschool\ngrin\njump\nhurray', { activity: 2 })
