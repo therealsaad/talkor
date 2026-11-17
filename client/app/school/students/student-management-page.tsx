@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState, FormEvent } from 'react'
+import React, { useEffect, useRef, useState, FormEvent } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowRight, BookOpen, ChevronLeft, ChevronRight, GraduationCap, Plus, Search, UsersRound } from 'lucide-react'
@@ -35,6 +35,7 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
   const [grade, setGrade] = useState(4)
   const [kgAlphabetPilotEnabled, setKgAlphabetPilotEnabled] = useState(false)
   const [pilotUpdating, setPilotUpdating] = useState<string | null>(null)
+  const pilotUpdateInFlight = useRef(false)
   const [className, setClassName] = useState('4A')
   const [avatarType, setAvatarType] = useState<'BOY' | 'GIRL'>('BOY')
   const [teacherId, setTeacherId] = useState('')
@@ -188,16 +189,24 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
   }
 
   async function toggleKGAlphabetPilot(student: StudentListItem) {
-    if (pilotUpdating || role !== 'SCHOOL_ADMIN' || student.grade !== 0) return
+    if (pilotUpdateInFlight.current || pilotUpdating || role !== 'SCHOOL_ADMIN' || student.grade !== 0) return
     const enabled = !student.kgAlphabetPilotEnabled
     if (!window.confirm(`${enabled ? 'Enable' : 'Disable'} ABCD Level 1 pilot for ${student.fullName}?`)) return
+    pilotUpdateInFlight.current = true
     setPilotUpdating(student.id)
     try {
-      await schoolService.setKGAlphabetPilot(student.id, enabled)
-      setStudents((rows) => rows.map((row) => row.id === student.id ? { ...row, kgAlphabetPilotEnabled: enabled } : row))
+      const saved = await schoolService.setKGAlphabetPilot(student.id, enabled)
+      if (saved.studentId !== student.id || saved.enabled !== enabled) {
+        throw new Error('The server did not confirm the requested ABCD pilot state. The displayed state was not changed.')
+      }
+      setStudents((rows) => rows.map((row) => row.id === student.id ? { ...row, kgAlphabetPilotEnabled: saved.enabled } : row))
+      await fetchStudents()
     } catch (error) {
       alert(error instanceof Error ? error.message : 'Could not update KG pilot access')
-    } finally { setPilotUpdating(null) }
+    } finally {
+      pilotUpdateInFlight.current = false
+      setPilotUpdating(null)
+    }
   }
 
   async function handleResetCode(id: string, name: string) {

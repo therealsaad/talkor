@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { ArrowLeft, Check, Headphones, LoaderCircle, Mic, Play, RotateCw, Sparkles, Volume2, VolumeX } from 'lucide-react'
 import { watchVoiceActivity } from '@/lib/voice-activity'
+import { nextKGStudentRoute } from '@/services/kg-resume-service'
 import { lessonTurnTelemetry } from '@/lib/lesson-turn-telemetry'
 import { LatencyReportButton } from '@/components/latency-report-button'
 import { parseSilenceMs } from '@/lib/silence-policy'
@@ -171,11 +172,18 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
         videoRef.current?.pause(); stopRecording(); releaseMic()
       }
     }
-    kgAlphabetService.state().then((state) => {
+    kgAlphabetService.state().then(async (state) => {
       if (!alive) return
       const letterReplayIndex = LETTERS.indexOf((replayRequest || '').toUpperCase() as typeof LETTERS[number])
       const all = replayRequest === 'all' && state.completed
       const single = letterReplayIndex >= 0 && state.currentIndex > letterReplayIndex
+      if (state.completed && !all && !single && !replayIntroRequest) {
+        try { router.replace(await nextKGStudentRoute()) }
+        catch {
+          if (alive) { setFeedback('Your progress is saved. Check your connection and try again.'); setPhase('error') }
+        }
+        return
+      }
       const initial = all ? 0 : single ? letterReplayIndex : state.currentIndex
       const introReplay = replayIntroRequest && state.introSeen
       setData(state); stateRef.current = state
@@ -207,7 +215,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       stopRecording()
       releaseMic()
     }
-  }, [replayRequest, replayIntroRequest, stopRecording, releaseMic, stopMusic, preview, previewStartIndex])
+  }, [router, replayRequest, replayIntroRequest, stopRecording, releaseMic, stopMusic, preview, previewStartIndex])
 
   const isIntro = INTRO_PHASES.has(phase)
   useEffect(() => {
@@ -476,7 +484,9 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     setSoundBlocked(false)
   }
 
-  // Best effort only: unmuted media and fullscreen normally require a real tap.
+  // Start the lesson story as soon as its authenticated intro ticket is ready.
+  // Browsers may reject autoplay/fullscreen; startVideo keeps recovery controls
+  // inside this same lesson screen.
   useEffect(() => {
     if (phase !== 'intro' || autoIntroAttemptRef.current === videoAttempt) return
     if (!preview && !kgAlphabetService.hasIntroTicket()) return
@@ -693,17 +703,26 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
     if (preview && stateRef.current) { stateRef.current = { ...stateRef.current, currentIndex: nextIndex }; setData(stateRef.current) }
     if (replayRef.current && !replayAllRef.current) { pendingResultRef.current = null; setPhase('finished'); return }
     if (nextIndex >= STEP_COUNT) {
+      if (!preview && stateRef.current?.completed !== true) {
+        setFeedback('Your completed garden progress has not been confirmed yet. Please try again.')
+        setPhase('error')
+        return
+      }
       try { await playClip('level-complete'); await playClip('celebrate') }
       catch { /* Saved completion remains available while Priya TTS recovers. */ }
-      // The child has already mastered the activities. A missing homework
-      // audio object must not erase progress or trap them in an error state.
       if (generation.current !== token) return
-      pendingResultRef.current = null; setPhase('finished')
+      pendingResultRef.current = null
+      setPhase('finished')
       try { await playClip('homework-abcd') } catch { /* printed homework remains visible */ }
       if (preview) router.replace('/school/kg-preview')
-      // The next published pilot begins immediately AFTER the spoken homework.
-      // Do not force the child back to the ten-level map or replay Level 1.
-      else if (stateRef.current?.level2Available) router.replace('/student/kg/level-2')
+      else {
+        try {
+          const destination = await nextKGStudentRoute()
+          if (generation.current === token) router.replace(destination)
+        } catch {
+          if (generation.current === token) router.replace('/student/kg/map')
+        }
+      }
       return
     }
     await beginStep(nextIndex)
@@ -852,7 +871,6 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
         {phase === 'saving-intro' ? <p className="kg-intro-saving" role="status"><LoaderCircle size={20} /> Saving your story progressâ€¦</p> : null}
         {soundBlocked && phase === 'intro-playing' ? <button type="button" className="kg-story-play" onClick={() => void unlockStorySound()}><Volume2 size={19} /> Tap for Miss Julie&apos;s sound</button> : null}
         {phase === 'intro-paused' ? <button type="button" className="kg-story-play" onClick={() => void startVideo()}><Play size={19} fill="currentColor" /> Continue full screen</button> : null}
-        {phase === 'intro' ? <p className="kg-intro-saving" role="status">Opening your fullscreen storyâ€¦</p> : null}
         {phase === 'intro-error' && !introEndedRef.current ? <button type="button" className="kg-story-play" onClick={() => { if (kgAlphabetService.hasIntroTicket()) void startVideo(); else void retryVideo() }}><Play size={19} /> Tap to allow fullscreen</button> : null}
         {phase === 'intro-error' && introEndedRef.current ? <button type="button" className="kg-story-play" onClick={() => void retryVideo()}><Check size={19} /> Save and continue</button> : null}
       </div>

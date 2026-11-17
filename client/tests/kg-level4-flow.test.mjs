@@ -55,6 +55,7 @@ test('Q–V advances on correct speech only and submits one microphone attempt',
   assert.match(microphoneFailureMessage({ name: 'NotAllowedError' }), /allow microphone access/i)
   assert.match(lesson, /onUnavailable: \(\) => \{ vadAvailable = false \}/)
   assert.match(lesson, /recorder\.onerror = \(\) => \{/)
+  assert.match(lesson, /transition\.complete[\s\S]*?router\.replace\('\/school\/kg-preview'\)/)
 })
 
 test('intro cannot be skipped or silently autoplayed, and KG Level 1 video path survives', () => {
