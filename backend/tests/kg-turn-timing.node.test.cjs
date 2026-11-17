@@ -67,3 +67,15 @@ test('summary gives p50/p95 per step and the Qwen and cache shares, ignoring oth
   const feedback = report.steps.find((s) => s.step === 'feedback')
   assert.deepEqual([feedback.count, feedback.p50, feedback.max], [2, 2, 1500])
 })
+
+test('the llm step is additive: it is timed, ordered between save and tts, and old KG entries are unchanged', async () => {
+  const timer = t.createTurnTimer(clock(0, 10, 40, 100))
+  await timer.time('llm', async () => 'ok')
+  const done = timer.finish()
+  assert.equal(done.steps.llm, 30)
+  assert.equal(t.serverTimingHeader({ stt: 5, llm: 30, tts: 9, total: 60 }), 'stt;dur=5, llm;dur=30, tts;dur=9, total;dur=60')
+  // An entry with no llm step behaves exactly as before.
+  assert.equal(t.slowestStep({ stt: 412, feedback: 3, total: 455 }), 'stt')
+  const legacy = t.summarizeTurnTimings(['INFO ' + JSON.stringify({ message: 'KG turn timing', phase: 'attempt', stt: 10, total: 12 })])
+  assert.deepEqual(legacy.steps.map((s) => s.step), ['stt', 'total'])
+})

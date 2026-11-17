@@ -10,12 +10,12 @@
  * Pure and dependency-free (the logger is passed in) so it is unit tested without a server.
  */
 
-export type TurnStep = 'stt' | 'feedback' | 'save' | 'tts' | 'total'
+export type TurnStep = 'stt' | 'feedback' | 'save' | 'llm' | 'tts' | 'total'
 export type TurnNoteValue = string | number | boolean | undefined
 export type TurnTiming = { steps: Partial<Record<TurnStep, number>>; notes: Record<string, TurnNoteValue> }
 export type TurnTimer = ReturnType<typeof createTurnTimer>
 
-const STEP_ORDER: TurnStep[] = ['stt', 'feedback', 'save', 'tts', 'total']
+const STEP_ORDER: TurnStep[] = ['stt', 'feedback', 'save', 'llm', 'tts', 'total']
 export const TURN_TIMING_MESSAGE = 'KG turn timing'
 export const DEFAULT_SLOW_TURN_MS = 2500
 
@@ -87,7 +87,7 @@ const percentile = (sorted: number[], p: number) => sorted[Math.min(sorted.lengt
 
 /** Turns raw log lines (anything else is ignored) into a per-step p50/p95/max table. */
 export function summarizeTurnTimings(lines: Iterable<string>): TimingReport {
-  const values: Record<TurnStep, number[]> = { stt: [], feedback: [], save: [], tts: [], total: [] }
+  const values: Record<TurnStep, number[]> = { stt: [], feedback: [], save: [], llm: [], tts: [], total: [] }
   let turns = 0
   let slow = 0
   let feedbackTurns = 0
