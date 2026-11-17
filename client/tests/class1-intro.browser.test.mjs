@@ -55,12 +55,14 @@ async function fixture({ resumed = false, failStart = false, blockAutoplay = fal
   await page.evaluateOnNewDocument((blockFirstPlay) => {
     window.__introMicCalls = 0
     window.__introAutoplayAttempts = 0
+    window.__introAutoplayMutedStates = []
     navigator.mediaDevices.getUserMedia = async () => { window.__introMicCalls++; throw Error('No physical microphone in this test') }
     const originalPlay = HTMLMediaElement.prototype.play
     let firstBlocked = false
     HTMLMediaElement.prototype.play = function (...args) {
       if (this.classList?.contains('class1-intro-video')) {
         window.__introAutoplayAttempts++
+        window.__introAutoplayMutedStates.push(this.muted)
         if (blockFirstPlay && !firstBlocked) {
           firstBlocked = true
           return Promise.reject(new DOMException('Synthetic browser gesture restriction', 'NotAllowedError'))
@@ -170,14 +172,15 @@ test('a browser blocking sound-on autoplay shows one-tap recovery without skippi
     await f.page.waitForSelector('.class1-intro-play-prompt button', { visible: true })
     console.log('INTRO_START_DIAGNOSTIC', JSON.stringify(f.startRequests()))
     assert.ok(f.starts() === 1, 'Expected one intro start; observed ' + f.starts() + ': ' + JSON.stringify(f.startRequests()))
-    assert.equal(await f.page.evaluate(() => window.__introAutoplayAttempts), 1)
-    assert.equal(await f.page.$eval('.class1-intro-video', v => v.paused), true)
-    assert.equal(await f.page.$eval('.class1-intro-video', v => v.muted), false)
+    assert.deepEqual(await f.page.evaluate(() => window.__introAutoplayMutedStates), [false, true])
+    assert.equal(await f.page.$eval('.class1-intro-video', v => v.paused), false)
+    assert.equal(await f.page.$eval('.class1-intro-video', v => v.muted), true)
     assert.equal(await f.page.evaluate(() => window.__introMicCalls), 0)
     assert.equal(f.calls.some(p => p.endsWith('/intro/complete')), false)
 
     await f.page.click('.class1-intro-play-prompt button')
     await f.page.waitForFunction(() => document.querySelector('.class1-intro-video')?.currentTime > 0.3)
+    assert.deepEqual(await f.page.evaluate(() => window.__introAutoplayMutedStates), [false, true, false])
     assert.equal(await f.page.$eval('.class1-intro-video', v => v.paused), false)
     assert.equal(await f.page.$eval('.class1-intro-video', v => v.muted), false)
     assert.equal(await f.page.$('.class1-intro-play-prompt'), null)
