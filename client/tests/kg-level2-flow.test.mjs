@@ -14,6 +14,9 @@ const root = new URL('../', import.meta.url)
 const read = (path) => readFile(new URL(path, root), 'utf8')
 const intro = await read('features/lessons/grades/kg/level-02/PreviewIntro.tsx')
 const activity = await read('features/lessons/grades/kg/level-02/LevelExperience.tsx')
+const studentExperience = await read('features/lessons/grades/kg/level-02/StudentExperience.tsx')
+const completedReview = await read('features/lessons/grades/kg/review/CompletedLevelReview.tsx')
+const level2World = await read('features/lessons/grades/kg/level-02/Level2JungleWorld.tsx')
 const level2Styles = await read('features/lessons/grades/kg/level-02/level-02.css')
 const service = await read('features/lessons/grades/kg/level-02/services/kg-level2-preview-service.ts')
 const introRoute = await read('app/school/kg-preview/level-2/page.tsx')
@@ -39,9 +42,13 @@ test('Level 2 uses the verified E–J video and remains a student-locked draft',
   assert.match(studentRoute, /level=\{1\}/)
 })
 
-test('intro playback starts automatically when permitted, resists seeking, and only completes after genuine viewing', () => {
+test('intro attempts immediate playback and keeps browser-blocked recovery inside the video screen', () => {
   assert.match(intro, /useEffect\(\(\) => \{\s*void startVideo\(\)\s*\}, \[startVideo, videoAttempt\]\)/)
+  assert.doesNotMatch(intro, /Start Learning/)
   assert.match(intro, /onClick=\{\(\) => void startVideo\(\)\}/)
+  assert.match(intro, /Tap to play with sound/)
+  assert.match(intro, /video\.muted = false/)
+  assert.match(intro, /video\.volume = 1/)
   assert.match(intro, /requestFullscreen/)
   assert.match(intro, /onSeeking=/)
   assert.match(intro, /onRateChange=/)
@@ -61,7 +68,8 @@ test('Level 2 staff routes use read-only rehearsal while the canonical runtime k
   assert.match(activityRoute, /CurriculumExplorerPage/)
   assert.doesNotMatch(activityRoute, /requestKGMicrophone|MediaRecorder|<Level\d?Experience/)
   assert.match(activityRoute, /initialLevel=\{2\}/)
-  assert.match(activity, /useState<Level2Letter>\('E'\)/)
+  assert.match(activity, /studentStartLetter = 'E'/)
+  assert.match(activity, /LEVEL2_LETTERS\.includes\(studentStartLetter as Level2Letter\)/)
   assert.match(dashboardMap, /dashboardHref[\s\S]*?2: '\/school\/kg-preview\/level-2'/)
   assert.notEqual(LEVEL2_INTRO_COMPLETED_KEY, 'talkora:kg-level3-intro-completed')
   assert.doesNotMatch(activity, /LEVEL3_LETTERS|kg-level3-preview|K–P/)
@@ -69,14 +77,22 @@ test('Level 2 staff routes use read-only rehearsal while the canonical runtime k
 
 test('Level 2 displays the confirmed letter-word-picture mappings', async () => {
   for (const [letter, word] of Object.entries({ E: 'elephant', F: 'fish', G: 'goat', H: 'hat', I: 'igloo', J: 'jam' })) {
-    assert.match(activity, new RegExp(`${letter}: '/kg/pictures/level-2/${word}\\.svg'`))
-    await access(new URL(`../public/kg/pictures/level-2/${word}.svg`, import.meta.url))
+    const path = `/kg/pictures/level-2/${word}.jpg`
+    assert.match(activity, new RegExp(`${letter}: '${path.replaceAll('.', '\\.').replaceAll('/', '\\/')}'`))
+    assert.match(studentExperience, new RegExp(`${letter}: '${path.replaceAll('.', '\\.').replaceAll('/', '\\/')}'`))
+    assert.match(completedReview, new RegExp(`${letter}: '${path.replaceAll('.', '\\.').replaceAll('/', '\\/')}'`))
+    const image = await readFile(new URL(`../public/kg/pictures/level-2/${word}.jpg`, import.meta.url))
+    assert.deepEqual(image.subarray(0, 3), Buffer.from([0xff, 0xd8, 0xff]))
+    await access(new URL(`../public/kg/pictures/level-2/${word}.jpg`, import.meta.url))
   }
+  assert.match(activity, /<Level2JungleWorld \/>/)
+  assert.match(studentExperience, /<Level2JungleWorld \/>/)
+  assert.match(completedReview, /level === 2 \? <Level2JungleWorld \/> : <KindergartenWorld \/>/)
   assert.match(activity, /<LetterWordPicture/)
   assert.doesNotMatch(activity, /letter\.toLowerCase|is for/)
 })
 
-test('Level 2 E–J share bounded layout rules and complete SVG assets', async () => {
+test('Level 2 E–J retain bounded image layout and original SVG assets', async () => {
   assert.match(level2Styles, /grid-template-columns: minmax\(112px, 0\.48fr\) minmax\(190px, 0\.9fr\) minmax\(240px, 1fr\)/)
   assert.match(level2Styles, /white-space: nowrap/)
   assert.match(level2Styles, /object-fit: contain/)
@@ -86,6 +102,16 @@ test('Level 2 E–J share bounded layout rules and complete SVG assets', async (
     assert.match(svg, /viewBox="0 0 (240 180|320 240)"/)
     assert.doesNotMatch(svg, /<clipPath|clip-path:/)
   }
+})
+
+test('the Level 2-only backdrop adds gentle decorations and respects reduced motion', () => {
+  assert.match(level2World, /kg-level2-jungle__float/)
+  assert.match(level2World, /kg-level2-jungle__star/)
+  assert.match(level2World, /kg-level2-jungle__sparkle/)
+  assert.match(level2Styles, /\.kg-level2-visuals \.kg-level2-jungle__float/)
+  assert.match(level2Styles, /\.kg-level2-visuals \.kg-level2-jungle__star/)
+  assert.match(level2Styles, /@media \(prefers-reduced-motion: reduce\)/)
+  assert.match(level2Styles, /\.kg-level2-visuals \.kg-level2-jungle \*/)
 })
 
 test('only correct E–J attempts advance; incorrect and unclear responses retry', () => {

@@ -4,6 +4,7 @@ import type { Letter } from '../level3-flow'
 
 export interface Level3AttemptResult {
   outcome: 'correct' | 'incorrect' | 'unclear'
+  advanced?: boolean
 }
 type FeedbackAudioId = 'great' | 'try-again' | 'repeat'
 const narrationBlobs = new Map<string, Promise<Blob>>()
@@ -59,25 +60,31 @@ function playBlob(blob: Blob, audio: HTMLAudioElement, signal?: AbortSignal): Pr
 }
 
 export const kgLevel3PreviewService = {
-  async playIntroduction(letter: Letter, audio: HTMLAudioElement, signal?: AbortSignal): Promise<void> {
+  async playIntroduction(letter: Letter, audio: HTMLAudioElement, signal?: AbortSignal, studentMode = false): Promise<void> {
     try {
       signal?.throwIfAborted()
       const suffix = letter.toLowerCase()
-      const [introduction, prompt] = await Promise.all([
-        loadNarration(`letter-${suffix}`, signal),
-        loadNarration(`prompt-${suffix}`, signal),
-      ])
-      await playBlob(introduction, audio, signal)
-      await playBlob(prompt, audio, signal)
+      if (studentMode) {
+        await kgAlphabetService.playStudentNarration(3, `letter-${suffix}`, audio, signal)
+        await kgAlphabetService.playStudentNarration(3, `prompt-${suffix}`, audio, signal)
+      } else {
+        const [introduction, prompt] = await Promise.all([
+          loadNarration(`letter-${suffix}`, signal),
+          loadNarration(`prompt-${suffix}`, signal),
+        ])
+        await playBlob(introduction, audio, signal)
+        await playBlob(prompt, audio, signal)
+      }
     } catch (error) {
       if (signal?.aborted) throw error
       throw new Error('Miss Julie narration playback failed', { cause: error })
     }
   },
 
-  async playFeedback(id: FeedbackAudioId, audio: HTMLAudioElement, signal?: AbortSignal): Promise<void> {
+  async playFeedback(id: FeedbackAudioId, audio: HTMLAudioElement, signal?: AbortSignal, studentMode = false): Promise<void> {
     try {
-      await kgAlphabetService.previewPlay(id, audio, requestSignal(signal))
+      if (studentMode) await kgAlphabetService.play(id, audio, undefined, requestSignal(signal))
+      else await kgAlphabetService.previewPlay(id, audio, requestSignal(signal))
     } catch (error) {
       if (signal?.aborted) throw error
       throw new Error('Miss Julie feedback playback failed', { cause: error })
@@ -89,8 +96,17 @@ export const kgLevel3PreviewService = {
     audio?: Blob
     durationMs: number
     noSpeech?: boolean
+    studentMode?: boolean
+    replay?: boolean
     signal?: AbortSignal
   }): Promise<Level3AttemptResult> {
+    if (input.studentMode) {
+      const result = await kgAlphabetService.submitStudentLetterAttempt({
+        level: 3, letter: input.letter, audio: input.audio, durationMs: input.durationMs,
+        noSpeech: input.noSpeech, replay: input.replay, signal: input.signal,
+      })
+      return { outcome: result.outcome as Level3AttemptResult['outcome'], advanced: result.advanced }
+    }
     let audioBase64: string | undefined
     if (input.audio) {
       audioBase64 = await new Promise<string>((resolve, reject) => {

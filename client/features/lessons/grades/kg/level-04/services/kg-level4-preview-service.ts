@@ -50,21 +50,31 @@ function playBlob(blob: Blob, audio: HTMLAudioElement, signal?: AbortSignal): Pr
 }
 
 export const kgLevel4PreviewService = {
-  async playIntroduction(letter: Level4Letter, audio: HTMLAudioElement, signal?: AbortSignal) {
+  async playIntroduction(letter: Level4Letter, audio: HTMLAudioElement, signal?: AbortSignal, studentMode = false) {
     const suffix = letter.toLowerCase() as Lowercase<Level4Letter>
     try {
       for (const id of [`letter-${suffix}`, `word-${suffix}`, `prompt-${suffix}`] as NarrationId[]) {
-        await playBlob(await loadNarration(id, signal), audio, signal)
+        if (studentMode) await kgAlphabetService.playStudentNarration(4, id, audio, signal)
+        else await playBlob(await loadNarration(id, signal), audio, signal)
       }
     } catch (error) {
       if (signal?.aborted) throw error
       throw new Error('Miss Julie narration playback failed', { cause: error })
     }
   },
-  playFeedback(id: FeedbackAudioId, audio: HTMLAudioElement, signal?: AbortSignal) {
-    return kgAlphabetService.previewPlay(id, audio, requestSignal(signal))
+  playFeedback(id: FeedbackAudioId, audio: HTMLAudioElement, signal?: AbortSignal, studentMode = false) {
+    return studentMode
+      ? kgAlphabetService.play(id, audio, undefined, requestSignal(signal))
+      : kgAlphabetService.previewPlay(id, audio, requestSignal(signal))
   },
-  async submitAttempt(input: { letter: Level4Letter; audio?: Blob; durationMs: number; noSpeech?: boolean; signal?: AbortSignal }) {
+  async submitAttempt(input: { letter: Level4Letter; audio?: Blob; durationMs: number; noSpeech?: boolean; studentMode?: boolean; replay?: boolean; signal?: AbortSignal }) {
+    if (input.studentMode) {
+      const result = await kgAlphabetService.submitStudentLetterAttempt({
+        level: 4, letter: input.letter, audio: input.audio, durationMs: input.durationMs,
+        noSpeech: input.noSpeech, replay: input.replay, signal: input.signal,
+      })
+      return { outcome: result.outcome as 'correct' | 'incorrect' | 'unclear', advanced: result.advanced }
+    }
     let audioBase64: string | undefined
     if (input.audio) {
       audioBase64 = await new Promise<string>((resolve, reject) => {
