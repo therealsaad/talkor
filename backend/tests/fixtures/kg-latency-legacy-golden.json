@@ -1,0 +1,90 @@
+{
+  "lines": [
+    "2026-11-03T08:00:00Z INFO {\"level\":\"info\",\"time\":\"2026-11-03T08:00:00Z\",\"message\":\"KG turn timing\",\"submissionId\":\"legacy-submission-1\",\"phase\":\"attempt\",\"stt\":900,\"feedback\":30,\"save\":20,\"total\":1000,\"feedbackSource\":\"guided\"}",
+    "2026-11-03T08:00:00Z INFO {\"level\":\"info\",\"time\":\"2026-11-03T08:00:00Z\",\"message\":\"KG turn timing\",\"submissionId\":\"legacy-submission-1\",\"phase\":\"audio\",\"tts\":300,\"total\":350,\"ttsSource\":\"azure\"}",
+    "2026-11-03T08:00:00Z INFO {\"level\":\"info\",\"time\":\"2026-11-03T08:00:00Z\",\"message\":\"KG turn timing\",\"submissionId\":\"legacy-submission-2\",\"phase\":\"attempt\",\"stt\":1200,\"feedback\":500,\"save\":25,\"total\":2000,\"feedbackSource\":\"qwen-8002\"}",
+    "2026-11-03T08:00:00Z INFO {\"level\":\"info\",\"time\":\"2026-11-03T08:00:00Z\",\"message\":\"KG turn timing\",\"submissionId\":\"legacy-submission-2\",\"phase\":\"audio\",\"tts\":450,\"total\":500,\"ttsSource\":\"cache\"}",
+    "2026-11-03T08:00:00Z INFO {\"level\":\"info\",\"time\":\"2026-11-03T08:00:00Z\",\"message\":\"KG turn timing\",\"submissionId\":\"legacy-submission-2\",\"phase\":\"audio\",\"tts\":7000,\"total\":9000,\"ttsSource\":\"azure\"}",
+    "2026-11-03T08:00:00Z INFO {\"level\":\"info\",\"time\":\"2026-11-03T08:00:00Z\",\"message\":\"KG turn timing\",\"submissionId\":\"legacy-submission-3\",\"phase\":\"attempt\",\"stt\":800,\"feedback\":10,\"save\":15,\"total\":900,\"feedbackSource\":\"guided\"}",
+    "2026-11-03T08:00:00Z INFO {\"level\":\"info\",\"time\":\"2026-11-03T08:00:00Z\",\"message\":\"KG turn timing\",\"submissionId\":\"legacy-submission-3\",\"phase\":\"audio\",\"tts\":280,\"total\":320,\"ttsSource\":\"cache\"}",
+    "2026-11-03T08:00:00Z INFO {\"level\":\"info\",\"time\":\"2026-11-03T08:00:00Z\",\"message\":\"KG turn timing\",\"submissionId\":\"legacy-submission-4\",\"phase\":\"attempt\",\"stt\":1500,\"feedback\":700,\"save\":30,\"total\":2400,\"feedbackSource\":\"qwen-8002\"}",
+    "2026-11-03T08:00:00Z INFO {\"level\":\"info\",\"time\":\"2026-11-03T08:00:00Z\",\"message\":\"KG turn timing\",\"submissionId\":\"legacy-submission-4\",\"phase\":\"audio\",\"tts\":600,\"total\":700,\"ttsSource\":\"azure\"}",
+    "2026-11-03T08:00:00Z INFO {\"level\":\"info\",\"time\":\"2026-11-03T08:00:00Z\",\"message\":\"KG turn timing\",\"submissionId\":\"legacy-submission-5\",\"phase\":\"attempt\",\"stt\":500,\"total\":700}",
+    "2026-11-03T08:00:00Z INFO {\"level\":\"info\",\"time\":\"2026-11-03T08:00:00Z\",\"message\":\"KG turn timing\",\"submissionId\":\"legacy-submission-6\",\"phase\":\"audio\",\"tts\":300,\"total\":340}",
+    "{\"message\":\"KG turn timing\",\"phase\":\"attempt\",\"submissionId\":\"x\",\"total\":0}",
+    "{\"message\":\"OTHER TYPE\",\"transcript\":\"SENSITIVE\"}",
+    "not json at all"
+  ],
+  "options": {
+    "minPairs": 3,
+    "budgetP95Ms": 4000
+  },
+  "report": {
+    "kind": "talkora-kg-latency-report",
+    "methodology": "actual-backend-log-request-sum",
+    "threshold": {
+      "minimumCompletedPairs": 3,
+      "maximumServerRequestSumP95Ms": 4000
+    },
+    "counts": {
+      "attemptRequests": 5,
+      "audioRequests": 5,
+      "correlatedTurns": 4,
+      "unmatchedAttempts": 1,
+      "unmatchedAudio": 1,
+      "duplicateLogLines": 1,
+      "unrelatedOrInvalidLines": 3
+    },
+    "serverRequestSum": {
+      "count": 4,
+      "p50Ms": 1350,
+      "p95Ms": 3100,
+      "maxMs": 3100
+    },
+    "stepMeasurements": {
+      "stt": {
+        "count": 5,
+        "p50Ms": 900,
+        "p95Ms": 1500,
+        "maxMs": 1500
+      },
+      "feedback": {
+        "count": 4,
+        "p50Ms": 30,
+        "p95Ms": 700,
+        "maxMs": 700
+      },
+      "save": {
+        "count": 4,
+        "p50Ms": 20,
+        "p95Ms": 30,
+        "maxMs": 30
+      },
+      "tts": {
+        "count": 5,
+        "p50Ms": 300,
+        "p95Ms": 600,
+        "maxMs": 600
+      },
+      "total": {
+        "count": 10,
+        "p50Ms": 700,
+        "p95Ms": 2400,
+        "maxMs": 2400
+      }
+    },
+    "feedback": {
+      "qwenAttempts": 2,
+      "totalAttempts": 5
+    },
+    "voice": {
+      "cachedAudioRequests": 2,
+      "totalAudioRequests": 5
+    },
+    "gate": "PASS_SERVER_BUDGET",
+    "deviceMicrophone": "NOT_VERIFIED_BY_SERVER_LOGS",
+    "audibleSpeaker": "NOT_VERIFIED_BY_SERVER_LOGS",
+    "nextDayPinResume": "NOT_VERIFIED_BY_SERVER_LOGS",
+    "note": "This is attempt HTTP + audio HTTP server timing, not real mouth-to-ear latency; verify browser playback and pauses separately."
+  }
+}
