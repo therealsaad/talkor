@@ -2,7 +2,7 @@ import { Types } from 'mongoose'
 import { Activity } from '../models/Activity'
 import { Conversation, IConversation } from '../models/Conversation'
 import { MissJulieContext } from '../providers/ai/AIProvider'
-import { getAIProvider } from '../providers/ai'
+import { generateWithTiming } from './ai-turn-timing'
 import { ApiError } from '../utils/ApiError'
 import { ProgressService } from './progress.service'
 import { detectStudentSkills, masteryFor, mergeEvidence, nextRetryState } from './pedagogy.service'
@@ -372,7 +372,7 @@ export const MissJulieService = {
       response = guardFirstDayPoemTurn(poemKey, input.message, class1ExplanationLanguage(studentContext))
     } else {
       try {
-        response = await getAIProvider(studentContext).generate(studentContext)
+        response = await generateWithTiming(studentContext)
       } catch (error) {
         if (!poemActivity) throw error
         logger.warn('Class 1 poem AI bridge failed; keeping authored scene lines', { sceneKey: poemKey })
