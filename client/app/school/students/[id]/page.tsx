@@ -26,6 +26,7 @@ import { gradeLabel } from '@/lib/grade-label'
 import { Breadcrumbs } from '@/components/portal/breadcrumbs'
 import { StatusBadge } from '@/components/portal/status-badge'
 import { MetricCard } from '@/components/portal/metric-card'
+import '../students.css'
 
 const cardStyle: React.CSSProperties = {
   background: '#ffffff',
@@ -175,6 +176,7 @@ export default function StudentDetailPage() {
       title={student.fullName}
       subtitle={`${gradeLabel(student.grade)}${student.className ? ` · Class ${student.className}` : ''} · Roll No. ${student.rollNumber}`}
     >
+      <div className="school-student-profile">
       <Breadcrumbs
         items={[
           { label: 'Students', href: '/school/students' },
@@ -184,6 +186,7 @@ export default function StudentDetailPage() {
 
       {/* Action Bar */}
       <div
+        className="school-student-profile__toolbar"
         style={{
           display: 'flex',
           justifyContent: 'space-between',
@@ -194,6 +197,7 @@ export default function StudentDetailPage() {
         }}
       >
         <Link
+          className="school-student-profile__back"
           href="/school/students"
           style={{
             display: 'inline-flex',
@@ -210,6 +214,7 @@ export default function StudentDetailPage() {
 
         <div style={{ display: 'flex', gap: 10 }}>
           <Link
+            className="school-student-profile__action"
             href={`/school/students/${encodeURIComponent(id)}/report`}
             style={{
               display: 'inline-flex',
@@ -229,6 +234,7 @@ export default function StudentDetailPage() {
             Printable parent / teacher report
           </Link>
           <Link
+            className="school-student-profile__action school-student-profile__action--primary"
             href={`/school/classes`}
             style={{
               display: 'inline-flex',
@@ -251,6 +257,7 @@ export default function StudentDetailPage() {
 
       {/* Student Profile Header Card */}
       <section
+        className="school-student-profile__hero"
         style={{
           ...cardStyle,
           display: 'flex',
@@ -261,8 +268,9 @@ export default function StudentDetailPage() {
           flexWrap: 'wrap',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18, minWidth: 260 }}>
+        <div className="school-student-profile__identity" style={{ display: 'flex', alignItems: 'center', gap: 18, minWidth: 260 }}>
           <div
+            className="school-student-profile__avatar"
             style={{
               position: 'relative',
               width: 72,
@@ -276,18 +284,18 @@ export default function StudentDetailPage() {
           >
             <Image src={learnerAvatar(student.avatarType)} alt="" fill sizes="72px" style={{ objectFit: 'cover' }} />
           </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <h2 style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#0f172a' }}>{student.fullName}</h2>
+          <div className="school-student-profile__identity-copy">
+            <div className="school-student-profile__name-line" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <h2 className="school-student-profile__name" style={{ margin: 0, fontSize: 22, fontWeight: 800, color: '#0f172a' }}>{student.fullName}</h2>
               <StatusBadge status={student.status === 'active' ? 'Active' : 'Inactive'} size="md" />
             </div>
-            <p style={{ margin: '6px 0 0', color: '#64748b', fontSize: 13 }}>
+            <p className="school-student-profile__meta" style={{ margin: '6px 0 0', color: '#64748b', fontSize: 13 }}>
               {gradeLabel(student.grade)} {student.className ? `· Section ${student.className}` : ''} · Roll No. {student.rollNumber}
             </p>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+        <div className="school-student-profile__health" style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           <StatusBadge
             status={attempts.length ? (progress.accuracy >= 70 ? 'On Track' : 'Needs Attention') : 'Awaiting Activity'}
             variant={attempts.length ? (progress.accuracy >= 70 ? 'on-track' : 'needs-support') : 'draft'}
@@ -298,6 +306,7 @@ export default function StudentDetailPage() {
 
       {/* KPI Overview Metrics */}
       <div
+        className="school-student-profile__metrics"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
@@ -354,16 +363,17 @@ export default function StudentDetailPage() {
       </div>
 
       {/* Learning Progress Section */}
-      <section style={{ ...cardStyle, marginBottom: 24 }}>
-        <h3 style={{ margin: '0 0 10px', fontSize: 17, fontWeight: 800, color: '#0f172a' }}>
+      <section className="school-student-profile__section school-student-profile__progress" style={{ ...cardStyle, marginBottom: 24 }}>
+        <h3 className="school-student-profile__section-title" style={{ margin: '0 0 10px', fontSize: 17, fontWeight: 800, color: '#0f172a' }}>
           Learning Progress & Activity Summary
         </h3>
-        <p style={{ margin: '0 0 16px', color: '#64748b', fontSize: 13 }}>
+        <p className="school-student-profile__section-caption" style={{ margin: '0 0 16px', color: '#64748b', fontSize: 13 }}>
           {progress.completedActivities ?? 0} individual activities completed · {progress.completedLessons ?? 0} lessons completed
         </p>
 
-        <div style={{ height: 10, background: '#f1f5f9', borderRadius: 999, overflow: 'hidden', maxWidth: 480 }}>
+        <div className="school-student-profile__progress-track" style={{ height: 10, background: '#f1f5f9', borderRadius: 999, overflow: 'hidden', maxWidth: 480 }}>
           <div
+            className="school-student-profile__progress-fill"
             style={{
               height: '100%',
               width: progress.totalLevels
@@ -384,7 +394,7 @@ export default function StudentDetailPage() {
       </section>
 
       {/* Home Practice / Audio Reflection Section */}
-      <section style={{ ...cardStyle, marginBottom: 24 }}>
+      <section className="school-student-profile__section school-student-profile__practice" style={{ ...cardStyle, marginBottom: 24 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
           <Mic size={18} color="#4f46e5" />
           <h3 style={{ margin: 0, fontSize: 17, fontWeight: 800, color: '#0f172a' }}>
@@ -470,12 +480,12 @@ export default function StudentDetailPage() {
       </section>
 
       {/* Recent Learning Attempts Table */}
-      <section style={cardStyle}>
+      <section className="school-student-profile__section school-student-profile__attempts" style={cardStyle}>
         <div style={{ marginBottom: 16 }}>
-          <h3 style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 800, color: '#0f172a' }}>
+          <h3 className="school-student-profile__section-title" style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 800, color: '#0f172a' }}>
             Recent Learning Attempts
           </h3>
-          <p style={{ margin: 0, color: '#64748b', fontSize: 13 }}>
+          <p className="school-student-profile__section-caption" style={{ margin: 0, color: '#64748b', fontSize: 13 }}>
             Verified attempts recorded by the Talkora backend evaluation engine.
           </p>
         </div>
@@ -494,8 +504,8 @@ export default function StudentDetailPage() {
             No activity attempts have been recorded for this student yet.
           </div>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
+          <div className="school-student-profile__attempts-scroll" style={{ overflowX: 'auto' }}>
+            <table className="school-student-profile__attempts-table" style={{ width: '100%', borderCollapse: 'collapse', minWidth: 640 }}>
               <thead>
                 <tr style={{ textAlign: 'left', color: '#64748b', borderBottom: '2px solid #e2e8f0', fontSize: 12 }}>
                   <th style={{ padding: '12px 14px' }}>Learner Response</th>
@@ -547,6 +557,7 @@ export default function StudentDetailPage() {
           </div>
         )}
       </section>
+      </div>
     </SchoolShell>
   )
 }

@@ -68,6 +68,7 @@ export function MetricCard({
 
   const content = (
     <div
+      className="portal-metric-card"
       style={{
         background: '#ffffff',
         border: '1px solid #e2e8f0',
@@ -86,6 +87,7 @@ export function MetricCard({
     >
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         <span
+          className="portal-metric-label"
           style={{
             fontSize: 12,
             fontWeight: 700,
@@ -98,6 +100,7 @@ export function MetricCard({
         </span>
         {Icon ? (
           <div
+            className="portal-metric-icon"
             style={{
               width: 36,
               height: 36,
@@ -129,6 +132,7 @@ export function MetricCard({
           />
         ) : (
           <span
+            className="portal-metric-value"
             style={{
               fontSize: 32,
               fontWeight: 850,
@@ -157,14 +161,14 @@ export function MetricCard({
       </div>
 
       {subtext ? (
-        <span style={{ fontSize: 12, color: '#64748b', lineHeight: 1.4 }}>{subtext}</span>
+        <span className="portal-metric-subtext" style={{ fontSize: 12, color: '#64748b', lineHeight: 1.4 }}>{subtext}</span>
       ) : null}
     </div>
   )
 
   if (href) {
     return (
-      <Link href={href} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
+      <Link className="portal-metric-link" href={href} style={{ textDecoration: 'none', color: 'inherit', display: 'block' }}>
         {content}
       </Link>
     )

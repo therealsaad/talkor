@@ -897,3 +897,821 @@
         width: 100%;
     }
 }
+
+    .educator-shell {
+        --ed-navy: #10172f;
+        --ed-ink: #18223b;
+        --ed-muted: #69758e;
+        --ed-line: #e7eaf2;
+        --ed-violet: #7259d8;
+        background:
+            radial-gradient(ellipse at 86% 0%, rgba(106, 91, 220, .08), transparent 34rem),
+            radial-gradient(ellipse at 60% 48%, rgba(42, 164, 196, .045), transparent 32rem),
+            #f6f7fb;
+        color: var(--ed-ink);
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .educator-sidebar {
+        background:
+            radial-gradient(ellipse at 8% 0%, rgba(118, 93, 220, .24), transparent 19rem),
+            linear-gradient(180deg, #121a35 0%, #11182e 60%, #151b34 100%);
+        border-right: 1px solid rgba(255, 255, 255, .07);
+        box-shadow: 12px 0 40px rgba(20, 28, 57, .08);
+        padding: 26px 17px;
+    }
+
+    .educator-sidebar nav {
+        gap: 6px;
+    }
+
+    .educator-sidebar nav a {
+        border: 1px solid transparent;
+        border-radius: 12px;
+        gap: 13px;
+        min-height: 46px;
+        transition: color .18s ease, background .18s ease, border-color .18s ease, transform .18s ease;
+    }
+
+    .educator-sidebar nav a svg {
+        color: #8f9bb9;
+        flex: 0 0 18px;
+        transition: color .18s ease, transform .18s ease;
+        width: 18px;
+    }
+
+    .educator-sidebar nav a:hover {
+        background: rgba(255, 255, 255, .065);
+        border-color: rgba(255, 255, 255, .055);
+        color: #fff;
+        transform: translateX(2px);
+    }
+
+    .educator-sidebar nav a:hover svg {
+        color: #c9c1ff;
+        transform: scale(1.06);
+    }
+
+    .educator-sidebar nav a.active {
+        background: linear-gradient(110deg, rgba(116, 94, 222, .27), rgba(75, 135, 205, .13));
+        border-color: rgba(190, 181, 255, .17);
+        box-shadow: inset 0 1px 0 rgba(255, 255, 255, .055);
+        color: #fff;
+    }
+
+    .educator-sidebar nav a.active svg {
+        color: #c9c0ff;
+    }
+
+    .educator-sidebar nav a.active:before {
+        background: linear-gradient(180deg, #a899ff, #65c6e8);
+    }
+
+    .educator-ai-launch {
+        background: linear-gradient(125deg, #7059cf, #4a75c8);
+        box-shadow: 0 10px 24px rgba(82, 86, 185, .2), inset 0 1px 0 rgba(255, 255, 255, .18);
+        transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+    }
+
+    .educator-ai-launch:hover {
+        box-shadow: 0 14px 28px rgba(82, 86, 185, .28), inset 0 1px 0 rgba(255, 255, 255, .2);
+        filter: saturate(1.08);
+        transform: translateY(-2px);
+    }
+
+    .educator-ai-launch svg {
+        transition: transform .2s ease;
+    }
+
+    .educator-ai-launch:hover svg {
+        transform: rotate(-8deg) scale(1.06);
+    }
+
+    .educator-account {
+        border-color: rgba(255, 255, 255, .09);
+    }
+
+    .educator-account>span,
+    .educator-user>span {
+        background: linear-gradient(145deg, #e8eaff, #d9e8ff);
+        box-shadow: inset 0 0 0 1px rgba(98, 102, 190, .08);
+    }
+
+    .educator-account button {
+        align-items: center;
+        border-radius: 9px;
+        cursor: pointer;
+        display: inline-flex;
+        justify-content: center;
+        min-height: 34px;
+        min-width: 34px;
+        transition: background .18s ease, color .18s ease;
+    }
+
+    .educator-account button:hover {
+        background: rgba(255, 255, 255, .08);
+        color: #fff;
+    }
+
+    .educator-main {
+        background: transparent;
+    }
+
+    .educator-topbar {
+        background: rgba(255, 255, 255, .82);
+        -webkit-backdrop-filter: blur(14px);
+        backdrop-filter: blur(14px);
+        border-color: rgba(225, 229, 239, .88);
+        box-shadow: 0 4px 18px rgba(31, 43, 82, .025);
+    }
+
+    .educator-search {
+        background: rgba(245, 247, 251, .9);
+        border-color: #e7eaf2;
+        border-radius: 12px;
+        transition: color .18s ease, background .18s ease, border-color .18s ease, box-shadow .18s ease;
+    }
+
+    .educator-search:hover,
+    .educator-search:focus-visible {
+        background: #fff;
+        border-color: #c4b8ff;
+        box-shadow: 0 0 0 3px rgba(119, 96, 220, .1);
+        color: #5543b1;
+        outline: none;
+    }
+
+    .educator-user>span {
+        border-radius: 12px;
+        height: 38px;
+        width: 38px;
+    }
+
+    .educator-workspace {
+        padding-top: 32px;
+    }
+
+    .educator-page-head {
+        margin-bottom: 25px;
+    }
+
+    .educator-page-head small {
+        color: #747d95;
+        letter-spacing: .11em;
+    }
+
+    .educator-page-head h1 {
+        color: #17213a;
+        font-size: clamp(27px, 2.45vw, 35px);
+        font-weight: 760;
+        letter-spacing: -.045em;
+        line-height: 1.16;
+        margin-top: 7px;
+    }
+
+    .educator-page-head p {
+        color: #6f7890;
+        font-size: 13px;
+        line-height: 1.6;
+        margin-top: 6px;
+        max-width: 720px;
+    }
+
+    .educator-ai-mobile,
+    .educator-menu,
+    .educator-logo>button,
+    .educator-ai-panel header button,
+    .educator-ai-input button {
+        cursor: pointer;
+    }
+
+    .educator-ai-mobile,
+    .educator-menu,
+    .educator-logo>button {
+        transition: background .18s ease, color .18s ease, transform .18s ease;
+    }
+
+    .educator-ai-mobile:hover {
+        background: #e7e0ff;
+        transform: translateY(-1px);
+    }
+
+    .educator-menu:hover,
+    .educator-logo>button:hover {
+        color: #c9c0ff;
+    }
+
+    .educator-scrim {
+        cursor: pointer;
+    }
+
+    .school-dashboard {
+        display: grid;
+        gap: 22px;
+        min-width: 0;
+    }
+
+    .school-dashboard .dashboard-error {
+        align-items: center;
+        background: linear-gradient(110deg, #fff5f4, #fffafa) !important;
+        border: 1px solid #f4d0ce !important;
+        border-radius: 16px !important;
+        box-shadow: 0 8px 24px rgba(150, 44, 37, .055);
+        margin: 0 !important;
+    }
+
+    .school-dashboard .dashboard-error-retry {
+        border: 1px solid #f1c5c2 !important;
+        border-radius: 10px !important;
+        cursor: pointer;
+        min-height: 36px;
+        transition: background .16s ease, border-color .16s ease, transform .16s ease;
+    }
+
+    .school-dashboard .dashboard-error-retry:hover {
+        background: #fff5f4 !important;
+        border-color: #e9a6a1 !important;
+        transform: translateY(-1px);
+    }
+
+    .school-dashboard .dashboard-hero {
+        animation: dashboard-enter .58s cubic-bezier(.2, .7, .2, 1) both;
+        background:
+            radial-gradient(ellipse at 86% 8%, rgba(135, 112, 249, .43), transparent 26rem),
+            radial-gradient(ellipse at 66% 112%, rgba(31, 181, 200, .19), transparent 25rem),
+            linear-gradient(116deg, #111a38 0%, #20234c 56%, #213253 100%) !important;
+        border: 1px solid rgba(188, 193, 255, .18);
+        border-radius: 25px !important;
+        box-shadow: 0 22px 48px rgba(28, 36, 82, .17), inset 0 1px 0 rgba(255, 255, 255, .09) !important;
+        isolation: isolate;
+        margin: 0 !important;
+        min-height: 234px;
+        padding: clamp(24px, 3.2vw, 38px) clamp(24px, 4vw, 46px) !important;
+    }
+
+    .school-dashboard .dashboard-hero.is-teacher {
+        background:
+            radial-gradient(ellipse at 86% 8%, rgba(72, 179, 231, .36), transparent 26rem),
+            radial-gradient(ellipse at 66% 112%, rgba(117, 108, 225, .2), transparent 25rem),
+            linear-gradient(116deg, #111b35 0%, #1b2b4a 56%, #1d3854 100%) !important;
+    }
+
+    .school-dashboard .dashboard-hero:after {
+        background: radial-gradient(circle, rgba(255, 255, 255, .1) 1px, transparent 1.6px);
+        background-size: 22px 22px;
+        content: "";
+        inset: 0 0 0 65%;
+        mask-image: linear-gradient(90deg, transparent, #000);
+        opacity: .16;
+        pointer-events: none;
+        position: absolute;
+        z-index: -1;
+    }
+
+    .school-dashboard .dashboard-hero-copy {
+        max-width: 690px !important;
+    }
+
+    .school-dashboard .dashboard-hero-eyebrow {
+        color: #c4b8ff !important;
+        font-size: 10px !important;
+        letter-spacing: .15em !important;
+        margin-bottom: 12px !important;
+    }
+
+    .school-dashboard .dashboard-hero.is-teacher .dashboard-hero-eyebrow {
+        color: #9de2ff !important;
+    }
+
+    .school-dashboard .dashboard-hero-title {
+        font-size: clamp(27px, 3vw, 39px) !important;
+        font-weight: 720 !important;
+        letter-spacing: -.04em;
+        line-height: 1.13 !important;
+        margin: 2px 0 12px !important;
+        max-width: 660px;
+    }
+
+    .school-dashboard .dashboard-hero-description {
+        color: #bdc5dc !important;
+        font-size: 14px !important;
+        line-height: 1.65 !important;
+        margin-bottom: 23px !important;
+        max-width: 610px;
+    }
+
+    .school-dashboard .dashboard-hero-actions {
+        gap: 10px !important;
+    }
+
+    .school-dashboard .dashboard-action {
+        align-items: center;
+        border-radius: 11px !important;
+        box-shadow: 0 5px 14px rgba(5, 10, 28, .12);
+        display: inline-flex;
+        justify-content: center;
+        min-height: 42px;
+        padding: 10px 16px !important;
+        transition: background .2s ease, border-color .2s ease, color .2s ease, transform .2s ease, box-shadow .2s ease !important;
+    }
+
+    .school-dashboard .dashboard-action:hover {
+        box-shadow: 0 9px 20px rgba(5, 10, 28, .22);
+        transform: translateY(-2px);
+    }
+
+    .school-dashboard .dashboard-action:active {
+        transform: translateY(0) scale(.98);
+    }
+
+    .school-dashboard .dashboard-action--primary {
+        background: linear-gradient(120deg, #d9d3ff, #b6eaff) !important;
+        color: #1d2450 !important;
+    }
+
+    .school-dashboard .dashboard-action--primary:hover {
+        background: linear-gradient(120deg, #e5e0ff, #cef1ff) !important;
+    }
+
+    .school-dashboard .dashboard-hero.is-teacher .dashboard-action--primary {
+        background: linear-gradient(120deg, #c8efff, #a7ddff) !important;
+    }
+
+    .school-dashboard .dashboard-action--secondary {
+        background: rgba(255, 255, 255, .105) !important;
+        border-color: rgba(255, 255, 255, .19) !important;
+        color: #f7f8ff !important;
+    }
+
+    .school-dashboard .dashboard-action--secondary:hover {
+        background: rgba(255, 255, 255, .17) !important;
+        border-color: rgba(255, 255, 255, .31) !important;
+    }
+
+    .school-dashboard .dashboard-action--tertiary {
+        background: transparent !important;
+        box-shadow: none;
+        color: #d3d8e9 !important;
+    }
+
+    .school-dashboard .dashboard-action--tertiary:hover {
+        background: rgba(255, 255, 255, .08) !important;
+        color: #fff !important;
+    }
+
+    .school-dashboard .dashboard-hero-mark {
+        background: linear-gradient(145deg, rgba(155, 141, 255, .32), rgba(93, 195, 220, .23)) !important;
+        border: 1px solid rgba(223, 225, 255, .27) !important;
+        border-radius: 28px !important;
+        box-shadow: 0 18px 38px rgba(5, 9, 29, .22), inset 0 1px 0 rgba(255, 255, 255, .15) !important;
+        height: 118px !important;
+        margin-right: 10px;
+        width: 118px !important;
+    }
+
+    .school-dashboard .dashboard-metrics {
+        animation: dashboard-enter .62s cubic-bezier(.2, .7, .2, 1) .08s both;
+        gap: 15px !important;
+        grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+        margin: 0 !important;
+    }
+
+    .school-dashboard .portal-metric-link {
+        min-width: 0;
+    }
+
+    .school-dashboard .portal-metric-card {
+        background: linear-gradient(155deg, #fff 0%, #fbfcff 100%) !important;
+        border: 1px solid #e8eaf3 !important;
+        border-radius: 18px !important;
+        box-shadow: 0 8px 22px rgba(30, 43, 89, .055), inset 0 1px 0 rgba(255, 255, 255, .9) !important;
+        gap: 13px !important;
+        min-height: 150px;
+        padding: 21px 21px 19px !important;
+        transition: transform .22s cubic-bezier(.2, .7, .2, 1), border-color .22s ease, box-shadow .22s ease !important;
+    }
+
+    .school-dashboard .portal-metric-card:before {
+        background: linear-gradient(90deg, #7a69e8, #55b9d1);
+        content: "";
+        height: 2px;
+        inset: 0 14px auto;
+        opacity: .55;
+        position: absolute;
+    }
+
+    .school-dashboard .portal-metric-link:nth-child(2) .portal-metric-card:before {
+        background: linear-gradient(90deg, #4f9eea, #54c9dd);
+    }
+
+    .school-dashboard .portal-metric-link:nth-child(3) .portal-metric-card:before {
+        background: linear-gradient(90deg, #36ad8b, #70d3bd);
+    }
+
+    .school-dashboard .portal-metric-link:nth-child(4) .portal-metric-card:before {
+        background: linear-gradient(90deg, #8b65dc, #c083e6);
+    }
+
+    .school-dashboard .portal-metric-link:hover .portal-metric-card,
+    .school-dashboard .portal-metric-link:focus-visible .portal-metric-card {
+        border-color: #d4d0f4 !important;
+        box-shadow: 0 15px 32px rgba(50, 55, 119, .12), inset 0 1px 0 rgba(255, 255, 255, .95) !important;
+        transform: translateY(-4px);
+    }
+
+    .school-dashboard .portal-metric-link:focus-visible {
+        border-radius: 18px;
+        outline: 3px solid rgba(114, 89, 216, .24);
+        outline-offset: 3px;
+    }
+
+    .school-dashboard .portal-metric-label {
+        color: #707a93 !important;
+        font-size: 10px !important;
+        font-weight: 800 !important;
+        letter-spacing: .09em !important;
+    }
+
+    .school-dashboard .portal-metric-icon {
+        border: 1px solid rgba(97, 105, 177, .08);
+        border-radius: 12px !important;
+        height: 39px !important;
+        transition: transform .22s ease, box-shadow .22s ease;
+        width: 39px !important;
+    }
+
+    .school-dashboard .portal-metric-link:hover .portal-metric-icon {
+        box-shadow: 0 5px 12px rgba(54, 68, 125, .1);
+        transform: translateY(-2px) rotate(-3deg);
+    }
+
+    .school-dashboard .portal-metric-value {
+        color: #1c2542 !important;
+        font-size: clamp(27px, 2.4vw, 34px) !important;
+        font-weight: 780 !important;
+        letter-spacing: -.045em !important;
+    }
+
+    .school-dashboard .portal-metric-subtext {
+        color: #828ba0 !important;
+        font-size: 11px !important;
+    }
+
+    .school-dashboard .dashboard-content-grid {
+        animation: dashboard-enter .64s cubic-bezier(.2, .7, .2, 1) .14s both;
+        gap: 18px !important;
+        grid-template-columns: minmax(0, 1.04fr) minmax(0, .96fr) !important;
+        margin: 0 !important;
+    }
+
+    .school-dashboard .dashboard-panel {
+        background: linear-gradient(155deg, rgba(255, 255, 255, .98), rgba(252, 253, 255, .96)) !important;
+        border: 1px solid #e8eaf2 !important;
+        border-radius: 20px !important;
+        box-shadow: 0 9px 26px rgba(31, 44, 87, .055), inset 0 1px 0 rgba(255, 255, 255, .92) !important;
+        min-width: 0;
+        padding: 22px !important;
+    }
+
+    .school-dashboard .dashboard-panel-heading {
+        align-items: flex-start !important;
+        margin-bottom: 20px !important;
+    }
+
+    .school-dashboard .dashboard-panel-title {
+        color: #222b46 !important;
+        font-size: 15px !important;
+        font-weight: 760 !important;
+        letter-spacing: -.02em;
+        line-height: 1.35;
+    }
+
+    .school-dashboard .dashboard-panel-caption {
+        color: #8790a4 !important;
+        display: inline-block;
+        font-size: 11px !important;
+        line-height: 1.5;
+        margin-top: 4px;
+    }
+
+    .school-dashboard .dashboard-text-link {
+        color: #6554c7 !important;
+        flex: 0 0 auto;
+        font-size: 12px !important;
+        transition: color .18s ease, gap .18s ease, transform .18s ease !important;
+    }
+
+    .school-dashboard .dashboard-text-link:hover {
+        color: #4334a4 !important;
+        transform: translateX(2px);
+    }
+
+    .school-dashboard .dashboard-text-link svg {
+        transition: transform .18s ease;
+    }
+
+    .school-dashboard .dashboard-text-link:hover svg {
+        transform: translateX(2px);
+    }
+
+    .school-dashboard .dashboard-student-list,
+    .school-dashboard .dashboard-grade-list {
+        gap: 9px !important;
+    }
+
+    .school-dashboard .dashboard-student-row {
+        background: #fafbfe !important;
+        border: 1px solid #edf0f6 !important;
+        border-radius: 13px !important;
+        gap: 13px !important;
+        padding: 11px 12px !important;
+        transition: background .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease !important;
+    }
+
+    .school-dashboard .dashboard-student-row:hover {
+        background: #fff !important;
+        border-color: #dcd8f7 !important;
+        box-shadow: 0 6px 16px rgba(37, 48, 96, .07);
+        transform: translateY(-1px);
+    }
+
+    .school-dashboard .dashboard-student-avatar {
+        border: 1px solid #dfe4f1 !important;
+        border-radius: 12px !important;
+        height: 40px !important;
+        width: 40px !important;
+    }
+
+    .school-dashboard .dashboard-student-avatar.is-girl {
+        border-color: #f1d7e8 !important;
+    }
+
+    .school-dashboard .dashboard-student-name {
+        color: #27314c !important;
+        font-size: 13px !important;
+        font-weight: 720 !important;
+    }
+
+    .school-dashboard .dashboard-student-meta {
+        color: #8790a4 !important;
+        display: inline-block;
+        font-size: 10px !important;
+        line-height: 1.55;
+        margin-top: 3px;
+    }
+
+    .school-dashboard .dashboard-student-accuracy {
+        font-size: 14px !important;
+        font-weight: 800 !important;
+    }
+
+    .school-dashboard .dashboard-grade-row {
+        animation: dashboard-enter .48s cubic-bezier(.2, .7, .2, 1) both;
+    }
+
+    .school-dashboard .dashboard-grade-row:nth-child(2) {
+        animation-delay: 45ms;
+    }
+
+    .school-dashboard .dashboard-grade-row:nth-child(3) {
+        animation-delay: 90ms;
+    }
+
+    .school-dashboard .dashboard-grade-row:nth-child(4) {
+        animation-delay: 135ms;
+    }
+
+    .school-dashboard .dashboard-grade-row:nth-child(n+5) {
+        animation-delay: 180ms;
+    }
+
+    .school-dashboard .dashboard-grade-track {
+        background: #edf0f7 !important;
+        border-radius: 999px !important;
+        height: 7px !important;
+    }
+
+    .school-dashboard .dashboard-grade-fill {
+        animation: dashboard-progress .9s cubic-bezier(.2, .7, .2, 1) both;
+        box-shadow: 0 0 10px rgba(85, 103, 205, .13);
+    }
+
+    .school-dashboard .dashboard-panel--support {
+        animation: dashboard-enter .66s cubic-bezier(.2, .7, .2, 1) .2s both;
+    }
+
+    .school-dashboard .dashboard-support-heading {
+        align-items: center !important;
+    }
+
+    .school-dashboard .dashboard-support-heading > div > div > svg {
+        background: #fff4e8;
+        border-radius: 9px;
+        box-sizing: content-box;
+        padding: 7px;
+    }
+
+    .school-dashboard .dashboard-attention-card {
+        background: linear-gradient(145deg, #fffdf8, #fff8ec) !important;
+        border: 1px solid #f2e4c8 !important;
+        border-radius: 15px !important;
+        padding: 15px !important;
+        transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease !important;
+    }
+
+    .school-dashboard .dashboard-attention-card:hover {
+        border-color: #e9d4a9 !important;
+        box-shadow: 0 9px 20px rgba(121, 89, 35, .08);
+        transform: translateY(-2px);
+    }
+
+    .school-dashboard .dashboard-attention-card-stats {
+        border-top: 1px solid rgba(216, 189, 136, .35);
+        flex-wrap: wrap;
+        gap: 8px 12px !important;
+        padding-top: 10px;
+    }
+
+    .school-dashboard [role="status"] {
+        color: #7d879c;
+    }
+
+    @keyframes dashboard-enter {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes dashboard-progress {
+        from {
+            transform: scaleX(0);
+            transform-origin: left center;
+        }
+
+        to {
+            transform: scaleX(1);
+            transform-origin: left center;
+        }
+    }
+
+    @media (max-width: 1120px) {
+        .school-dashboard .dashboard-metrics {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        }
+    }
+
+    @media (max-width: 900px) {
+        .educator-sidebar {
+            box-shadow: 18px 0 48px rgba(10, 17, 42, .24);
+        }
+
+        .educator-workspace {
+            padding-top: 25px;
+        }
+
+        .school-dashboard .dashboard-content-grid {
+            grid-template-columns: minmax(0, 1fr) !important;
+        }
+    }
+
+    @media (max-width: 560px) {
+        .educator-topbar {
+            -webkit-backdrop-filter: blur(10px);
+            backdrop-filter: blur(10px);
+        }
+
+        .educator-workspace {
+            padding-top: 20px;
+        }
+
+        .educator-page-head {
+            margin-bottom: 19px;
+        }
+
+        .educator-page-head p {
+            font-size: 12px;
+        }
+
+        .school-dashboard {
+            gap: 15px;
+        }
+
+        .school-dashboard .dashboard-hero {
+            align-items: flex-start !important;
+            border-radius: 20px !important;
+            gap: 15px !important;
+            min-height: 0;
+            padding: 23px 20px !important;
+        }
+
+        .school-dashboard .dashboard-hero-mark {
+            border-radius: 18px !important;
+            height: 58px !important;
+            margin: 0;
+            width: 58px !important;
+            font-size: 26px !important;
+        }
+
+        .school-dashboard .dashboard-hero-title {
+            font-size: clamp(24px, 7vw, 31px) !important;
+        }
+
+        .school-dashboard .dashboard-hero-description {
+            font-size: 12px !important;
+            margin-bottom: 17px !important;
+        }
+
+        .school-dashboard .dashboard-hero-actions {
+            align-items: stretch;
+            gap: 8px !important;
+        }
+
+        .school-dashboard .dashboard-action {
+            flex: 1 1 auto;
+            font-size: 11px !important;
+            min-height: 42px;
+            padding: 9px 11px !important;
+        }
+
+        .school-dashboard .dashboard-metrics {
+            gap: 10px !important;
+        }
+
+        .school-dashboard .portal-metric-card {
+            border-radius: 16px !important;
+            min-height: 136px;
+            padding: 16px !important;
+        }
+
+        .school-dashboard .portal-metric-label {
+            font-size: 9px !important;
+        }
+
+        .school-dashboard .dashboard-panel {
+            border-radius: 17px !important;
+            padding: 18px 16px !important;
+        }
+
+        .school-dashboard .dashboard-panel-heading {
+            gap: 10px;
+        }
+
+        .school-dashboard .dashboard-panel-caption {
+            font-size: 10px !important;
+        }
+
+        .school-dashboard .dashboard-student-row {
+            gap: 9px !important;
+            padding: 10px !important;
+        }
+
+        .school-dashboard .dashboard-student-meta {
+            font-size: 9px !important;
+        }
+
+        .school-dashboard .dashboard-attention-card-heading {
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+    }
+
+    @media (max-width: 380px) {
+        .school-dashboard .dashboard-metrics {
+            grid-template-columns: minmax(0, 1fr) !important;
+        }
+
+        .school-dashboard .portal-metric-card {
+            min-height: 122px;
+        }
+
+        .school-dashboard .dashboard-hero-mark {
+            display: none !important;
+        }
+
+        .school-dashboard .dashboard-action--tertiary {
+            flex-basis: 100%;
+        }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .educator-sidebar nav a,
+        .educator-sidebar nav a svg,
+        .educator-ai-launch,
+        .educator-ai-launch svg,
+        .educator-account button,
+        .educator-search,
+        .school-dashboard *,
+        .school-dashboard *:before,
+        .school-dashboard *:after {
+            animation-duration: .01ms !important;
+            animation-iteration-count: 1 !important;
+            scroll-behavior: auto !important;
+            transition-duration: .01ms !important;
+        }
+    }

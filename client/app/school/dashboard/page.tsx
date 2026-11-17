@@ -84,8 +84,10 @@ export default function SchoolDashboardPage() {
           : `Live overview of enrollment, accuracy, learning minutes, and curriculum progress for ${schoolName}.`
       }
     >
+      <div className="school-dashboard">
       {error ? (
         <div
+          className="dashboard-error"
           role="alert"
           style={{
             background: '#fef2f2',
@@ -107,6 +109,7 @@ export default function SchoolDashboardPage() {
             <span>{error}</span>
           </div>
           <button
+            className="dashboard-error-retry"
             type="button"
             onClick={() => setReload((v) => v + 1)}
             style={{
@@ -130,6 +133,7 @@ export default function SchoolDashboardPage() {
 
       {/* Hero Welcome Banner */}
       <section
+        className={`dashboard-hero${isTeacher ? ' is-teacher' : ''}`}
         style={{
           background: isTeacher
             ? 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)'
@@ -148,8 +152,9 @@ export default function SchoolDashboardPage() {
           overflow: 'hidden',
         }}
       >
-        <div style={{ position: 'relative', zIndex: 1, maxWidth: 640 }}>
+        <div className="dashboard-hero-copy" style={{ position: 'relative', zIndex: 1, maxWidth: 640 }}>
           <span
+            className="dashboard-hero-eyebrow"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -165,19 +170,20 @@ export default function SchoolDashboardPage() {
             <Sparkles size={14} />
             {isTeacher ? 'Teacher Classroom Workspace' : 'School Administration Workspace'}
           </span>
-          <h2 style={{ fontSize: 26, fontWeight: 800, margin: '4px 0 10px', color: '#ffffff', lineHeight: 1.25 }}>
+          <h2 className="dashboard-hero-title" style={{ fontSize: 26, fontWeight: 800, margin: '4px 0 10px', color: '#ffffff', lineHeight: 1.25 }}>
             {isTeacher
               ? `Welcome back, ${userName}!`
               : `Empowering students to speak English with confidence.`}
           </h2>
-          <p style={{ color: '#94a3b8', fontSize: 14, margin: '0 0 20px', lineHeight: 1.5 }}>
+          <p className="dashboard-hero-description" style={{ color: '#94a3b8', fontSize: 14, margin: '0 0 20px', lineHeight: 1.5 }}>
             {isTeacher
               ? 'Review speaking activity for your classes, inspect individual student responses, and preview curriculum lessons.'
               : `Review school-wide recorded speaking attempts, student accuracy, and verified progress across all grades.`}
           </p>
 
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+          <div className="dashboard-hero-actions" style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
             <Link
+              className="dashboard-action dashboard-action--primary"
               href="/school/students"
               style={{
                 background: isTeacher ? '#38bdf8' : '#f7ca3e',
@@ -196,6 +202,7 @@ export default function SchoolDashboardPage() {
               {isTeacher ? 'View My Students' : '+ Manage Students'}
             </Link>
             <Link
+              className="dashboard-action dashboard-action--secondary"
               href="/school/curriculum-map"
               style={{
                 background: 'rgba(255, 255, 255, 0.1)',
@@ -215,6 +222,7 @@ export default function SchoolDashboardPage() {
               Explore Curriculum Map
             </Link>
             <Link
+              className="dashboard-action dashboard-action--tertiary"
               href="/school/reports"
               style={{
                 background: 'rgba(255, 255, 255, 0.08)',
@@ -235,6 +243,7 @@ export default function SchoolDashboardPage() {
         </div>
 
         <div
+          className="dashboard-hero-mark"
           aria-hidden="true"
           style={{
             width: 110,
@@ -257,6 +266,7 @@ export default function SchoolDashboardPage() {
 
       {/* KPI Cards Grid */}
       <div
+        className="dashboard-metrics"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
@@ -304,6 +314,7 @@ export default function SchoolDashboardPage() {
 
       {/* Two-Column Main Content */}
       <div
+        className="dashboard-content-grid"
         style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 380px), 1fr))',
@@ -313,6 +324,7 @@ export default function SchoolDashboardPage() {
       >
         {/* Left Column: Recent Students Stream */}
         <section
+          className="dashboard-panel dashboard-panel--students"
           style={{
             background: '#ffffff',
             border: '1px solid #e2e8f0',
@@ -324,6 +336,7 @@ export default function SchoolDashboardPage() {
           }}
         >
           <div
+            className="dashboard-panel-heading"
             style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -332,14 +345,15 @@ export default function SchoolDashboardPage() {
             }}
           >
             <div>
-              <h3 style={{ fontSize: 17, fontWeight: 800, color: '#0f172a', margin: 0 }}>
+              <h3 className="dashboard-panel-title" style={{ fontSize: 17, fontWeight: 800, color: '#0f172a', margin: 0 }}>
                 {isTeacher ? 'My Assigned Students' : 'Classroom Students'}
               </h3>
-              <small style={{ color: '#64748b', fontSize: 12 }}>
+              <small className="dashboard-panel-caption" style={{ color: '#64748b', fontSize: 12 }}>
                 Recent learners and verified speaking accuracy
               </small>
             </div>
             <Link
+              className="dashboard-text-link"
               href="/school/students"
               style={{
                 color: '#4f46e5',
@@ -355,7 +369,7 @@ export default function SchoolDashboardPage() {
             </Link>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
+          <div className="dashboard-student-list" style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
             {loading && students.length === 0 ? (
               [0, 1, 2, 3].map((item) => (
                 <div
@@ -391,6 +405,7 @@ export default function SchoolDashboardPage() {
                 const acc = student.progress?.attemptCount ? student.progress.accuracy : undefined
                 return (
                   <Link
+                    className="dashboard-student-row"
                     key={student.id}
                     href={`/school/students/${student.id}`}
                     style={{
@@ -407,6 +422,7 @@ export default function SchoolDashboardPage() {
                     }}
                   >
                     <div
+                      className={`dashboard-student-avatar${student.avatarType === 'GIRL' ? ' is-girl' : ''}`}
                       style={{
                         width: 38,
                         height: 38,
@@ -424,8 +440,9 @@ export default function SchoolDashboardPage() {
                       {initials}
                     </div>
 
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <div className="dashboard-student-copy" style={{ flex: 1, minWidth: 0 }}>
                       <strong
+                        className="dashboard-student-name"
                         style={{
                           display: 'block',
                           fontSize: 14,
@@ -438,14 +455,15 @@ export default function SchoolDashboardPage() {
                       >
                         {student.fullName}
                       </strong>
-                      <span style={{ color: '#64748b', fontSize: 12 }}>
+                      <span className="dashboard-student-meta" style={{ color: '#64748b', fontSize: 12 }}>
                         {gradeLabel(student.grade)}
                         {student.className ? ` (${student.className})` : ''} · Roll {student.rollNumber}
                       </span>
                     </div>
 
-                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <div className="dashboard-student-score" style={{ textAlign: 'right', flexShrink: 0 }}>
                       <strong
+                        className="dashboard-student-accuracy"
                         style={{
                           display: 'block',
                           fontSize: 14,
@@ -468,6 +486,7 @@ export default function SchoolDashboardPage() {
 
         {/* Right Column: Grade Performance Breakdown */}
         <section
+          className="dashboard-panel dashboard-panel--grades"
           style={{
             background: '#ffffff',
             border: '1px solid #e2e8f0',
@@ -479,6 +498,7 @@ export default function SchoolDashboardPage() {
           }}
         >
           <div
+            className="dashboard-panel-heading"
             style={{
               display: 'flex',
               justifyContent: 'space-between',
@@ -487,19 +507,19 @@ export default function SchoolDashboardPage() {
             }}
           >
             <div>
-              <h3 style={{ fontSize: 17, fontWeight: 800, color: '#0f172a', margin: 0 }}>
+              <h3 className="dashboard-panel-title" style={{ fontSize: 17, fontWeight: 800, color: '#0f172a', margin: 0 }}>
                 Grade Performance Breakdown
               </h3>
-              <small style={{ color: '#64748b', fontSize: 12 }}>
+              <small className="dashboard-panel-caption" style={{ color: '#64748b', fontSize: 12 }}>
                 Recorded student performance across Kindergarten and Classes 1–10
               </small>
             </div>
             <StatusBadge status="Verified" variant="published" />
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
+          <div className="dashboard-grade-list" style={{ display: 'flex', flexDirection: 'column', gap: 14, flex: 1 }}>
             {(analytics?.gradeBreakdown ?? []).map((item) => (
-              <div key={item.grade}>
+              <div className="dashboard-grade-row" key={item.grade}>
                 <div
                   style={{
                     display: 'flex',
@@ -515,8 +535,9 @@ export default function SchoolDashboardPage() {
                     {item.studentCount} {item.studentCount === 1 ? 'student' : 'students'}
                   </span>
                 </div>
-                <div style={{ height: 8, background: '#f1f5f9', borderRadius: 999, overflow: 'hidden' }}>
+                <div className="dashboard-grade-track" style={{ height: 8, background: '#f1f5f9', borderRadius: 999, overflow: 'hidden' }}>
                   <div
+                    className="dashboard-grade-fill"
                     style={{
                       height: '100%',
                       width: `${item.attemptedStudentCount ? Math.min(100, Math.max(0, item.avgAccuracy)) : 0}%`,
@@ -547,6 +568,7 @@ export default function SchoolDashboardPage() {
 
       {/* Students Who May Need Support Section */}
       <section
+        className="dashboard-panel dashboard-panel--support"
         style={{
           background: '#ffffff',
           border: '1px solid #e2e8f0',
@@ -556,6 +578,7 @@ export default function SchoolDashboardPage() {
         }}
       >
         <div
+          className="dashboard-panel-heading dashboard-support-heading"
           style={{
             display: 'flex',
             alignItems: 'flex-start',
@@ -568,15 +591,16 @@ export default function SchoolDashboardPage() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <AlertTriangle size={18} color="#d97706" />
-              <h3 style={{ fontSize: 17, fontWeight: 800, color: '#0f172a', margin: 0 }}>
+              <h3 className="dashboard-panel-title" style={{ fontSize: 17, fontWeight: 800, color: '#0f172a', margin: 0 }}>
                 Students Who May Need Support
               </h3>
             </div>
-            <small style={{ color: '#64748b', fontSize: 12, marginTop: 4, display: 'block' }}>
+            <small className="dashboard-panel-caption" style={{ color: '#64748b', fontSize: 12, marginTop: 4, display: 'block' }}>
               Identified from at least 2 recorded activity attempts with average accuracy below 70%.
             </small>
           </div>
           <Link
+            className="dashboard-text-link"
             href="/school/reports"
             style={{
               color: '#4f46e5',
@@ -602,6 +626,7 @@ export default function SchoolDashboardPage() {
           >
             {analytics!.studentsNeedingAttention!.map((item) => (
               <Link
+                className="dashboard-attention-card"
                 key={item.studentId}
                 href={`/school/students/${item.studentId}`}
                 style={{
@@ -617,15 +642,16 @@ export default function SchoolDashboardPage() {
                   transition: 'border-color 150ms ease',
                 }}
               >
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <strong style={{ fontSize: 14, fontWeight: 750, color: '#0f172a' }}>{item.fullName}</strong>
+                <div className="dashboard-attention-card-heading" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <strong className="dashboard-student-name" style={{ fontSize: 14, fontWeight: 750, color: '#0f172a' }}>{item.fullName}</strong>
                   <StatusBadge status="Needs Review" variant="needs-support" size="sm" />
                 </div>
-                <span style={{ color: '#64748b', fontSize: 12 }}>
+                <span className="dashboard-student-meta" style={{ color: '#64748b', fontSize: 12 }}>
                   {gradeLabel(item.grade)}
                   {item.className ? ` · Class ${item.className}` : ''}
                 </span>
                 <div
+                  className="dashboard-attention-card-stats"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -648,6 +674,7 @@ export default function SchoolDashboardPage() {
           </p>
         )}
       </section>
+      </div>
     </SchoolShell>
   )
 }

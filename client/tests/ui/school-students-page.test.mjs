@@ -5,6 +5,7 @@ import { test } from 'node:test'
 const page = await readFile(new URL('../../app/school/students/page.tsx', import.meta.url), 'utf8')
 const component = await readFile(new URL('../../app/school/students/student-management-page.tsx', import.meta.url), 'utf8')
 const styles = await readFile(new URL('../../app/school/students/students.css', import.meta.url), 'utf8')
+const schoolService = await readFile(new URL('../../services/school-service.ts', import.meta.url), 'utf8')
 
 test('Students screen preserves existing server filter and live paginated data flow', () => {
   assert.match(page, /initialGradeFilter=\{Number\.isInteger\(grade\)[\s\S]*?grade : undefined\}/)
@@ -15,6 +16,17 @@ test('Students screen preserves existing server filter and live paginated data f
   assert.match(component, /aria-label="Filter by grade"/)
   assert.match(component, /setPage\(\(value\) => value \+ 1\)/)
   assert.match(component, /setPage\(\(value\) => value - 1\)/)
+})
+
+test('student status filters and summary counts use live server data', () => {
+  assert.match(component, /status: statusFilter \|\| undefined/)
+  assert.match(component, /aria-label="Filter by student status"/)
+  assert.match(component, /status: 'active'[\s\S]*?status: 'inactive'/)
+  assert.match(component, /studentStats\.active \+ studentStats\.inactive/)
+  assert.match(component, /setStatusFilter\(nextStatus === 'active' \|\| nextStatus === 'inactive' \? nextStatus : ''\)/)
+  assert.match(component, /function clearFilters\(\)[\s\S]*?setStatusFilter\(''\)[\s\S]*?setPage\(1\)/)
+  assert.match(schoolService, /status\?: 'active' \| 'inactive'/)
+  assert.match(schoolService, /if \(params\?\.status\) query\.set\('status', params\.status\)/)
 })
 
 test('student report, edit, PIN, and role-gated pilot actions remain wired', () => {
