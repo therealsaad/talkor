@@ -102,6 +102,7 @@ export const schoolService = {
     grade?: number
     className?: string
     search?: string
+    status?: 'active' | 'inactive'
     page?: number
     limit?: number
   }): Promise<{ students: StudentListItem[]; total: number; page: number; limit: number }> {
@@ -109,6 +110,7 @@ export const schoolService = {
     if (params?.grade !== undefined) query.set('grade', String(params.grade))
     if (params?.className) query.set('className', params.className)
     if (params?.search) query.set('search', params.search)
+    if (params?.status) query.set('status', params.status)
     if (params?.page) query.set('page', String(params.page))
     if (params?.limit) query.set('limit', String(params.limit))
 

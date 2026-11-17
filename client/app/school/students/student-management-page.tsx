@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, FormEvent } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ArrowRight, BookOpen, ChevronLeft, ChevronRight, GraduationCap, Plus, Search, UsersRound } from 'lucide-react'
+import { Activity, ArrowRight, BookOpen, ChevronLeft, ChevronRight, FileText, GraduationCap, KeyRound, Pencil, Plus, RotateCcw, Search, UserCheck, UserX, UsersRound } from 'lucide-react'
 import { SchoolShell } from '@/components/school/school-shell'
 import { schoolService, StudentListItem } from '@/services/school-service'
 import { AvatarTypePicker } from '@/components/school/avatar-type-picker'
@@ -24,9 +24,13 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
   const [search, setSearch] = useState('')
   const [submittedSearch, setSubmittedSearch] = useState('')
   const [gradeFilter, setGradeFilter] = useState<number | undefined>(initialGradeFilter)
+  const [statusFilter, setStatusFilter] = useState<'' | 'active' | 'inactive'>('')
   const [page, setPage] = useState(1)
   const [total, setTotal] = useState(0)
   const pageSize = 20
+  const [studentStats, setStudentStats] = useState<{ active?: number; inactive?: number }>({})
+  const [statisticsLoading, setStatisticsLoading] = useState(true)
+  const [statisticsError, setStatisticsError] = useState('')
 
   // Add student modal
   const [isAddOpen, setIsAddOpen] = useState(initialAddOpen)
@@ -114,6 +118,7 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
       const data = await schoolService.listStudents({
         search: submittedSearch || undefined,
         grade: gradeFilter,
+        status: statusFilter || undefined,
         page,
         limit: pageSize,
       })
@@ -129,12 +134,51 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
 
   useEffect(() => {
     fetchStudents()
-  }, [gradeFilter, page, submittedSearch])
+  }, [gradeFilter, page, submittedSearch, statusFilter])
+
+  async function fetchStatistics() {
+    setStatisticsLoading(true)
+    setStatisticsError('')
+    const [active, inactive] = await Promise.allSettled([
+      schoolService.listStudents({ status: 'active', page: 1, limit: 1 }),
+      schoolService.listStudents({ status: 'inactive', page: 1, limit: 1 }),
+    ])
+    if (active.status === 'fulfilled') {
+      setStudentStats((current) => ({ ...current, active: active.value.total }))
+    } else {
+      console.error('Failed to load active student count', active.reason)
+    }
+    if (inactive.status === 'fulfilled') {
+      setStudentStats((current) => ({ ...current, inactive: inactive.value.total }))
+    } else {
+      console.error('Failed to load inactive student count', inactive.reason)
+    }
+    if (active.status === 'rejected' || inactive.status === 'rejected') {
+      setStatisticsError('Some student statistics could not be loaded.')
+    }
+    setStatisticsLoading(false)
+  }
+
+  useEffect(() => {
+    void fetchStatistics()
+  }, [])
 
   function handleSearchSubmit(e: FormEvent) {
     e.preventDefault()
     setPage(1)
     setSubmittedSearch(search)
+  }
+
+  const hasActiveFilters = Boolean(search.trim() || submittedSearch || gradeFilter !== undefined || statusFilter)
+  const totalProfiles = studentStats.active !== undefined && studentStats.inactive !== undefined
+    ? studentStats.active + studentStats.inactive
+    : '—'
+  function clearFilters() {
+    setSearch('')
+    setSubmittedSearch('')
+    setGradeFilter(undefined)
+    setStatusFilter('')
+    setPage(1)
   }
 
   async function handleAddStudent(e: FormEvent) {
@@ -157,7 +201,7 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
       setFullName('')
       setRollNumber('')
       setKgAlphabetPilotEnabled(false)
-      fetchStudents()
+      await Promise.all([fetchStudents(), fetchStatistics()])
     } catch (err: any) {
       setAddError(err.message || 'Failed to create student. Please check the details.')
     } finally {
@@ -224,7 +268,7 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
     if (!confirm(`Deactivate student profile for ${name}?`)) return
     try {
       await schoolService.deactivateStudent(id)
-      fetchStudents()
+      await Promise.all([fetchStudents(), fetchStatistics()])
     } catch (err: any) {
       alert(err.message || 'Failed to deactivate student.')
     }
@@ -240,57 +284,94 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
           <div className="school-students__intro-icon" aria-hidden="true"><UsersRound size={24} /></div>
           <div>
             <span className="school-students__eyebrow">STUDENT DIRECTORY</span>
-            <h2>Manage your learners</h2>
-            <p>Find a student, review their progress, or update their profile.</p>
+            <h2>Students</h2>
+            <p>Manage enrollment, student profiles, and learning access across your school.</p>
           </div>
         </section>
 
-        <div className="school-student-toolbar">
-        <form className="school-student-search" onSubmit={handleSearchSubmit}>
-          <label className="school-student-search-field">
-            <Search size={18} aria-hidden="true" />
-          <input
-            className="school-student-search-input"
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by student name or roll number..."
-            aria-label="Search by student name or roll number"
-          />
-          </label>
-          <select
-            className="school-student-grade-filter"
-            value={gradeFilter ?? ''}
-            onChange={(e) => setGradeFilter(e.target.value ? Number(e.target.value) : undefined)}
-            aria-label="Filter by grade"
-          >
-            <option value="">All Grades</option>
-            {Array.from({ length: 11 }, (_, i) => i).map((g) => (
-              <option key={g} value={g}>
-                {g === 0 ? 'Kindergarten (KG)' : `Class ${g}`}
-              </option>
-            ))}
-          </select>
-          <button
-            className="school-student-search-submit"
-            type="submit"
-          >
-            Search
-          </button>
-        </form>
+        <section className="school-student-stats" aria-label="Student statistics" aria-busy={statisticsLoading}>
+          <article className="school-student-stat school-student-stat--total">
+            <span className="school-student-stat__icon" aria-hidden="true"><UsersRound size={19} /></span>
+            <div><small>Total students</small><strong>{statisticsLoading ? '—' : totalProfiles}</strong><span>Across your roster</span></div>
+          </article>
+          <article className="school-student-stat school-student-stat--active">
+            <span className="school-student-stat__icon" aria-hidden="true"><UserCheck size={19} /></span>
+            <div><small>Active profiles</small><strong>{statisticsLoading ? '—' : studentStats.active ?? '—'}</strong><span>Currently enabled accounts</span></div>
+          </article>
+          <article className="school-student-stat school-student-stat--inactive">
+            <span className="school-student-stat__icon" aria-hidden="true"><UserX size={19} /></span>
+            <div><small>Inactive profiles</small><strong>{statisticsLoading ? '—' : studentStats.inactive ?? '—'}</strong><span>Deactivated accounts</span></div>
+          </article>
+          {statisticsError ? (
+            <p className="school-student-stats-error" role="status">
+              {statisticsError} <button type="button" onClick={() => void fetchStatistics()}>Retry</button>
+            </p>
+          ) : null}
+        </section>
 
-        <div className="school-student-toolbar__actions">
-        <Link className="school-student-preview-link" href="/school/kg-preview/level-1">
-          <BookOpen size={16} aria-hidden="true" /> Preview KG Level 1
-        </Link>
-        <button
-          className="school-student-enroll-button"
-          type="button"
-          onClick={() => setIsAddOpen(true)}
-        >
-          <Plus size={17} aria-hidden="true" /> Enroll student
-        </button></div>
-      </div>
+        <div className="school-student-toolbar">
+          <form className="school-student-search" onSubmit={handleSearchSubmit}>
+            <label className="school-student-search-field">
+              <Search size={18} aria-hidden="true" />
+              <input
+                className="school-student-search-input"
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search by student name or roll number..."
+                aria-label="Search by student name or roll number"
+              />
+            </label>
+            <select
+              className={`school-student-grade-filter${gradeFilter !== undefined ? ' is-filtered' : ''}`}
+              value={gradeFilter ?? ''}
+              onChange={(e) => { setGradeFilter(e.target.value ? Number(e.target.value) : undefined); setPage(1) }}
+              aria-label="Filter by grade"
+            >
+              <option value="">All Grades</option>
+              {Array.from({ length: 11 }, (_, i) => i).map((g) => (
+                <option key={g} value={g}>
+                  {g === 0 ? 'Kindergarten (KG)' : `Class ${g}`}
+                </option>
+              ))}
+            </select>
+            <select
+              className={`school-student-status-filter${statusFilter ? ' is-filtered' : ''}`}
+              value={statusFilter}
+              onChange={(e) => {
+                const nextStatus = e.target.value
+                setStatusFilter(nextStatus === 'active' || nextStatus === 'inactive' ? nextStatus : '')
+                setPage(1)
+              }}
+              aria-label="Filter by student status"
+            >
+              <option value="">All statuses</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+            <button className="school-student-search-submit" type="submit">
+              <Search size={15} aria-hidden="true" /> Search
+            </button>
+            {hasActiveFilters ? (
+              <button className="school-student-clear-filters" type="button" onClick={clearFilters}>
+                <RotateCcw size={14} aria-hidden="true" /> Clear filters
+              </button>
+            ) : null}
+          </form>
+
+          <div className="school-student-toolbar__actions">
+            <Link className="school-student-preview-link" href="/school/kg-preview/level-1">
+              <BookOpen size={16} aria-hidden="true" /> Preview KG Level 1
+            </Link>
+            <button
+              className="school-student-enroll-button"
+              type="button"
+              onClick={() => setIsAddOpen(true)}
+            >
+              <Plus size={17} aria-hidden="true" /> Enroll student
+            </button>
+          </div>
+        </div>
 
       <section className="school-student-table-panel" aria-label="Students">
         <div className="school-student-table-header">
@@ -314,7 +395,14 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
           </div>
         ) : students.length === 0 ? (
           <div className="school-student-empty" role="status">
-            No students found matching your criteria.
+            <span className="school-student-empty__icon" aria-hidden="true"><UsersRound size={25} /></span>
+            <strong>{hasActiveFilters ? 'No students found matching your criteria' : 'No students enrolled yet'}</strong>
+            <span>{hasActiveFilters ? 'Try adjusting your search or filters.' : 'Enroll a student to start building your school roster.'}</span>
+            {hasActiveFilters ? (
+              <button type="button" className="school-student-empty__action" onClick={clearFilters}>Clear filters</button>
+            ) : (
+              <button type="button" className="school-student-empty__action" onClick={() => setIsAddOpen(true)}>Enroll student</button>
+            )}
           </div>
         ) : (
           <div className="school-student-table-scroll">
@@ -335,7 +423,7 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
                   const acc = student.progress?.attemptCount ? student.progress.accuracy : undefined
                   return (
                     <tr key={student.id}>
-                      <td className="school-student-identity-cell">
+                      <td className="school-student-identity-cell" data-label="Student">
                         <div className="school-student-identity">
                           <div className="school-student-avatar">
                             <Image src={learnerAvatar(student.avatarType || 'BOY')} alt="" fill sizes="42px" />
@@ -349,36 +437,36 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
                         </div>
                       </td>
 
-                      <td className="school-student-class-cell">
+                      <td className="school-student-class-cell" data-label="Class / Section">
                         {student.grade === 0 ? 'KG' : `Class ${student.grade}`} {student.className ? `(${student.className})` : ''}
                       </td>
 
-                      <td>
+                      <td data-label="Character">
                         <span className="school-student-character"><span aria-hidden="true">{student.avatarType === 'GIRL' ? 'G' : 'B'}</span>{student.avatarType === 'GIRL' ? 'Girl' : 'Boy'}</span>
                       </td>
 
-                      <td>
+                      <td data-label="Accuracy">
                         <strong className={`school-student-accuracy${acc === undefined ? ' is-unavailable' : acc >= 75 ? ' is-strong' : ' is-developing'}`}>
                           {acc === undefined ? 'No attempts' : `${acc}%`}
                         </strong>
                       </td>
 
-                      <td>
+                      <td data-label="Levels">
                         <span className="school-student-levels">
                           {student.progress?.completedLevels ?? 0}<span aria-hidden="true"> / </span>{student.progress?.totalLevels || '—'}
                         </span>
                       </td>
 
-                      <td>
+                      <td data-label="Status">
                         <span className={`school-student-status ${student.status === 'active' ? 'is-active' : 'is-inactive'}`}>
                           <span aria-hidden="true" />{student.status}
                         </span>
                       </td>
 
-                      <td className="school-student-actions-cell">
+                      <td className="school-student-actions-cell" data-label="Actions">
                         <div className="school-student-row-actions">
                           <Link className="school-student-action school-student-action--report" href={`/school/students/${student.id}`}>
-                            Report
+                            <FileText size={13} aria-hidden="true" /> Report
                           </Link>
 
                           {role === 'SCHOOL_ADMIN' && student.grade === 0 ? <button
@@ -386,6 +474,7 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
                             onClick={() => void toggleKGAlphabetPilot(student)}
                             title="Approve this student for the separate ABCD pilot"
                             className={`school-student-action ${student.kgAlphabetPilotEnabled ? 'school-student-action--enabled' : 'school-student-action--pilot'}`}>
+                              <Activity size={13} aria-hidden="true" />
                             {pilotUpdating === student.id ? 'Saving…' : student.kgAlphabetPilotEnabled ? 'ABCD enabled ✓' : 'Enable ABCD'}
                           </button> : null}
                           <button
@@ -401,7 +490,7 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
                             }}
                             className="school-student-action school-student-action--edit"
                           >
-                            Edit
+                            <Pencil size={13} aria-hidden="true" /> Edit
                           </button>
 
                           <button
@@ -410,7 +499,7 @@ export function StudentManagementPage({ initialAddOpen = false, initialEditStude
                             title="Issue a new 5-digit student PIN"
                             className="school-student-action school-student-action--pin"
                           >
-                            Reset PIN
+                            <KeyRound size={13} aria-hidden="true" /> Reset PIN
                           </button>
                         </div>
                       </td>
