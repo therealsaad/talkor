@@ -1,0 +1,26 @@
+ts-jest[config] (WARN) [94mmessage[0m[90m TS151002: [0mUsing hybrid module kind (Node16/18/Next) is only supported in "isolatedModules: true". Please set "isolatedModules: true" in your tsconfig.json. To disable this message, you can set "diagnostics.ignoreCodes" to include 151002 in your ts-jest config. See more at https://kulshekhar.github.io/ts-jest/docs/getting-started/options/diagnostics
+ts-jest[config] (WARN) [94mmessage[0m[90m TS151002: [0mUsing hybrid module kind (Node16/18/Next) is only supported in "isolatedModules: true". Please set "isolatedModules: true" in your tsconfig.json. To disable this message, you can set "diagnostics.ignoreCodes" to include 151002 in your ts-jest config. See more at https://kulshekhar.github.io/ts-jest/docs/getting-started/options/diagnostics
+PASS tests/unit/class1AudioAck.test.ts (5.261 s)
+  ✓ pending final Qwen turn is recoverable without awarding progress (3 ms)
+  ✓ authenticated acknowledgment awards progress only for completed v3 speech (3 ms)
+  ✓ incomplete or unrelated lessons cannot self-award first-day progress (1 ms)
+  ✓ replaying an already acknowledged response is idempotent
+  ✓ missing receipt cannot award Class 1 progress (1 ms)
+  ✓ forged receipt cannot award Class 1 progress
+  ✓ expired receipt cannot award Class 1 progress
+  ✓ other learner receipt cannot award Class 1 progress (1 ms)
+  ✓ other session receipt cannot award Class 1 progress
+  ✓ other activity receipt cannot award Class 1 progress
+  ✓ other login receipt cannot award Class 1 progress
+  ✓ altered text receipt cannot award Class 1 progress
+  ✓ only generated complete audio for the frozen teacher turn receives a signed receipt (14 ms)
+  ✓ malformed saved teacher text cannot trigger speech or mint a receipt
+  ✓ invalid audio (0 bytes, audio/mpeg) never returns a playback receipt (1 ms)
+  ✓ invalid audio (100 bytes, audio/mpeg) never returns a playback receipt
+  ✓ invalid audio (512 bytes, text/html) never returns a playback receipt (1 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       17 passed, 17 total
+Snapshots:   0 total
+Time:        5.435 s, estimated 6 s
+Ran all test suites matching /tests\/unit\/class1AudioAck.test.ts/i.

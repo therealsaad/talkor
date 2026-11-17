@@ -95,7 +95,7 @@ export default function StudentLessonPage() {
     class1IntroVideoUrl={firstDayReady && typeof lesson.lesson.settings?.introVideoUrl === 'string'
       ? lesson.lesson.settings.introVideoUrl
       : undefined}
-    introVideoKey={lesson.experienceId === 'g01-l01' && lesson.completedActivityIds.length === 0
+    introVideoKey={lesson.experienceId === 'g01-l01' && (firstDayReady || lesson.completedActivityIds.length === 0)
       ? 'class1-g01-l01'
       : lesson.grade === 0 && typeof lesson.lesson.settings?.lessonKey === 'string'
         ? lesson.lesson.settings.lessonKey

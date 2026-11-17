@@ -6,6 +6,8 @@ import { CheckCircle2, LoaderCircle, Mic, RotateCw, Sparkles } from 'lucide-reac
 import { useReducedMotion } from 'framer-motion'
 import { requestKGMicrophone } from '@/lib/kg-microphone'
 import { watchVoiceActivity } from '@/lib/voice-activity'
+import { lessonTurnTelemetry } from '@/lib/lesson-turn-telemetry'
+import { LatencyReportButton } from '@/components/latency-report-button'
 import { AnimatedMissJulie } from '../level-01/components/AnimatedMissJulie'
 import { KindergartenWorld } from '../components/KindergartenWorld'
 import { LetterWordPicture } from '../components/LetterWordPicture'
@@ -107,6 +109,7 @@ export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State 
       recorder.onstop = () => {
         if (submitted) return
         submitted = true
+        lessonTurnTelemetry.mark('recorderStop', 'kg2')
         const durationMs = Math.min(11900, Math.max(250, Math.round(performance.now() - started)))
         const blob = new Blob(chunks, { type: recorder?.mimeType || mimeType || 'audio/webm' })
         releaseMicrophone()
@@ -120,7 +123,8 @@ export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State 
       }
       recorder.start()
       setPhase('listening')
-      stopWatcher = watchVoiceActivity(stream, () => {
+      stopWatcher = watchVoiceActivity(stream, (info) => {
+        if (info?.heardVoice) lessonTurnTelemetry.mark('speechEnd', 'kg2', info.lastVoiceAt)
         if (recorder?.state === 'recording') recorder.stop()
       }, {
         silenceMs: 1100, minimumSpeechMs: 350, noSpeechTimeoutMs: 6500,
@@ -222,6 +226,7 @@ export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State 
           ) : null}
         </section>
       </div>
+      <LatencyReportButton />
     </main>
   )
 }

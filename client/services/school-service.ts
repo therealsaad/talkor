@@ -222,7 +222,7 @@ export const schoolService = {
       { headers: { Authorization: `Bearer ${token}` }, cache: 'no-store' },
     )
     if (!response.ok) {
-      handleUnauthorizedResponse(response.status)
+      handleUnauthorizedResponse(response.status, token)
       throw new Error(`Export failed (${response.status})`)
     }
     return response.blob()

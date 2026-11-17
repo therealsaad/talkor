@@ -1,0 +1,11 @@
+talkora-110-level-checks.yml: 4 step(s) to run, 0 skipped on this computer.
+
+[1/4] structure: Guard shared staff preview structural verification against regressions ... ok (0.2s)
+[2/4] structure: Verify the local CI runner reads this workflow completely ... ok (1.4s)
+[3/4] structure: Keep lesson videos and images light for slow connections ... ok (0.2s)
+[4/4] structure: Validate all 110 level workspaces and mapping boundaries ... ok (0.2s)
+
+Summary
+  passed: 4   failed: 0   skipped here: 0
+
+CI would be GREEN for these jobs.

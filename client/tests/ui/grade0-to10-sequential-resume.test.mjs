@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import { test } from 'node:test'
+import vm from 'node:vm'
+import ts from 'typescript'
 const read = (path) => readFile(new URL(path, import.meta.url), 'utf8')
 const resume = await read('../../app/student/continue/page.tsx')
 const service = await read('../../features/lessons/grades/kg/continuation/continuation-service.ts')
@@ -22,10 +24,9 @@ const studentRoute4 = await read('../../app/student/kg/level-4/page.tsx')
 const studentRoute5 = await read('../../app/student/kg/level-5/page.tsx')
 
 test('KG always resumes the next unfinished authored level after a PIN login, never a completed stone', () => {
-  assert.match(resume, /kgAlphabetService\.state\(\)/)
-  assert.match(resume, /kgLevel2StudentService\.state\(\)/)
-  assert.match(resume, /kgContinuationStudentService\.overview\(\)/)
-  assert.match(resume, /continuation\.nextLevel \? '\/student\/kg\/level-' \+ continuation\.nextLevel/)
+  assert.match(resume, /nextKGStudentRoute\(\)/)
+  assert.doesNotMatch(resume, /kgAlphabetService\.state|kgLevel2StudentService\.state/)
+  assert.match(controller, /nextStudentRoute/)
   assert.match(level2, /updated\.completed\) \{ router\.replace\('\/student\/continue'\)/)
   assert.match(continuation, /updated\.completed\) \{ router\.replace\('\/student\/continue'\)/)
   assert.match(mapPage, /kgContinuationStudentService\.overview\(\)/)
@@ -35,6 +36,97 @@ test('KG always resumes the next unfinished authored level after a PIN login, ne
   assert.match(studentRoute3, /level=\{3\}/)
   assert.match(studentRoute4, /level=\{4\}/)
   assert.match(studentRoute5, /level=\{5\}/)
+})
+
+const resumeSource = await read('../../services/kg-resume-service.ts')
+function resumeHarness() {
+  let token = 'fixture-A'
+  const requests = []
+  const exports = {}
+  vm.runInNewContext(ts.transpileModule(resumeSource, { compilerOptions: {
+    module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020,
+  } }).outputText, { exports, module: { exports }, AbortSignal,
+    require: id => {
+      assert.equal(id, '@/lib/api-client')
+      return { getStoredToken: () => token, apiClient: (url, options) => new Promise((resolve, reject) => {
+        requests.push({ url, options, token, resolve, reject })
+      }) }
+    } })
+  return { next: exports.nextKGStudentRoute, requests, setToken: value => { token = value } }
+}
+
+test('KG resume shares concurrent requests for one login and never caches settled progress', async () => {
+  const h = resumeHarness()
+  const a = h.next()
+  assert.strictEqual(a, h.next())
+  assert.equal(h.requests.length, 1)
+  assert.equal(h.requests[0].url, '/kg-continuation/overview')
+  assert.equal(h.requests[0].options.cache, 'no-store')
+  h.requests[0].resolve({ nextStudentRoute: '/student/kg/level-2' })
+  assert.equal(await a, '/student/kg/level-2')
+  const b = h.next()
+  assert.equal(h.requests.length, 2)
+  h.requests[1].resolve({ nextStudentRoute: '/student/kg/level-3' })
+  assert.equal(await b, '/student/kg/level-3')
+})
+
+test('old KG resume response cannot select a level or erase a newer login request', async () => {
+  const h = resumeHarness()
+  const a = h.next()
+  h.setToken('fixture-B')
+  const b = h.next()
+  h.requests[0].resolve({ nextStudentRoute: '/student/kg/level-5' })
+  await assert.rejects(a, /previous login/)
+  assert.strictEqual(b, h.next())
+  h.requests[1].resolve({ nextStudentRoute: '/student/kg' })
+  assert.equal(await b, '/student/kg')
+})
+
+test('failed KG resume can retry; unknown, external and KG6–10 routes fail closed', async () => {
+  const h = resumeHarness()
+  const failed = h.next()
+  h.requests[0].reject(Error('Offline'))
+  await assert.rejects(failed, /Offline/)
+  for (const route of [undefined, '/student/kg/level-6', '/school/dashboard', 'https://example.test']) {
+    const retry = h.next()
+    h.requests.at(-1).resolve({ nextStudentRoute: route })
+    await assert.rejects(retry, /next lesson could not open/)
+  }
+  h.setToken(null)
+  const count = h.requests.length
+  await assert.rejects(h.next(), /sign in/)
+  assert.equal(h.requests.length, count)
+})
+
+const shellSource = await read('../../components/student/shell/student-portal-shell.tsx')
+async function shellReads(pathname, grade) {
+  const effects = [], reads = []
+  const exports = {}
+  const noop = () => null
+  vm.runInNewContext(ts.transpileModule(shellSource, { compilerOptions: {
+    module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.ReactJSX,
+  } }).outputText, { exports, module: { exports }, require: id => {
+    if (id === 'react') return { useEffect: f => effects.push(f), useState: x => [x, noop] }
+    if (id === 'react/jsx-runtime') return { jsx: (type, props) => ({ type, props }), jsxs: (type, props) => ({ type, props }) }
+    if (id === 'next/navigation') return { usePathname: () => pathname, useRouter: () => ({ replace: noop }) }
+    if (id === '@/components/auth/auth-provider') return { useAuth: () => ({ session: { student: { id: 'fixture', grade } } }) }
+    if (id === '@/services/progress-service') return { progressService: { getMyProgress: async () => { reads.push('generic'); return {} } } }
+    if (id.includes('kg-alphabet-service')) return { kgAlphabetService: { state: async () => { reads.push('kg'); return {} } } }
+    if (id === '@/config/talkora-assets') return { accountAvatar: noop, learnerAvatar: noop }
+    return { default: noop, Flame: noop, Star: noop, StudentNav: noop, TalkoraLogo: noop }
+  } })
+  exports.StudentPortalShell({ children: null })
+  for (const effect of effects) effect()
+  await Promise.resolve()
+  return reads
+}
+
+test('hidden lesson and resume HUDs never trigger unused student progress reads', async () => {
+  for (const pathname of ['/student/continue', '/student/kg', '/student/kg/level-4', '/student/lesson/fixture']) {
+    for (const grade of [0, 1]) assert.deepEqual(await shellReads(pathname, grade), [])
+  }
+  assert.deepEqual(await shellReads('/student/kg/map', 0), ['kg'])
+  assert.deepEqual(await shellReads('/student/profile', 1), ['generic'])
 })
 
 test('one reusable student engine, protected voice intro and receipts, no preview shortcut', () => {

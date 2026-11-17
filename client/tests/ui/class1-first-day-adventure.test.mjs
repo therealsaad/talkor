@@ -1,6 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import vm from 'node:vm'
+import ts from 'typescript'
 const load = file => readFile(new URL(file, import.meta.url), 'utf8')
 
 test('Class 1 First Day uses the illustrated board with live teacher text', async () => {
@@ -35,6 +37,104 @@ test('the Class 1 mic tolerates quiet voices with no extra STT requests', async 
   const engine = await load('../../components/lessons/lesson-experience.tsx')
   assert.match(engine, /speechThreshold: 0\.012/)
   assert.match(engine, /noSpeechTimeoutMs: 8000/)
+})
+
+test('Class 1 gives one automatic no-speech retry, then a safe manual recovery', async () => {
+  const source = await load('../../lib/class1-microphone-recovery.ts')
+  const module = { exports: {} }
+  vm.runInNewContext(ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText,
+    { module, exports: module.exports, Error })
+  const { class1SilenceRecovery, isClass1NoSpeechError } = module.exports
+  assert.equal(isClass1NoSpeechError(new Error('No speech was detected. Please try again.')), true)
+  assert.equal(isClass1NoSpeechError(new Error('I could not hear enough. Please try again.')), true)
+  for (const message of ['Azure TTS 502', 'Microphone permission denied',
+    'Speech recognition is temporarily unavailable', 'The teacher audio is unavailable']) {
+    assert.equal(isClass1NoSpeechError(new Error(message)), false)
+  }
+  const first = class1SilenceRecovery(0)
+  assert.equal(first.misses, 1)
+  assert.equal(first.autoListen, true)
+  assert.match(first.feedback, /listen once more/)
+  const second = class1SilenceRecovery(first.misses)
+  assert.equal(second.misses, 2)
+  assert.equal(second.autoListen, false)
+  assert.match(second.feedback, /Tap the microphone/)
+  const repeat = class1SilenceRecovery(second.misses)
+  assert.equal(repeat.autoListen, false)
+})
+
+test('Class 1 poem records both lines, retries silence without a second STT call or fake completion', async () => {
+  const engine = await load('../../components/lessons/lesson-experience.tsx')
+  assert.match(engine, /silenceMs: activity\.activityKey\?\.startsWith\('class1-l01-v4-poem-'\) \? 1900 : 1350/)
+  assert.match(engine, /speechThreshold: 0\.012/)
+  assert.match(engine, /const recovery = class1SilenceRecovery\(noSpeechMisses\.current\)/)
+  assert.match(engine, /'FEEDBACK', activity\.id, 'en-IN'/)
+  assert.match(engine, /playback = await julie\.speak\(/)
+  assert.match(engine, /if \(generation !== playbackGeneration\.current\) return/)
+  assert.match(engine, /if \(playback !== 'spoken'\) \{\s*setAudioBlocked\(true\)/)
+  assert.match(engine, /setExperience\('julie_audio_pending'\)/)
+  assert.match(engine, /setExperience\(recovery\.autoListen \? 'waiting_for_student' : 'recoverable_error'\)/)
+  assert.match(engine, /const delay = experienceId === 'g01-l01' && noSpeechMisses\.current > 0 \? 1400 : 420/)
+  assert.match(engine, /if \(normalizedText\) noSpeechMisses\.current = 0/)
+  assert.match(engine, /if \(experienceId === 'g01-l01'\) setStudentTurn\(null\)/)
+  assert.match(engine, /await cancelActiveVoiceSession\(\)\s+if \(experienceId === 'g01-l01' && isClass1NoSpeechError\(error\)\)/)
+  assert.match(engine, /await submit\(normalizedText, currentSessionId, 'MIC', voiceResult\.languageCode, telemetryTurnId\)/)
+  assert.match(engine, /if \(playback !== 'spoken'\)/)
+  assert.match(engine, /await acknowledgeFirstDayTeacherAudio\(\)/)
+})
+
+test('Class 1 finale sends five aligned real clip boundaries with no client-owned grading', async () => {
+  const source = await load('../../lib/class1-poem-recital.ts')
+  const module = { exports: {} }
+  vm.runInNewContext(ts.transpileModule(source, { compilerOptions: {
+    module: ts.ModuleKind.CommonJS,
+  } }).outputText, { module, exports: module.exports })
+  const join = module.exports.joinClass1PoemRecitalParts
+  const five = ['See me skip.\nSee me run.', 'school', 'grin', 'jumping', 'Hooray!']
+  assert.equal(join(five), 'See me skip. See me run.\nschool\ngrin\njumping\nHooray!')
+  assert.throws(() => join(five.slice(0, 4)), /Five poem parts/)
+  assert.throws(() => join(['skip', 'school', '', 'jump', 'hurray']), /unclear/)
+  assert.throws(() => join(['skip', 'school', 'grin', 'jump', 'a'.repeat(241)]), /unclear/)
+  const engine = await load('../../components/lessons/lesson-experience.tsx')
+  assert.match(engine, /joinClass1PoemRecitalParts\(\[\.\.\.poemRecitalParts\.current, normalizedText\]\)/)
+  assert.match(engine, /await cancelActiveVoiceSession\(\)/)
+  assert.match(engine, /Say one word from these lines, or try both lines/)
+  assert.match(engine, /await submit\(normalizedText, currentSessionId, 'MIC'/)
+  assert.doesNotMatch(source, /activityComplete|xpAwarded|masteryStatus/)
+})
+
+test('Class 1 gives instant truthful visual feedback while STT, Node and Azure are working', async () => {
+  const source = await load('../../lib/class1-turn-wait-cue.ts')
+  const module = { exports: {} }
+  vm.runInNewContext(ts.transpileModule(source, { compilerOptions: {
+    module: ts.ModuleKind.CommonJS,
+  } }).outputText, { module, exports: module.exports })
+  const cue = module.exports.class1TurnWaitCue
+  assert.match(cue('transcribing').label, /words/)
+  assert.match(cue('julie_thinking').label, /next little step/)
+  assert.match(cue('julie_audio_pending').label, /voice/)
+  assert.match(cue('julie_text_ready').label, /voice/)
+  for (const state of ['julie_speaking', 'student_recording', 'retry_required',
+    'activity_complete', 'recoverable_error', 'waiting_for_student']) {
+    assert.equal(cue(state), null, 'Never mislabel ' + state + ' as still waiting')
+  }
+
+  const engine = await load('../../components/lessons/lesson-experience.tsx')
+  const stage = await load('../../components/student/lesson/immersive-lesson-stage.tsx')
+  const classroom = await load('../../features/lessons/grades/class-01/level-01/FirstDayPoemClassroom.tsx')
+  const css = await load('../../features/lessons/grades/class-01/level-01/first-day-poem-classroom.css')
+  assert.match(engine, /class1TurnWaitCue\(experience\)/)
+  assert.match(engine, /waitInvitation=\{class1WaitCue\?\.invitation\}/)
+  assert.match(engine, /class1WaitCue && !julie\.isSpeaking/)
+  assert.match(stage, /turnStatus=\{statusText\}/)
+  assert.match(stage, /waitInvitation=\{waitInvitation\}/)
+  assert.match(classroom, /isProcessing && !isSpeaking && !isListening && turnStatus/)
+  assert.match(classroom, /poem-feedback__wait/)
+  assert.match(classroom, /role="status" aria-live="polite"/)
+  assert.match(css, /prefers-reduced-motion: reduce/)
+  assert.match(css, /poem-feedback__wait-dots/)
+  // No invented audio filler, false success status, or additional network path.
+  assert.doesNotMatch(source, /fetch\(|audio\.play|julie\.speak|setTimeout|xpAwarded|masteryStatus/)
 })
 
 test('First Day route uses school-action homework and hides v3 fullscreen button', async () => {
@@ -73,9 +173,14 @@ test('Marathi/Hindi STT locale reaches Azure voice choice without another STT re
   const azure = await load('../../../backend/src/providers/voice/AzureVoiceProvider.ts')
   assert.match(engine, /voiceLanguage: detectedLanguage/)
   assert.match(engine, /turn\.voiceLanguage/)
-  assert.match(hook, /voiceService\.speak\(text, onState, turnId, priority, activityId, language\)/)
+  // The optional timing observer may wrap onState, but must never drop the language/session arguments.
+  assert.match(hook, /voiceService\.speak\(text, \(nextState, message\) => \{/)
+  assert.match(hook, /onState\(nextState, message\)/)
+  assert.match(hook, /\}, turnId, priority, activityId, language, teacherSessionId\)/)
   assert.match(client, /language: language \|\| detectVoiceLanguage\(text\)/)
-  assert.match(server, /class1Lesson: true, language: options\.language/)
+  // Azure now also receives the authenticated v4 poem-recitation flag.
+  // Keep checking the language handoff without relying on one-line formatting.
+  assert.match(server, /class1Lesson: true,\s*language: options\.language,\s*poemRecitation: isFirstDayPoem/)
   assert.match(azure, /options\?\.language/)
 })
 
@@ -107,7 +212,9 @@ test('First Day Qwen completion requires media-ended server acknowledgment and i
   const pedagogy = await load('../../../backend/src/services/missJulie.service.ts')
   assert.match(engine, /const firstDayV3 = \/\^class1-l01-v\(\?:3\|4\)-\//)
   assert.match(engine, /pendingTeacherAck\.current = id/)
-  assert.match(engine, /if \(firstDayV3 && complete && spoken\) await acknowledgeFirstDayTeacherAudio\(\)/)
+  // Progress ACK remains after successful onended playback; the new telemetry only observes it.
+  assert.match(engine, /if \(firstDayV3 && complete && spoken\) \{\s*const acknowledged = await acknowledgeFirstDayTeacherAudio\(\)/)
+  assert.match(engine, /if \(acknowledged && telemetryTurnId\) lessonTurnTelemetry\.markFor\(telemetryTurnId, 'ackDone'\)/)
   assert.match(engine, /await voiceService\.pendingTeacherAudio\(activity\.id\)/)
   assert.match(engine, /await voiceService\.acknowledgeTeacherAudio\(pendingId\)/)
   assert.match(client, /\/teacher-audio-played/)

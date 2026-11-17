@@ -1,0 +1,87 @@
+
+> my-project@0.1.0 build /workspace/scratch/3d6540fc17c4/integration-work/client
+> next build
+
+▲ Next.js 16.3.0 (Turbopack)
+✓ Running next.config.mjs took 15ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 13.1s
+  Running TypeScript ...
+  Finished TypeScript in 11.6s ...
+  Collecting page data using 8 workers ...
+  Generating static pages using 8 workers (0/49) ...
+  Generating static pages using 8 workers (12/49)
+  Generating static pages using 8 workers (24/49)
+  Generating static pages using 8 workers (36/49)
+✓ Generating static pages using 8 workers (49/49) in 606ms
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ƒ /[...slug]
+├ ○ /ai-lab
+├ ƒ /api/auth/[...all]
+├ ○ /classroom-preview
+├ ○ /login
+├ ○ /login/school
+├ ○ /login/student
+├ ○ /login/teacher
+├ ○ /school-login
+├ ○ /school/classes
+├ ƒ /school/classes/[id]
+├ ƒ /school/curriculum-map
+├ ƒ /school/curriculum-studio/[grade]/[level]
+├ ○ /school/dashboard
+├ ○ /school/kg-preview
+├ ○ /school/kg-preview/level-1
+├ ○ /school/kg-preview/level-2
+├ ƒ /school/kg-preview/level-2/[letter]
+├ ○ /school/kg-preview/level-3
+├ ƒ /school/kg-preview/level-3/[letter]
+├ ○ /school/kg-preview/level-4
+├ ○ /school/kg-preview/level-5
+├ ƒ /school/kg-preview/level-5/[letter]
+├ ○ /school/reports
+├ ○ /school/settings
+├ ƒ /school/students
+├ ƒ /school/students/[id]
+├ ƒ /school/students/[id]/edit
+├ ƒ /school/students/[id]/report
+├ ○ /school/students/new
+├ ○ /school/teachers
+├ ○ /sign-in
+├ ○ /sign-up
+├ ○ /student
+├ ○ /student-login
+├ ○ /student/classes
+├ ○ /student/code
+├ ○ /student/continue
+├ ○ /student/dashboard
+├ ○ /student/home
+├ ○ /student/kg
+├ ○ /student/kg/level-2
+├ ○ /student/kg/level-3
+├ ○ /student/kg/level-4
+├ ○ /student/kg/level-5
+├ ○ /student/kg/map
+├ ƒ /student/kg/review/[level]
+├ ƒ /student/lesson/[id]
+├ ○ /student/level
+├ ○ /student/levels
+├ ƒ /student/levels/[id]
+├ ○ /student/practice
+├ ○ /student/practice/home
+├ ○ /student/practice/talk
+├ ○ /student/profile
+├ ○ /student/progress
+├ ○ /student/rewards
+├ ○ /student/select-profile
+└ ○ /voice-lab
+
+
+ƒ Proxy (Middleware)
+
+○  (Static)   prerendered as static content
+ƒ  (Dynamic)  server-rendered on demand

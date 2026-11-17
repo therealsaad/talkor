@@ -1,16 +1,29 @@
 import { afterEach, expect, test } from '@jest/globals'
 import { AzureVoiceProvider } from '../src/providers/voice/AzureVoiceProvider'
+import { logger } from '../src/utils/logger'
 
 const originalFetch = globalThis.fetch
 const initialKey = process.env.AZURE_SPEECH_KEY
 const initialRegion = process.env.AZURE_SPEECH_REGION
 
 afterEach(() => {
+  jest.restoreAllMocks()
   globalThis.fetch = originalFetch
   if (initialKey === undefined) delete process.env.AZURE_SPEECH_KEY
   else process.env.AZURE_SPEECH_KEY = initialKey
   if (initialRegion === undefined) delete process.env.AZURE_SPEECH_REGION
   else process.env.AZURE_SPEECH_REGION = initialRegion
+})
+
+test('Azure provider errors cannot echo private SSML or upstream response text into logs', async () => {
+  process.env.AZURE_SPEECH_KEY = 'test-only-key'
+  const privateText = 'CANARY_PRIVATE_CHILD_TEXT'
+  const warnings: unknown[][] = []
+  jest.spyOn(logger, 'warn').mockImplementation((...args) => { warnings.push(args) })
+  globalThis.fetch = async () => new Response(privateText, { status: 400 })
+  await expect(new AzureVoiceProvider().synthesizeStream(privateText)).rejects.toThrow()
+  expect(warnings).toEqual([['Azure TTS returned an error', { status: 400 }]])
+  expect(JSON.stringify(warnings)).not.toContain(privateText)
 })
 
 test('Azure 200 with empty speech bytes is a provider failure, not a spoken turn', async () => {

@@ -5,6 +5,8 @@ import { AIProvider, MissJulieContext, unitTeachingGuidance } from './AIProvider
 import { GroqProvider } from './GroqProvider'
 import { class1ExplanationLanguage } from './class1-language'
 import { ApiError } from '../../utils/ApiError'
+import { errorCategory } from '../../utils/error-category'
+import { lessonTeachingContextSchema } from '../../services/lesson-teaching-context'
 
 export class PythonAIProvider implements AIProvider {
   name = 'python-qwen'
@@ -13,7 +15,12 @@ export class PythonAIProvider implements AIProvider {
   async generate(context: MissJulieContext): Promise<AIStructuredResponse> {
     const startedAt = Date.now()
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), env.aiServiceTimeoutMs)
+    // Even an OLD Python 8002 process must not keep a child waiting ten
+    // seconds on a poem recitation. Only this canonical scene is bounded;
+    // ordinary KG and other classes retain their original timeouts.
+    const poemScene = context.grade === 1 && context.levelId === 'g01-l01' &&
+      context.sceneKey?.startsWith('poem-') === true
+    const deadlineMs = poemScene ? Math.min(env.aiServiceTimeoutMs, 2800) : env.aiServiceTimeoutMs
     const unitGuidance = unitTeachingGuidance(context)
     const isClass1Pilot = context.grade === 1 && context.levelId === 'g01-l01'
     const pilotEnabled = isClass1Pilot
@@ -25,6 +32,14 @@ export class PythonAIProvider implements AIProvider {
     const baseUrl = pilotEnabled && isClass1Pilot
       ? process.env.TALKORA_CLASS1_AI_URL || 'http://127.0.0.1:8002'
       : env.aiServiceUrl
+    if (context.teachingContext) {
+      const checked = lessonTeachingContextSchema.safeParse(context.teachingContext)
+      if (!isClass1Pilot || !checked.success || checked.data.sceneKey !== context.sceneKey ||
+          checked.data.teacherQuestion !== context.activityTarget ||
+          JSON.stringify([...checked.data.vocabulary].sort()) !== JSON.stringify([...(context.allowedVocabulary || [])].sort()))
+        throw ApiError.provider('LESSON_TEACHING_CONTEXT_MISMATCH')
+    }
+    const timeout = setTimeout(() => controller.abort(), deadlineMs)
 
     try {
       if (env.nodeEnv !== 'production') {
@@ -54,6 +69,9 @@ export class PythonAIProvider implements AIProvider {
             lessonTitle: context.lessonTitle,
             stage: context.stage || context.promptContext,
             activityTitle: context.activityTitle || '',
+            // Resolved from an authorized MongoDB activity, never from browser speech.
+            ...(isClass1Pilot && context.sceneKey ? { sceneKey: context.sceneKey } : {}),
+            ...(isClass1Pilot && context.teachingContext ? { teachingContext: context.teachingContext } : {}),
             digitalType: context.digitalType || '',
             julieProfile: context.julieProfile || {},
             currentQuestion: context.activityTarget || context.activityTitle || '',
@@ -155,7 +173,7 @@ export class PythonAIProvider implements AIProvider {
     } catch (error) {
       console.warn(
         '[TALKORA AI] Local Qwen unavailable.',
-        error instanceof Error ? error.message : error,
+        errorCategory(error),
       )
 
       // Never route an unavailable Class 1 curriculum turn to an unrestricted
@@ -173,7 +191,7 @@ export class PythonAIProvider implements AIProvider {
         } catch (groqError) {
           console.warn(
             '[TALKORA AI] Groq fallback failed.',
-            groqError instanceof Error ? groqError.message : groqError,
+            errorCategory(groqError),
           )
         }
       }

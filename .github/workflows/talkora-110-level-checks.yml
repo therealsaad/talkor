@@ -15,6 +15,10 @@ jobs:
           node-version: '22'
       - name: Guard shared staff preview structural verification against regressions
         run: node --test tools/tests/staff-preview-boundaries.test.cjs
+      - name: Verify the local CI runner reads this workflow completely
+        run: node --test tools/tests/run-ci-locally.test.mjs
+      - name: Keep lesson videos and images light for slow connections
+        run: node tools/check-asset-budget.mjs
       - name: Validate all 110 level workspaces and mapping boundaries
         run: node tools/verify-110-levels.cjs
   frontend:
@@ -44,16 +48,21 @@ jobs:
         env:
           CHROME_PATH: /usr/bin/google-chrome
         working-directory: client
+      - name: Verify Class 1 fresh and resumed visits enforce the introduction in real Chromium
+        run: node --test tests/class1-intro.browser.test.mjs
+        env:
+          CHROME_PATH: /usr/bin/google-chrome
+        working-directory: client
       - name: Verify production preview endpoints are truly unavailable
         working-directory: client
         shell: bash
         run: |
-          pnpm exec next start -p 3100 > /tmp/talkora-preview-next.log 2>&1 &
+          pnpm exec next start -p 3100 --hostname 127.0.0.1 > /tmp/talkora-preview-next.log 2>&1 &
           next_pid=$!
           trap 'kill "$next_pid" 2>/dev/null || true' EXIT
           code="000"
           for attempt in {1..45}; do
-            code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3100/classroom-preview || true)
+            code=$(curl -s -o /dev/null -w '%{http_code}' --connect-timeout 2 --max-time 5 http://127.0.0.1:3100/classroom-preview || true)
             if [ "$code" != "000" ]; then break; fi
             sleep 1
           done
@@ -62,7 +71,7 @@ jobs:
             echo "Expected 404 for classroom-preview, got $code"
             exit 1
           fi
-          static_code=$(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3100/classroom-preview.html || true)
+          static_code=$(curl -s -o /dev/null -w '%{http_code}' --connect-timeout 2 --max-time 5 http://127.0.0.1:3100/classroom-preview.html || true)
           test "$static_code" = "404"
       - name: Verify stable SSR hydration for student and school authentication
         run: node --test tests/ui/auth-hydration-contract.test.mjs
@@ -81,6 +90,9 @@ jobs:
         working-directory: client
       - name: Verify lesson latency telemetry is opt-in, anonymous and isolated per student
         run: node --test tests/ui/lesson-turn-telemetry.test.mjs
+        working-directory: client
+      - name: Verify KG2 to KG5 latency telemetry measures each stage and keeps students apart
+        run: node --test tests/ui/lesson-turn-telemetry-kg2-5.test.mjs
         working-directory: client
       - name: Verify the device audio cache only keeps fixed lesson clips
         run: node --test tests/ui/device-audio-cache.test.mjs
@@ -103,14 +115,23 @@ jobs:
       - name: "Guard all 110 levels: next KG letter journey, published-grade locking and session resume"
         run: node --test tests/ui/grade0-to10-sequential-resume.test.mjs
         working-directory: client
+      - name: Verify Class 1 Level 2 chapter-order, bilingual voice-model and 19 exercise coverage
+        run: node --test tests/ui/class1-level2-release-readiness.test.mjs tests/ui/class1-review-authoring-literals.test.mjs
+        working-directory: client
       - name: Verify KG6–10 and Class 1 L2 teacher drafts stay complete but locked from students
         run: node --test tests/ui/kg6-10-class1-l2-editorial-drafts.test.mjs
         working-directory: client
       - name: Verify Class 1 hands-free audio and landscape contracts
         run: node --test tests/ui/class1-voice-runtime-contract.test.mjs
         working-directory: client
+      - name: Verify Class 1 signed feedback waits for complete playback and isolates logins
+        run: node --test tests/ui/class1-feedback-receipt.test.mjs
+        working-directory: client
       - name: Verify bundled First Day intro staging and mandatory playback gate
         run: node --test tests/ui/class1-bundled-firstday-intro.test.mjs
+        working-directory: client
+      - name: Verify Class 1 visible poem pairs use authenticated Azure recitation
+        run: node --test tests/ui/class1-poem-azure-replay.test.mjs
         working-directory: client
       - name: Verify Class 1 poem UI and existing voice loop contracts
         run: node --test tests/ui/class1-poem-recitation.test.mjs
@@ -158,6 +179,11 @@ jobs:
         working-directory: backend
       - name: Verify real KG latency report only aggregates correlated timings and cannot leak speech
         run: node --test tests/kg-turn-latency-report.node.test.mjs
+        working-directory: backend
+      - name: Verify private request metrics and provider error logging
+        run: |
+          pnpm exec jest --runInBand tests/unit/requestObservability.test.ts
+          node --test tests/cors-options.node.test.cjs
         working-directory: backend
       - name: Verify real school-lab KG PIN acceptance report resolves exact server progress
         run: node --test tests/kg-live-session-acceptance.node.test.mjs
@@ -254,6 +280,16 @@ jobs:
       - name: Test Class 1 Node-Python bridge security
         run: pnpm exec jest --runInBand tests/unit/pythonAIProviderBridge.test.ts tests/unit/class1StaticAudio.test.ts
         working-directory: backend
+      - name: Verify authorized DB lesson context, current-activity adaptation and bridge bounds
+        run: |
+          node --check scripts/verify-class1-teaching-wire.mjs
+          pnpm exec jest --runInBand tests/unit/lessonTeachingContext.test.ts tests/integration/lessonTeachingContext.test.ts
+        working-directory: backend
+      - name: Verify third-reply practice, conversation isolation and unchanged signed-ACK completion
+        run: |
+          node --check scripts/report-first-day-practice.mjs
+          pnpm exec jest --runInBand tests/unit/firstDayPracticeScaffold.test.ts tests/integration/firstDayPracticeScaffold.test.ts
+        working-directory: backend
       - name: Guard synthetic-only Node to Python advisory teaching contract
         run: pnpm run test:synthetic-teaching-harness
         working-directory: backend
@@ -267,6 +303,12 @@ jobs:
           TALKORA_CHECKPOINT_TEST_MONGO_URI: mongodb://127.0.0.1:27017
       - name: Verify loopback HTTP Node to synthetic Python wire contract
         run: pnpm exec jest --runInBand tests/integration/syntheticTeachingWire.test.ts
+        working-directory: backend
+      - name: Guard poem AI against recorded at-at fallback in English Hindi Marathi
+        run: pnpm exec jest --runInBand tests/unit/class1PoemTeachingGuard.test.ts
+        working-directory: backend
+      - name: Verify Azure rhythmic poem recitation SSML without paid calls
+        run: pnpm exec jest --runInBand tests/unit/class1PoemAzureRecitation.test.ts
         working-directory: backend
       - name: Verify authentic Balbharati 1.1 poem pairs and whole recitation
         run: pnpm exec jest --runInBand tests/unit/class1PoemRecitation.test.ts
@@ -288,6 +330,16 @@ jobs:
         working-directory: backend
       - name: Guard Class 1 First Day release against false publishing and historical progress
         run: pnpm exec jest --runInBand tests/unit/class1Level1Publication.test.ts
+        working-directory: backend
+      - name: Verify Class 1 release staging and remote media safety contracts
+        run: pnpm exec jest --runInBand tests/unit/class1ProductionStaging.test.ts
+        working-directory: backend
+      - name: Verify source-bound Class 1 Level 2 review pack and reject false publication
+        shell: bash
+        run: |
+          pnpm exec jest --runInBand tests/unit/lessonReviewPack.test.ts
+          node --test tests/class1-review-pack.node.test.mjs
+          node scripts/class1-level2-review-pack.mjs --check
         working-directory: backend
       - name: Guard real Class 1 Sarvam to Qwen to Azure smoke route
         run: pnpm exec jest --runInBand tests/unit/class1LiveSmokeContract.test.ts

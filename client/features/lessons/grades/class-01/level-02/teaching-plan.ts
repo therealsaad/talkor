@@ -74,6 +74,61 @@ export const CLASS1_LEVEL2_TEACHING_STEPS = [
   },
 ] as const
 
+/** The next five canonical speaking beats, one per source chapter, in strict
+ * Balbharati 1.2–1.6 order. These are original model sentences for a
+ * teacher-approved *future* student runtime. The authenticated backend must
+ * supply the active chapter and own all evidence, progress and unlocking;
+ * this module cannot mark an activity, chapter or level completed.
+ *
+ * The 19 accompanying numbered textbook exercises require separately
+ * supervised reading, writing, movement and listening review. Five spoken
+ * words cannot certify all 19 exercises or the level.
+ */
+export const CLASS1_LEVEL2_VOICE_SCENES = [
+  { chapter: '1.2', stepKey: 'clap-invitation', englishTarget: 'clap',
+    modelEnglish: 'I can clap.', retryEnglish: 'Listen: clap. Now say clap.',
+    translationEnglish: 'Clap means bringing your hands together.',
+    teacherReviewRequired: true, audioReviewRequired: true, deviceTestRequired: true,
+    reviewed: false, studentPlayable: false },
+  { chapter: '1.3', stepKey: 'letter-listening', englishTarget: 'B',
+    modelEnglish: 'This is the letter B.', retryEnglish: 'Listen to B. Try saying B.',
+    translationEnglish: 'B is one letter of the English alphabet.',
+    teacherReviewRequired: true, audioReviewRequired: true, deviceTestRequired: true,
+    reviewed: false, studentPlayable: false },
+  { chapter: '1.4', stepKey: 'cat-building', englishTarget: 'cat',
+    modelEnglish: 'I see a cat.', retryEnglish: 'Listen: c, a, t. Together: cat.',
+    translationEnglish: 'We can join c, a and t to make cat.',
+    teacherReviewRequired: true, audioReviewRequired: true, deviceTestRequired: true,
+    reviewed: false, studentPlayable: false },
+  { chapter: '1.5', stepKey: 'special-letters', englishTarget: 'a',
+    modelEnglish: 'The vowel a is in cat.', retryEnglish: 'Find the letter a in cat.',
+    translationEnglish: 'The five vowel letters are a, e, i, o and u.',
+    teacherReviewRequired: true, audioReviewRequired: true, deviceTestRequired: true,
+    reviewed: false, studentPlayable: false },
+  { chapter: '1.6', stepKey: 'rainbow-colour', englishTarget: 'red',
+    modelEnglish: 'It is red.', retryEnglish: 'Look at the red card. Say red.',
+    translationEnglish: 'Red is a colour of the rainbow.',
+    teacherReviewRequired: true, audioReviewRequired: true, deviceTestRequired: true,
+    reviewed: false, studentPlayable: false },
+] as const
+
+/** Short supports reuse the same already-authored Hindi/Marathi lesson cue.
+ * Student-language recognition is Sarvam; these preview strings are not
+ * evidence that an English word was spoken or that a child mastered it. */
+export const CLASS1_LEVEL2_LANGUAGE_SCAFFOLDS = CLASS1_LEVEL2_VOICE_SCENES.map(scene => {
+  const step = CLASS1_LEVEL2_TEACHING_STEPS.find(item => item.key === scene.stepKey)
+  if (!step || step.chapter !== scene.chapter)
+    throw new Error('Class 1 Level 2 authoring step and voice model disagree: ' + scene.stepKey)
+  return {
+    chapter: scene.chapter, stepKey: scene.stepKey,
+    teacherEnglish: step.teacherLine, modelEnglish: scene.modelEnglish,
+    hintHindi: step.hintHi, hintMarathi: step.hintMr,
+    retryEnglish: scene.retryEnglish,
+    teacherReviewRequired: true as const,
+    studentPlayable: false as const,
+  }
+})
+
 /** Original supplementary review activities, not replacement of the 1.2–1.6
  * syllabus tasks. All need teacher signoff and real audio approval.
  */

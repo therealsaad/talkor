@@ -1,0 +1,111 @@
+{
+  "date": "2026-11-10",
+  "productionReady": false,
+  "realStudentDataUsed": false,
+  "paidProvidersTested": false,
+  "physicalMicrophoneSpeakerTested": false,
+  "mainUnchanged": true,
+  "curriculumPublished": false,
+  "prsMerged": false,
+  "combinedLocalCommit": "2aece4e624af7a50934c83d660daf2e57a5abdba",
+  "combinedLocalTree": "f040e783f288a0280949516bce53f63f8cacfda2",
+  "githubBaseApp": "b9da4b48c4641e74927e26f703fd2247521dc7e9",
+  "githubBaseAI": "83b19973d28c41378a2b5be04bbaf7be4e3f8f4f",
+  "combinedChecks": {
+    "structure": {
+      "stepsPassed": 4,
+      "failed": 0
+    },
+    "backend": {
+      "stepsPassed": 51,
+      "failed": 0,
+      "skipped": "dependency install only; includes disposable MongoDB checkpoint persistence"
+    },
+    "frontendNodeTests": {
+      "stepsPassed": 28,
+      "failed": 0,
+      "runnerSkippedBrowserSteps": 2,
+      "browserStepsRunSeparately": true
+    },
+    "productionBuild": "passed",
+    "chromium": {
+      "passed": 11,
+      "failed": 0
+    },
+    "productionPreviewSmoke": {
+      "/classroom-preview": 404,
+      "/classroom-preview.html": 404,
+      "explicitHostname": "127.0.0.1"
+    }
+  },
+  "ai": {
+    "main": {
+      "passed": 196,
+      "skipped": 1
+    },
+    "pr20": {
+      "passed": 200,
+      "skipped": 1
+    },
+    "skipReason": "optional prototype seed absent",
+    "warning": "Starlette/httpx deprecation",
+    "realModelTested": false
+  },
+  "reproduction": {
+    "backend": "node tools/run-ci-locally.mjs --job backend --keep-going (pnpm 10.18.0 on PATH; owned MongoDB on loopback 27017; MONGOMS_SYSTEM_BINARY with --nounixsocket)",
+    "frontend": "node tools/run-ci-locally.mjs --job frontend --only \"node --test\" --keep-going; pnpm build in client",
+    "browser": "CHROME_PATH=<headless chromium> node --test tests/staff-explorer.browser.test.mjs tests/class1-intro.browser.test.mjs",
+    "structure": "node tools/run-ci-locally.mjs --job structure --keep-going"
+  },
+  "integrationResolutions": [
+    "CORS and test preserve all three exposed response headers",
+    "Class 1 journey retains signed-feedback and intro tests, legitimate intro fixture, no duplicate model imports"
+  ],
+  "githubCI": [
+    {
+      "pr": 126,
+      "headSha": "a58a286ba850a09afc94a609430672c89401b7b1",
+      "workflowRun": "https://github.com/therealsaad/talkor/actions/runs/42784157904",
+      "conclusion": "success"
+    },
+    {
+      "pr": 127,
+      "headSha": "c8ec7fb02aeac08af007ee185147f586bfccea30",
+      "workflowRun": "https://github.com/therealsaad/talkor/actions/runs/42784644915",
+      "conclusion": "success"
+    },
+    {
+      "pr": 128,
+      "headSha": "adb1bc0e5f08d375c77c21e42bf265140fc0f87c",
+      "workflowRun": "https://github.com/therealsaad/talkor/actions/runs/42787278099",
+      "conclusion": "success"
+    },
+    {
+      "pr": 129,
+      "headSha": "71a80c3cd6379a050668192632a152f638b276c6",
+      "workflowRun": "https://github.com/therealsaad/talkor/actions/runs/42788686216",
+      "conclusion": "success"
+    },
+    {
+      "pr": 130,
+      "headSha": "1a36e8236c842e62cefeca77aa2d2b640d76a8ae",
+      "workflowRun": "https://github.com/therealsaad/talkor/actions/runs/42791450787",
+      "conclusion": "success"
+    },
+    {
+      "pr": 131,
+      "headSha": "b71bdfe74ab6ce804133b77938b1c3707e5070b8",
+      "workflowRun": "https://github.com/therealsaad/talkor/actions/runs/42792942985",
+      "conclusion": "success"
+    }
+  ],
+  "loadMeasurements": {
+    "initial": "synthetic-load.json",
+    "confirmation": "synthetic-load-confirmation.json",
+    "localSourceCommit": "04c2ca0",
+    "githubSourceCommit": "71a80c3cd6379a050668192632a152f638b276c6",
+    "finalTypeScriptCompile": "passed",
+    "confirmationExitCode": 0,
+    "setupFailure": "The first confirmation could not start MongoDB using a wrapper; direct cached MongoDB binary passed. Both own disposable databases, never an external target."
+  }
+}

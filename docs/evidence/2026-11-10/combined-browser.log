@@ -1,0 +1,19 @@
+✔ fresh PIN visit waits for the complete Class 1 story without starting speech (3355.306105ms)
+✔ saved-progress resume waits for the complete Class 1 story without starting speech (1910.056786ms)
+✔ a failed intro start offers visible retry and does not enter practice (1735.006124ms)
+✔ teacher login opens all 110 addresses; class/unit/search and coverage are interactive (5703.951771ms)
+✔ school login opens all 110 addresses; class/unit/search and coverage are interactive (3687.700653ms)
+✔ invalid credentials stay on login; anonymous and student sessions cannot inspect staff plans (3157.092447ms)
+✔ teacher KG denial stays unavailable and does not become a published state (2627.698168ms)
+✔ a late previous-class response cannot replace the selected class (2753.858125ms)
+✔ planning notes survive reload and do not leak to another staff account (5026.630263ms)
+✔ expired authentication removes the explorer and redirects to school sign-in (2864.327466ms)
+✔ teaching preview waits and retries the same prompt with Hindi and Marathi support without writing progress (2240.128658ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 11
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 28346.198875

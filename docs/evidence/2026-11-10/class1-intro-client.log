@@ -1,0 +1,14 @@
+✔ authenticated poem lesson supports the exact bundled reviewed media source (1.16915ms)
+✔ stage command refuses fake video, writes no old attempts or progress, checks local file (0.257502ms)
+✔ intro starts are single-flight per login/lesson and stale responses cannot authorize a new child (94.382539ms)
+✔ intro failures retry and a login change during completion cannot finish the new lesson (16.057072ms)
+✔ real ended handler waits for the backend and cannot continue on save failure or double-ended events (30.09299ms)
+✔ late video metadata cannot erase an earlier server-intro failure and hide recovery (7.784987ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 651.654095

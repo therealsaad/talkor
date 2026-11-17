@@ -36,6 +36,7 @@ import {
   isClass1DemoLesson,
   isClass1DemoLevel,
 } from './class1-demo-access'
+import { assertFirstDayIntro } from './class1-intro-eligibility'
 
 /** Controlled, one-student demo; never opens draft Class 1 to the general student population. */
 export { CLASS1_DEMO_VERSION }
@@ -55,7 +56,7 @@ export const CurriculumAccessService = {
         studentId,
       )
         .select(
-          'grade schoolId status className fullName',
+          'grade schoolId status className fullName authVersion',
         )
         .lean()
 
@@ -270,6 +271,10 @@ export const CurriculumAccessService = {
         studentId,
         activity.lessonId.toString(),
       )
+
+    await assertFirstDayIntro({ studentId, schoolId: String(access.student.schoolId),
+      authVersion: access.student.authVersion || 0, grade: access.student.grade,
+      lessonId: String(lesson._id), settings: lesson.settings, activityKey: activity.activityKey })
 
     return {
       activity,

@@ -4,6 +4,7 @@ import { aiStructuredResponseSchema } from '../../schemas/ai.schema'
 import { ApiError } from '../../utils/ApiError'
 import { env } from '../../config/env'
 import { logger } from '../../utils/logger'
+import { errorCategory } from '../../utils/error-category'
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 
@@ -37,13 +38,13 @@ export class OpenAIProvider implements AIProvider {
         }),
       })
     } catch (err) {
-      logger.error('OpenAI request failed', { err })
+      logger.error('OpenAI request failed', { errorCategory: errorCategory(err) })
       throw ApiError.provider('Failed to reach the AI provider')
     }
 
     if (!response.ok) {
-      const text = await response.text().catch(() => '')
-      logger.error('OpenAI returned an error', { status: response.status, text })
+      await response.body?.cancel().catch(() => undefined)
+      logger.error('OpenAI returned an error', { status: response.status })
       throw ApiError.provider('The AI provider returned an error')
     }
 

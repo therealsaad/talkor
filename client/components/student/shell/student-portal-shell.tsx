@@ -18,7 +18,7 @@ export function StudentPortalShell({ children }: { children: ReactNode }) {
   const { session } = useAuth()
   const [stats, setStats] = useState<{ xp?: number; streak?: number; stars?: number }>({})
   const isKGMap = pathname === '/student/kg/map'
-  const isLesson = pathname.startsWith('/student/lesson') || (pathname.startsWith('/student/kg') && !isKGMap)
+  const isLesson = pathname === '/student/continue' || pathname.startsWith('/student/lesson') || (pathname.startsWith('/student/kg') && !isKGMap)
   const isMap = pathname === '/student/levels' || pathname === '/student/kg/map'
   const isKgMap = isMap && session?.student?.grade === 0
 
@@ -30,13 +30,15 @@ export function StudentPortalShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let alive = true
-    if (!session?.student) {
+    // The lesson/intro/resume stage hides this HUD. Fetch its statistics only
+    // on visible dashboard/map routes, leaving progress authorization fresh.
+    if (!session?.student || isLesson) {
       setStats({})
       return () => { alive = false }
     }
 
     // KG Level 1 persists in KGAlphabetProgress, not generic curriculum Progress.
-    // Fetch on session changes and map/lesson navigation; never store on a shared PC.
+    // Fetch on session changes and visible HUD navigation; never persist on a shared PC.
     if (session.student.grade === 0) {
       setStats({})
       kgAlphabetService.state().then((state) => {
@@ -51,7 +53,7 @@ export function StudentPortalShell({ children }: { children: ReactNode }) {
     return () => {
       alive = false
     }
-  }, [session?.student?.id, session?.student?.grade, pathname])
+  }, [session?.student?.id, session?.student?.grade, pathname, isLesson])
 
   const student = session?.student
   const studentName = student?.fullName?.split(' ')[0] || 'Explorer'

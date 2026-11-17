@@ -1,0 +1,7 @@
+Starting the MongoMemoryServer Instance failed, enable debug log for more information. Error:
+ UnexpectedCloseError: Instance closed unexpectedly with code "2" and signal "null"
+    at MongoInstance.closeHandler (/workspace/scratch/3d6540fc17c4/talkor/backend/node_modules/.pnpm/mongodb-memory-server-core@9.5.0/node_modules/mongodb-memory-server-core/lib/util/MongoInstance.js:302:58)
+    at ChildProcess.emit (node:events:514:28)
+    at maybeClose (node:internal/child_process:1172:16)
+    at ChildProcess._handle.onexit (node:internal/child_process:335:5)
+Synthetic profile failed; no external target or credentials are accepted.

@@ -15,9 +15,16 @@ const compiled = ts.transpileModule(source, {
 function makeHarness() {
   let token = 'student-token-A'
   const starts = []
+  const states = []
   const requests = []
   const apiClient = (path) => {
     requests.push({ path, token })
+    if (path === '/kg-alphabet/state') {
+      let resolve, reject
+      const promise = new Promise((finish, fail) => { resolve = finish; reject = fail })
+      states.push({ resolve, reject, token })
+      return promise
+    }
     if (path === '/kg-alphabet/intro/start') {
       let resolve
       const promise = new Promise((finish) => { resolve = finish })
@@ -49,6 +56,7 @@ function makeHarness() {
   return {
     service: exports.kgAlphabetService,
     starts,
+    states,
     requests,
     setToken: (next) => { token = next },
   }
@@ -93,4 +101,55 @@ test('completed ticket is invalidated when a shared computer changes login', asy
   assert.throws(() => h.service.introSeen(), /Start the full story first/)
   assert.throws(() => h.service.acknowledgeFeedback('submission-A'), /intro ticket missing or belongs to another login/)
   assert.equal(h.requests.some((r) => r.path.includes('feedback-played')), false)
+})
+
+
+const kgState = (index) => ({ currentIndex: index, audioVersion: 'v1', audio: {} })
+
+test('parallel KG1 state readers for the same login share exactly one request', async () => {
+  const h = makeHarness()
+  const first = h.service.state()
+  const second = h.service.state()
+  assert.strictEqual(first, second)
+  assert.equal(h.states.length, 1)
+  h.states[0].resolve(kgState(2))
+  assert.deepEqual((await Promise.all([first, second])).map((state) => state.currentIndex), [2, 2])
+
+  // An ACK, retry or new visit must be able to read newer server-owned progress.
+  const fresh = h.service.state()
+  assert.equal(h.states.length, 2)
+  h.states[1].resolve(kgState(3))
+  assert.equal((await fresh).currentIndex, 3)
+})
+
+test('a delayed state result from student A cannot affect student B', async () => {
+  const h = makeHarness()
+  const old = h.service.state()
+  h.setToken('student-token-B')
+  const active = h.service.state()
+  assert.equal(h.states.length, 2)
+  assert.deepEqual(h.states.map((item) => item.token), ['student-token-A', 'student-token-B'])
+
+  h.states[0].resolve(kgState(7))
+  await assert.rejects(old, /previous login/)
+  const concurrent = h.service.state()
+  assert.strictEqual(concurrent, active, 'settling A must not erase B\'s pending request')
+  h.states[1].resolve(kgState(1))
+  assert.equal((await active).currentIndex, 1)
+
+  const fresh = h.service.state()
+  assert.equal(h.states.length, 3)
+  h.states[2].resolve(kgState(2))
+  assert.equal((await fresh).currentIndex, 2)
+})
+
+test('failed KG1 state reads are never cached, allowing an immediate retry', async () => {
+  const h = makeHarness()
+  const failed = h.service.state()
+  h.states[0].reject(new Error('network unavailable'))
+  await assert.rejects(failed, /network unavailable/)
+  const retry = h.service.state()
+  assert.equal(h.states.length, 2)
+  h.states[1].resolve(kgState(0))
+  assert.equal((await retry).currentIndex, 0)
 })

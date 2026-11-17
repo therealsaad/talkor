@@ -1,3 +1,5 @@
+import { FIRST_DAY_POEM_STEPS } from '../curriculum/class1-first-day-poem'
+
 /** Small, auditable evidence gate for active Balbharati 1.1 scenes.
  * A word detected in Sarvam text is NOT a pronunciation assessment. The
  * student can learn/continue with one appropriate English attempt, including
@@ -26,25 +28,36 @@ export function firstDaySceneSkills(sceneKey: string, message: string): string[]
   return evidence[sceneKey]?.test(text) ? ['first_day_english_attempt'] : []
 }
 
+/** A bounded recognition alias for a common child's spoken "See me".
+ * Saaras can render the connected English sounds as "semi". This is NOT a
+ * general-purpose correction and never supplies an absent action/second line.
+ * Do not change the stored raw transcript or use this for pronunciation grades.
+ */
+export function normalizeFirstDayPoemRecognition(text: string): string {
+  return text.normalize('NFKC').toLowerCase()
+    .replace(/\bsemi\s+(?=(?:skip|run|walk|grin|jump|play)(?:ping|ning|ing)?\b)/g, 'see me ')
+}
+
 /** Only transcript evidence of both taught lines is enough to progress.
  * No acoustic pronunciation or comprehension scores are inferred from STT.
  */
 export function poemEvidence(sceneKey: string, text: string): string[] {
-  if (!text || /[?]|\b(?:what|why|how|help|repeat|again|meaning|i don['’]?t know|no idea)\b|क्या|मदद|मतलब|काय|म्हणजे|नाही|समजत/.test(text)) return []
-  const checks: Record<string, RegExp[]> = {
-    'poem-pair-1': [/\bskip(?:ping)?\b/, /\brun(?:ning)?\b/],
-    'poem-pair-2': [/\bschool\b/, /\bwalk(?:ing)?\b/],
-    'poem-pair-3': [/\b(?:grin|smile|smiling)\b/, /\b(?:bell|rings|ringing)\b/],
-    'poem-pair-4': [/\bjump(?:ing)?\b/, /\bplay(?:ing)?\b/],
-    'poem-pair-5': [/\bgrade\s+(?:one|1)\b/, /\b(?:hurray|hooray|hip\s*hip)\b/],
-  }
-  if (sceneKey === 'poem-full') {
-    const themes = [/\bskip\b.*\brun\b/s,/\bwalk\b.*\bgrin\b/s,
-      /\bbell\b.*\bin\b/s,/\bjump\b.*\bplay\b/s,
-      /\bgrade\s+(?:one|1)\b.*\b(?:hurray|hooray)\b/s]
-    return text.split(/\s+/).length >= 20 && themes.filter(re => re.test(text)).length >= 4
+  // Direct callers (including the final teacher-voice guard) can pass raw
+  // Sarvam casing. Normalize here, not only in firstDaySceneSkills.
+  const said = normalizeFirstDayPoemRecognition(text).trim()
+  if (!said || /[?]|\b(?:what|why|how|help|repeat|again|meaning|i don['’]?t know|no idea)\b|क्या|मदद|मतलब|काय|म्हणजे|नाही|समजत/.test(said)) return []
+  // A bare word bank response ("grin bell", "skip run", or "at at")
+  // is NOT reciting both lines. Look for both authored phrase patterns with
+  // modest speech-recognition tolerance for punctuation and inflections.
+  // This is textual evidence, never an accent/pitch pronunciation score.
+  const step = FIRST_DAY_POEM_STEPS.find(candidate => candidate.key === sceneKey)
+  if (!step) return []
+  if ('recital' in step) {
+    const { minWords, minThemes, themes } = step.recital
+    return said.split(/\s+/).length >= minWords &&
+      themes.filter(re => re.test(said)).length >= minThemes
       ? ['first_day_english_attempt'] : []
   }
-  const pair = checks[sceneKey]
-  return pair && pair.every(re => re.test(text)) ? ['first_day_english_attempt'] : []
+  return step.expectedLinePatterns.every(re => re.test(said))
+    ? ['first_day_english_attempt'] : []
 }

@@ -1,0 +1,265 @@
+{
+  "scenario": "Production UI, synthetic authenticated KG4 resume, fresh browser context per sample",
+  "revision": "832d04ecf6b827d15c9b81cc38ccce19d1992f7c",
+  "browser": "HeadlessChrome/153.0.8010.0",
+  "apiDelayMs": 200,
+  "runs": 10,
+  "physicalSpeechTested": false,
+  "pinToIntroScreenMs": {
+    "p50": 968,
+    "p95": 1045
+  },
+  "loginScreenMs": {
+    "p50": 238,
+    "p95": 295
+  },
+  "samples": [
+    {
+      "loginScreenMs": 278.38393199999996,
+      "pinToIntroScreenMs": 1010.4360510000001,
+      "apiRequests": [
+        "/auth/student/pin-login",
+        "/kg-continuation/overview",
+        "/kg-continuation/4/state",
+        "/kg-continuation/4/intro/start"
+      ],
+      "mediaBeforePin": [],
+      "mediaRequests": [
+        "/lessons/kg/level-04/animal-sounds-intro.mp4"
+      ],
+      "longTasks": [
+        52,
+        63
+      ],
+      "cls": 0,
+      "heapBytes": 6965380,
+      "resourceRequests": 42,
+      "transferredBytes": 706512,
+      "videoReady": 4,
+      "videoError": null,
+      "failures": []
+    },
+    {
+      "loginScreenMs": 295.4242089999998,
+      "pinToIntroScreenMs": 956.927017,
+      "apiRequests": [
+        "/auth/student/pin-login",
+        "/kg-continuation/overview",
+        "/kg-continuation/4/state",
+        "/kg-continuation/4/intro/start"
+      ],
+      "mediaBeforePin": [],
+      "mediaRequests": [
+        "/lessons/kg/level-04/animal-sounds-intro.mp4"
+      ],
+      "longTasks": [
+        63,
+        60
+      ],
+      "cls": 0,
+      "heapBytes": 7005092,
+      "resourceRequests": 42,
+      "transferredBytes": 706512,
+      "videoReady": 4,
+      "videoError": null,
+      "failures": []
+    },
+    {
+      "loginScreenMs": 204.96301399999993,
+      "pinToIntroScreenMs": 949.5236080000004,
+      "apiRequests": [
+        "/auth/student/pin-login",
+        "/kg-continuation/overview",
+        "/kg-continuation/4/state",
+        "/kg-continuation/4/intro/start"
+      ],
+      "mediaBeforePin": [],
+      "mediaRequests": [
+        "/lessons/kg/level-04/animal-sounds-intro.mp4"
+      ],
+      "longTasks": [
+        55,
+        61
+      ],
+      "cls": 0,
+      "heapBytes": 7001076,
+      "resourceRequests": 42,
+      "transferredBytes": 706512,
+      "videoReady": 4,
+      "videoError": null,
+      "failures": []
+    },
+    {
+      "loginScreenMs": 258.2522259999996,
+      "pinToIntroScreenMs": 968.1620229999999,
+      "apiRequests": [
+        "/auth/student/pin-login",
+        "/kg-continuation/overview",
+        "/kg-continuation/4/state",
+        "/kg-continuation/4/intro/start"
+      ],
+      "mediaBeforePin": [],
+      "mediaRequests": [
+        "/lessons/kg/level-04/animal-sounds-intro.mp4"
+      ],
+      "longTasks": [],
+      "cls": 0,
+      "heapBytes": 7047124,
+      "resourceRequests": 42,
+      "transferredBytes": 706512,
+      "videoReady": 4,
+      "videoError": null,
+      "failures": []
+    },
+    {
+      "loginScreenMs": 232.78931600000033,
+      "pinToIntroScreenMs": 970.6737909999993,
+      "apiRequests": [
+        "/auth/student/pin-login",
+        "/kg-continuation/overview",
+        "/kg-continuation/4/state",
+        "/kg-continuation/4/intro/start"
+      ],
+      "mediaBeforePin": [],
+      "mediaRequests": [
+        "/lessons/kg/level-04/animal-sounds-intro.mp4"
+      ],
+      "longTasks": [
+        89
+      ],
+      "cls": 0,
+      "heapBytes": 7035260,
+      "resourceRequests": 42,
+      "transferredBytes": 706512,
+      "videoReady": 4,
+      "videoError": null,
+      "failures": []
+    },
+    {
+      "loginScreenMs": 224.10297199999968,
+      "pinToIntroScreenMs": 970.9358909999992,
+      "apiRequests": [
+        "/auth/student/pin-login",
+        "/kg-continuation/overview",
+        "/kg-continuation/4/state",
+        "/kg-continuation/4/intro/start"
+      ],
+      "mediaBeforePin": [],
+      "mediaRequests": [
+        "/lessons/kg/level-04/animal-sounds-intro.mp4"
+      ],
+      "longTasks": [
+        51,
+        71
+      ],
+      "cls": 0,
+      "heapBytes": 7040648,
+      "resourceRequests": 42,
+      "transferredBytes": 706512,
+      "videoReady": 4,
+      "videoError": null,
+      "failures": []
+    },
+    {
+      "loginScreenMs": 269.53282299999955,
+      "pinToIntroScreenMs": 955.8855160000003,
+      "apiRequests": [
+        "/auth/student/pin-login",
+        "/kg-continuation/overview",
+        "/kg-continuation/4/state",
+        "/kg-continuation/4/intro/start"
+      ],
+      "mediaBeforePin": [],
+      "mediaRequests": [
+        "/lessons/kg/level-04/animal-sounds-intro.mp4"
+      ],
+      "longTasks": [
+        52,
+        101,
+        64
+      ],
+      "cls": 0,
+      "heapBytes": 7022624,
+      "resourceRequests": 42,
+      "transferredBytes": 706512,
+      "videoReady": 4,
+      "videoError": null,
+      "failures": []
+    },
+    {
+      "loginScreenMs": 233.19832199999837,
+      "pinToIntroScreenMs": 949.3907089999993,
+      "apiRequests": [
+        "/auth/student/pin-login",
+        "/kg-continuation/overview",
+        "/kg-continuation/4/state",
+        "/kg-continuation/4/intro/start"
+      ],
+      "mediaBeforePin": [],
+      "mediaRequests": [
+        "/lessons/kg/level-04/animal-sounds-intro.mp4"
+      ],
+      "longTasks": [
+        51,
+        62
+      ],
+      "cls": 0,
+      "heapBytes": 7020844,
+      "resourceRequests": 42,
+      "transferredBytes": 706512,
+      "videoReady": 4,
+      "videoError": null,
+      "failures": []
+    },
+    {
+      "loginScreenMs": 238.13461800000005,
+      "pinToIntroScreenMs": 986.2014490000001,
+      "apiRequests": [
+        "/auth/student/pin-login",
+        "/kg-continuation/overview",
+        "/kg-continuation/4/state",
+        "/kg-continuation/4/intro/start"
+      ],
+      "mediaBeforePin": [],
+      "mediaRequests": [
+        "/lessons/kg/level-04/animal-sounds-intro.mp4"
+      ],
+      "longTasks": [
+        62
+      ],
+      "cls": 0,
+      "heapBytes": 7031184,
+      "resourceRequests": 42,
+      "transferredBytes": 706512,
+      "videoReady": 4,
+      "videoError": null,
+      "failures": []
+    },
+    {
+      "loginScreenMs": 252.72240300000158,
+      "pinToIntroScreenMs": 1044.5752420000008,
+      "apiRequests": [
+        "/auth/student/pin-login",
+        "/kg-continuation/overview",
+        "/kg-continuation/4/state",
+        "/kg-continuation/4/intro/start"
+      ],
+      "mediaBeforePin": [],
+      "mediaRequests": [
+        "/lessons/kg/level-04/animal-sounds-intro.mp4"
+      ],
+      "longTasks": [
+        68,
+        63,
+        66
+      ],
+      "cls": 0,
+      "heapBytes": 7009876,
+      "resourceRequests": 42,
+      "transferredBytes": 706512,
+      "videoReady": 4,
+      "videoError": null,
+      "failures": []
+    }
+  ]
+}

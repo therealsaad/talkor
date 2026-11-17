@@ -49,7 +49,7 @@ async function intro(level: number, auth: string, studentId: unknown) {
   const playbackId: string = started.body.data.playbackId
   expect(playbackId).toMatch(/^[a-f0-9]{64}$/)
   await KGContinuationProgress.updateOne({ studentId, level }, {
-    $set: { introStartedAt: new Date(Date.now() - 20_000) },
+    $set: { introStartedAt: new Date(Date.now() - (level === 5 ? 61_000 : 91_000)) },
   })
   await request(app).post(base + '/intro/complete').set('Authorization', auth)
     .send({ playbackId, videoEnded: true }).expect(200)
@@ -76,7 +76,7 @@ it('real PIN re-login keeps the KG cursor but revokes older Level 2 and Level 3 
     .set('Authorization', first).expect(200)
   const l2ticket: string = l2started.body.data.playbackId
   await KGLevel2Progress.updateOne({ studentId: student._id },
-    { $set: { introStartedAt: new Date(Date.now() - 20_000) } })
+    { $set: { introStartedAt: new Date(Date.now() - 91_000) } })
   await request(app).post(level2 + '/intro/complete').set('Authorization', first)
     .send({ playbackId: l2ticket, videoEnded: true }).expect(200)
   const second = await login() // Next PIN visit, even without a clean logout.

@@ -110,6 +110,8 @@ type Props = {
   isSpeaking: boolean
   isListening: boolean
   isProcessing: boolean
+  turnStatus?: string
+  waitInvitation?: string
   isCompleted: boolean
   isRetry?: boolean
   transcript?: string
@@ -119,6 +121,8 @@ type Props = {
   isAudioEnabled?: boolean
   onEnableAudio?: () => void
   onReplayJulie?: () => void
+  /** Replay exactly the displayed poem lines using authenticated Azure TTS. */
+  onReciteLines?: (text: string) => void
   onStartMic?: () => void
   onStopMic?: () => void
   step?: number
@@ -183,6 +187,8 @@ export function FirstDayPoemClassroom({
   isSpeaking,
   isListening,
   isProcessing,
+  turnStatus,
+  waitInvitation,
   isCompleted,
   isRetry = false,
   transcript,
@@ -192,6 +198,7 @@ export function FirstDayPoemClassroom({
   isAudioEnabled = true,
   onEnableAudio,
   onReplayJulie,
+  onReciteLines,
   onStartMic,
   onStopMic,
   step = 1,
@@ -270,7 +277,7 @@ export function FirstDayPoemClassroom({
           </div>
           <div>
             <strong>MY FIRST DAY</strong>
-            <span>ENGLISH BALBHARATI · 1.1 · LISTEN & SING</span>
+            <span>ENGLISH BALBHARATI · 1.1 · LISTEN & CHANT</span>
           </div>
         </div>
 
@@ -492,9 +499,21 @@ export function FirstDayPoemClassroom({
             ) : null}
           </div>
 
-          <p className="poem-feedback__teacher-text" aria-live={isSpeaking ? 'off' : 'polite'}>
-            {teacherText || 'We will learn our poem together. Listen first, then say your lines.'}
-          </p>
+          {/* React immediately reflects the real STT → teaching → Azure
+              stage. No audio filler, extra network call or made-up success. */}
+          {isProcessing && !isSpeaking && !isListening && turnStatus ? (
+            <div className="poem-feedback__wait" role="status" aria-live="polite" aria-atomic="true">
+              <span className="poem-feedback__wait-dots" aria-hidden="true"><i /><i /><i /></span>
+              <span className="poem-feedback__wait-copy">
+                <strong>{turnStatus}</strong>
+                {waitInvitation ? <small>{waitInvitation}</small> : null}
+              </span>
+            </div>
+          ) : (
+            <p className="poem-feedback__teacher-text" aria-live={isSpeaking ? 'off' : 'polite'}>
+              {teacherText || 'We will learn our poem together. Listen first, then say your lines.'}
+            </p>
+          )}
 
           {modelSentence && isRetry ? (
             <small className="poem-feedback__model">
@@ -538,6 +557,18 @@ export function FirstDayPoemClassroom({
             >
               <VolumeX size={19} />
               <span>Enable voice</span>
+            </button>
+          ) : null}
+
+          {/* A genuine teacher recitation, NOT a replay of a stale model hint. */}
+          {!isSpeaking && !isProcessing && !isListening && !isCompleted && !needsAudioGesture && isAudioEnabled && onReciteLines ? (
+            <button type="button"
+              className="poem-actions__button poem-actions__button--replay"
+              onClick={() => onReciteLines(LINES.slice(activeStart, activeEnd).join('\n'))}
+              aria-label={final ? 'Hear this poem recital segment' : 'Hear these two poem lines'}
+            >
+              <Volume2 size={19} />
+              <span>Hear these lines</span>
             </button>
           ) : null}
 

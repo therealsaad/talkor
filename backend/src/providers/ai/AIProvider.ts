@@ -1,4 +1,5 @@
 import { AIStructuredResponse } from '../../types'
+import type { LessonTeachingContext } from '../../services/lesson-teaching-context'
 
 export interface MissJulieContext {
   studentName: string
@@ -9,6 +10,8 @@ export interface MissJulieContext {
   levelTitle: string
   lessonTitle: string
   activityTitle?: string
+  /** Server-resolved immutable scene key from authorized Mongo activity metadata. */
+  sceneKey?: string
   activityTarget?: string
   recentMistakes: string[]
   memoryFacts: string[]
@@ -31,6 +34,8 @@ export interface MissJulieContext {
   recentJulieOpeners?: string[]
   digitalType?: string
   julieProfile?: Record<string, string>
+  /** Bounded projection of authorized curriculum + current-activity support. */
+  teachingContext?: LessonTeachingContext
 }
 
 export function unitTeachingGuidance(

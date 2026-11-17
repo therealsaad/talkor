@@ -1,0 +1,79 @@
+{
+  "scenario": "Loopback KG overview reads, one Node process including load generator, disposable MongoDB 7.0.14",
+  "enrolledSyntheticAccounts": 10000,
+  "schools": 2,
+  "sharedMongoRateLimits": true,
+  "paidSpeechCalls": 0,
+  "physicalAudioTested": false,
+  "productionSystemTested": false,
+  "stages": [
+    {
+      "concurrency": 1,
+      "requests": 600,
+      "failures": 0,
+      "errorRate": 0,
+      "requestsPerSecond": 168.3,
+      "seconds": 3.57,
+      "p50ms": 5.3,
+      "p95ms": 8.8,
+      "p99ms": 13.7,
+      "statuses": {
+        "200": 600
+      },
+      "nodePeakRssMiB": 418,
+      "nodeCpuMs": 3088,
+      "mongoResidentMiBAfter": 193
+    },
+    {
+      "concurrency": 10,
+      "requests": 600,
+      "failures": 0,
+      "errorRate": 0,
+      "requestsPerSecond": 334,
+      "seconds": 1.8,
+      "p50ms": 29.6,
+      "p95ms": 35.5,
+      "p99ms": 40.2,
+      "statuses": {
+        "200": 600
+      },
+      "nodePeakRssMiB": 446,
+      "nodeCpuMs": 2066,
+      "mongoResidentMiBAfter": 193
+    },
+    {
+      "concurrency": 30,
+      "requests": 600,
+      "failures": 0,
+      "errorRate": 0,
+      "requestsPerSecond": 368.6,
+      "seconds": 1.63,
+      "p50ms": 77.5,
+      "p95ms": 109,
+      "p99ms": 169.5,
+      "statuses": {
+        "200": 600
+      },
+      "nodePeakRssMiB": 481,
+      "nodeCpuMs": 2187,
+      "mongoResidentMiBAfter": 198
+    },
+    {
+      "concurrency": 60,
+      "requests": 600,
+      "failures": 0,
+      "errorRate": 0,
+      "requestsPerSecond": 431.4,
+      "seconds": 1.39,
+      "p50ms": 132.4,
+      "p95ms": 190.5,
+      "p99ms": 385.5,
+      "statuses": {
+        "200": 600
+      },
+      "nodePeakRssMiB": 481,
+      "nodeCpuMs": 1573,
+      "mongoResidentMiBAfter": 205
+    }
+  ]
+}

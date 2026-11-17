@@ -22,10 +22,11 @@ test('request close no longer cancels Azure audio during response streaming', as
   assert.match(server, /res\.once\('close', onDisconnected\)/)
 })
 
-test('Class 1 app starts playable audio during the same user gesture as fullscreen', async () => {
+test('Class 1 intro autoplays with optional sound recovery', async () => {
   const intro = await read('../../features/lessons/grades/class-01/level-01/Class1LessonIntro.tsx')
-  assert.match(intro, /const unlockAudio = voiceService\.unlockPlayback\(\)/)
-  assert.match(intro, /const startedVideo = video\.current\.play\(\)/)
+  assert.match(intro, /void voiceService\.unlockPlayback\(\)/)
+  assert.match(intro, /await video\.current\.play\(\)/)
+  assert.match(intro, /void player\.play\(\)/)
   assert.match(intro, /firstDayOnly/)
   assert.match(intro, /sourceReady/)
 })

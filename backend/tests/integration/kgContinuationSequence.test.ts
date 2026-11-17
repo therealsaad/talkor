@@ -42,6 +42,48 @@ const get = (level: number, auth: string) => request(app).get('/api/kg-continuat
   .set('Authorization', auth)
 const overview = (auth: string) => request(app).get('/api/kg-continuation/overview')
   .set('Authorization', auth)
+
+it.each([
+  [0, 0, [], '/student/kg'],
+  [8, 0, [], '/student/kg/level-2'],
+  [8, 5, [], '/student/kg/level-2'],
+  [8, 6, [], '/student/kg/level-3'],
+  [8, 6, [3], '/student/kg/level-4'],
+  [8, 6, [3, 4], '/student/kg/level-5'],
+  [8, 6, [3, 4, 5], '/student/kg/map'],
+  [8, 6, [5], '/student/kg/level-3'],
+  [7, 6, [3, 4, 5], '/student/kg'],
+] as Array<[number, number, number[], string]>)('resolves fresh KG resume from cursors %s/%s, saved %j', async (kg1, kg2, completed, expected) => {
+  const { student, school, auth } = await fixture()
+  await KGAlphabetProgress.updateOne({ studentId: student._id }, { $set: { currentIndex: kg1 } })
+  await KGLevel2Progress.updateOne({ studentId: student._id }, { $set: { currentIndex: kg2 } })
+  for (const level of completed) await KGContinuationProgress.create({
+    studentId: student._id, schoolId: school._id, level,
+    currentIndex: level === 5 ? 4 : 6, completedAt: new Date(),
+  })
+  const before = JSON.stringify(await KGContinuationProgress.find({ studentId: student._id }).lean())
+  const response = await overview(auth).expect(200)
+  expect(response.headers['cache-control']).toBe('private, no-store')
+  expect(response.body.data.nextStudentRoute).toBe(expected)
+  expect(response.body.data.unavailableLevels).toEqual([6, 7, 8, 9, 10])
+  expect(JSON.stringify(await KGContinuationProgress.find({ studentId: student._id }).lean())).toBe(before)
+})
+
+it('resume overview enforces pilot, grade, school and independent student ownership', async () => {
+  const { student, school, auth } = await fixture()
+  await overview(auth).expect(200)
+  await request(app).get('/api/kg-continuation/overview').expect(401)
+  const other = await Student.create({ schoolId: school._id, fullName: 'Other synthetic learner',
+    rollNumber: 'other', grade: 0, passwordHash: 'hash', status: 'active', avatarType: 'BOY', kgAlphabetPilotEnabled: true })
+  const otherToken = signToken({ sub: other._id.toString(), schoolId: school._id.toString(), role: 'STUDENT', sv: 0 })
+  expect((await overview('Bearer ' + otherToken).expect(200)).body.data.nextStudentRoute).toBe('/student/kg')
+  await Student.updateOne({ _id: student._id }, { $set: { kgAlphabetPilotEnabled: false } })
+  await overview(auth).expect(403)
+  await Student.updateOne({ _id: student._id }, { $set: { kgAlphabetPilotEnabled: true, grade: 1 } })
+  await overview(auth).expect(403)
+  const wrongSchool = signToken({ sub: other._id.toString(), schoolId: '111111111111111111111111', role: 'STUDENT', sv: 0 })
+  await overview('Bearer ' + wrongSchool).expect(401)
+})
 async function intro(level: number, auth: string, studentId: unknown) {
   const base = '/api/kg-continuation/' + level
   const started = await request(app).post(base + '/intro/start').set('Authorization', auth).expect(200)
@@ -49,11 +91,35 @@ async function intro(level: number, auth: string, studentId: unknown) {
   expect(playbackId).toMatch(/^[a-f0-9]{64}$/)
   await request(app).post(base + '/intro/complete').set('Authorization', auth)
     .send({ playbackId, videoEnded: true }).expect(409)
-  await KGContinuationProgress.updateOne({ studentId, level }, { $set: { introStartedAt: new Date(Date.now() - 20_000) } })
+  await KGContinuationProgress.updateOne({ studentId, level }, { $set: { introStartedAt: new Date(Date.now() - (level === 5 ? 61_000 : 91_000)) } })
   await request(app).post(base + '/intro/complete').set('Authorization', auth)
     .send({ playbackId, videoEnded: true }).expect(200)
   return { Authorization: auth, 'X-KG-Continuation-Intro': playbackId }
 }
+
+it.each([[3, 90_000], [4, 90_000], [5, 60_000]])(
+  'requires the complete packaged Level %s film duration before accepting its ticket', async (level, duration) => {
+    const { student, school, auth } = await fixture()
+    await KGLevel2Progress.updateOne({ studentId: student._id }, { $set: { currentIndex: 6, completedAt: new Date() } })
+    for (let previous = 3; previous < level; previous++) {
+      await KGContinuationProgress.create({ studentId: student._id, schoolId: school._id,
+        level: previous, currentIndex: 6, completedAt: new Date() })
+    }
+    const base = '/api/kg-continuation/' + level
+    const started = await request(app).post(base + '/intro/start').set('Authorization', auth).expect(200)
+    const body = { playbackId: started.body.data.playbackId, videoEnded: true }
+    for (const elapsed of [20_000, duration - 5_000]) {
+      await KGContinuationProgress.updateOne({ studentId: student._id, level },
+        { $set: { introStartedAt: new Date(Date.now() - elapsed) } })
+      await request(app).post(base + '/intro/complete').set('Authorization', auth).send(body).expect(409)
+      expect((await KGContinuationProgress.findOne({ studentId: student._id, level }))?.introCompletedAt).toBeUndefined()
+    }
+    await KGContinuationProgress.updateOne({ studentId: student._id, level },
+      { $set: { introStartedAt: new Date(Date.now() - duration - 1_000) } })
+    await request(app).post(base + '/intro/complete').set('Authorization', auth).send({ ...body, videoEnded: false }).expect(409)
+    await request(app).post(base + '/intro/complete').set('Authorization', auth).send(body).expect(200)
+  },
+)
 
 it('unlocks K–P only after KG Level 2 completion; no bypass of level 4, 5, 6 or staff preview', async () => {
   const { student, auth } = await fixture()
