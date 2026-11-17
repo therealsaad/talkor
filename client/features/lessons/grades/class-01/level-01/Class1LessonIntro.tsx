@@ -58,7 +58,7 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
     let live = true
     const requestKey = `${lessonId || ''}:${introRetry}`
     if (!introStartRequest.current || introStartRequest.current.key !== requestKey) {
-      introStartRequest.current = { key: requestKey, promise: beginFirstDayIntro(lessonId || '') }
+      introStartRequest.current = { key: requestKey, promise: beginFirstDayIntro(lessonId || '', { forceNew: introRetry > 0 }) }
     }
     setPlaybackId(null)
     void introStartRequest.current.promise.then(result => {
