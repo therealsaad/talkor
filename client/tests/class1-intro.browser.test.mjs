@@ -50,7 +50,7 @@ async function fixture({ resumed = false, failStart = false, blockAutoplay = fal
   const school = { id: '111111111111111111111111', name: 'Synthetic school', code: 'INTROQA' }
   const token = `fixture.${Buffer.from(JSON.stringify({ role: 'STUDENT', exp: Math.floor(Date.now()/1000)+3600 })).toString('base64url')}.fixture`
   let signedIn = false, starts = 0
-  const calls = [], errors = []
+  const calls = [], errors = [], startRequests = []
   page.on('pageerror', error => errors.push(error.message))
   await page.evaluateOnNewDocument((blockFirstPlay) => {
     window.__introMicCalls = 0
@@ -94,7 +94,9 @@ async function fixture({ resumed = false, failStart = false, blockAutoplay = fal
         activities, completedActivityIds: resumed ? activities.slice(0, 2).map(a => a.id) : [],
       })
       if (p === '/voice/first-day/intro/start') {
-        assert.equal(JSON.parse(request.postData()).lessonId, lessonId)
+        const body = JSON.parse(request.postData())
+        assert.equal(body.lessonId, lessonId)
+        startRequests.push({ lessonId: body.lessonId, hasAuthorization: Boolean(request.headers().authorization), authorizationMatchesFixture: request.headers().authorization === `Bearer ${token}`, at: Date.now() })
         starts++
         return await json(failStart && starts === 1 ? 'Synthetic introduction unavailable' : { playbackId: 'a'.repeat(64), minimumSeconds: 90 }, failStart && starts === 1 ? 503 : 200)
       }
@@ -104,7 +106,7 @@ async function fixture({ resumed = false, failStart = false, blockAutoplay = fal
       if (!request.isInterceptResolutionHandled()) await request.abort().catch(() => {})
     }
   })
-  return { page, context, calls, errors, starts: () => starts }
+  return { page, context, calls, errors, starts: () => starts, startRequests: () => startRequests }
 }
 
 for (const resumed of [false, true]) {
@@ -166,7 +168,7 @@ test('a browser blocking sound-on autoplay shows one-tap recovery without skippi
     await f.page.type('input[inputmode="numeric"]', '00000')
     await f.page.click('form button[type="submit"]')
     await f.page.waitForSelector('.class1-intro-play-prompt button', { visible: true })
-    assert.equal(f.starts(), 1)
+    assert.equal(f.starts(), 1, JSON.stringify(f.startRequests()))
     assert.equal(await f.page.evaluate(() => window.__introAutoplayAttempts), 1)
     assert.equal(await f.page.$eval('.class1-intro-video', v => v.paused), true)
     assert.equal(await f.page.$eval('.class1-intro-video', v => v.muted), false)
