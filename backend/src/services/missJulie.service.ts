@@ -360,15 +360,6 @@ export const MissJulieService = {
         ? gentlePoemTeacherResponse(gentlePoem, class1ExplanationLanguage(studentContext))
         : undefined
     let response: AIStructuredResponse
-    const aiRequestId = randomUUID()
-    const aiProvider = getAIProvider(studentContext)
-    const configuredProvider = process.env.TALKORA_CLASS1_QWEN_PILOT === 'true' && studentContext.grade === 1 &&
-      studentContext.levelId === 'g01-l01' ? 'qwen' : env.aiProvider
-    const labels = aiTimingLabels({ provider: aiProvider.name,
-      model: configuredAIModel(configuredProvider, { qwen: env.qwenModel, groq: env.conversationGroqModel,
-        openai: 'gpt-4o-mini' }), grade: studentContext.grade, levelId: studentContext.levelId })
-    const aiTimer = createTurnTimer()
-    let aiOutcome: 'success' | 'failure' = 'success'
     if (guidedResponse) {
       response = guidedResponse
     } else if (poemKey === 'poem-full' && isFirstDayScene &&
@@ -379,13 +370,7 @@ export const MissJulieService = {
       try {
         response = await generateWithTiming(studentContext)
       } catch (error) {
-        aiOutcome = 'failure'
-        if (!poemActivity) {
-          const failedTiming = aiTimer.finish()
-          logger.warn('AI turn timing', { requestId: aiRequestId, phase: 'ai', ...labels,
-            llm: failedTiming.steps.llm, outcome: aiOutcome })
-          throw error
-        }
+        if (!poemActivity) throw error
         // No transcript, student name, secret or provider response is logged.
         logger.warn('Class 1 poem AI bridge failed; keeping authored scene lines', { sceneKey: poemKey })
         // A reviewed, syllabus-scoped fallback is preferable to making children
@@ -395,9 +380,6 @@ export const MissJulieService = {
           poemKey, input.message, class1ExplanationLanguage(studentContext))
       }
     }
-    const aiCompletedTiming = aiTimer.finish()
-    logger[aiOutcome === 'success' ? 'info' : 'warn']('AI turn timing', { requestId: aiRequestId,
-      phase: 'ai', ...labels, llm: aiCompletedTiming.steps.llm, outcome: aiOutcome })
     const priorPractice = priorRetry?.practiceScaffold
     const practice = isFirstDayScene && !finalTurn && !guidedResponse ? scaffoldFirstDayPractice({
       context: studentContext.teachingContext, transcript: input.message,
