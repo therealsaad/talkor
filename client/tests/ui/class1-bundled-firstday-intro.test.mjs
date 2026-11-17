@@ -17,6 +17,7 @@ test('authenticated poem lesson supports the exact bundled reviewed media source
   assert.match(intro, /candidate === CLASS1_FIRST_DAY_VIDEO_BUNDLED/)
   assert.match(intro, /src=\{videoSource \|\| undefined\}/)
   assert.match(intro, /const MIN_DURATION_SECONDS = 87/)
+  assert.match(intro, /const BUNDLED_DURATION_SECONDS = 40\.908798/)
   assert.match(intro, /const MAX_DURATION_SECONDS = 93/)
   assert.match(intro, /const REQUIRED_WATCH_SECONDS = 85/)
   // Native autoPlay could start before the validated media/server ticket;
@@ -25,8 +26,9 @@ test('authenticated poem lesson supports the exact bundled reviewed media source
   assert.match(intro, /player\.muted = false/)
   assert.match(intro, /player\.volume = 1/)
   assert.match(intro, /void player\.play\(\)\.then/)
-  assert.match(intro, /if \(!cancelled && !player\.paused && !document\.hidden\) setNeedsTap\(false\)/)
-  assert.match(intro, /if \(document\.hidden\) \{\s*setNeedsTap\(true\)/)
+  assert.match(intro, /player\.muted = true/)
+  assert.match(intro, /await player\.play\(\)/)
+  assert.match(intro, /if \(!cancelled\) setNeedsTap\(true\)/)
   assert.doesNotMatch(intro, /\bautoPlay\s*=/)
   assert.match(intro, /\{needsTap && canPlay && \(!firstDayOnly \|\| playbackId\)/)
   assert.match(intro, /if \(video\.current\?\.muted \|\| watchedUntil\.current < \(bundledVideo \? BUNDLED_DURATION_SECONDS - 1 : REQUIRED_WATCH_SECONDS\)\)/)
@@ -116,7 +118,8 @@ test('real ended handler waits for the backend and cannot continue on save failu
   const completing = { current: false }
   const finish = introFunction('finish', {
     completing, video: { current: { muted: false, pause() {} } }, watchedUntil: { current: 90 },
-    bundledVideo: false, REQUIRED_WATCH_SECONDS: 85, firstDayOnly: true, lessonId: lesson, playbackId: 'a'.repeat(64),
+    REQUIRED_WATCH_SECONDS: 85, BUNDLED_DURATION_SECONDS: 40.908798, bundledVideo: true,
+    firstDayOnly: true, lessonId: lesson, playbackId: 'a'.repeat(64),
     completeFirstDayIntro: () => { calls++; return request },
     setLoading() {}, setNeedsTap() {}, setError() {}, onDone: () => { completed++ },
     document: { fullscreenElement: null }, frame: { current: {} },
@@ -164,7 +167,8 @@ test('late video metadata cannot erase an earlier server-intro failure and hide 
   let error = 'Your story could not open. Please try again.'
   const validate = introFunction('validateVideo', {
     video: { current: { duration: 90 } }, watchedUntil: { current: 0 },
-    bundledVideo: false, MIN_DURATION_SECONDS: 87, MAX_DURATION_SECONDS: 93,
+    bundledVideo: false, BUNDLED_DURATION_SECONDS: 40.908798,
+    MIN_DURATION_SECONDS: 87, MAX_DURATION_SECONDS: 93,
     setCanPlay() {}, setLoading() {}, setError: next => { error = next }, onAvailable() {},
   })
   validate()

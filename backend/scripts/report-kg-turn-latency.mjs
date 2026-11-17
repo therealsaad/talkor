@@ -10,7 +10,7 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import { pathToFileURL } from 'node:url'
 
-const STEPS = ['stt', 'feedback', 'save', 'tts', 'total']
+const STEPS = ['stt', 'feedback', 'save', 'llm', 'tts', 'total']
 const MAX_FILE_BYTES = 25 * 1024 * 1024
 
 const percentile = (ordered, fraction) =>
@@ -29,6 +29,19 @@ function readTiming(line) {
   if (pos < 0) return null
   try {
     const entry = JSON.parse(line.slice(pos))
+    if (entry?.message === 'AI Python request timing') {
+      const duration = boundedDuration(entry.durationMs)
+      if (duration === null || !/^[a-z0-9][a-z0-9._:-]{0,79}$/i.test(entry.provider || '') ||
+          !/^[a-z0-9][a-z0-9._:-]{0,79}$/i.test(entry.model || '')) return null
+      return { providerAttempt: true, provider: entry.provider, model: entry.model, llm: duration }
+    }
+    if (entry?.message === 'AI turn timing' && entry.phase === 'ai') {
+      const duration = boundedDuration(entry.llm)
+      if (duration === null || !/^[a-z0-9][a-z0-9._:-]{0,79}$/i.test(entry.cohort || '') ||
+          !/^[a-z0-9][a-z0-9._:-]{0,79}$/i.test(entry.provider || '') ||
+          !/^[a-z0-9][a-z0-9._:-]{0,79}$/i.test(entry.model || '')) return null
+      return { ai: true, cohort: entry.cohort, provider: entry.provider, model: entry.model, llm: duration }
+    }
     if (entry?.message !== 'KG turn timing' ||
         !['attempt', 'audio'].includes(entry.phase) ||
         typeof entry.submissionId !== 'string' ||
@@ -42,7 +55,7 @@ function readTiming(line) {
     }
     // Only retain whitelisted values. Never echo names, transcripts or IDs.
     return {
-      id: entry.submissionId, phase: entry.phase, steps,
+      ai: false, id: entry.submissionId, phase: entry.phase, steps,
       feedbackSource: entry.feedbackSource === 'qwen-8002' ? 'qwen' : 'other',
       ttsSource: entry.ttsSource === 'cache' ? 'cache' : 'other',
     }
@@ -60,10 +73,26 @@ function readTiming(line) {
 export function analyzeKGLatency(lines, options = {}) {
   const attempts = new Map()
   const audio = new Map()
+  const aiGroups = new Map()
+  const providerAttemptGroups = new Map()
   let unrelatedLines = 0, duplicates = 0
   for (const line of lines) {
     const value = readTiming(line)
     if (!value) { unrelatedLines++; continue }
+    if (value.providerAttempt) {
+      const key = JSON.stringify([value.provider, value.model])
+      const group = providerAttemptGroups.get(key) || []
+      group.push(value.llm)
+      providerAttemptGroups.set(key, group)
+      continue
+    }
+    if (value.ai) {
+      const key = JSON.stringify([value.cohort, value.provider, value.model])
+      const group = aiGroups.get(key) || []
+      group.push(value.llm)
+      aiGroups.set(key, group)
+      continue
+    }
     const target = value.phase === 'attempt' ? attempts : audio
     if (target.has(value.id)) { duplicates++; continue }
     target.set(value.id, value)
@@ -89,17 +118,33 @@ export function analyzeKGLatency(lines, options = {}) {
   const withinBudget = enoughData && requestP95.p95Ms <= budgetP95Ms
   const qwenCount = [...attempts.values()].filter((entry) => entry.feedbackSource === 'qwen').length
   const cacheCount = [...audio.values()].filter((entry) => entry.ttsSource === 'cache').length
+  const aiBreakdown = [...aiGroups.entries()].map(([key, samples]) => {
+    const [cohort, provider, model] = JSON.parse(key)
+    return { cohort, provider, model, ...stats(samples) }
+  })
+  const aiSampleCount = [...aiGroups.values()].reduce((total, samples) => total + samples.length, 0)
+  const providerAttemptCount = [...providerAttemptGroups.values()].reduce((total, samples) => total + samples.length, 0)
+  const providerAttemptBreakdown = [...providerAttemptGroups.entries()].map(([key, samples]) => {
+    const [provider, model] = JSON.parse(key)
+    return { provider, model, ...stats(samples) }
+  })
   return {
-    kind: 'talkora-kg-latency-report', methodology: 'actual-backend-log-request-sum',
+    kind: 'talkora-kg-latency-report',
+    methodology: (aiSampleCount || providerAttemptCount) ? (pairs.length ? 'actual-backend-logs-with-separate-ai-provider-and-kg-request-measurements' : 'actual-backend-ai-provider-duration-only')
+      : 'actual-backend-log-request-sum',
     recordedAt: new Date().toISOString(),
     threshold: { minimumCompletedPairs: minPairs, maximumServerRequestSumP95Ms: budgetP95Ms },
     counts: {
       attemptRequests: attempts.size, audioRequests: audio.size, correlatedTurns: pairs.length,
       unmatchedAttempts: attempts.size - pairs.length, unmatchedAudio: audio.size - pairs.length,
+      aiRequests: aiSampleCount,
+      pythonProviderAttempts: providerAttemptCount,
       duplicateLogLines: duplicates, unrelatedOrInvalidLines: unrelatedLines,
     },
     serverRequestSum: requestP95,
     stepMeasurements: durationSteps,
+    aiLatencyByCohortProviderModel: aiBreakdown,
+    pythonProviderAttemptLatencyByProviderModel: providerAttemptBreakdown,
     feedback: { qwenAttempts: qwenCount, totalAttempts: attempts.size },
     voice: { cachedAudioRequests: cacheCount, totalAudioRequests: audio.size },
     gate: !enoughData ? 'INSUFFICIENT_REAL_SAMPLES' : withinBudget ? 'PASS_SERVER_BUDGET' : 'SLOW_SERVER_REQUEST_SUM',
