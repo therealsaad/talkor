@@ -62,17 +62,15 @@ export default function HomePage() {
     setError('')
 
     try {
-      const signedIn = await loginStudentByPin(pin)
+      await loginStudentByPin(pin)
 
       // Clear PIN after successful login
       setPin('')
 
-      // Redirect based on student grade
-      router.replace(
-        signedIn.student?.grade === 0
-          ? '/student/kg/map'
-          : '/student/continue'
-      )
+      // Resolve the next lesson from authenticated server progress for every
+      // student, including KG Levels 1–5. Never send a KG learner back to the
+      // map between PIN login and the lesson they are authorized to resume.
+      router.replace('/student/continue')
     } catch {
       setError(
         'Invalid PIN. Please ask your teacher for help.'

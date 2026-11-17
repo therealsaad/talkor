@@ -2,21 +2,24 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth/auth-provider'
 import { TalkoraLoader } from '@/components/student/talkora-loader'
 import { Level2PreviewIntro } from '../level-02/PreviewIntro'
 import { KGContinuationStudentExperience } from './ContinuationExperience'
 import { kgContinuationStudentService, type KGContinuationState, type KGContinuationLevel } from './continuation-service'
+import { nextKGStudentRoute } from '@/services/kg-resume-service'
 
 const INTRO_VIDEO: Record<KGContinuationLevel, string> = {
   3: '/lessons/kg/level-03/K%20to%20P%20Untitled_Scene_10-16_08_25_20_20261016142423.mp4',
   4: '/lessons/kg/level-04/animal-sounds-intro.mp4',
   5: '/lessons/kg/level-05/W%20to%20Z%20Untitled_Scene_10-16_10_07_17_20261016160313.mp4',
 }
-type Stage = 'loading' | 'intro' | 'saving' | 'lesson' | 'complete' | 'error'
+type Stage = 'loading' | 'intro' | 'saving' | 'lesson' | 'error'
 
 export function KGContinuationStudentPage({ level }: { level: KGContinuationLevel }) {
   const { student, status } = useAuth()
+  const router = useRouter()
   const [stage, setStage] = useState<Stage>('loading')
   const [state, setState] = useState<KGContinuationState | null>(null)
   const [message, setMessage] = useState('')
@@ -30,7 +33,10 @@ export function KGContinuationStudentPage({ level }: { level: KGContinuationLeve
     void kgContinuationStudentService.state(level).then(async (saved) => {
       if (!live) return
       setState(saved)
-      if (saved.completed) { setStage('complete'); return }
+      if (saved.completed) {
+        router.replace(await nextKGStudentRoute())
+        return
+      }
       await kgContinuationStudentService.beginIntro(level)
       if (live) setStage('intro')
     }).catch((cause: unknown) => {
@@ -39,7 +45,7 @@ export function KGContinuationStudentPage({ level }: { level: KGContinuationLeve
       setStage('error')
     })
     return () => { live = false }
-  }, [level, retry, status, student?.id])
+  }, [level, retry, router, status, student?.id])
 
   const afterVideo = async () => {
     setStage('saving')
@@ -60,13 +66,6 @@ export function KGContinuationStudentPage({ level }: { level: KGContinuationLeve
   }
   if (stage === 'lesson' && state) {
     return <KGContinuationStudentExperience key={student?.id + ':' + level} initial={state} />
-  }
-  if (stage === 'complete') {
-    return <main className="kg-level2-play" style={{ placeContent: 'center', textAlign: 'center', alignItems: 'center' }}>
-      <h1>Wonderful! Level {level} complete!</h1>
-      <p>Your learning is safely saved. Miss Julie is proud of you!</p>
-      <Link href="/student/continue" className="kg-level2-play__action">Continue learning</Link>
-    </main>
   }
   return <main role="alert" className="kg-level2-play" style={{ placeContent: 'center', textAlign: 'center', alignItems: 'center' }}>
     <h1>Miss Julie needs a little help</h1>

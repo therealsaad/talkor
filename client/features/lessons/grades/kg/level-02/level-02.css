@@ -249,6 +249,147 @@
   background-position: center;
   background-size: cover;
 }
+
+/* Level 2-only scenery sits behind the existing lesson UI. */
+.kg-level2-visuals {
+  position: relative;
+  isolation: isolate;
+}
+.kg-level2-visuals > .kg-level2-jungle {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.kg-level2-visuals > :not(.kg-level2-jungle) {
+  position: relative;
+  z-index: 1;
+}
+.kg-level2-visuals .kg-level2-jungle__sun {
+  position: absolute;
+  top: clamp(52px, 8vh, 88px);
+  right: clamp(42px, 8vw, 112px);
+  width: clamp(54px, 6vw, 78px);
+  aspect-ratio: 1;
+  border: 8px solid rgba(255, 247, 190, .48);
+  border-radius: 50%;
+  background: rgba(255, 220, 123, .88);
+  box-shadow: 0 0 42px rgba(255, 235, 165, .32);
+}
+.kg-level2-visuals .kg-level2-jungle__hill {
+  position: absolute;
+  right: -8%;
+  bottom: -72px;
+  left: -8%;
+  height: 27%;
+  border-radius: 50% 50% 0 0;
+}
+.kg-level2-visuals .kg-level2-jungle__hill--back {
+  bottom: -24px;
+  left: -18%;
+  height: 22%;
+  background: rgba(135, 196, 128, .56);
+}
+.kg-level2-visuals .kg-level2-jungle__hill--front {
+  background: linear-gradient(180deg, rgba(152, 204, 130, .42), rgba(99, 158, 96, .54));
+}
+.kg-level2-visuals .kg-level2-jungle__tree {
+  position: absolute;
+  bottom: 8%;
+  width: clamp(44px, 6vw, 76px);
+  height: clamp(132px, 24vh, 224px);
+  border-radius: 48px 48px 12px 12px;
+  background: linear-gradient(90deg, rgba(111, 125, 88, .42), rgba(147, 131, 90, .42), rgba(111, 125, 88, .42));
+  transform-origin: bottom center;
+  animation: kg-level2-tree-sway 11s ease-in-out infinite alternate;
+}
+.kg-level2-visuals .kg-level2-jungle__tree--left { left: clamp(4px, 2vw, 28px); }
+.kg-level2-visuals .kg-level2-jungle__tree--right { right: clamp(4px, 2vw, 28px); animation-delay: -5.5s; }
+.kg-level2-visuals .kg-level2-jungle__tree i {
+  position: absolute;
+  width: clamp(70px, 9vw, 110px);
+  height: clamp(48px, 6vw, 76px);
+  border-radius: 50%;
+  background: rgba(100, 166, 112, .58);
+}
+.kg-level2-visuals .kg-level2-jungle__tree i:nth-child(1) { top: -10%; left: -52%; }
+.kg-level2-visuals .kg-level2-jungle__tree i:nth-child(2) { top: 0; right: -58%; background: rgba(123, 183, 120, .58); }
+.kg-level2-visuals .kg-level2-jungle__tree i:nth-child(3) { top: 15%; left: -36%; }
+.kg-level2-visuals .kg-level2-jungle__tree i:nth-child(4) { top: 24%; right: -42%; background: rgba(123, 183, 120, .58); }
+.kg-level2-visuals .kg-level2-jungle__leaves {
+  position: absolute;
+  bottom: 5%;
+  display: flex;
+  opacity: .42;
+}
+.kg-level2-visuals .kg-level2-jungle__leaves--left { left: 10%; }
+.kg-level2-visuals .kg-level2-jungle__leaves--right { right: 10%; }
+.kg-level2-visuals .kg-level2-jungle__leaves i {
+  width: clamp(20px, 2.5vw, 34px);
+  height: clamp(48px, 7vw, 78px);
+  border-radius: 100% 0;
+  background: linear-gradient(145deg, rgba(146, 199, 123, .84), rgba(80, 151, 105, .74));
+  transform-origin: bottom;
+  animation: kg-level2-leaf-sway 8s ease-in-out infinite alternate;
+}
+.kg-level2-visuals .kg-level2-jungle__leaves i:nth-child(even) { transform: rotate(28deg); animation-delay: -3s; }
+.kg-level2-visuals .kg-level2-jungle__leaves i:nth-child(odd) { transform: rotate(-20deg); }
+.kg-level2-visuals .kg-level2-jungle__butterfly {
+  position: absolute;
+  color: rgba(255, 233, 155, .8);
+  font-size: 16px;
+  animation: kg-level2-gentle-float 12s ease-in-out infinite;
+}
+.kg-level2-visuals .kg-level2-jungle__butterfly--one { top: 34%; left: 13%; }
+.kg-level2-visuals .kg-level2-jungle__butterfly--two { top: 24%; left: 32%; animation-delay: -6s; }
+.kg-level2-visuals .kg-level2-jungle__leaf {
+  position: absolute;
+  width: 9px;
+  height: 17px;
+  border-radius: 100% 0;
+  background: rgba(123, 184, 113, .8);
+  animation: kg-level2-gentle-float 10s ease-in-out infinite;
+}
+.kg-level2-visuals .kg-level2-jungle__leaf--one { top: 42%; left: 19%; }
+.kg-level2-visuals .kg-level2-jungle__leaf--two { top: 50%; right: 20%; animation-delay: -5s; }
+.kg-level2-visuals .kg-level2-jungle__float {
+  position: absolute;
+  width: clamp(18px, 2.2vw, 30px);
+  aspect-ratio: 1;
+  border: 1px solid rgba(255, 255, 255, .5);
+  border-radius: 42% 58% 61% 39%;
+  background: rgba(255, 255, 255, .22);
+  box-shadow: 0 0 22px rgba(255, 255, 255, .14);
+  animation: kg-level2-gentle-float 13s ease-in-out infinite;
+}
+.kg-level2-visuals .kg-level2-jungle__float--one { top: 31%; left: 8%; }
+.kg-level2-visuals .kg-level2-jungle__float--two { right: 13%; bottom: 30%; width: 20px; animation-delay: -6s; }
+.kg-level2-visuals .kg-level2-jungle__star,
+.kg-level2-visuals .kg-level2-jungle__sparkle {
+  position: absolute;
+  color: rgba(255, 248, 202, .76);
+  text-shadow: 0 0 12px rgba(255, 247, 194, .38);
+  animation: kg-level2-soft-twinkle 5.8s ease-in-out infinite;
+}
+.kg-level2-visuals .kg-level2-jungle__star { font-size: clamp(13px, 1.5vw, 19px); }
+.kg-level2-visuals .kg-level2-jungle__star--one { top: 20%; left: 27%; }
+.kg-level2-visuals .kg-level2-jungle__star--two { right: 28%; bottom: 22%; animation-delay: -2.9s; }
+.kg-level2-visuals .kg-level2-jungle__sparkle { color: rgba(255, 221, 154, .72); font-size: 13px; }
+.kg-level2-visuals .kg-level2-jungle__sparkle--one { top: 39%; right: 15%; animation-delay: -1.7s; }
+.kg-level2-visuals .kg-level2-jungle__sparkle--two { bottom: 35%; left: 35%; animation-delay: -4.1s; }
+@keyframes kg-level2-gentle-float { 50% { transform: translate3d(0, -8px, 0); } }
+@keyframes kg-level2-soft-twinkle { 0%, 100% { opacity: .42; transform: scale(.9); } 50% { opacity: .86; transform: scale(1); } }
+@keyframes kg-level2-tree-sway { from { transform: rotate(-.35deg); } to { transform: rotate(.35deg); } }
+@keyframes kg-level2-leaf-sway { to { transform: translateY(-4px) rotate(5deg); } }
+@media (max-width: 760px) {
+  .kg-level2-visuals .kg-level2-jungle__tree { bottom: 12%; opacity: .66; }
+  .kg-level2-visuals .kg-level2-jungle__float--two { right: 8%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kg-level2-visuals .kg-level2-jungle *,
+  .kg-level2-visuals .kg-letter-word-picture__image { animation: none !important; transition: none !important; }
+}
 .kg-level2-play::before,
 .kg-level2-play .kg-level2-play__board::before { display:none; }
 .kg-level2-play__board { overflow:hidden; }

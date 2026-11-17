@@ -136,6 +136,33 @@ test('real ended handler waits for the backend and cannot continue on save failu
   assert.equal(completed, 1)
 })
 
+test('muted fallback playback cannot complete the intro', async () => {
+  let completed = 0, requests = 0, needsTap = false, error = ''
+  const finish = introFunction('finish', {
+    completing: { current: false },
+    video: { current: { muted: true, pause() {} } },
+    watchedUntil: { current: 90 },
+    bundledVideo: false,
+    REQUIRED_WATCH_SECONDS: 85,
+    firstDayOnly: true,
+    lessonId: lesson,
+    playbackId: 'a'.repeat(64),
+    completeFirstDayIntro: async () => { requests++ },
+    setLoading() {},
+    setNeedsTap: value => { needsTap = value },
+    setError: value => { error = value },
+    onDone: () => { completed++ },
+    document: { fullscreenElement: null },
+    frame: { current: {} },
+  })
+
+  await finish()
+  assert.equal(requests, 0)
+  assert.equal(completed, 0)
+  assert.equal(needsTap, true)
+  assert.match(error, /with sound/)
+})
+
 test('late video metadata cannot erase an earlier server-intro failure and hide recovery', () => {
   let error = 'Your story could not open. Please try again.'
   const validate = introFunction('validateVideo', {

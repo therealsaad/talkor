@@ -83,6 +83,11 @@ test('Azure KG synthesis is transient: no AudioCacheService read/write, and XML 
 test('staff preview routes audio through STT and returns manifest-selected Priya feedback, no progress writes', async () => {
   const calls = { stt: 0, priya: 0, db: 0 }
   const blockDatabase = new Proxy({}, { get() { calls.db++; throw new Error('Preview must not access student MongoDB') } })
+  const loadTestTS = require('./helpers/load-ts.cjs').loadTS
+  const level2Content = loadTestTS('kg/level2-content.ts')
+  const level3Content = loadTestTS('kg/level3-content.ts')
+  const level4Content = loadTestTS('kg/level4-content.ts')
+  const level5Content = loadTestTS('kg/level5-content.ts')
   const { KGAlphabetController } = loadTS('controllers/kg-alphabet.controller.ts', {
     'node:crypto': require('node:crypto'),
     mongoose: { Types: class {} },
@@ -103,6 +108,16 @@ test('staff preview routes audio through STT and returns manifest-selected Priya
       activityAt: (i) => i === 0 ? { id: 'say-a', letter: 'A', mode: 'speak' } : null,
       evaluateKGSpeech: (transcript) => transcript === 'apple' ? 'correct' : 'incorrect',
     },
+    '../kg/level2-content': level2Content,
+    '../kg/level3-content': level3Content,
+    '../kg/level4-content': level4Content,
+    '../kg/level5-content': level5Content,
+    '../kg/level-progression': loadTestTS('kg/level-progression.ts', {
+      './level2-content': level2Content,
+      './level3-content': level3Content,
+      './level4-content': level4Content,
+      './level5-content': level5Content,
+    }),
     '../kg/kg-child-grading': { gradeKGTranscription: ({ transcript }) => transcript === 'apple' ? 'correct' : 'incorrect' },
     '../teaching/kg-teaching-turn': { classifyKGTeachingTurn: () => ({ kind: 'wrong_word', language: 'en-IN' }) },
     '../services/kg-pilot-access': { isAuthorizedKGAlphabetStudent: () => true },

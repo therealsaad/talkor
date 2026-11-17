@@ -172,6 +172,7 @@ test('a browser blocking sound-on autoplay shows one-tap recovery without skippi
     await f.page.waitForSelector('.class1-intro-play-prompt button', { visible: true })
     console.log('INTRO_START_DIAGNOSTIC', JSON.stringify(f.startRequests()))
     assert.ok(f.starts() === 1, 'Expected one intro start; observed ' + f.starts() + ': ' + JSON.stringify(f.startRequests()))
+    assert.equal(f.starts(), 1)
     assert.deepEqual(await f.page.evaluate(() => window.__introAutoplayMutedStates), [false, true])
     assert.equal(await f.page.$eval('.class1-intro-video', v => v.paused), false)
     assert.equal(await f.page.$eval('.class1-intro-video', v => v.muted), true)

@@ -53,6 +53,8 @@ export function Level2PreviewIntro({ onComplete, videoSrc = INTRO_VIDEO }: { onC
     updatePlayback('loading')
     clearBufferTimeout()
     scheduleBufferTimeout()
+    video.muted = false
+    video.volume = 1
 
     if (frame.requestFullscreen && document.fullscreenElement !== frame) {
       try {
@@ -194,11 +196,11 @@ export function Level2PreviewIntro({ onComplete, videoSrc = INTRO_VIDEO }: { onC
           {videoError ? <p role="alert">{videoError}</p> :
             playback === 'paused' ? <p>The introduction is paused. Resume to continue watching.</p> :
               playback === 'loading' ? <p role="status">Loading the introduction…</p> :
-                playback === 'ready' ? <p>Watch the complete introduction before starting at letter E.</p> : null}
+              playback === 'ready' ? <p>Loading Miss Julie&apos;s introduction.</p> : null}
           {fullscreenFallback ? <p role="status">Continuing in the full-screen page view; browser fullscreen is unavailable.</p> : null}
-          {playback === 'ready' || playback === 'blocked' || playback === 'paused'
+          {playback === 'blocked' || playback === 'paused'
             ? <button type="button" onClick={() => void startVideo()}>
-                <RotateCw size={18} /> {playback === 'paused' ? 'Resume introduction' : playback === 'ready' ? 'Play introduction' : 'Play introduction'}
+                <RotateCw size={18} /> {playback === 'paused' ? 'Resume introduction' : 'Tap to play with sound'}
               </button>
             : null}
           {playback === 'error'

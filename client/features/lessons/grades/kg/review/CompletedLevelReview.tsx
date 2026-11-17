@@ -9,6 +9,7 @@ import { TalkoraLoader } from '@/components/student/talkora-loader'
 import { apiClientBlob } from '@/lib/api-client'
 import { AnimatedMissJulie } from '../level-01/components/AnimatedMissJulie'
 import { KindergartenWorld } from '../components/KindergartenWorld'
+import { Level2JungleWorld } from '../level-02/Level2JungleWorld'
 import { LetterWordPicture } from '../components/LetterWordPicture'
 import { kgLevel2StudentService } from '../level-02/services/kg-level2-student-service'
 import { kgContinuationStudentService } from '../continuation/continuation-service'
@@ -28,9 +29,9 @@ const CONTENT: Record<KGReviewLevel, { letters: readonly string[]; words: Record
     letters: ['E', 'F', 'G', 'H', 'I', 'J'],
     words: { E: 'elephant', F: 'fish', G: 'goat', H: 'hat', I: 'igloo', J: 'jam' },
     pictures: {
-      E: '/kg/pictures/level-2/elephant.svg', F: '/kg/pictures/level-2/fish.svg',
-      G: '/kg/pictures/level-2/goat.svg', H: '/kg/pictures/level-2/hat.svg',
-      I: '/kg/pictures/level-2/igloo.svg', J: '/kg/pictures/level-2/jam.svg',
+      E: '/kg/pictures/level-2/elephant.jpg', F: '/kg/pictures/level-2/fish.jpg',
+      G: '/kg/pictures/level-2/goat.jpg', H: '/kg/pictures/level-2/hat.jpg',
+      I: '/kg/pictures/level-2/igloo.jpg', J: '/kg/pictures/level-2/jam.jpg',
     },
   },
   3: {
@@ -189,8 +190,8 @@ export function KGCompletedLevelReview({ level }: { level: KGReviewLevel }) {
   }
 
   return (
-    <main className="kg-level2-play kg-review" aria-label={'Completed KG Level ' + level + ' revision'}>
-      <KindergartenWorld />
+    <main className={'kg-level2-play kg-review' + (level === 2 ? ' kg-level2-visuals' : '')} aria-label={'Completed KG Level ' + level + ' revision'}>
+      {level === 2 ? <Level2JungleWorld /> : <KindergartenWorld />}
       <header className="kg-level2-play__top">
         <Link className="kg-level2-play__back" href="/student/kg/map"><Map size={17} /> My garden map</Link>
         <div className="kg-level2-play__progress">
