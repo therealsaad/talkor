@@ -6,6 +6,7 @@ import { kgLessonLimiter } from '../middleware/rateLimit'
 const router = Router()
 router.use(authenticate, kgLessonLimiter)
 router.get('/state', requireRole('STUDENT'), KGAlphabetController.state)
+router.get('/narration/:level/:id', requireRole('STUDENT'), KGAlphabetController.studentNarration)
 router.post('/intro/start', requireRole('STUDENT'), KGAlphabetController.startIntro)
 router.post('/intro-seen', requireRole('STUDENT'), KGAlphabetController.markIntro)
 router.get('/audio/:version/:id', requireRole('STUDENT'), KGAlphabetController.audio)

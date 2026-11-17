@@ -29,11 +29,11 @@ test('student PIN login still automatically resumes the first unfinished lesson;
 })
 
 test('all completed KG1-5 stones open their respective revision, while locked stones have no URL', () => {
-  assert.match(map, /if \(status === 'LOCKED'\) return undefined/)
-  assert.match(map, /levelNumber === 1\) return status === 'COMPLETED' \? '\/student\/kg\?replay=all'/)
-  assert.match(map, /levelNumber >= 2 && levelNumber <= 5 && status === 'COMPLETED'/)
-  assert.match(map, /'\/student\/kg\/review\/' \+ levelNumber/)
-  assert.match(map, /Green check = revise/)
+  assert.match(map, /if \(status === 'locked'\) return undefined/)
+  assert.match(map, /level === 1\) return status === 'completed' \? '\/student\/kg\?replay=all'/)
+  assert.match(map, /level >= 2 && level <= 5/)
+  assert.match(map, /status === 'completed' \? `\/student\/kg\/review\/\$\{level\}` : `\/student\/kg\/level-\$\{level\}`/)
+  assert.match(map, /level\.status === 'completed' \? Check : LockKeyhole/)
   assert.match(reviewPage, /\^\[2-5\]\$/)
   assert.match(reviewPage, /KGCompletedLevelReview/)
 })

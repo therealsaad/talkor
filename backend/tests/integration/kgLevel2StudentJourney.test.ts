@@ -71,7 +71,11 @@ it('unlocks student E–J only after authoritative KG1 completion; keeps preview
   await request(app).post('/api/kg-level2/intro/start').set('Authorization', auth).expect(403)
   await request(app).post('/api/kg-level2/attempt').set('Authorization', auth).send({}).expect(403)
   expect(await KGLevel2Progress.countDocuments({ studentId: student._id })).toBe(0)
-  await KGAlphabetProgress.updateOne({ studentId: student._id }, { $set: { currentIndex: 8 } })
+  const completedAt = new Date()
+  await KGAlphabetProgress.updateOne({ studentId: student._id }, { $set: {
+    currentIndex: 8, currentLevel: 1, completedLevels: [1], completedAt,
+    xp: 100, stars: 3, homeworkStatus: 'pending', homeworkAssignedAt: completedAt,
+  } })
   const level1 = await request(app).get('/api/kg-alphabet/state').set('Authorization', auth).expect(200)
   expect(level1.body.data).toMatchObject({ completed: true, level2Available: true })
   expect(level1.body.data.homework.status).not.toBe('completed') // Homework is not a gate.

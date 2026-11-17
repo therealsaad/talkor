@@ -3,6 +3,7 @@ import { Schema, model, Types } from 'mongoose'
 export interface IKGAlphabetAttempt {
   studentId: Types.ObjectId
   schoolId: Types.ObjectId
+  level: number
   activityId: string
   letter: string
   mode: 'speak' | 'touch'
@@ -29,8 +30,9 @@ export interface IKGAlphabetAttempt {
 const schema = new Schema<IKGAlphabetAttempt>({
   studentId: { type: Schema.Types.ObjectId, ref: 'Student', required: true, index: true },
   schoolId: { type: Schema.Types.ObjectId, ref: 'School', required: true, index: true },
+  level: { type: Number, min: 1, max: 5, default: 1, index: true },
   activityId: { type: String, required: true },
-  letter: { type: String, enum: ['A', 'B', 'C', 'D'], required: true },
+  letter: { type: String, enum: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''), required: true },
   mode: { type: String, enum: ['speak', 'touch'], required: true },
   outcome: { type: String, enum: ['correct', 'incorrect', 'unclear', 'supported'], required: true },
   transcript: { type: String, maxlength: 240 },

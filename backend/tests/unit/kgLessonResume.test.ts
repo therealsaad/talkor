@@ -3,7 +3,9 @@ jest.mock('../../src/models/CurriculumClass', () => ({ CurriculumClass: { findOn
 jest.mock('../../src/models/Level', () => ({ Level: { exists: jest.fn(), find: jest.fn() } }))
 jest.mock('../../src/models/Lesson', () => ({ Lesson: { find: jest.fn() } }))
 jest.mock('../../src/models/Activity', () => ({ Activity: { find: jest.fn() } }))
-jest.mock('../../src/services/progress.service', () => ({ ProgressService: { getForStudent: jest.fn() } }))
+jest.mock('../../src/services/progress.service', () => ({ ProgressService: {
+  getForStudent: jest.fn(), assertLevelAccessible: jest.fn(),
+} }))
 
 import { Student } from '../../src/models/Student'
 import { CurriculumClass } from '../../src/models/CurriculumClass'
@@ -81,6 +83,7 @@ describe('KG lesson resume path', () => {
     expect(result.curriculumClass.grade).toBe(0)
     expect(result.lesson.id).toBe(lessonId)
     expect(result.completedActivityIds).toEqual(['finished-activity'])
+    expect(ProgressService.assertLevelAccessible).toHaveBeenCalledWith(studentId, classId, levelId)
   })
 
   it('does not send a KG student to a false completed state when the published unit has no active lessons', async () => {

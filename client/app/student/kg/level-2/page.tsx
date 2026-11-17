@@ -2,16 +2,19 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/components/auth/auth-provider'
 import { TalkoraLoader } from '@/components/student/talkora-loader'
 import { Level2PreviewIntro } from '@/features/lessons/grades/kg/level-02/PreviewIntro'
 import { KGLevel2StudentExperience } from '@/features/lessons/grades/kg/level-02/StudentExperience'
 import { kgLevel2StudentService, type KGLevel2State } from '@/features/lessons/grades/kg/level-02/services/kg-level2-student-service'
+import { nextKGStudentRoute } from '@/services/kg-resume-service'
 
-type Stage = 'loading' | 'intro' | 'saving' | 'lesson' | 'complete' | 'error'
+type Stage = 'loading' | 'intro' | 'saving' | 'lesson' | 'error'
 /** Student-pilot route: never reuses the staff-only preview or its sessionStorage bypass marker. */
 export default function KGLevel2StudentPage() {
   const { student, status } = useAuth()
+  const router = useRouter()
   const [stage, setStage] = useState<Stage>('loading')
   const [state, setState] = useState<KGLevel2State | null>(null)
   const [error, setError] = useState('')
@@ -26,7 +29,10 @@ export default function KGLevel2StudentPage() {
       .then(async (saved) => {
         if (!live) return
         setState(saved)
-        if (saved.completed) { setStage('complete'); return }
+        if (saved.completed) {
+          router.replace(await nextKGStudentRoute())
+          return
+        }
         await kgLevel2StudentService.beginIntro()
         if (live) setStage('intro')
       })
@@ -36,7 +42,7 @@ export default function KGLevel2StudentPage() {
         setStage('error')
       })
     return () => { live = false }
-  }, [status, student?.id, retry])
+  }, [router, status, student?.id, retry])
 
   const finish = async () => {
     setStage('saving')
@@ -55,13 +61,6 @@ export default function KGLevel2StudentPage() {
   if (stage === 'intro') return <Level2PreviewIntro onComplete={() => { void finish() }} />
   if (stage === 'lesson' && state) {
     return <KGLevel2StudentExperience key={student?.id} initial={state} />
-  }
-  if (stage === 'complete') {
-    return <main className="kg-level2-play" style={{ placeContent: 'center', textAlign: 'center', alignItems: 'center' }}>
-      <h1>Wonderful! Level 2 is complete!</h1>
-      <p>Letters E through J are saved. Miss Julie is proud of you!</p>
-      <Link href="/student/kg/map" className="kg-level2-play__action">Back to my garden</Link>
-    </main>
   }
   return <main className="kg-level2-play" role="alert" style={{ placeContent: 'center', textAlign: 'center', alignItems: 'center' }}>
     <h1>Miss Julie needs a little help</h1>

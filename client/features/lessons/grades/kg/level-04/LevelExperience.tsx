@@ -32,13 +32,13 @@ const PICTURES: Record<Level4Letter, string> = {
 type VideoState = 'ready' | 'loading' | 'playing' | 'paused' | 'blocked' | 'error' | 'complete'
 type Phase = 'narrating' | 'requesting' | 'listening' | 'checking' | 'feedback' | 'error' | 'finished'
 
-export default function LevelExperience({ preview = false }: LevelExperienceProps) {
+export default function LevelExperience({ preview = false, studentMode = false, studentReview = false, studentStartLetter = 'Q' }: LevelExperienceProps) {
   const router = useRouter()
   const reducedMotion = useReducedMotion()
   const [videoState, setVideoState] = useState<VideoState>('ready')
   const [videoError, setVideoError] = useState('')
   const [videoAttempt, setVideoAttempt] = useState(0)
-  const [letter, setLetter] = useState<Level4Letter>('Q')
+  const [letter, setLetter] = useState<Level4Letter>(LEVEL4_LETTERS.includes(studentStartLetter as Level4Letter) ? studentStartLetter as Level4Letter : 'Q')
   const [phase, setPhase] = useState<Phase>('narrating')
   const [feedback, setFeedback] = useState('')
   const [outcome, setOutcome] = useState<'correct' | 'incorrect' | 'unclear' | ''>('')
@@ -140,7 +140,7 @@ export default function LevelExperience({ preview = false }: LevelExperienceProp
       setOutcome('')
       setPhase('narrating')
       if (!audioRef.current) audioRef.current = new Audio()
-      await kgLevel4PreviewService.playIntroduction(letter, audioRef.current, controller.signal)
+      await kgLevel4PreviewService.playIntroduction(letter, audioRef.current, controller.signal, studentMode)
       if (!active) return () => undefined
       setPhase('requesting')
       stream = await requestKGMicrophone(controller.signal)
@@ -176,9 +176,16 @@ export default function LevelExperience({ preview = false }: LevelExperienceProp
           audio: noSpeech ? undefined : blob,
           durationMs,
           noSpeech,
+          studentMode,
+          replay: studentReview,
           signal: controller.signal,
         }).then(async (result) => {
           if (!active) return
+          if (studentMode && !studentReview && result.outcome === 'correct' &&
+              (!('advanced' in result) || !result.advanced)) {
+            fail(new Error('Student progress was not advanced'))
+            return
+          }
           const transition = resolveLevel4Attempt(letter, result.outcome)
           setOutcome(result.outcome)
           setFeedback(transition.retry
@@ -190,6 +197,7 @@ export default function LevelExperience({ preview = false }: LevelExperienceProp
             result.outcome === 'correct' ? 'great' : result.outcome === 'unclear' ? 'repeat' : 'try-again',
             audioRef.current,
             controller.signal,
+            studentMode,
           )
           if (!active) return
           if (transition.retry) setAttemptCycle((cycle) => cycle + 1)
@@ -222,7 +230,7 @@ export default function LevelExperience({ preview = false }: LevelExperienceProp
       release()
       audioRef.current?.pause()
     }
-  }, [attemptCycle, letter, preview, router])
+  }, [attemptCycle, letter, preview, router, studentMode, studentReview])
 
   useEffect(() => {
     if (videoState !== 'complete') return
@@ -238,7 +246,7 @@ export default function LevelExperience({ preview = false }: LevelExperienceProp
     }
   }, [beginTurn, videoState])
 
-  if (!preview) return <main className="kg-alpha kg-level3-blocked"><strong>Staff-only draft preview.</strong><span>This Level 4 lesson is not available to students.</span></main>
+  if (!preview && !studentMode) return <main className="kg-alpha kg-level3-blocked"><strong>Staff-only draft preview.</strong><span>This Level 4 lesson is not available to students.</span></main>
   if (videoState !== 'complete') {
     return <main className="kg-level3-intro kg-level4-intro" ref={frameRef} aria-label="Level 4 introductory video">
       <div className="kg-level3-intro__video-frame">
@@ -284,8 +292,8 @@ export default function LevelExperience({ preview = false }: LevelExperienceProp
 
   const selectedIndex = LEVEL4_LETTERS.indexOf(letter)
   const characterState = phase === 'listening' ? 'listening' : phase === 'checking' ? 'thinking' : phase === 'finished' ? 'celebrating' : phase === 'feedback' ? outcome === 'correct' ? 'celebrating' : 'encouraging' : phase === 'error' ? 'encouraging' : 'speaking'
-  return <main className="kg-alpha kg-alpha-play kg-level3-play kg-level4-play" data-phase={phase} aria-label="Staff preview of Level 4 letters Q to V">
-    <header className="kg-alpha-play-top"><span /><div className="kg-alpha-progress-wrap" aria-label={`Letter ${selectedIndex + 1} of ${LEVEL4_LETTERS.length}`}><span>LEVEL 4 · Q–V</span><div className="kg-alpha-step-bar">{LEVEL4_LETTERS.map((item, index) => <i key={item} className={index < selectedIndex ? 'done' : index === selectedIndex ? 'current' : ''} />)}</div></div><span className="kg-alpha-level-pill"><Sparkles size={15} /> STAFF-ONLY DRAFT</span></header>
+  return <main className="kg-alpha kg-alpha-play kg-level3-play kg-level4-play" data-phase={phase} aria-label={studentMode ? 'Level 4 letters Q to V' : 'Staff preview of Level 4 letters Q to V'}>
+    <header className="kg-alpha-play-top"><span /><div className="kg-alpha-progress-wrap" aria-label={`Letter ${selectedIndex + 1} of ${LEVEL4_LETTERS.length}`}><span>LEVEL 4 · Q–V</span><div className="kg-alpha-step-bar">{LEVEL4_LETTERS.map((item, index) => <i key={item} className={index < selectedIndex ? 'done' : index === selectedIndex ? 'current' : ''} />)}</div></div><span className="kg-alpha-level-pill"><Sparkles size={15} /> {preview ? 'STAFF-ONLY DRAFT' : studentReview ? 'LEVEL REVIEW' : 'YOUR LEARNING'}</span></header>
     <div className="kg-alpha-scene">
       <aside className="kg-alpha-teacher"><div className="kg-alpha-teacher-glow" aria-hidden="true" /><AnimatedMissJulie state={characterState} reducedMotion={Boolean(reducedMotion)} /><div className="kg-alpha-speech" role={phase === 'error' ? 'alert' : 'status'} aria-live="polite">{phase === 'finished' ? 'Wonderful! You explored letters Q through V.' : phase === 'feedback' ? feedback : phase === 'listening' ? `Your turn! Say the letter ${letter}.` : phase === 'checking' ? 'Let me hear that…' : phase === 'error' ? feedback : `Say the letter ${letter}.`}</div></aside>
       <section className="kg-alpha-quest kg-alpha-teaching-board"><AnimatePresence mode="wait"><motion.div key={letter} className="kg-alpha-learning kg-level3-learning" initial={reducedMotion ? false : { opacity: 0, y: 18, scale: .97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={reducedMotion ? undefined : { opacity: 0, y: -8 }} transition={{ duration: .46 }}>
