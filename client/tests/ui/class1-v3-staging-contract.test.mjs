@@ -18,7 +18,7 @@ test('Class 1 live diagnostics check First Day scenes, not obsolete little words
   assert.match(bridge, /Outdated 8002 scripted First Day response detected/)
   assert.match(audio, /firstDay from '.\/class1-first-day-voice-v3.json'/)
   assert.match(audio, /educatorReviewVerified: false/)
-  assert.match(intro, /school actions and English/)
+  assert.match(intro, /aria-label="Miss Julie Class 1 first day story"/)
 })
 
 test('Class 1 smoke test uses real word boundaries for skip, not escaped literal backslashes', async () => {
