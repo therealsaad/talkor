@@ -160,10 +160,10 @@ export function Class1LessonIntro({ onAvailable, onDone, firstDayOnly = false, a
 
   async function finish() {
     if (completing.current) return
-    if (watchedUntil.current < (bundledVideo ? BUNDLED_DURATION_SECONDS - 1 : REQUIRED_WATCH_SECONDS)) {
+    if (video.current?.muted || watchedUntil.current < (bundledVideo ? BUNDLED_DURATION_SECONDS - 1 : REQUIRED_WATCH_SECONDS)) {
       video.current?.pause()
       setNeedsTap(true)
-      setError("Let's finish the complete story before we start practising.")
+      setError("Let's finish the complete story with sound before we start practising.")
       return
     }
     completing.current = true
