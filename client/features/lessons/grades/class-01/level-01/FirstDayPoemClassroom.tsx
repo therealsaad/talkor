@@ -110,6 +110,8 @@ type Props = {
   isSpeaking: boolean
   isListening: boolean
   isProcessing: boolean
+  turnStatus?: string
+  waitInvitation?: string
   isCompleted: boolean
   isRetry?: boolean
   transcript?: string
@@ -185,6 +187,8 @@ export function FirstDayPoemClassroom({
   isSpeaking,
   isListening,
   isProcessing,
+  turnStatus,
+  waitInvitation,
   isCompleted,
   isRetry = false,
   transcript,
@@ -495,9 +499,21 @@ export function FirstDayPoemClassroom({
             ) : null}
           </div>
 
-          <p className="poem-feedback__teacher-text" aria-live={isSpeaking ? 'off' : 'polite'}>
-            {teacherText || 'We will learn our poem together. Listen first, then say your lines.'}
-          </p>
+          {/* React immediately reflects the real STT → teaching → Azure
+              stage. No audio filler, extra network call or made-up success. */}
+          {isProcessing && !isSpeaking && !isListening && turnStatus ? (
+            <div className="poem-feedback__wait" role="status" aria-live="polite" aria-atomic="true">
+              <span className="poem-feedback__wait-dots" aria-hidden="true"><i /><i /><i /></span>
+              <span className="poem-feedback__wait-copy">
+                <strong>{turnStatus}</strong>
+                {waitInvitation ? <small>{waitInvitation}</small> : null}
+              </span>
+            </div>
+          ) : (
+            <p className="poem-feedback__teacher-text" aria-live={isSpeaking ? 'off' : 'polite'}>
+              {teacherText || 'We will learn our poem together. Listen first, then say your lines.'}
+            </p>
+          )}
 
           {modelSentence && isRetry ? (
             <small className="poem-feedback__model">

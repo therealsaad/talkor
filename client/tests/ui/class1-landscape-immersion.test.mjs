@@ -23,8 +23,6 @@ test('fullscreen is user-initiated and persists from the introductory story into
   assert.match(utility, /requestFullscreen\(\{ navigationUI: 'hide' \}\)/)
   assert.match(utility, /orientation\?\.lock\?\.\('landscape'\)/)
   assert.match(intro, /closest<HTMLElement>\('\[data-class1-immersion\]'\)/)
-  assert.match(intro, /const fullscreen = requestClass1Fullscreen\(fullscreenTarget\)/)
-  assert.match(intro, /fullscreenActive\.current = await fullscreen/)
   assert.match(intro, /if \(document\.fullscreenElement === frame\.current\)/)
   assert.doesNotMatch(shell, /requestFullscreen\(\)/) // no autoplay/effect fullscreen
 })

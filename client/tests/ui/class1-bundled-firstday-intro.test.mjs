@@ -25,10 +25,11 @@ test('authenticated poem lesson supports the exact bundled reviewed media source
   assert.match(intro, /player\.muted = false/)
   assert.match(intro, /player\.volume = 1/)
   assert.match(intro, /void player\.play\(\)\.then/)
-  assert.match(intro, /if \(!cancelled && player\.paused\) setNeedsTap\(true\)/)
+  assert.match(intro, /if \(!cancelled && !player\.paused && !document\.hidden\) setNeedsTap\(false\)/)
+  assert.match(intro, /if \(document\.hidden\) \{\s*setNeedsTap\(true\)/)
   assert.doesNotMatch(intro, /\bautoPlay\s*=/)
   assert.match(intro, /\{needsTap && canPlay && \(!firstDayOnly \|\| playbackId\)/)
-  assert.match(intro, /if \(video\.current\?\.muted \|\| watchedUntil\.current < REQUIRED_WATCH_SECONDS\)/)
+  assert.match(intro, /if \(video\.current\?\.muted \|\| watchedUntil\.current < \(bundledVideo \? BUNDLED_DURATION_SECONDS - 1 : REQUIRED_WATCH_SECONDS\)\)/)
   assert.match(page, /lesson\.activities\.length === 6/)
   assert.match(page, /class1IntroVideoUrl=\{firstDayReady/)
   assert.match(engine, /introVideoKey && introState !== 'done'/)
@@ -115,7 +116,7 @@ test('real ended handler waits for the backend and cannot continue on save failu
   const completing = { current: false }
   const finish = introFunction('finish', {
     completing, video: { current: { muted: false, pause() {} } }, watchedUntil: { current: 90 },
-    REQUIRED_WATCH_SECONDS: 85, firstDayOnly: true, lessonId: lesson, playbackId: 'a'.repeat(64),
+    bundledVideo: false, REQUIRED_WATCH_SECONDS: 85, firstDayOnly: true, lessonId: lesson, playbackId: 'a'.repeat(64),
     completeFirstDayIntro: () => { calls++; return request },
     setLoading() {}, setNeedsTap() {}, setError() {}, onDone: () => { completed++ },
     document: { fullscreenElement: null }, frame: { current: {} },
@@ -132,11 +133,38 @@ test('real ended handler waits for the backend and cannot continue on save failu
   assert.equal(completed, 1)
 })
 
+test('muted fallback playback cannot complete the intro', async () => {
+  let completed = 0, requests = 0, needsTap = false, error = ''
+  const finish = introFunction('finish', {
+    completing: { current: false },
+    video: { current: { muted: true, pause() {} } },
+    watchedUntil: { current: 90 },
+    bundledVideo: false,
+    REQUIRED_WATCH_SECONDS: 85,
+    firstDayOnly: true,
+    lessonId: lesson,
+    playbackId: 'a'.repeat(64),
+    completeFirstDayIntro: async () => { requests++ },
+    setLoading() {},
+    setNeedsTap: value => { needsTap = value },
+    setError: value => { error = value },
+    onDone: () => { completed++ },
+    document: { fullscreenElement: null },
+    frame: { current: {} },
+  })
+
+  await finish()
+  assert.equal(requests, 0)
+  assert.equal(completed, 0)
+  assert.equal(needsTap, true)
+  assert.match(error, /with sound/)
+})
+
 test('late video metadata cannot erase an earlier server-intro failure and hide recovery', () => {
   let error = 'Your story could not open. Please try again.'
   const validate = introFunction('validateVideo', {
     video: { current: { duration: 90 } }, watchedUntil: { current: 0 },
-    MIN_DURATION_SECONDS: 87, MAX_DURATION_SECONDS: 93,
+    bundledVideo: false, MIN_DURATION_SECONDS: 87, MAX_DURATION_SECONDS: 93,
     setCanPlay() {}, setLoading() {}, setError: next => { error = next }, onAvailable() {},
   })
   validate()

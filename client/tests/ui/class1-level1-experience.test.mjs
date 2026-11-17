@@ -47,16 +47,17 @@ test('Class 1 Level 1 staff syllabus follows the ten published-ready First Day s
   assert.match(backendFastRoute, /experienceId: \(isClass1Demo \|\| firstDay\)/)
 })
 
-test('first visit requires the reviewed story with a minimum 85-second watch; no fake audio or in-app skip', () => {
+test('first visit plays the complete bundled story and advances on end without a Play button', () => {
   assert.match(studentRoute, /lesson\.completedActivityIds\.length === 0/)
   assert.match(studentRoute, /class1-g01-l01/)
   assert.match(lessonEngine, /<Class1LessonIntro/)
   assert.match(intro, /miss-julie-first-day-intro\.mp4/)
   assert.match(intro, /MIN_DURATION_SECONDS = 87/)
   assert.match(intro, /REQUIRED_WATCH_SECONDS = 85/)
-  assert.match(intro, /requestClass1Fullscreen/)
+  assert.match(intro, /BUNDLED_DURATION_SECONDS = 40\.908798/)
+  assert.match(intro, /player\.muted = true/)
+  assert.doesNotMatch(intro, /<Play|Start with sound/)
   assert.match(intro, /muted = false/)
-  assert.match(intro, /Fullscreen is an enhancement/)
   assert.match(intro, /pauseWhenHidden/)
   assert.match(intro, /pauseWhenFullscreenEnds/)
   assert.match(intro, /Try loading again/)
