@@ -13,22 +13,22 @@ import { AnimatedMissJulie } from '../level-01/components/AnimatedMissJulie'
 import { Level2JungleWorld } from './Level2JungleWorld'
 import { LetterWordPicture } from '../components/LetterWordPicture'
 import { LEVEL2_LETTERS, microphoneFailureMessage, type Level2Letter } from './level2-flow'
-import { kgLevel2StudentService, type KGLevel2State } from './services/kg-level2-student-service'
+import { kgLevel2StudentService, type KGLevel2AttemptResult, type KGLevel2State } from './services/kg-level2-student-service'
 import '../level-01/styles/kg-alphabet.css'
 import '../level-01/styles/kg-level1-polish.css'
 import '../components/kindergarten-world.css'
 import './level-02.css'
 
 const WORDS: Record<Level2Letter, string> = {
-  E: 'elephant', F: 'fish', G: 'goat', H: 'hat', I: 'igloo', J: 'jam',
+  E: 'Elephant', F: 'Fish', G: 'Grapes', H: 'House', I: 'Ice Cream', J: 'Juice',
 }
 const PICTURES: Record<Level2Letter, string> = {
   E: '/kg/pictures/level-2/elephant.jpg',
   F: '/kg/pictures/level-2/fish.jpg',
-  G: '/kg/pictures/level-2/goat.jpg',
-  H: '/kg/pictures/level-2/hat.jpg',
-  I: '/kg/pictures/level-2/igloo.jpg',
-  J: '/kg/pictures/level-2/jam.jpg',
+  G: '/kg/pictures/level-2/grapes.jpg',
+  H: '/kg/pictures/level-2/house.jpg',
+  I: '/kg/pictures/level-2/ice_cream.jpg',
+  J: '/kg/pictures/level-2/juice.jpg',
 }
 type Phase = 'narrating' | 'requesting' | 'listening' | 'checking' | 'feedback' | 'error' | 'finished'
 
@@ -38,11 +38,18 @@ export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State 
   const [state, setState] = useState(initial)
   const [phase, setPhase] = useState<Phase>(initial.completed ? 'finished' : 'narrating')
   const [message, setMessage] = useState('')
+  const [celebrating, setCelebrating] = useState(false)
   const [cycle, setCycle] = useState(0)
   const recorderRef = useRef<MediaRecorder | null>(null)
   const letter = state.activity?.letter
   const index = state.currentIndex
   const pendingId = state.pendingFeedback?.submissionId
+
+  useEffect(() => {
+    if (!celebrating) return
+    const timer = window.setTimeout(() => setCelebrating(false), 1400)
+    return () => window.clearTimeout(timer)
+  }, [celebrating])
 
   useEffect(() => {
     if (state.completed || !letter) { setPhase('finished'); return }
@@ -64,14 +71,16 @@ export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State 
       stream = undefined
       recorderRef.current = null
     }
-    async function deliverFeedback(submissionId: string, words: string) {
+    async function deliverFeedback(submissionId: string, words: string, outcome: KGLevel2AttemptResult['outcome']) {
       if (!live || controller.signal.aborted) return
+      setCelebrating(outcome === 'correct')
       setMessage(words)
       setPhase('feedback')
       await kgLevel2StudentService.playFeedback(submissionId, audio, controller.signal)
       if (!live || controller.signal.aborted) return
       const updated = await kgLevel2StudentService.acknowledge(submissionId, controller.signal)
       if (!live || controller.signal.aborted) return
+      setCelebrating(false)
       setState(updated)
       // After the persisted final J acknowledgement, automatically resolve
       // the next permitted lesson; never send the child back to a completed map.
@@ -124,7 +133,7 @@ export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State 
           letter: currentLetter, submissionId: window.crypto.randomUUID(), audio: blob, durationMs,
           noSpeech: (vadAvailable && !heardSpeech) || blob.size < 800,
           signal: controller.signal,
-        }).then((result) => deliverFeedback(result.submissionId, result.feedbackText)).catch(fail)
+        }).then((result) => deliverFeedback(result.submissionId, result.feedbackText, result.outcome)).catch(fail)
       }
       recorder.start()
       setPhase('listening')
@@ -141,7 +150,7 @@ export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State 
     }
     async function run() {
       if (state.pendingFeedback) {
-        await deliverFeedback(state.pendingFeedback.submissionId, state.pendingFeedback.feedbackText)
+        await deliverFeedback(state.pendingFeedback.submissionId, state.pendingFeedback.feedbackText, state.pendingFeedback.outcome)
       } else {
         setPhase('narrating')
         setMessage('Listen, then say the letter ' + letter + '!')
@@ -166,6 +175,7 @@ export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State 
   }, [index, pendingId, cycle, state.completed, letter])
 
   async function retry() {
+    setCelebrating(false)
     setPhase('requesting')
     setMessage('')
     try {
@@ -208,7 +218,8 @@ export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State 
             reducedMotion={Boolean(reduceMotion)} />
           <div className="kg-level2-play__speech" role={phase === 'error' ? 'alert' : 'status'} aria-live="polite">{display}</div>
         </aside>
-        <section className="kg-level2-play__board" aria-label="Miss Julie's Level 2 teaching board">
+        <section className="kg-level2-play__board" aria-label="Miss Julie's Level 2 teaching board"
+          data-celebrating={celebrating ? 'true' : undefined} data-letter={letter}>
           <span className="kg-level2-play__eyebrow"><Sparkles size={17} /> LISTEN · LEARN · SPEAK</span>
           {state.completed ? (
             <div className="kg-level2-play__finished">

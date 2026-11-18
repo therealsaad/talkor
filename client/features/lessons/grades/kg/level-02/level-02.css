@@ -190,7 +190,7 @@
 .kg-level2-play {
   position: relative;
   isolation: isolate;
-  background: linear-gradient(180deg, #cceaff 0%, #e7dcff 48%, #fff0d5 72%, #86be75 100%) !important;
+  background-color: #c9e8a9 !important;
   color: #55466f;
 }
 .kg-level2-play__top { min-height: 52px; }
@@ -242,12 +242,12 @@
 @keyframes kg-level2-mic-breathe { 0%,100% { box-shadow: 0 6px 0 #318664,0 12px 24px rgba(49,134,100,.18); } 50% { box-shadow: 0 6px 0 #318664,0 0 0 4px rgba(91,196,146,.12),0 14px 26px rgba(49,134,100,.2); } }
 @media (prefers-reduced-motion:reduce) { .kg-level2-play * { animation:none !important; transition:none !important; } }
 
-.kg-level2-play {
-  background-color: #c9e8a9;
+.kg-level2-play.kg-level2-visuals {
+  background-color: #c9e8a9 !important;
   background-image: url('/lessons/kg/jungle-background.png') !important;
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: cover;
+  background-repeat: no-repeat !important;
+  background-position: center center !important;
+  background-size: cover !important;
 }
 
 /* Level 2-only scenery sits behind the existing lesson UI. */
@@ -256,6 +256,7 @@
   isolation: isolate;
 }
 .kg-level2-visuals > .kg-level2-jungle {
+  display: none;
   position: absolute;
   z-index: 0;
   inset: 0;
@@ -470,4 +471,88 @@
   .kg-level2-play__speech { max-width: 360px; }
   .kg-level2-play__board { min-height: 0; padding: 20px 14px; }
   .kg-level2-play__letter { width: min(32vw, 155px); font-size: min(23vw, 96px); }
+}
+
+.kg-level2-play__board .kg-level2-letter-word-picture .kg-letter-word-picture__picture {
+  position: relative;
+  outline: 3px solid transparent;
+  outline-offset: 2px;
+  transition: outline-color .25s ease-out, outline-offset .25s ease-out;
+}
+.kg-level2-play__board[data-celebrating='true'] .kg-level2-letter-word-picture .kg-letter-word-picture__picture {
+  overflow: visible;
+  outline-color: rgba(255, 202, 76, .9);
+  outline-offset: 4px;
+}
+.kg-level2-play__board[data-celebrating='true'] .kg-level2-letter-word-picture .kg-letter-word-picture__picture::before,
+.kg-level2-play__board[data-celebrating='true'] .kg-level2-letter-word-picture .kg-letter-word-picture__picture::after {
+  position: absolute;
+  z-index: 1;
+  color: #ffd45e;
+  font-size: clamp(18px, 2.4vw, 27px);
+  line-height: 1;
+  pointer-events: none;
+  text-shadow: 0 2px 8px rgba(255, 186, 72, .45);
+  animation: kg-level2-reward-spark 1.15s cubic-bezier(.2, .8, .2, 1) both;
+}
+.kg-level2-play__board[data-celebrating='true'] .kg-level2-letter-word-picture .kg-letter-word-picture__picture::before {
+  top: 8%;
+  left: 9%;
+  content: '✦';
+}
+.kg-level2-play__board[data-celebrating='true'] .kg-level2-letter-word-picture .kg-letter-word-picture__picture::after {
+  right: 8%;
+  bottom: 8%;
+  color: #74d8d0;
+  content: '★';
+  animation-delay: .12s;
+}
+.kg-level2-play__board[data-celebrating='true'][data-letter='E'] .kg-level2-letter-word-picture .kg-letter-word-picture__image,
+.kg-level2-play__board[data-celebrating='true'][data-letter='H'] .kg-level2-letter-word-picture .kg-letter-word-picture__image,
+.kg-level2-play__board[data-celebrating='true'][data-letter='J'] .kg-level2-letter-word-picture .kg-letter-word-picture__image {
+  animation: kg-level2-reward-bounce .95s cubic-bezier(.2, .8, .2, 1) both;
+}
+.kg-level2-play__board[data-celebrating='true'][data-letter='F'] .kg-level2-letter-word-picture .kg-letter-word-picture__image {
+  animation: kg-level2-reward-swim 1.1s ease-in-out both;
+}
+.kg-level2-play__board[data-celebrating='true'][data-letter='G'] .kg-level2-letter-word-picture .kg-letter-word-picture__image {
+  animation: kg-level2-reward-playful 1s ease-in-out both;
+}
+.kg-level2-play__board[data-celebrating='true'][data-letter='I'] .kg-level2-letter-word-picture .kg-letter-word-picture__image {
+  animation: kg-level2-reward-magic 1.1s ease-in-out both;
+}
+@keyframes kg-level2-reward-spark {
+  0% { opacity: 0; transform: translate3d(0, 7px, 0) scale(.55) rotate(-20deg); }
+  24%, 72% { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(0, -16px, 0) scale(1.2) rotate(18deg); }
+}
+@keyframes kg-level2-reward-bounce {
+  0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+  38% { transform: translate3d(0, -8px, 0) scale(1.035); }
+  72% { transform: translate3d(0, 0, 0) scale(.99); }
+}
+@keyframes kg-level2-reward-swim {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0); }
+  32% { transform: translate3d(5px, -2px, 0) rotate(2deg); }
+  68% { transform: translate3d(-4px, 1px, 0) rotate(-2deg); }
+}
+@keyframes kg-level2-reward-playful {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(0); }
+  35% { transform: translate3d(0, -5px, 0) rotate(-2deg); }
+  70% { transform: translate3d(0, 0, 0) rotate(2deg); }
+}
+@keyframes kg-level2-reward-magic {
+  0%, 100% { transform: scale(1); }
+  42% { transform: scale(1.025) rotate(-1deg); }
+  76% { transform: scale(1.015) rotate(1deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kg-level2-play__board[data-celebrating='true'] .kg-level2-letter-word-picture .kg-letter-word-picture__picture {
+    transition: none;
+  }
+  .kg-level2-play__board[data-celebrating='true'] .kg-level2-letter-word-picture .kg-letter-word-picture__picture::before,
+  .kg-level2-play__board[data-celebrating='true'] .kg-level2-letter-word-picture .kg-letter-word-picture__picture::after {
+    animation: none;
+    opacity: 0;
+  }
 }

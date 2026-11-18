@@ -23,20 +23,20 @@ import {
 } from './level2-flow'
 
 const LETTER_WORDS: Record<Level2Letter, string> = {
-  E: 'elephant',
-  F: 'fish',
-  G: 'goat',
-  H: 'hat',
-  I: 'igloo',
-  J: 'jam',
+  E: 'Elephant',
+  F: 'Fish',
+  G: 'Grapes',
+  H: 'House',
+  I: 'Ice Cream',
+  J: 'Juice',
 }
 const LETTER_PICTURES: Record<Level2Letter, string> = {
   E: '/kg/pictures/level-2/elephant.jpg',
   F: '/kg/pictures/level-2/fish.jpg',
-  G: '/kg/pictures/level-2/goat.jpg',
-  H: '/kg/pictures/level-2/hat.jpg',
-  I: '/kg/pictures/level-2/igloo.jpg',
-  J: '/kg/pictures/level-2/jam.jpg',
+  G: '/kg/pictures/level-2/grapes.jpg',
+  H: '/kg/pictures/level-2/house.jpg',
+  I: '/kg/pictures/level-2/ice_cream.jpg',
+  J: '/kg/pictures/level-2/juice.jpg',
 }
 
 const LETTER_TRANSITION_PAUSE_MS = 900
