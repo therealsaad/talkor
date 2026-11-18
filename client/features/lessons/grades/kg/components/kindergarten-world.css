@@ -288,8 +288,7 @@
   .kg-letter-word-picture__picture { width: min(100%, 220px); }
 }
 
-/* Exact supplied jungle artwork for KG Levels 2 and 3 lesson canvases. */
-.kg-level2-play,
+/* Exact supplied jungle artwork for the Level 3 lesson canvas. */
 .kg-level3-play.kg-alpha-play {
   background-color: #c9e8a9;
   background-image: url('/lessons/kg/jungle-background.png') !important;
@@ -297,14 +296,12 @@
   background-position: center;
   background-size: cover;
 }
-.kg-level2-play > .kg-kindergarten-world,
 .kg-level3-play > .kg-kindergarten-world {
   background-image: url('/lessons/kg/jungle-background.png');
   background-repeat: no-repeat;
   background-position: center;
   background-size: cover;
 }
-.kg-level2-play > .kg-kindergarten-world > *,
 .kg-level3-play > .kg-kindergarten-world > * {
   display: none;
 }

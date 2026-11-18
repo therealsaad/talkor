@@ -18,6 +18,7 @@ const studentExperience = await read('features/lessons/grades/kg/level-02/Studen
 const completedReview = await read('features/lessons/grades/kg/review/CompletedLevelReview.tsx')
 const level2World = await read('features/lessons/grades/kg/level-02/Level2JungleWorld.tsx')
 const level2Styles = await read('features/lessons/grades/kg/level-02/level-02.css')
+const sharedWorldStyles = await read('features/lessons/grades/kg/components/kindergarten-world.css')
 const service = await read('features/lessons/grades/kg/level-02/services/kg-level2-preview-service.ts')
 const introRoute = await read('app/school/kg-preview/level-2/page.tsx')
 const activityRoute = await read('app/school/kg-preview/level-2/[letter]/page.tsx')
@@ -76,14 +77,20 @@ test('Level 2 staff routes use read-only rehearsal while the canonical runtime k
 })
 
 test('Level 2 displays the confirmed letter-word-picture mappings', async () => {
-  for (const [letter, word] of Object.entries({ E: 'elephant', F: 'fish', G: 'goat', H: 'hat', I: 'igloo', J: 'jam' })) {
-    const path = `/kg/pictures/level-2/${word}.jpg`
+  for (const [letter, word, fileName] of [
+    ['E', 'Elephant', 'elephant.jpg'], ['F', 'Fish', 'fish.jpg'], ['G', 'Grapes', 'grapes.jpg'],
+    ['H', 'House', 'house.jpg'], ['I', 'Ice Cream', 'ice_cream.jpg'], ['J', 'Juice', 'juice.jpg'],
+  ]) {
+    const path = `/kg/pictures/level-2/${fileName}`
+    assert.match(activity, new RegExp(`${letter}: '${word}'`))
+    assert.match(studentExperience, new RegExp(`${letter}: '${word}'`))
+    assert.match(completedReview, new RegExp(`${letter}: '${word}'`))
     assert.match(activity, new RegExp(`${letter}: '${path.replaceAll('.', '\\.').replaceAll('/', '\\/')}'`))
     assert.match(studentExperience, new RegExp(`${letter}: '${path.replaceAll('.', '\\.').replaceAll('/', '\\/')}'`))
     assert.match(completedReview, new RegExp(`${letter}: '${path.replaceAll('.', '\\.').replaceAll('/', '\\/')}'`))
-    const image = await readFile(new URL(`../public/kg/pictures/level-2/${word}.jpg`, import.meta.url))
+    const image = await readFile(new URL(`../public/kg/pictures/level-2/${fileName}`, import.meta.url))
     assert.deepEqual(image.subarray(0, 3), Buffer.from([0xff, 0xd8, 0xff]))
-    await access(new URL(`../public/kg/pictures/level-2/${word}.jpg`, import.meta.url))
+    await access(new URL(`../public/kg/pictures/level-2/${fileName}`, import.meta.url))
   }
   assert.match(activity, /<Level2JungleWorld \/>/)
   assert.match(studentExperience, /<Level2JungleWorld \/>/)
@@ -92,16 +99,20 @@ test('Level 2 displays the confirmed letter-word-picture mappings', async () => 
   assert.doesNotMatch(activity, /letter\.toLowerCase|is for/)
 })
 
-test('Level 2 E–J retain bounded image layout and original SVG assets', async () => {
+test('Level 2 E–J retain bounded image layout and full-screen background rules', async () => {
   assert.match(level2Styles, /grid-template-columns: minmax\(112px, 0\.48fr\) minmax\(190px, 0\.9fr\) minmax\(240px, 1fr\)/)
   assert.match(level2Styles, /white-space: nowrap/)
   assert.match(level2Styles, /object-fit: contain/)
   assert.match(level2Styles, /\/lessons\/kg\/jungle-background\.png/)
-  for (const word of ['elephant', 'fish', 'goat', 'hat', 'igloo', 'jam']) {
-    const svg = await read(`public/kg/pictures/level-2/${word}.svg`)
-    assert.match(svg, /viewBox="0 0 (240 180|320 240)"/)
-    assert.doesNotMatch(svg, /<clipPath|clip-path:/)
-  }
+  assert.match(level2Styles, /background-repeat: no-repeat/)
+  assert.match(level2Styles, /background-position: center center/)
+  assert.match(level2Styles, /\.kg-level2-play\.kg-level2-visuals \{\s*background-color: #c9e8a9 !important;\s*background-image: url\('\/lessons\/kg\/jungle-background\.png'\) !important;\s*background-repeat: no-repeat !important;\s*background-position: center center !important;\s*background-size: cover !important;/)
+  assert.equal((level2Styles.match(/background-image: url\('\/lessons\/kg\/jungle-background\.png'\)/g) || []).length, 1)
+  assert.match(level2Styles, /\.kg-level2-visuals > \.kg-level2-jungle \{\s*display: none;/)
+  const sharedBackgroundStart = sharedWorldStyles.indexOf('/* Exact supplied jungle artwork')
+  const sharedBackgroundEnd = sharedWorldStyles.indexOf('.kg-level2-play__board,', sharedBackgroundStart)
+  const sharedBackgroundRules = sharedWorldStyles.slice(sharedBackgroundStart, sharedBackgroundEnd)
+  assert.doesNotMatch(sharedBackgroundRules, /\.kg-level2-play/)
 })
 
 test('the Level 2-only backdrop adds gentle decorations and respects reduced motion', () => {
@@ -133,6 +144,17 @@ test('only correct E–J attempts advance; incorrect and unclear responses retry
   assert.match(activity, /Try again/)
   assert.match(activity, /releaseMicrophone/)
   assert.match(activity, /controller\.abort\(\)/)
+})
+
+test('student rewards are limited to confirmed correct answers and respect reduced motion', () => {
+  assert.match(studentExperience, /setCelebrating\(outcome === 'correct'\)/)
+  assert.match(studentExperience, /result\.feedbackText, result\.outcome/)
+  assert.match(studentExperience, /state\.pendingFeedback\.feedbackText, state\.pendingFeedback\.outcome/)
+  assert.match(studentExperience, /setTimeout\(\(\) => setCelebrating\(false\), 1400\)/)
+  for (const letter of LEVEL2_LETTERS) {
+    assert.match(level2Styles, new RegExp(`data-letter='${letter}'`))
+  }
+  assert.match(level2Styles, /@media \(prefers-reduced-motion: reduce\)[\s\S]*?animation: none/)
 })
 
 test('microphone recordings are submitted to the Level 2 authenticated service only', () => {
