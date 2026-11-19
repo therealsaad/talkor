@@ -393,7 +393,33 @@
 }
 .kg-level2-play::before,
 .kg-level2-play .kg-level2-play__board::before { display:none; }
-.kg-level2-play__board { overflow:hidden; }
+.kg-level2-play__board {
+  overflow: hidden;
+  border: 0;
+  border-radius: 24px;
+  background-color: rgba(242, 255, 238, .62);
+  background-image:
+    linear-gradient(145deg, rgba(241, 255, 235, .52), rgba(255, 248, 224, .44)),
+    url('/lessons/kg/jungle-background.png');
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: cover;
+  box-shadow: 0 10px 28px rgba(37, 71, 48, .12);
+}
+.kg-level2-play.kg-level2-visuals .kg-level2-play__teacher .kg-alpha-teacher-image {
+  width: min(100%, 380px);
+  height: min(58dvh, 500px);
+  max-height: none;
+}
+.kg-level2-play__speech {
+  box-sizing: border-box;
+  width: min(100%, 440px);
+  max-width: 440px;
+  min-height: 84px;
+  padding: 18px 22px;
+  font-size: clamp(16px, 1.4vw, 20px);
+  line-height: 1.4;
+}
 .kg-level2-play__letter { display: none; }
 .kg-level2-letter-word-picture {
   grid-template-columns: minmax(112px, 0.48fr) minmax(190px, 0.9fr) minmax(240px, 1fr);
@@ -402,17 +428,21 @@
   width: 100%;
   min-width: 0;
 }
-.kg-level2-letter-word-picture .kg-letter-word-picture__letter {
+.kg-level2-play .kg-level2-letter-word-picture .kg-letter-word-picture__letter {
   justify-self: center;
   width: clamp(112px, 11vw, 172px);
+  border: 3px solid rgba(255, 255, 255, .86);
+  background: linear-gradient(145deg, rgba(255, 250, 220, .96), rgba(255, 255, 255, .86));
+  box-shadow: 0 8px 20px rgba(50, 79, 56, .16);
 }
-.kg-level2-letter-word-picture .kg-letter-word-picture__copy {
+.kg-level2-play .kg-level2-letter-word-picture .kg-letter-word-picture__copy {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   min-width: 0;
+  text-align: center;
 }
-.kg-level2-letter-word-picture .kg-letter-word-picture__copy strong {
+.kg-level2-play .kg-level2-letter-word-picture .kg-letter-word-picture__copy strong {
   display: block;
   width: max-content;
   max-width: 100%;
@@ -422,24 +452,34 @@
   line-height: 1.05;
   font-size: clamp(28px, 3vw, 44px);
 }
-.kg-level2-letter-word-picture .kg-letter-word-picture__picture {
+.kg-level2-play .kg-level2-letter-word-picture .kg-letter-word-picture__picture {
+  position: relative;
   width: min(100%, 320px);
-  aspect-ratio: 4 / 3;
-  height: auto;
+  height: clamp(160px, 24dvh, 210px);
+  aspect-ratio: auto;
   max-height: 240px;
   min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, .62);
+  box-shadow: 0 8px 20px rgba(38, 67, 45, .16);
   justify-self: center;
   overflow: hidden;
 }
-.kg-level2-letter-word-picture .kg-letter-word-picture__image {
+.kg-level2-play .kg-level2-letter-word-picture .kg-letter-word-picture__image {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
+  max-width: none;
   max-height: none;
+  box-sizing: border-box;
   aspect-ratio: auto;
   border: 0;
-  border-radius: 0;
+  border-radius: inherit;
   box-shadow: none;
-  object-fit: contain;
+  object-fit: cover;
   object-position: center;
   animation: kg-level2-picture-breathe 4.8s ease-in-out infinite;
 }
@@ -451,11 +491,12 @@
     column-gap: 10px;
     row-gap: 14px;
   }
-  .kg-level2-letter-word-picture .kg-letter-word-picture__letter { width: min(34vw, 150px); }
-  .kg-level2-letter-word-picture .kg-letter-word-picture__copy strong { font-size: clamp(25px, 8vw, 34px); }
-  .kg-level2-letter-word-picture .kg-letter-word-picture__picture {
+  .kg-level2-play .kg-level2-letter-word-picture .kg-letter-word-picture__letter { width: min(34vw, 150px); }
+  .kg-level2-play .kg-level2-letter-word-picture .kg-letter-word-picture__copy strong { font-size: clamp(25px, 8vw, 34px); }
+  .kg-level2-play .kg-level2-letter-word-picture .kg-letter-word-picture__picture {
     grid-column: 1 / -1;
     width: min(68vw, 250px);
+    height: clamp(145px, 44vw, 180px);
     max-height: none;
     justify-self: center;
   }
@@ -467,10 +508,28 @@
   .kg-level2-play__progress { grid-column: 1 / -1; grid-row: 2; }
   .kg-level2-play__scene { grid-template-columns: 1fr; gap: 12px; }
   .kg-level2-play__teacher { display: flex; align-items: center; justify-content: center; }
-  .kg-level2-play__teacher .kg-alpha-teacher-image { width: 120px; height: 135px; flex: 0 0 120px; }
-  .kg-level2-play__speech { max-width: 360px; }
+  .kg-level2-play.kg-level2-visuals .kg-level2-play__teacher .kg-alpha-teacher-image {
+    width: clamp(128px, 31vw, 172px);
+    height: clamp(168px, 24dvh, 220px);
+    max-height: none;
+    flex: 0 0 auto;
+  }
+  .kg-level2-play__speech {
+    flex: 1 1 0;
+    width: auto;
+    min-width: 0;
+    max-width: 440px;
+    min-height: 84px;
+    padding: 14px 16px;
+    font-size: clamp(15px, 3.8vw, 18px);
+  }
   .kg-level2-play__board { min-height: 0; padding: 20px 14px; }
   .kg-level2-play__letter { width: min(32vw, 155px); font-size: min(23vw, 96px); }
+}
+
+@media (max-height: 650px) and (orientation: landscape) {
+  .kg-level2-play.kg-level2-visuals .kg-level2-play__teacher .kg-alpha-teacher-image { height: min(42dvh, 260px); }
+  .kg-level2-play__speech { min-height: 72px; padding: 12px 16px; }
 }
 
 .kg-level2-play__board .kg-level2-letter-word-picture .kg-letter-word-picture__picture {
