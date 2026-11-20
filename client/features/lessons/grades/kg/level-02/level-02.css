@@ -400,7 +400,7 @@
   background-color: rgba(242, 255, 238, .62);
   background-image:
     linear-gradient(145deg, rgba(241, 255, 235, .52), rgba(255, 248, 224, .44)),
-    url('/lessons/kg/jungle-background.png');
+    url('/lessons/kg/images/jungle-background.png');
   background-position: center;
   background-repeat: no-repeat;
   background-size: cover;
@@ -466,9 +466,7 @@
   padding: clamp(10px, 1vw, 18px);
   border: 3px solid rgba(255, 255, 255, .86);
   border-radius: 38% 44% 40% 45%;
-  background-image: url('/lessons/kg/images/letter-background.png');
-  background-size: cover;
-  background-position: center;
+  background: linear-gradient(145deg, #f5efff 0%, #e4d8f8 56%, #ccb7ed 100%);
   box-shadow: 0 8px 20px rgba(50, 79, 56, .16);
 }
 .kg-level2-play .kg-level2-letter-word-picture .kg-letter-word-picture__copy {

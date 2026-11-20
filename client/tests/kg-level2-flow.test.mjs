@@ -101,6 +101,7 @@ test('Level 2 displays the confirmed letter-word-picture mappings', async () => 
 })
 
 test('Level 2 E–J retain bounded image layout and full-screen background rules', async () => {
+  await access(new URL('../public/lessons/kg/images/jungle-background.png', import.meta.url))
   assert.match(level2Styles, /grid-template-columns: minmax\(112px, 0\.48fr\) minmax\(190px, 0\.9fr\) minmax\(240px, 1fr\)/)
   assert.match(level2Styles, /white-space: nowrap/)
   assert.match(level2Styles, /object-fit: contain/)
@@ -110,9 +111,12 @@ test('Level 2 E–J retain bounded image layout and full-screen background rules
   assert.match(level2Styles, /background-position: center center/)
   assert.match(level2Styles, /\.kg-level2-play\.kg-level2-visuals \{\s*background-color: #c9e8a9 !important;\s*background-image: url\('\/lessons\/kg\/images\/jungle-background\.png'\) !important;\s*background-repeat: no-repeat !important;\s*background-position: center center !important;\s*background-size: cover !important;/)
   assert.equal((level2Styles.match(/background-image: url\('\/lessons\/kg\/images\/jungle-background\.png'\)/g) || []).length, 1)
+  assert.match(level2Styles, /url\('\/lessons\/kg\/images\/jungle-background\.png'\)/)
+  assert.doesNotMatch(level2Styles, /\/lessons\/kg\/jungle-background\.png/)
   assert.match(letterWordPicture, /<div className="kg-letter-word-picture__letter-box">\s*<div className="kg-letter-word-picture__letter"/)
   assert.match(letterWordPicture, /className=\{`kg-letter-word-picture \$\{className\}`\}/)
-  assert.match(level2Styles, /\.kg-level2-play \.kg-level2-letter-word-picture \.kg-letter-word-picture__letter-box \{[\s\S]*?background-image: url\('\/lessons\/kg\/images\/letter-background\.png'\);\s*background-size: cover;\s*background-position: center;/)
+  assert.match(level2Styles, /\.kg-level2-play \.kg-level2-letter-word-picture \.kg-letter-word-picture__letter-box \{[\s\S]*?background: linear-gradient\(145deg, #f5efff 0%, #e4d8f8 56%, #ccb7ed 100%\);/)
+  assert.doesNotMatch(level2Styles, /letter-background\.png/)
   assert.match(level2Styles, /\.kg-level2-play \.kg-level2-letter-word-picture \.kg-letter-word-picture__letter \{[\s\S]*?background: linear-gradient\(145deg, #f5efff 0%, #e4d8f8 56%, #ccb7ed 100%\);/)
   assert.match(level2Styles, /\.kg-level2-play\.kg-level2-visuals \.kg-level2-play__teacher \.kg-alpha-teacher-image \{[\s\S]*?overflow: visible;/)
   assert.match(level2Styles, /\.kg-julie-animated__pose,[\s\S]*?object-fit: contain;\s*object-position: center bottom;/)
