@@ -216,7 +216,7 @@ export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State 
         <aside className="kg-level2-play__teacher">
           <AnimatedMissJulie state={phase === 'listening' ? 'listening' : busy ? 'speaking' : state.completed ? 'celebrating' : phase === 'feedback' ? 'encouraging' : 'idle'}
             reducedMotion={Boolean(reduceMotion)} />
-          <div className="kg-level2-play__speech" role={phase === 'error' ? 'alert' : 'status'} aria-live="polite">{display}</div>
+          <div className="kg-level2-play__speech" data-microphone-warning={display === 'I could not find a microphone. Connect one, then tap Try again.' ? 'true' : undefined} role={phase === 'error' ? 'alert' : 'status'} aria-live="polite">{display}</div>
         </aside>
         <section className="kg-level2-play__board" aria-label="Miss Julie's Level 2 teaching board"
           data-celebrating={celebrating ? 'true' : undefined} data-letter={letter}>
