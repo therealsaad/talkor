@@ -22,9 +22,17 @@ export function LetterWordPicture({ letter, word, pictureSrc, reducedMotion, cla
         exit={reducedMotion ? undefined : { opacity: 0, y: -8, scale: .98 }}
         transition={{ duration: .46, ease: [0.22, 1, 0.36, 1] }}
       >
-        <div className="kg-letter-word-picture__letter" aria-label={`Letter ${letter}`}>
-          <strong>{letter}</strong>
-        </div>
+        {className.split(/\s+/).includes('kg-level2-letter-word-picture') ? (
+          <div className="kg-letter-word-picture__letter-box">
+            <div className="kg-letter-word-picture__letter" aria-label={`Letter ${letter}`}>
+              <strong>{letter}</strong>
+            </div>
+          </div>
+        ) : (
+          <div className="kg-letter-word-picture__letter" aria-label={`Letter ${letter}`}>
+            <strong>{letter}</strong>
+          </div>
+        )}
         <div className="kg-letter-word-picture__copy">
           <strong>{titleWord}</strong>
         </div>
