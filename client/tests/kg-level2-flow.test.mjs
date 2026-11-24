@@ -113,7 +113,10 @@ test('Level 2 E–J retain bounded image layout and full-screen background rules
   assert.match(level2Styles, /\.kg-level2-play\.kg-level2-visuals \{\s*background-color: #c9e8a9 !important;\s*background-image: url\('\/lessons\/kg\/images\/jungle-background\.png'\) !important;\s*background-image: image-set\(url\('\/lessons\/kg\/images\/jungle-background\.png\.webp'\) type\('image\/webp'\), url\('\/lessons\/kg\/images\/jungle-background\.png'\) type\('image\/png'\)\) !important;\s*background-repeat: no-repeat !important;\s*background-position: center center !important;\s*background-size: cover !important;/)
   assert.equal((level2Styles.match(/background-image: url\('\/lessons\/kg\/images\/jungle-background\.png'\)/g) || []).length, 1)
   assert.match(level2Styles, /url\('\/lessons\/kg\/images\/jungle-background\.png'\)/)
-  assert.equal((level2Styles.match(/image-set\(url\('\/lessons\/kg\/images\/jungle-background\.png\.webp'/g) || []).length, 2)
+  assert.equal((level2Styles.match(/image-set\(url\('\/lessons\/kg\/images\/jungle-background\.png\.webp'/g) || []).length, 1)
+  const letterBoardRule = level2Styles.match(/\.kg-level2-play__board \{\r?\n  overflow: hidden;[\s\S]*?\r?\n\}/)?.[0]
+  assert.match(letterBoardRule, /background: #fffbed;/)
+  assert.doesNotMatch(letterBoardRule, /background-image|url\(/)
   assert.match(level2Styles, /\.kg-level2-play__speech \{\s*position: relative;\s*z-index: 2;/)
   assert.match(level2Styles, /\.kg-level2-play\.kg-level2-visuals \.kg-level2-play__teacher \.kg-alpha-teacher-image \{\s*position: relative;\s*z-index: 1;/)
   assert.match(level2Styles, /\.kg-level2-play__speech \{[\s\S]*?background: linear-gradient\(145deg, #fff, #fff4e8\);/)

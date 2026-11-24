@@ -398,16 +398,7 @@
   overflow: hidden;
   border: 0;
   border-radius: 24px;
-  background-color: rgba(242, 255, 238, .62);
-  background-image:
-    linear-gradient(145deg, rgba(241, 255, 235, .52), rgba(255, 248, 224, .44)),
-    url('/lessons/kg/images/jungle-background.png');
-  background-image:
-    linear-gradient(145deg, rgba(241, 255, 235, .52), rgba(255, 248, 224, .44)),
-    image-set(url('/lessons/kg/images/jungle-background.png.webp') type('image/webp'), url('/lessons/kg/images/jungle-background.png') type('image/png'));
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
+  background: #fffbed;
   box-shadow: 0 10px 28px rgba(37, 71, 48, .12);
 }
 .kg-level2-play.kg-level2-visuals .kg-level2-play__teacher .kg-alpha-teacher-image {
