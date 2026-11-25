@@ -1,4 +1,5 @@
 import { apiClient, apiClientBlob, getStoredToken } from '@/lib/api-client'
+import type { KGRewardCollection } from '@/services/kg-rewards-service'
 import { kgRequest } from './kg-request'
 import { lessonTurnTelemetry, setTelemetrySession } from '@/lib/lesson-turn-telemetry'
 import { clipKey, createDeviceAudioCache, shouldSkipBackgroundDownload } from '@/lib/device-audio-cache'
@@ -420,7 +421,7 @@ export const kgAlphabetService = {
     }
     completedFeedbackReceipts.set(submissionId, { receipt, studentToken: ownerToken, ticket: ownerTicket })
   },
-  acknowledgeFeedback(submissionId: string, signal?: AbortSignal) {
+  acknowledgeFeedback(submissionId: string, signal?: AbortSignal): Promise<{ state: KGAlphabetState; reward?: KGRewardCollection }> {
     const headers = introTicketHeaders()
     const saved = completedFeedbackReceipts.get(submissionId)
     if (!saved || saved.studentToken !== getStoredToken() || saved.ticket !== playbackId) {

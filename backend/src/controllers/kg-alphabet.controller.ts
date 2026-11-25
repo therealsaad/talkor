@@ -8,6 +8,7 @@ import { ok } from '../utils/ApiResponse'
 import { ApiError } from '../utils/ApiError'
 import { Student } from '../models/Student'
 import { KGAlphabetProgress, type IKGAlphabetProgress } from '../models/KGAlphabetProgress'
+import { KGRewardsService } from '../services/kg-rewards.service'
 import { KGAlphabetAttempt, type IKGAlphabetAttempt } from '../models/KGAlphabetAttempt'
 import { KGAlphabetSubmission } from '../models/KGAlphabetSubmission'
 import { KGIntroPlayback } from '../models/KGIntroPlayback'
@@ -861,7 +862,13 @@ export const KGAlphabetController = {
       { $set: { awaitingFeedbackPlayback: false, feedbackAcknowledgedAt: new Date() } })
     const latest = await KGAlphabetProgress.findOne({ studentId: student._id, schoolId: student.schoolId })
     if (!latest) throw ApiError.internal('KG progress unavailable')
-    ok(res, { state: { ...presentState(latest), fallbackAvailable: await canUsePictureSupport(student._id, student.schoolId, latest.currentIndex) } })
+    const reward = latest.currentIndex === 8
+      ? await KGRewardsService.awardCompletedLevelBestEffort(student._id, student.schoolId, 1)
+      : null
+    ok(res, {
+      state: { ...presentState(latest), fallbackAvailable: await canUsePictureSupport(student._id, student.schoolId, latest.currentIndex) },
+      ...(reward ? { reward } : {}),
+    })
   }),
   feedbackAudio: catchAsync(async (req: Request, res: Response) => {
     const { student } = await ensureState(req)

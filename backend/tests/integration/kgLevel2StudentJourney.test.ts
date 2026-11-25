@@ -159,6 +159,8 @@ it('saves Level 2 only after audio receipt, resumes F on next login, and never w
 it('finishes J with an atomic final ACK, preserving completed Level 2 on later login', async () => {
   const { student, auth } = await fixture()
   await get(auth).expect(200)
+  const level1Reward = await request(app).get('/api/kg-rewards/mine').set('Authorization', auth).expect(200)
+  expect(level1Reward.body.data.newlyAwardedLevels).toEqual([1])
   await KGLevel2Progress.updateOne({ studentId: student._id }, { $set: { currentIndex: 5 } })
   const headers = await watchIntro(auth, student._id)
   jest.spyOn(KGSpeechService, 'transcribe').mockResolvedValue({
@@ -179,8 +181,50 @@ it('finishes J with an atomic final ACK, preserving completed Level 2 on later l
   const final = await request(app).post('/api/kg-level2/attempt/level2-final-j-123456/feedback-played')
     .set(headers).send({ feedbackReceipt: receipt }).expect(200)
   expect(final.body.data).toMatchObject({ currentIndex: 6, completed: true, activity: null })
+  expect(final.body.data.reward?.newlyAwardedLevels).toEqual([2])
   expect(final.body.data.completedAt).toBeTruthy()
+  const repeated = await request(app).post('/api/kg-level2/attempt/level2-final-j-123456/feedback-played')
+    .set(headers).send({ feedbackReceipt: receipt }).expect(404)
+  const collection = await request(app).get('/api/kg-rewards/mine').set('Authorization', auth).expect(200)
+  expect(collection.body.data.totalStars).toBe(2)
+  expect(collection.body.data.levels.filter((level: { starEarned: boolean }) => level.starEarned)).toHaveLength(2)
+  expect((await KGAlphabetProgress.findOne({ studentId: student._id }))?.kgRewards.map((reward) => reward.level)).toEqual([1, 2])
   const reloaded = await get(auth).expect(200)
   expect(reloaded.body.data).toMatchObject({ currentIndex: 6, completed: true })
   expect((await KGLevel2Progress.findOne({ studentId: student._id }))?.currentIndex).toBe(6)
+})
+
+it('keeps lesson completion saved when a reward write fails and reconciles a celebratory star later', async () => {
+  const { student, auth } = await fixture()
+  await get(auth).expect(200)
+  await request(app).get('/api/kg-rewards/mine').set('Authorization', auth).expect(200)
+  await KGLevel2Progress.updateOne({ studentId: student._id }, { $set: { currentIndex: 5 } })
+  const headers = await watchIntro(auth, student._id)
+  jest.spyOn(KGSpeechService, 'transcribe').mockResolvedValue({
+    transcript: 'jay', provider: 'sarvam', available: true,
+  } as never)
+  jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached').mockResolvedValue({
+    audio: Buffer.alloc(500, 65), contentType: 'audio/mpeg',
+  })
+  await request(app).post('/api/kg-level2/attempt').set(headers).send({
+    letter: 'J', submissionId: 'level2-reward-retry-123',
+    mimeType: 'audio/webm', durationMs: 900, audioBase64: 'Y'.repeat(160),
+  }).expect(200)
+  const audio = await request(app).get('/api/kg-level2/attempt/level2-reward-retry-123/feedback-audio')
+    .set(headers).expect(200)
+  jest.spyOn(KGAlphabetProgress, 'updateOne').mockImplementationOnce(() => {
+    throw new Error('temporary reward storage failure')
+  })
+  const completed = await request(app).post('/api/kg-level2/attempt/level2-reward-retry-123/feedback-played')
+    .set(headers).send({ feedbackReceipt: audio.headers['x-kg-feedback-receipt'] }).expect(200)
+  expect(completed.body.data).toMatchObject({ currentIndex: 6, completed: true })
+  expect(completed.body.data).not.toHaveProperty('reward')
+  expect((await KGLevel2Progress.findOne({ studentId: student._id }))?.completedAt).toBeInstanceOf(Date)
+
+  const reconciled = await request(app).get('/api/kg-rewards/mine').set('Authorization', auth).expect(200)
+  expect(reconciled.body.data.totalStars).toBe(2)
+  expect(reconciled.body.data.newlyAwardedLevels).toEqual([2])
+  const repeatedRead = await request(app).get('/api/kg-rewards/mine').set('Authorization', auth).expect(200)
+  expect(repeatedRead.body.data.newlyAwardedLevels).toEqual([])
+  expect((await KGAlphabetProgress.findOne({ studentId: student._id }))?.kgRewards.map((reward) => reward.level)).toEqual([1, 2])
 })

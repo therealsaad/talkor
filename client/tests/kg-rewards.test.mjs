@@ -1,0 +1,77 @@
+import assert from 'node:assert/strict'
+import { readFile } from 'node:fs/promises'
+import { test } from 'node:test'
+
+const root = new URL('../', import.meta.url)
+const read = (path) => readFile(new URL(path, root), 'utf8')
+const service = await read('services/kg-rewards-service.ts')
+const shell = await read('components/student/shell/student-portal-shell.tsx')
+const studentNav = await read('components/student/navigation/student-nav.tsx')
+const rewardsPage = await read('app/student/rewards/page.tsx')
+const shelf = await read('features/lessons/grades/kg/components/KGRewardCollectionShelf.tsx')
+const celebration = await read('features/lessons/grades/kg/components/KGRewardCelebration.tsx')
+const celebrationCss = await read('features/lessons/grades/kg/components/kg-reward-celebration.css')
+const level1 = await read('features/lessons/grades/kg/level-01/LevelExperience.tsx')
+const level2 = await read('features/lessons/grades/kg/level-02/StudentExperience.tsx')
+const continuation = await read('features/lessons/grades/kg/continuation/ContinuationExperience.tsx')
+const backendService = await read('../backend/src/services/kg-rewards.service.ts')
+const backendController = await read('../backend/src/controllers/kg-rewards.controller.ts')
+const level1Controller = await read('../backend/src/controllers/kg-alphabet.controller.ts')
+const level2Controller = await read('../backend/src/controllers/kg-level2-student.controller.ts')
+const continuationController = await read('../backend/src/controllers/kg-continuation.controller.ts')
+
+test('KG rewards are read from an authenticated server endpoint and the KG HUD uses completion stars', () => {
+  assert.match(service, /apiClient<\{ eligible: boolean \}>\('\/kg-rewards\/access'/)
+  assert.match(service, /apiClient<KGRewardCollection>\('\/kg-rewards\/mine', \{ cache: 'no-store' \}\)/)
+  assert.match(service, /rewardForCompletedLevel[\s\S]*?this\.mine\(\)/)
+  assert.match(shell, /kgRewardsService\.access\(\)/)
+  assert.match(shell, /kgRewardsService\.mine\(\)/)
+  assert.match(shell, /showRewards=\{session\?\.student\?\.grade !== 0 \|\| kgRewardsEligible === true\}/)
+  assert.match(studentNav, /href !== '\/student\/rewards' \|\| showRewards/)
+  assert.match(shell, /stars: rewards\.totalStars/)
+  assert.match(rewardsPage, /kgRewardsService\.access\(\)/)
+  assert.match(rewardsPage, /kgAccess === 'allowed'[\s\S]*?KGRewardCollectionShelf/)
+  assert.match(rewardsPage, /kgAccess === 'denied'[\s\S]*?KG rewards are not available yet/)
+  assert.match(backendController, /req\.auth\?\.role !== 'STUDENT'/)
+  assert.match(backendController, /isAuthorizedKGAlphabetStudent/)
+  assert.match(backendController, /eligible \}/)
+  assert.doesNotMatch(backendController, /req\.body\?\.studentId|req\.query\.studentId/)
+})
+
+test('only verified completion acknowledgements can award one star per KG level', () => {
+  assert.match(backendService, /KGAlphabetProgress\.findOne[\s\S]*KGLevel2Progress\.findOne[\s\S]*KGContinuationProgress\.find/)
+  assert.match(backendService, /currentIndex === 8/)
+  assert.match(backendService, /currentIndex === 6 && level2\.completedAt/)
+  assert.match(backendService, /row\.completedAt && row\.currentIndex === continuationLesson/)
+  assert.match(backendService, /'kgRewards\.level': \{ \$ne: level \}/)
+  assert.match(level1Controller, /awardCompletedLevelBestEffort\(student\._id, student\.schoolId, 1\)/)
+  assert.match(level2Controller, /awardCompletedLevelBestEffort\(studentId, schoolId, 2\)/)
+  assert.match(continuationController, /awardCompletedLevelBestEffort\(studentId, schoolId, level\)/)
+  assert.match(backendService, /newlyAwardedLevels/)
+  assert.match(backendService, /recordLevel\(studentId, schoolId, level\)\) newlyAwardedLevels\.push\(level\)/)
+})
+
+test('all KG lesson finish screens celebrate only new rewards and keep their Continue action', () => {
+  for (const screen of [level1, level2, continuation]) {
+    assert.match(screen, /rewardForCompletedLevel\(/)
+    assert.match(screen, /<KGRewardCelebration/)
+    assert.match(screen, /continueToNextLesson|continueAfterCompletion/)
+  }
+  assert.match(celebration, /KG Champion/)
+  assert.match(celebration, /Miss Julie is proud of you/)
+  assert.match(celebration, /Continue learning/)
+  assert.match(celebration, /playChime/)
+  assert.match(celebration, /setMuted/)
+  assert.match(celebrationCss, /prefers-reduced-motion: reduce/)
+  assert.match(celebrationCss, /kg-reward-confetti/)
+})
+
+test('the collection shows five saved level slots and unlocks the trophy after five stars', () => {
+  assert.match(shelf, /kgRewardsService\.mine\(\)/)
+  assert.match(shelf, /result\.newlyAwardedLevels\.length/)
+  assert.match(shelf, /<KGRewardCelebration/)
+  assert.match(shelf, /collection\.levels\.map/)
+  assert.match(shelf, /collection\.totalStars/)
+  assert.match(shelf, /collection\.championUnlocked/)
+  assert.match(shelf, /item\.awardedAt/)
+})

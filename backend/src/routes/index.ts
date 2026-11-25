@@ -20,6 +20,7 @@ import kgContinuationRoutes from './kg-continuation.routes'
 import kgLevel3PreviewRoutes from './kg-level3-preview.routes'
 import kgLevel4PreviewRoutes from './kg-level4-preview.routes'
 import kgLevel5PreviewRoutes from './kg-level5-preview.routes'
+import kgRewardsRoutes from './kg-rewards.routes'
 import levelMapRoutes from './level-map.routes'
 
 const router = Router()
@@ -44,6 +45,7 @@ router.use('/kg-continuation', kgContinuationRoutes)
 router.use('/kg-level3-preview', kgLevel3PreviewRoutes)
 router.use('/kg-level4-preview', kgLevel4PreviewRoutes)
 router.use('/kg-level5-preview', kgLevel5PreviewRoutes)
+router.use('/kg-rewards', kgRewardsRoutes)
 router.use('/curriculum-map', levelMapRoutes)
 router.use('/analytics', analyticsRoutes)
 router.use('/daily-challenges', dailyChallengeRoutes)

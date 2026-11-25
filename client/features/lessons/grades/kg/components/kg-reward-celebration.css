@@ -1,0 +1,65 @@
+.kg-reward-celebration {
+  position: fixed;
+  z-index: 10000;
+  right: max(16px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  display: flex;
+  width: min(650px, calc(100vw - 32px));
+  align-items: center;
+  gap: clamp(12px, 3vw, 25px);
+  overflow: hidden;
+  border: 2px solid #fff;
+  border-radius: 28px;
+  padding: clamp(16px, 2.6vw, 26px);
+  background: linear-gradient(140deg, #fffdf3 0%, #fff3ce 100%);
+  box-shadow: 0 16px 50px rgba(67, 45, 96, .28), 0 5px 0 rgba(238, 190, 73, .5);
+  color: #4e3d70;
+  animation: kg-reward-enter .42s cubic-bezier(.2,.8,.2,1) both;
+}
+.kg-reward-celebration__dismiss {
+  position: absolute;
+  z-index: 3;
+  top: 8px;
+  right: 8px;
+  display: grid;
+  width: 34px;
+  height: 34px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255,255,255,.78);
+  color: #5e4d7d;
+  cursor: pointer;
+}
+.kg-reward-celebration__julie { position: relative; z-index: 1; flex: 0 0 auto; width: clamp(78px, 14vw, 116px); }
+.kg-reward-celebration__julie img { display: block; width: 100%; height: auto; filter: drop-shadow(0 6px 7px rgba(76,55,103,.18)); }
+.kg-reward-celebration__copy { position: relative; z-index: 1; min-width: 0; }
+.kg-reward-celebration__eyebrow { display: inline-flex; align-items: center; gap: 6px; color: #a66b16; font-size: 12px; font-weight: 950; letter-spacing: .08em; }
+.kg-reward-celebration h2 { margin: 5px 34px 4px 0; color: #493563; font-size: clamp(20px, 3vw, 27px); line-height: 1.08; }
+.kg-reward-celebration p { margin: 0; color: #665b7b; font-size: 15px; font-weight: 650; line-height: 1.35; }
+.kg-reward-celebration__stars { display: flex; align-items: center; gap: 8px; margin-top: 9px; color: #d99b20; }
+.kg-reward-celebration__stars strong { display: flex; align-items: baseline; gap: 4px; color: #604b81; font-size: 21px; }
+.kg-reward-celebration__stars small { font-size: 12px; font-weight: 750; }
+.kg-reward-celebration__trophy { color: #d99b20; filter: drop-shadow(0 3px 3px #d99b2040); }
+.kg-reward-celebration__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 10px; }
+.kg-reward-celebration__continue { min-height: 42px; border: 0; border-radius: 14px; padding: 9px 16px; background: linear-gradient(145deg,#7c62ad,#624a91); color: #fff; font: inherit; font-weight: 900; cursor: pointer; }
+.kg-reward-celebration__collection { color: #654f8b; font-size: 13px; font-weight: 850; text-decoration: underline; text-underline-offset: 3px; }
+.kg-reward-celebration__sound { display: grid; width: 38px; height: 38px; place-items: center; border: 1px solid #ddd0eb; border-radius: 12px; background: #fff; color: #654f8b; cursor: pointer; }
+.kg-reward-celebration button:focus-visible, .kg-reward-celebration a:focus-visible { outline: 3px solid #e6a826; outline-offset: 3px; }
+.kg-reward-celebration__confetti { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.kg-reward-celebration__confetti i { position: absolute; top: -12px; left: calc((var(--piece) * 5.8%) + 2%); width: 7px; height: 12px; border-radius: 3px; background: hsl(calc(var(--piece) * 37), 78%, 59%); animation: kg-reward-confetti 2.4s ease-in calc(var(--piece) * 45ms) both; }
+@keyframes kg-reward-enter { from { opacity: 0; transform: translateY(28px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes kg-reward-confetti { to { transform: translateY(270px) rotate(calc(var(--piece) * 73deg)); opacity: 0; } }
+@media (max-width: 600px) {
+  .kg-reward-celebration { right: 10px; bottom: max(10px, env(safe-area-inset-bottom)); left: 10px; width: auto; gap: 10px; border-radius: 22px; padding: 14px 12px; }
+  .kg-reward-celebration__julie { width: 72px; }
+  .kg-reward-celebration h2 { font-size: 20px; }
+  .kg-reward-celebration p { font-size: 13px; }
+  .kg-reward-celebration__actions { gap: 8px; }
+  .kg-reward-celebration__continue { min-height: 40px; padding-inline: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kg-reward-celebration { animation: none; }
+  .kg-reward-celebration__confetti { display: none; }
+  .kg-reward-celebration__confetti i { animation: none; }
+}

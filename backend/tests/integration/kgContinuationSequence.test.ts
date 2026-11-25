@@ -148,6 +148,8 @@ it('unlocks K–P only after KG Level 2 completion; no bypass of level 4, 5, 6 o
 it('verified final letter opens the exact next continuation level; resumes after a new PIN login and ends safely after Z', async () => {
   const { student, school, auth } = await fixture()
   await KGLevel2Progress.updateOne({ studentId: student._id }, { $set: { currentIndex: 6, completedAt: new Date() } })
+  const earlierRewards = await request(app).get('/api/kg-rewards/mine').set('Authorization', auth).expect(200)
+  expect(earlierRewards.body.data.newlyAwardedLevels).toEqual([1, 2])
   jest.spyOn(AzureVoiceProvider.prototype, 'synthesizeUncached').mockResolvedValue({
     audio: Buffer.alloc(500, 65), contentType: 'audio/mpeg',
   })
@@ -184,6 +186,7 @@ it('verified final letter opens the exact next continuation level; resumes after
     const finished = await request(app).post(base + '/attempt/' + id + '/feedback-played').set(headers)
       .send({ feedbackReceipt: audio.headers['x-kg-feedback-receipt'] }).expect(200)
     expect(finished.body.data).toMatchObject({ completed: true, currentIndex: part.index + 1, activity: null })
+    expect(finished.body.data.reward?.newlyAwardedLevels).toEqual([part.level])
     const reloaded = await get(part.level, auth).expect(200)
     expect(reloaded.body.data.completed).toBe(true)
     expect((await overview(auth).expect(200)).body.data.nextLevel).toBe(part.next)
@@ -193,6 +196,8 @@ it('verified final letter opens the exact next continuation level; resumes after
     expect(attempt).not.toHaveProperty('transcript')
     await request(app).post(base + '/attempt/' + id + '/feedback-played').set(headers)
       .send({ feedbackReceipt: audio.headers['x-kg-feedback-receipt'] }).expect(404)
+    const savedRewards = await KGAlphabetProgress.findOne({ studentId: student._id }).lean()
+    expect(savedRewards?.kgRewards.filter((reward) => reward.level === part.level)).toHaveLength(1)
   }
   expect((await overview(auth).expect(200)).body.data).toMatchObject({
     nextLevel: null, unavailableLevels: [6, 7, 8, 9, 10],

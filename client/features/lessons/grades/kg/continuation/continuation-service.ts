@@ -1,4 +1,5 @@
 import { apiClient, apiClientBlob, getStoredToken } from '@/lib/api-client'
+import type { KGRewardCollection } from '@/services/kg-rewards-service'
 import { lessonTurnTelemetry, setTelemetrySession } from '@/lib/lesson-turn-telemetry'
 export type KGContinuationLevel = 3 | 4 | 5
 
@@ -15,6 +16,7 @@ export interface KGContinuationState {
   pendingFeedback: {
     submissionId: string; letter: string; outcome: 'correct' | 'incorrect' | 'unclear'; feedbackText: string
   } | null
+  reward?: KGRewardCollection
 }
 export interface KGContinuationOverview {
   nextLevel: KGContinuationLevel | null

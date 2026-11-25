@@ -124,6 +124,10 @@ async function playAndAck(
   const again = await student.post(path + '/feedback-played',
     { feedbackReceipt: receipt }).expect(200)
   expect(again.body.data.state.currentIndex).toBe(expectedIndex + 1)
+  if (expectedIndex === 7) {
+    expect(success.body.data.reward?.newlyAwardedLevels).toEqual([1])
+    expect(again.body.data.reward?.newlyAwardedLevels).toEqual([])
+  }
   return success.body.data.state
 }
 
@@ -229,6 +233,16 @@ it('uses real 5-digit PIN, intro, 8 saved turns, receipt ACK, homework and safe 
     homework: { status: 'pending' },
   })
   expect(final.body.data.completedAt).toBeTruthy()
+  const firstRewards = await request(app).get('/api/kg-rewards/mine').set('Authorization', tokenA).expect(200)
+  expect(firstRewards.body.data.totalStars).toBe(1)
+  expect(firstRewards.body.data.newlyAwardedLevels).toEqual([])
+  const secondRewards = await request(app).get('/api/kg-rewards/mine?studentId=' + first._id)
+    .set('Authorization', tokenB).expect(200)
+  expect(secondRewards.body.data.totalStars).toBe(0)
+  expect(secondRewards.body.data.championUnlocked).toBe(false)
+  const savedRewards = await KGAlphabetProgress.findOne({ studentId: first._id }).lean()
+  expect(savedRewards?.kgRewards).toHaveLength(1)
+  expect(savedRewards?.kgRewards[0].level).toBe(1)
   expect((await a.protected('/api/kg-alphabet/pending-feedback').expect(200)).body.data.pending).toBeNull()
   const homework = '/api/kg-alphabet/homework/complete'
   const savedHomework = await a.post(homework,

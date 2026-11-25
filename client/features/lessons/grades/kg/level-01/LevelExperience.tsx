@@ -8,12 +8,14 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { ArrowLeft, Check, Headphones, LoaderCircle, Mic, Play, RotateCw, Sparkles, Volume2, VolumeX } from 'lucide-react'
 import { watchVoiceActivity } from '@/lib/voice-activity'
 import { nextKGStudentRoute } from '@/services/kg-resume-service'
+import { kgRewardsService, type KGRewardCollection } from '@/services/kg-rewards-service'
 import { lessonTurnTelemetry } from '@/lib/lesson-turn-telemetry'
 import { LatencyReportButton } from '@/components/latency-report-button'
 import { parseSilenceMs } from '@/lib/silence-policy'
 import { kgAlphabetService, type KGAlphabetState, type KGOutcome, type KGPreparedAttempt, type KGAttemptResponse } from './services/kg-alphabet-service'
 import { requestKGMicrophone, KG_SESSION_END_EVENT } from '@/lib/kg-microphone'
 import { AnimatedMissJulie } from './components/AnimatedMissJulie'
+import { KGRewardCelebration } from '../components/KGRewardCelebration'
 import { useKGAmbience } from './hooks/use-kg-ambience'
 import { AUTH_INVALIDATED_EVENT, ApiError, getStoredToken, handleUnauthorizedResponse } from '@/lib/api-client'
 import { makeKGPreviewState } from './services/kg-alphabet-preview'
@@ -85,6 +87,7 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
   const replayRequest = params.get('replay')
   const replayIntroRequest = params.get('intro') === 'replay'
   const [data, setData] = useState<KGAlphabetState | null>(null)
+  const [newReward, setNewReward] = useState<KGRewardCollection | null>(null)
   const [phase, setPhase] = useState<Phase>('loading')
   const { musicEnabled, setMusicEnabled, unlockMusic, silenceForMicrophone, beginVoice, stopMusic } = useKGAmbience(phase)
   const [index, setIndex] = useState(0)
@@ -647,7 +650,12 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
           if (!preview && pendingResultRef.current?.result.submissionId) {
             if (!audioRef.current) audioRef.current = new Audio()
             await kgAlphabetService.playAttemptFeedback(pendingResultRef.current.result.submissionId, audioRef.current, requestRef.current?.signal)
-            await kgAlphabetService.acknowledgeFeedback(pendingResultRef.current.result.submissionId, requestRef.current?.signal)
+            const acknowledged = await kgAlphabetService.acknowledgeFeedback(pendingResultRef.current.result.submissionId, requestRef.current?.signal)
+            if (acknowledged.state.completed) {
+              void kgRewardsService.rewardForCompletedLevel(1, acknowledged.reward).then((reward) => {
+                if (generation.current === token && reward) setNewReward(reward)
+              })
+            }
           } else await speakFeedback('silence', feedbackAudioBase64)
         } catch {
           if (generation.current !== token) return
@@ -686,6 +694,11 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       try {
         const acknowledged = await kgAlphabetService.acknowledgeFeedback(pendingResultRef.current.result.submissionId, requestRef.current?.signal)
         stateRef.current = acknowledged.state; setData(acknowledged.state)
+        if (acknowledged.state.completed) {
+          void kgRewardsService.rewardForCompletedLevel(1, acknowledged.reward).then((reward) => {
+            if (generation.current === token && reward) setNewReward(reward)
+          })
+        }
       } catch {
         setFeedback('Could not save your completed listening turn. Tap Try again.')
         setPhase('error')
@@ -715,14 +728,6 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
       setPhase('finished')
       try { await playClip('homework-abcd') } catch { /* printed homework remains visible */ }
       if (preview) router.replace('/school/kg-preview')
-      else {
-        try {
-          const destination = await nextKGStudentRoute()
-          if (generation.current === token) router.replace(destination)
-        } catch {
-          if (generation.current === token) router.replace('/student/kg/map')
-        }
-      }
       return
     }
     await beginStep(nextIndex)
@@ -756,6 +761,14 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
         setPhase('error')
       }
     } finally { busy.current = false; micStartingRef.current = false }
+  }
+
+  const continueAfterCompletion = async () => {
+    try {
+      const destination = await nextKGStudentRoute()
+      router.replace(destination)
+    }
+    catch { router.replace('/student/kg/map') }
   }
 
   const retryLesson = async () => {
@@ -917,8 +930,12 @@ export function KGAlphabetLesson({ preview = false, previewStartIndex = 0, onPre
           {homeworkError ? <p role="alert">{homeworkError}</p> : null}
           {feedback === friendlyAudioError() ? <p role="alert">{feedback}</p> : null}
         </div>
-        {preview ? <button type="button" className="kg-story-play" onClick={onPreviewBack}><Check size={20} /> Back to the map</button> : <Link className="kg-story-play" href="/student/kg/map"><Check size={20} /> Back to my garden</Link>}
+        {preview ? <button type="button" className="kg-story-play" onClick={onPreviewBack}><Check size={20} /> Back to the map</button> : <>
+          <button type="button" className="kg-story-play" onClick={() => void continueAfterCompletion()}><Check size={20} /> Continue to the next lesson</button>
+          <Link className="kg-story-play" href="/student/kg/map"><Check size={20} /> Back to my garden</Link>
+        </>}
       </div>
+      {!preview && newReward ? <KGRewardCelebration level={1} reward={newReward} onContinue={() => void continueAfterCompletion()} onDismiss={() => setNewReward(null)} /> : null}
     </motion.section> : phase === 'error' && !current ? <section className="kg-alpha-error" role="alert"><Image src="/miss-julie-welcome.webp" alt="Miss Julie is here to help" width={170} height={210} /><div><h1>Let’s try that again</h1><p>{feedback}</p><button type="button" className="kg-story-play" onClick={() => window.location.reload()}><RotateCw size={18} /> Try again</button></div></section> : <>
       <div className="kg-alpha-scene">
         <aside className={`kg-alpha-teacher ${phase === 'julie' ? 'is-speaking' : ''}`}>

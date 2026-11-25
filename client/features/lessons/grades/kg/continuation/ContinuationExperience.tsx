@@ -9,6 +9,8 @@ import { watchVoiceActivity } from '@/lib/voice-activity'
 import { lessonTurnTelemetry } from '@/lib/lesson-turn-telemetry'
 import { nextKGStudentRoute } from '@/services/kg-resume-service'
 import { LatencyReportButton } from '@/components/latency-report-button'
+import { KGRewardCelebration } from '../components/KGRewardCelebration'
+import { kgRewardsService, type KGRewardCollection } from '@/services/kg-rewards-service'
 import { AnimatedMissJulie } from '../level-01/components/AnimatedMissJulie'
 import { KindergartenWorld } from '../components/KindergartenWorld'
 import { LetterWordPicture } from '../components/LetterWordPicture'
@@ -42,6 +44,7 @@ export function KGContinuationStudentExperience({ initial }: { initial: KGContin
   const LEVEL_LETTERS = LEVEL_SETS[initial.level]
   const reduceMotion = useReducedMotion()
   const [state, setState] = useState(initial)
+  const [newReward, setNewReward] = useState<KGRewardCollection | null>(null)
   const [phase, setPhase] = useState<Phase>(initial.completed ? 'finished' : 'narrating')
   const [message, setMessage] = useState('')
   const [cycle, setCycle] = useState(0)
@@ -80,8 +83,10 @@ export function KGContinuationStudentExperience({ initial }: { initial: KGContin
       if (!live || controller.signal.aborted) return
       setState(updated)
       if (updated.completed) {
-        try { router.replace(await nextKGStudentRoute()) }
-        catch { setMessage('Your progress is saved. Tap Continue when your connection returns.') }
+        void kgRewardsService.rewardForCompletedLevel(state.level, updated.reward).then((reward) => {
+          if (live && !controller.signal.aborted && reward) setNewReward(reward)
+        })
+        setPhase('finished')
         return
       }
       setCycle((n) => n + 1)
@@ -250,6 +255,7 @@ export function KGContinuationStudentExperience({ initial }: { initial: KGContin
         </section>
       </div>
       <LatencyReportButton />
+      {newReward ? <KGRewardCelebration level={state.level} reward={newReward} onContinue={() => void continueToNextLesson()} onDismiss={() => setNewReward(null)} /> : null}
     </main>
   )
 }
