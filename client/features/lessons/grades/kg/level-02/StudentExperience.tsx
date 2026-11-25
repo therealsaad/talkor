@@ -86,8 +86,13 @@ export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State 
       setCelebrating(false)
       setState(updated)
       if (updated.completed) {
+        try { router.replace(await nextKGStudentRoute()) }
+        catch { setMessage('Your progress is saved. Tap Continue when your connection returns.') }
         void kgRewardsService.rewardForCompletedLevel(2, updated.reward).then((reward) => {
-          if (live && !controller.signal.aborted && reward) setNewReward(reward)
+          if (reward) {
+            if (live && !controller.signal.aborted) setNewReward(reward)
+            window.dispatchEvent(new CustomEvent('talkora:kg-reward-earned', { detail: { level: 2, reward } }))
+          }
         })
         return
       }

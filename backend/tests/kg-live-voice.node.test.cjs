@@ -121,6 +121,23 @@ test('staff preview routes audio through STT and returns manifest-selected Priya
     '../kg/kg-child-grading': { gradeKGTranscription: ({ transcript }) => transcript === 'apple' ? 'correct' : 'incorrect' },
     '../teaching/kg-teaching-turn': { classifyKGTeachingTurn: () => ({ kind: 'wrong_word', language: 'en-IN' }) },
     '../services/kg-pilot-access': { isAuthorizedKGAlphabetStudent: () => true },
+    '../services/kg-rewards.service': { KGRewardsService: {
+      awardCompletedLevel: async () => ({
+        totalStars: 0, maxStars: 5,
+        levels: [1, 2, 3, 4, 5].map((level) => ({ level, title: `Level ${level}`, completed: false, starEarned: false, awardedAt: null })),
+        championUnlocked: false, newlyAwardedLevels: [],
+      }),
+      getCollection: async () => ({
+        totalStars: 0, maxStars: 5,
+        levels: [1, 2, 3, 4, 5].map((level) => ({ level, title: `Level ${level}`, completed: false, starEarned: false, awardedAt: null })),
+        championUnlocked: false, newlyAwardedLevels: [],
+      }),
+      awardCompletedLevelBestEffort: async () => ({
+        totalStars: 0, maxStars: 5,
+        levels: [1, 2, 3, 4, 5].map((level) => ({ level, title: `Level ${level}`, completed: false, starEarned: false, awardedAt: null })),
+        championUnlocked: false, newlyAwardedLevels: [],
+      }),
+    } },
     '../services/kg-static-audio-cache': { getKGStaticAudio: async () => null },
     '../services/kg-azure-narration.service': { getKGAzureNarrationAudio: async () => null },
     '../providers/voice/AzureVoiceProvider': { AzureVoiceProvider: class { async synthesizeUncached() { throw new Error('Preview must not synthesize live audio') } } },

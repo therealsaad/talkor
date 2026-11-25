@@ -21,7 +21,7 @@ export function StudentPortalShell({ children }: { children: ReactNode }) {
   const { session } = useAuth()
   const [stats, setStats] = useState<{ xp?: number; streak?: number; stars?: number }>({})
   const [kgRewardsEligible, setKgRewardsEligible] = useState<boolean | null>(null)
-  const [pendingReward, setPendingReward] = useState<{ level: number; reward: KGRewardCollection } | null>(null)
+  const [pendingReward, setPendingReward] = useState<{ level: number; reward: KGRewardCollection; continueToMap: boolean } | null>(null)
   const isKGMap = pathname === '/student/kg/map'
   const isLesson = pathname === '/student/continue' || pathname.startsWith('/student/lesson') || (pathname.startsWith('/student/kg') && !isKGMap)
   const isMap = pathname === '/student/levels' || pathname === '/student/kg/map'
@@ -32,6 +32,15 @@ export function StudentPortalShell({ children }: { children: ReactNode }) {
       router.replace('/student/kg/map')
     }
   }, [pathname, router, session?.student?.grade])
+
+  useEffect(() => {
+    const receiveReward = (event: Event) => {
+      const detail = (event as CustomEvent<{ level: number; reward: KGRewardCollection }>).detail
+      if (detail) setPendingReward({ ...detail, continueToMap: false })
+    }
+    window.addEventListener('talkora:kg-reward-earned', receiveReward)
+    return () => window.removeEventListener('talkora:kg-reward-earned', receiveReward)
+  }, [])
 
   useEffect(() => {
     let alive = true
@@ -56,7 +65,7 @@ export function StudentPortalShell({ children }: { children: ReactNode }) {
         if (!alive) return
         setStats({ xp: state.xp, stars: rewards.totalStars, streak: 0 })
         if (rewards.newlyAwardedLevels.length) {
-          setPendingReward({ level: Math.max(...rewards.newlyAwardedLevels), reward: rewards })
+          setPendingReward({ level: Math.max(...rewards.newlyAwardedLevels), reward: rewards, continueToMap: true })
         }
       }).catch(() => {
         if (alive) {
@@ -151,7 +160,10 @@ export function StudentPortalShell({ children }: { children: ReactNode }) {
       {pendingReward ? <KGRewardCelebration
         level={pendingReward.level}
         reward={pendingReward.reward}
-        onContinue={() => { setPendingReward(null); router.push('/student/kg/map') }}
+        onContinue={() => {
+          setPendingReward(null)
+          if (pendingReward.continueToMap) router.push('/student/kg/map')
+        }}
         onDismiss={() => setPendingReward(null)}
       /> : null}
     </div>
