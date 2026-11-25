@@ -62,7 +62,7 @@ function isStudentNavItemActive(href: string, pathname: string) {
   return href === '/student/home' && pathname === '/student'
 }
 
-export function StudentNav() {
+export function StudentNav({ showRewards = true }: { showRewards?: boolean }) {
   const pathname =
     usePathname()
 
@@ -106,7 +106,7 @@ export function StudentNav() {
         --------------------------------------------------- */}
 
         <nav className="talkora-rail-links">
-          {studentNavItems.map(
+          {studentNavItems.filter(({ href }) => href !== '/student/rewards' || showRewards).map(
             ({
               href,
               label,
@@ -182,7 +182,7 @@ export function StudentNav() {
         className="student-bottom-nav"
         aria-label="Mobile Navigation"
       >
-        {studentNavItems.map(
+          {studentNavItems.filter(({ href }) => href !== '/student/rewards' || showRewards).map(
           ({
             href,
             label,

@@ -1,4 +1,5 @@
 import { apiClient, apiClientBlob, getStoredToken } from '@/lib/api-client'
+import type { KGRewardCollection } from '@/services/kg-rewards-service'
 import type { Level2Letter } from '../level2-flow'
 import { lessonTurnTelemetry, setTelemetrySession } from '@/lib/lesson-turn-telemetry'
 
@@ -20,6 +21,7 @@ export interface KGLevel2State {
     outcome: 'correct' | 'incorrect' | 'unclear'
     feedbackText: string
   } | null
+  reward?: KGRewardCollection
 }
 export interface KGLevel2AttemptResult {
   outcome: 'correct' | 'incorrect' | 'unclear'

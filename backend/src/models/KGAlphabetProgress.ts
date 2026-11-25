@@ -15,6 +15,7 @@ export interface IKGAlphabetProgress {
   completedAt?: Date
   xp: number
   stars: number
+  kgRewards: Array<{ level: number; awardedAt: Date }>
   homeworkStatus: 'not-assigned' | 'pending' | 'completed'
   homeworkAssignedAt?: Date
   homeworkCompletedAt?: Date
@@ -40,6 +41,7 @@ const schema = new Schema<IKGAlphabetProgress>({
   completedAt: Date,
   xp: { type: Number, default: 0, min: 0 },
   stars: { type: Number, default: 0, min: 0 },
+  kgRewards: [{ _id: false, level: { type: Number, min: 1, max: 5, required: true }, awardedAt: { type: Date, required: true } }],
   homeworkStatus: { type: String, enum: ['not-assigned', 'pending', 'completed'], default: 'not-assigned' },
   homeworkAssignedAt: Date,
   homeworkCompletedAt: Date,

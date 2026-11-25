@@ -6,6 +6,7 @@ import { KGAlphabetProgress } from '../models/KGAlphabetProgress'
 import { KGLevel2Progress } from '../models/KGLevel2Progress'
 import { KGContinuationProgress, type IKGContinuationProgress } from '../models/KGContinuationProgress'
 import { KGContinuationAttempt, type IKGContinuationAttempt } from '../models/KGContinuationAttempt'
+import { KGRewardsService } from '../services/kg-rewards.service'
 import { isAuthorizedKGAlphabetStudent } from '../services/kg-pilot-access'
 import { KGSpeechService } from '../services/kg-speech.service'
 import { AzureVoiceProvider } from '../providers/voice/AzureVoiceProvider'
@@ -371,6 +372,8 @@ export const KGContinuationController = {
     }
     const fresh = await row(studentId, schoolId, level)
     res.setHeader('Cache-Control', 'private, no-store')
-    ok(res, await state(fresh))
+    const completed = fresh.completedAt && fresh.currentIndex === continuationLesson(level).letters.length
+    const reward = completed ? await KGRewardsService.awardCompletedLevelBestEffort(studentId, schoolId, level) : null
+    ok(res, { ...await state(fresh), ...(reward ? { reward } : {}) })
   }),
 }

@@ -4,6 +4,7 @@ import { Types } from 'mongoose'
 import { KGAlphabetProgress } from '../models/KGAlphabetProgress'
 import { KGLevel2Attempt, type IKGLevel2Attempt } from '../models/KGLevel2Attempt'
 import { KGLevel2Progress, type IKGLevel2Progress } from '../models/KGLevel2Progress'
+import { KGRewardsService } from '../services/kg-rewards.service'
 import { Student } from '../models/Student'
 import { isAuthorizedKGAlphabetStudent } from '../services/kg-pilot-access'
 import { KGSpeechService } from '../services/kg-speech.service'
@@ -313,6 +314,9 @@ export const KGLevel2StudentController = {
     }
     const fresh = await levelState(studentId, schoolId)
     res.setHeader('Cache-Control', 'private, no-store')
-    ok(res, await readState(fresh))
+    const reward = fresh.currentIndex === LEVEL2_LETTERS.length
+      ? await KGRewardsService.awardCompletedLevelBestEffort(studentId, schoolId, 2)
+      : null
+    ok(res, { ...await readState(fresh), ...(reward ? { reward } : {}) })
   }),
 }

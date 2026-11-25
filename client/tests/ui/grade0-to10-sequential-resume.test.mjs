@@ -105,19 +105,23 @@ async function shellReads(pathname, grade) {
   const noop = () => null
   vm.runInNewContext(ts.transpileModule(shellSource, { compilerOptions: {
     module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020, jsx: ts.JsxEmit.ReactJSX,
-  } }).outputText, { exports, module: { exports }, require: id => {
+  } }).outputText, { exports, module: { exports }, window: { addEventListener: noop, removeEventListener: noop }, require: id => {
     if (id === 'react') return { useEffect: f => effects.push(f), useState: x => [x, noop] }
     if (id === 'react/jsx-runtime') return { jsx: (type, props) => ({ type, props }), jsxs: (type, props) => ({ type, props }) }
     if (id === 'next/navigation') return { usePathname: () => pathname, useRouter: () => ({ replace: noop }) }
     if (id === '@/components/auth/auth-provider') return { useAuth: () => ({ session: { student: { id: 'fixture', grade } } }) }
     if (id === '@/services/progress-service') return { progressService: { getMyProgress: async () => { reads.push('generic'); return {} } } }
+    if (id === '@/services/kg-rewards-service') return { kgRewardsService: {
+      access: async () => { reads.push('kg-access'); return { eligible: true } },
+      mine: async () => { reads.push('kg-rewards'); return { totalStars: 0, newlyAwardedLevels: [] } },
+    } }
     if (id.includes('kg-alphabet-service')) return { kgAlphabetService: { state: async () => { reads.push('kg'); return {} } } }
     if (id === '@/config/talkora-assets') return { accountAvatar: noop, learnerAvatar: noop }
     return { default: noop, Flame: noop, Star: noop, StudentNav: noop, TalkoraLogo: noop }
   } })
   exports.StudentPortalShell({ children: null })
   for (const effect of effects) effect()
-  await Promise.resolve()
+  for (let i = 0; i < 4; i++) await Promise.resolve()
   return reads
 }
 
@@ -125,7 +129,7 @@ test('hidden lesson and resume HUDs never trigger unused student progress reads'
   for (const pathname of ['/student/continue', '/student/kg', '/student/kg/level-4', '/student/lesson/fixture']) {
     for (const grade of [0, 1]) assert.deepEqual(await shellReads(pathname, grade), [])
   }
-  assert.deepEqual(await shellReads('/student/kg/map', 0), ['kg'])
+  assert.deepEqual(await shellReads('/student/kg/map', 0), ['kg-access', 'kg', 'kg-rewards'])
   assert.deepEqual(await shellReads('/student/profile', 1), ['generic'])
 })
 

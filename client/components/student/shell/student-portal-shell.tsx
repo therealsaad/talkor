@@ -6,17 +6,22 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Flame, Star } from 'lucide-react'
 import { progressService } from '@/services/progress-service'
+import { kgRewardsService } from '@/services/kg-rewards-service'
 import { kgAlphabetService } from '@/features/lessons/grades/kg/level-01/services/kg-alphabet-service'
 import { StudentNav } from '@/components/student/navigation/student-nav'
 import { accountAvatar, learnerAvatar } from '@/config/talkora-assets'
 import { TalkoraLogo } from '@/components/brand/talkora-logo'
 import { useAuth } from '@/components/auth/auth-provider'
+import { KGRewardCelebration } from '@/features/lessons/grades/kg/components/KGRewardCelebration'
+import type { KGRewardCollection } from '@/services/kg-rewards-service'
 
 export function StudentPortalShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const router = useRouter()
   const { session } = useAuth()
   const [stats, setStats] = useState<{ xp?: number; streak?: number; stars?: number }>({})
+  const [kgRewardsEligible, setKgRewardsEligible] = useState<boolean | null>(null)
+  const [pendingReward, setPendingReward] = useState<{ level: number; reward: KGRewardCollection; continueToMap: boolean } | null>(null)
   const isKGMap = pathname === '/student/kg/map'
   const isLesson = pathname === '/student/continue' || pathname.startsWith('/student/lesson') || (pathname.startsWith('/student/kg') && !isKGMap)
   const isMap = pathname === '/student/levels' || pathname === '/student/kg/map'
@@ -29,22 +34,47 @@ export function StudentPortalShell({ children }: { children: ReactNode }) {
   }, [pathname, router, session?.student?.grade])
 
   useEffect(() => {
+    const receiveReward = (event: Event) => {
+      const detail = (event as CustomEvent<{ level: number; reward: KGRewardCollection }>).detail
+      if (detail) setPendingReward({ ...detail, continueToMap: false })
+    }
+    window.addEventListener('talkora:kg-reward-earned', receiveReward)
+    return () => window.removeEventListener('talkora:kg-reward-earned', receiveReward)
+  }, [])
+
+  useEffect(() => {
     let alive = true
     // The lesson/intro/resume stage hides this HUD. Fetch its statistics only
     // on visible dashboard/map routes, leaving progress authorization fresh.
     if (!session?.student || isLesson) {
       setStats({})
+      if (!session?.student) setKgRewardsEligible(null)
       return () => { alive = false }
     }
 
     // KG Level 1 persists in KGAlphabetProgress, not generic curriculum Progress.
     // Fetch on session changes and visible HUD navigation; never persist on a shared PC.
     if (session.student.grade === 0) {
+      setKgRewardsEligible(null)
       setStats({})
-      kgAlphabetService.state().then((state) => {
-        if (alive) setStats({ xp: state.xp, stars: state.stars, streak: 0 })
-      }).catch(() => { if (alive) setStats({}) })
+      void kgRewardsService.access().then(async ({ eligible }) => {
+        if (!alive) return
+        setKgRewardsEligible(eligible)
+        if (!eligible) return
+        const [state, rewards] = await Promise.all([kgAlphabetService.state(), kgRewardsService.mine()])
+        if (!alive) return
+        setStats({ xp: state.xp, stars: rewards.totalStars, streak: 0 })
+        if (rewards.newlyAwardedLevels.length) {
+          setPendingReward({ level: Math.max(...rewards.newlyAwardedLevels), reward: rewards, continueToMap: true })
+        }
+      }).catch(() => {
+        if (alive) {
+          setKgRewardsEligible(false)
+          setStats({})
+        }
+      })
     } else {
+      setKgRewardsEligible(null)
       progressService.getMyProgress().then((progress) => {
         if (alive) setStats({ xp: progress.xp, streak: progress.streak, stars: progress.stars })
       }).catch(() => { if (alive) setStats({}) })
@@ -67,7 +97,7 @@ export function StudentPortalShell({ children }: { children: ReactNode }) {
       } ${isMap ? 'talkora-app-shell--map' : ''}`}
     >
       {/* Adventure map owns its sidebar; hide the global rail there to avoid dual nav. */}
-      {!isLesson && !isMap && <StudentNav />}
+      {!isLesson && !isMap && <StudentNav showRewards={session?.student?.grade !== 0 || kgRewardsEligible === true} />}
 
       <div className="talkora-main-wrapper">
         {!isLesson && (
@@ -127,6 +157,15 @@ export function StudentPortalShell({ children }: { children: ReactNode }) {
   {children}
 </main>
       </div>
+      {pendingReward ? <KGRewardCelebration
+        level={pendingReward.level}
+        reward={pendingReward.reward}
+        onContinue={() => {
+          setPendingReward(null)
+          if (pendingReward.continueToMap) router.push('/student/kg/map')
+        }}
+        onDismiss={() => setPendingReward(null)}
+      /> : null}
     </div>
   )
 }

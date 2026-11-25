@@ -20,6 +20,8 @@ import { useAuth } from '@/components/auth/auth-provider'
 import { cardMotion, badgeReveal, pageVariants } from '@/motion/presets'
 import { learnerAvatar, accountAvatar, talkoraAssets } from '@/config/talkora-assets'
 import { TalkoraLoader } from '@/components/student/talkora-loader'
+import { KGRewardCollectionShelf } from '@/features/lessons/grades/kg/components/KGRewardCollectionShelf'
+import { kgRewardsService } from '@/services/kg-rewards-service'
 
 import { Volume2 } from 'lucide-react'
 
@@ -28,9 +30,21 @@ export default function RewardsAndBadgesPage() {
   const { student } = useAuth()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [kgAccess, setKgAccess] = useState<'loading' | 'allowed' | 'denied' | 'error' | null>(null)
+  const [kgAccessRetry, setKgAccessRetry] = useState(0)
 
   useEffect(() => {
     let alive = true
+    if (student?.grade === 0) {
+      setKgAccess('loading')
+      void kgRewardsService.access().then(({ eligible }) => {
+        if (alive) setKgAccess(eligible ? 'allowed' : 'denied')
+      }).catch(() => {
+        if (alive) setKgAccess('error')
+      })
+      return () => { alive = false }
+    }
+    setKgAccess(null)
     Promise.allSettled([progressService.getMyAchievements()]).then(
       ([achieveRes]) => {
         if (!alive) return
@@ -45,9 +59,31 @@ export default function RewardsAndBadgesPage() {
     return () => {
       alive = false
     }
-  }, [])
+  }, [student?.grade, kgAccessRetry])
 
   const julieRewardsSpeech = "You earned this because you kept trying! Every badge is a celebration of your brave speaking."
+
+  if (student?.grade === 0 && (!kgAccess || kgAccess === 'loading')) {
+    return <TalkoraLoader compact message="Checking your KG rewards access..." />
+  }
+
+  if (student?.grade === 0 && kgAccess === 'allowed') return <KGRewardCollectionShelf />
+
+  if (student?.grade === 0 && kgAccess === 'denied') {
+    return <main className="kg-reward-shelf"><section className="kg-reward-shelf__message" role="status">
+      <h1>KG rewards are not available yet</h1>
+      <p>Your school needs to enable KG alphabet lessons for your account before you can collect these stars.</p>
+      <Link href="/student/profile">Back to my profile</Link>
+    </section></main>
+  }
+
+  if (student?.grade === 0 && kgAccess === 'error') {
+    return <main className="kg-reward-shelf"><section className="kg-reward-shelf__error" role="alert">
+      <h1>We could not check your KG rewards</h1>
+      <p>Please try again in a moment.</p>
+      <button type="button" onClick={() => setKgAccessRetry((value) => value + 1)}>Try again</button>
+    </section></main>
+  }
 
   if (loading) {
     return <TalkoraLoader compact message="Polishing your trophies and badges..." />

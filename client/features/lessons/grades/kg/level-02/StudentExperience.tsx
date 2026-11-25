@@ -9,6 +9,8 @@ import { watchVoiceActivity } from '@/lib/voice-activity'
 import { lessonTurnTelemetry } from '@/lib/lesson-turn-telemetry'
 import { nextKGStudentRoute } from '@/services/kg-resume-service'
 import { LatencyReportButton } from '@/components/latency-report-button'
+import { KGRewardCelebration } from '../components/KGRewardCelebration'
+import { kgRewardsService, type KGRewardCollection } from '@/services/kg-rewards-service'
 import { AnimatedMissJulie } from '../level-01/components/AnimatedMissJulie'
 import { Level2JungleWorld } from './Level2JungleWorld'
 import { LetterWordPicture } from '../components/LetterWordPicture'
@@ -36,6 +38,7 @@ export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State 
   const router = useRouter()
   const reduceMotion = useReducedMotion()
   const [state, setState] = useState(initial)
+  const [newReward, setNewReward] = useState<KGRewardCollection | null>(null)
   const [phase, setPhase] = useState<Phase>(initial.completed ? 'finished' : 'narrating')
   const [message, setMessage] = useState('')
   const [celebrating, setCelebrating] = useState(false)
@@ -82,11 +85,15 @@ export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State 
       if (!live || controller.signal.aborted) return
       setCelebrating(false)
       setState(updated)
-      // After the persisted final J acknowledgement, automatically resolve
-      // the next permitted lesson; never send the child back to a completed map.
       if (updated.completed) {
         try { router.replace(await nextKGStudentRoute()) }
         catch { setMessage('Your progress is saved. Tap Continue when your connection returns.') }
+        void kgRewardsService.rewardForCompletedLevel(2, updated.reward).then((reward) => {
+          if (reward) {
+            if (live && !controller.signal.aborted) setNewReward(reward)
+            window.dispatchEvent(new CustomEvent('talkora:kg-reward-earned', { detail: { level: 2, reward } }))
+          }
+        })
         return
       }
       setCycle((n) => n + 1)
@@ -251,6 +258,7 @@ export function KGLevel2StudentExperience({ initial }: { initial: KGLevel2State 
         </section>
       </div>
       <LatencyReportButton />
+      {newReward ? <KGRewardCelebration level={2} reward={newReward} onContinue={() => void continueToNextLesson()} onDismiss={() => setNewReward(null)} /> : null}
     </main>
   )
 }
