@@ -76,7 +76,7 @@ export default function HomePage() {
           <div className="tkh-spark tkh-spark-two" aria-hidden="true">✳</div>
           <div className="tkh-hero-trio">
             <Image
-              src="/assets/talkora-hero-trio.webp?v=20261012"
+              src="/assets/talkora-hero-trio.webp"
               alt="Miss Julie smiling with two happy schoolchildren"
               fill
               priority
